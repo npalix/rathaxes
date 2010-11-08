@@ -1,0 +1,26 @@
+#!/bin/sh
+
+INSTALLPATH="$HOME/rathaxes/language/tags/rtx-prototype/"
+GENERATIONPATH="$INSTALLPATH/scripts/generation/"
+MISCPATH="$INSTALLPATH/scripts/misc/"
+PARSINGPATH="$INSTALLPATH/scripts/parsing/"
+CODEWORKEREXTENSION="$INSTALLPATH/scripts/CodeWorkerExtension/"
+SEMANTICSPATH="$INSTALLPATH/scripts/semantics/"
+COREPATH="$INSTALLPATH/scripts/core/"
+CNORM_PATH="$INSTALLPATH/scripts/cnorm/"
+BLACKLIBRARYPATH="$INSTALLPATH/black_library/"
+CNORM2C="$INSTALLPATH/scripts/cnorm/cnorm2c/"
+INCLUDESPATHS="-I $GENERATIONPATH -I $MISCPATH -I $PARSINGPATH -I $CODEWORKEREXTENSION -I $SEMANTICSPATH -I $COREPATH -I $CNORM_PATH -I $BLACKLIBRARYPATH -I $CNORM2C"
+
+case "$1" in
+    "clean")
+	rm -rf *.c
+	rm -rf *.rtree
+	;;
+
+    *)
+    export CNORM_PATH="$CNORM_PATH"
+	codeworker -nologo -stack 1000 $INCLUDESPATHS -script $INSTALLPATH/scripts/rathaxes.cws -args "unix" "$INSTALLPATH" $*
+	;;
+
+esac

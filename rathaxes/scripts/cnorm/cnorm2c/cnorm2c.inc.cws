@@ -1,0 +1,61 @@
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+
+// fonction d'affichage d'un block de C
+declare function	cnorm2c(block : node);
+// les Etype sont les types d'expressions, ce sont les premieres fonctions templates appeles
+declare function	cnorm2cEtype<T>(block : node);
+// les Types sont les types de DECLARATION possibles
+declare function	cnorm2cType<T>(block : node);
+// les Ctypes sont les types C possibles
+declare function	cnorm2cCtype<T>(ctype : node);
+// les Otypes sont les Others types, types de Operandes pour les expressions/statements
+declare function	cnorm2cOtype<T>(block : node);
+
+// fonction d'affichage d'une phrase C normale
+declare function	cnorm2cStmt(block : node);
+// fonction d'affichage une expression
+declare function	cnorm2cExprStmt(block : node);
+// dans un for, le premier parametre peut etre une declaration ou une expression
+declare function	cnorm2cForStmt(block : node);
+// fonction d'affichage d'un block {}
+declare function	cnorm2cCompoundStmt(block : node);
+// fonction d'affichage du nom d'un element en C, abstraction pour identifiant simple, pfunction, tableaux
+declare function	cnorm2cName(block : node);
+// fonction d'affichage des bitfields
+declare function	cnorm2cBitfield(block : node);
+// fonction d'affichage du prototype d'une fonction
+declare function	cnorm2cListParameters(block : node);
+// fonction d'affichage des info de type supplementaire, et du signe
+declare function	cnorm2cInfoAndSign(ctype : node);
+// fonction d'affichage des types pointeurs
+declare function	cnorm2cPointer(ctype : node);
+// fonction d'affichage des tableaux
+declare function	cnorm2cArray(ctype : node);
+// fonction d'affichage de la liste d'initialisation constante
+declare function	cnorm2cInit(block : node);
+// fonction utilise pour les compounds literals
+declare function	cnorm2cInit_recurs(block : node);
+// fonction d'affichage des champs d'une structure, union, enum
+declare function	cnorm2cListEnumUnionStruct(ctype : node);
+
+// fonctions outils
+#include "cnorm2cFunctions.inc.cws"
+// includes
+#include "cnorm2cEtype.inc.cws"
+#include "cnorm2cType.inc.cws"
+#include "cnorm2cCtype.inc.cws"
+#include "cnorm2cOtype.inc.cws"
+
+function	cnorm2c(block : node)
+{
+  local sContent = "";
+  cnorm2cConf.increment = 0;
+  foreach entry in block
+    {sContent += cnorm2cEtype<entry.etype>(entry) + _newLine();}
+  return sContent;
+}
+

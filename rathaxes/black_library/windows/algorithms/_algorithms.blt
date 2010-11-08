@@ -1,0 +1,75 @@
+<%
+/*
+**  _algorithms.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+localref nSelf = project.references.currentContext;
+%>
+
+ADVICE algorithms PART_OF algorithms
+{
+    <%
+        // Registers variables declaration.
+        local definedStack;
+        foreach element in nSelf
+        {
+            if (element.rtype == "algorithms")
+            {
+                if (element.first_parameter.rtype == "register" &&
+                        !findElement(element.first_parameter.register.definition.name, definedStack))
+                {
+                    // Handle multiple declaration
+                    local registerName = element.first_parameter.register.definition.name;
+                    %>
+                        @registerName@_register_object = new_@registerName@();
+                    <%
+                    insert definedStack[element.first_parameter.register.definition.name];
+                }
+                if (element.second_parameter.rtype == "register" &&
+                        !findElement(element.second_parameter.register.definition.name, definedStack))
+                {
+                    // Handle multiple declaration
+                    local registerName = element.second_parameter.register.definition.name;
+                    %>
+                        @registerName@_register_object = new_@registerName@();
+                    <%
+                    insert definedStack[element.second_parameter.register.definition.name];
+                }
+            }
+        }
+
+        foreach element in nSelf
+        {
+            if (element.rtype == "algorithms")
+            {
+                local sToken = getContextToken(element);
+                %>
+                    JOINPOINT @element.algorithm@(@sToken@) IN algorithms.@element.algorithm@;
+                <%
+            }
+        }
+
+        //foreach element in nSelf
+        //{
+        //    if (element.rtype == "algorithms")
+        //    {
+        //        if (element.first_parameter.rtype == "register" &&
+        //                findElement(element.first_parameter.register.definition.name, definedStack))
+        //        {
+        //            local registerName = element.first_parameter.register.definition.name;
+        //            %> MmFreeNonCachedMemory(@registerName@_register_object, sizeof(*@registerName@_register_object)); <%
+        //            removeElement(definedStack, registerName);
+        //        }
+        //        if (element.second_parameter.rtype == "register" &&
+        //                findElement(element.second_parameter.register.definition.name, definedStack))
+        //        {
+        //            local registerName = element.second_parameter.register.definition.name;
+        //            %> MmFreeNonCachedMemory(@registerName@_register_object, sizeof(*@registerName@_register_object)); <%
+        //            removeElement(definedStack, registerName);
+        //        }
+        //    }
+        //}
+    %>
+};

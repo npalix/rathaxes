@@ -1,0 +1,22 @@
+/*
+**	rdsl_declaration_buffer.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+*/
+
+rathaxes_all_types ::=
+	rathaxes_types | rathaxes_basic_types
+;
+
+rathaxes_types ::=
+	#readIdentifier:{"CONTEXT", "BUFFER"}
+;
+
+/*
+**	File rules:
+**
+**		- type : Basic types 1bit, 8bits, 16bits, 32bits
+*/
+rathaxes_basic_types ::=
+	#readIdentifier:{"BIT", "BYTE", "WORD", "DWORD"}
+;

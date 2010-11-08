@@ -1,0 +1,149 @@
+//#trace
+
+function pileReference(source : value, destination : value)
+{
+    pushItem this.loadProject.referenceList;
+    insert this.loadProject.referenceList#back.source = source;
+    insert this.loadProject.referenceList#back.dest = destination;
+}
+
+
+
+root ::=
+    => insert this.loadProject;
+    => insert this.loadProject.currentPath = "this";
+    => insert this.loadProject.referenceList;
+    #ignore(C++)
+    #continue
+    [codeworkerNode(this.loadProject)]
+    #empty
+;
+
+codeworkerNode(currentNode : node) ::=
+    arrayEntry(currentNode)
+    |
+    selfClosingNode(currentNode)
+    |
+    openCloseNode(currentNode)
+;
+
+/********* Array nodes***************/
+
+arrayEntry(currentNode : node) ::=
+    selfClosingArrayEntry(currentNode) 
+    |
+    openCloseArrayEntry(currentNode)
+;
+
+
+
+selfClosingArrayEntry(currentNode : node) ::=
+'<' #readIdentifier:{"__ARRAY_ENTRY"} 
+    [arrayKey(currentNode)] 
+    [#insert(currentNode.val) valueRule(currentNode.val)]? 
+    [#insert(currentNode.refe) referenceRule(currentNode.refe) => pileReference(this.loadProject.currentPath + "[\"" + currentNode.key +"\"]", currentNode.refe); ]? 
+"/>"
+=>
+{
+     insert currentNode.type = "endArrayEntry";
+     insert #evaluateVariable(this.loadProject.currentPath + "[\"" + currentNode.key + "\"]") = currentNode.val;
+}
+
+;
+
+openCloseArrayEntry(currentNode : node) ::=
+'<'  #readIdentifier:{"__ARRAY_ENTRY"}  
+    [arrayKey(currentNode)] 
+    [#insert(currentNode.val)  valueRule(currentNode.val)]? 
+">" 
+ => 
+ {
+     insert #evaluateVariable(this.loadProject.currentPath + "[\"" + currentNode.key + "\"]") = currentNode.val;
+     this.loadProject.currentPath +=  "[\"" + currentNode.key + "\"]";
+ }
+    [   #pushItem(currentNode.children) codeworkerNode(currentNode.children#back) ]+
+
+"</"  #readIdentifier:{"__ARRAY_ENTRY"} ">" 
+=> 
+{
+    insert currentNode.type = "beginArrayEntry";
+    this.loadProject.currentPath = rsubString(this.loadProject.currentPath, lengthString( "[\"" + currentNode.key + "\"]"));
+
+}
+;
+
+/*************************/
+
+selfClosingNode(currentNode : node) ::=
+"<"
+    #readIdentifier:name 
+    [#insert(currentNode.val) valueRule(currentNode.val)]?
+    [#insert(currentNode.refe)  referenceRule(currentNode.refe) => pileReference(this.loadProject.currentPath +"." + name, currentNode.refe);]?
+"/>" 
+=>
+{
+   insert currentNode.type = "endNode";
+   insert currentNode.name = name;
+   insert  #evaluateVariable(this.loadProject.currentPath +"." + name) = currentNode.val;
+}
+;
+
+
+openCloseNode(currentNode : node) ::=
+ '<' 
+    #readIdentifier:nName 
+    [#insert(currentNode.val) valueRule(currentNode.val)]? 
+
+ '>'
+    => 
+    {
+       if (!((nName == "project") && (this.loadProject.currentPath == "this")))
+        {
+         insert  #evaluateVariable(this.loadProject.currentPath +"." + nName) = currentNode.val;
+         this.loadProject.currentPath += "." + nName; 
+        }
+    }
+    [
+    #pushItem(currentNode.children)
+    codeworkerNode(currentNode.children#back)
+    ]*
+"</" #readIdentifier ">"
+=>
+{
+     if (!((nName == "project") && (this.loadProject.currentPath == "this")))
+                 {
+                    insert     currentNode.type = "parentNode";
+                     insert    currentNode.name = nName;
+                    this.loadProject.currentPath = rsubString(this.loadProject.currentPath, lengthString("." + nName));
+                 }
+
+}
+;
+
+/* Lowest Level rules */
+arrayKey(currentNode : node) ::=
+    #readIdentifier:{"__KEY"} "=" #readCString:nKey
+    =>
+    {
+       insert currentNode.key = nKey;
+    }
+;
+
+valueRule(val : node ) ::= 
+    #readIdentifier:{"__VALUE"} "=" /*-#readCString:vali*/ ["\"" -> "\""]:vali 
+    =>
+    {
+        vali = subString(rsubString(vali, 1), 1);
+		// CHANGER CETTE LIGNE SI LE BUG du mauvais echappement est corrige
+        val = replaceString("&quot;", "\"", vali);
+        val = replaceString("&amp;", "&", val);
+    }
+;
+
+referenceRule(refe : node) ::=
+      #readIdentifier:{"__REFERENCE"} "=" #readCString:vali
+      => 
+      {
+          refe = vali;
+      }
+;
