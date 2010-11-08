@@ -46,7 +46,7 @@ The windows ddk (driver develempement kit) provide the usefull include:
 
 \section{Entry point/out point}
 when the driver is loaded in the kernel the first function called is
-{\it driver\_entry}. this function is in charge of creating everything needed
+{\textit driver\_entry}. this function is in charge of creating everything needed
 by the driver to function.\\
 \begin{lstlisting}
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
@@ -63,14 +63,14 @@ PDRIVER_STARTIO DriverStartIo
 PDRIVER_UNLOAD DriverUnload
 PDRIVER_DISPATCH MajorFunction[IRP_MJ_MAXIMUM_FUNCTION+1]
 \end{lstlisting}
-{\bf DeviceObject} is updated automatically by the {\it IoCreateDevice}\\
-{\bf DriverExtension} a pointer to the extention structure DriverExtension>AddDevice is the only accessible member.\\
-{\bf HardwareDatabase} is the path to the hardware configuration in the registry.\\
-{\bf FastIoDispatch} is a pointer to the fastI/O structure whitch define the fastI/O entry point.\\
-{\bf DriverInit} is the entry point for the DriverEntry.\\
-{\bf DriverStartIo} is the entry point for the startI/O routine.\\
-{\bf DriverUnload} the function called at unload time.\\
-{\bf MajorFunction} is an arrray containing the function pointer to the dispatch ROUTINES (READ, WRITE,...).\\
+{\textbf DeviceObject} is updated automatically by the {\textit IoCreateDevice}\\
+{\textbf DriverExtension} a pointer to the extention structure DriverExtension>AddDevice is the only accessible member.\\
+{\textbf HardwareDatabase} is the path to the hardware configuration in the registry.\\
+{\textbf FastIoDispatch} is a pointer to the fastI/O structure whitch define the fastI/O entry point.\\
+{\textbf DriverInit} is the entry point for the DriverEntry.\\
+{\textbf DriverStartIo} is the entry point for the startI/O routine.\\
+{\textbf DriverUnload} the function called at unload time.\\
+{\textbf MajorFunction} is an arrray containing the function pointer to the dispatch ROUTINES (READ, WRITE,...).\\
 In odrer to be able to unload the driver it is important to set the unload
 field of the DriverObject.
 \begin{lstlisting}
@@ -114,7 +114,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 }
 \end{lstlisting}
 
-To output message from the kernel we use the {\it DbgPrint()} function, hoever
+To output message from the kernel we use the {\textit DbgPrint()} function, hoever
 this doesn't prouce any output on the command line. To view the output use a
 debugger or the Dbgview program from www.sysinternals.com.
 
@@ -128,14 +128,14 @@ CreateService API or add the necessary registrykey by hand.
 \subsubsection{Using regedit}
 to register your driver you need to create a new key in your systeme and fill
 4 registry key.\\
-Firts create the new subkey: {\it
-HKEY\_LOCAL\_MACHINE\textbackslashSystem\textbackslashCurrentControlSet\textbackslashServices\textbackslashdriverName}
+Firts create the new subkey: {\textit
+HKEY\_LOCAL\_MACHINE\textbackslash System\textbackslash CurrentControlSet\textbackslash Services\textbackslash driverName}
 then create the following key with the coresponding value:
-{\bf DisplayName} driverName\\
-{\bf ImagePath} c:\textbackslashpath\textbackslashto\textbackslashdriver\textbackslashdriverName.sys\\
-{\bf Start} 3 (possible values are boot (0),  System (1), Auto (2), Demand
+{\textbf DisplayName} driverName\\
+{\textbf ImagePath} c:\textbackslash path\textbackslash to\textbackslash driver\textbackslash driverName.sys\\
+{\textbf Start} 3 (possible values are boot (0),  System (1), Auto (2), Demand
 (3), Disabled (4))
-{\bf Type} 1 (ie Kernel Driver)
+{\textbf Type} 1 (ie Kernel Driver)
 \subsection{Load a driver}
 The simplest way to load a driver is using a prompt to type the following
 command:
