@@ -1,13 +1,18 @@
 PROJECT(RATHAXES NONE)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 
 FIND_PACKAGE(LATEX)
 
+INCLUDE(maintainers/CMakeScripts/FileCopy.cmake)
+INCLUDE(maintainers/CMakeScripts/RathaxesCopyLatexClasses.cmake)
+
 IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     INCLUDE(maintainers/CMakeScripts/UseLATEX.cmake)
+
     ADD_SUBDIRECTORY(doc)
     ADD_SUBDIRECTORY(epitech)
+    ADD_SUBDIRECTORY(maintainers)
 ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     MESSAGE(SEND_ERROR "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
 ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)

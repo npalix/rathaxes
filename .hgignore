@@ -2,3 +2,4 @@ Session.vim$
 \.sw.$
 \.DS_Store$
 ~$
+build/.*
