@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(cdc)
+ADD_SUBDIRECTORY(bilan_archi)
