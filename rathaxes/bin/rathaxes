@@ -1,6 +1,6 @@
 #!/bin/sh
 
-INSTALLPATH="$HOME/rathaxes/language/tags/rtx-prototype/"
+INSTALLPATH="$RTX_PATH/"
 GENERATIONPATH="$INSTALLPATH/scripts/generation/"
 MISCPATH="$INSTALLPATH/scripts/misc/"
 PARSINGPATH="$INSTALLPATH/scripts/parsing/"
