@@ -12,43 +12,87 @@
 
 \tableofcontents
 
+
+\chapter{sujet (temp)}
+
+\section{Barème}
+
+Format du document (première page, cartouches, tableau des révisions, résumé, table des matières, clarté, organisation) /2
+Grammaire Orthographe /2
+Rappel du fonctionnel de l'application /1
+Digramme(s) global de l'application /2
+Diagramme(s) détaillé(s) /3
+Diagramme(s) de communication(s) (échange de flux, interactions internes des composant, interactions externes, n'hésitez pas à modéliser via les différentes représentations UML à votre disposition) /3
+Modélisation conceptuelle (même remarque que le point d'avant) /3
+Modélisation conceptuelle / physique de la DB /2
+Choix des technologies (avantages / inconvénients, étude de pérennité, …) /2
+Malus global /-20
+
 \chapter{Rappel du projet}
 
 \section{Qu'est ce que Rathaxes ?} 
-Rathaxes est une suite de logiciel servant à simplifier la création de pilotes de périférique.
+
+Rathaxes est un ensemble d'outils permettant de simplifier l'écriture de pilote de périphérique. Le projet permet de générer un code source écrit en C pour Linux, Windows 7 et openBSD a partir d'un seul fichier de description de pilote.
+Ses principaux outils sont :
+
+Le projet Rathaxes 2012 est une amélioration d'un EIP réalisé en 2009. Il incorpore de nouvelles fonctionnalités comme l’asynchronicité. 
+Rathaxes 2012 sera capable de générer un pilote de souris USB et celui d'une carte son en preuve de concepte.
+C'est un projet à visée scientifique distribué sous licences libres.
+
 
 \section{Structuration générale de Rathaxes}
-Rathaxes est un logiciel fonctionnant en 3 parties :
 
-* Le DSL
-* La BlackLibrary
-* CodeWorker
+Rathaxes est fonctionne avec3 parties :
+
+\begin {itemize}
+        \item Le langages Rathaxes : C'est un langage dédié (DSL), il est utilisé pour décrire un pilote.
+        \item La black-librairie :  Elle permet l'interfacage entre le DSL et le compilateur;
+        \item Le compilateur : Il transforme les fichiers rathaxes (.rtx) , à l'aide de la black-librairie, en fichier .c spécifique à la plate-forme. \ldots
+\end
+
+\chapter{Diagramme}
+
+\section{Diagramme global}
+
+Diagrame à insérer (et a dessiner) 
+=>> voir EIP 2009
 
 
-\chapter{Diagrame Globale}
+\section{Diagramme détaillé}
 
-Test.
+(Obligatoire selon le barem mais je ne vois pas ce qu'on vas pouvoir mettre dedans)
 
 \chapter{Technologie}
 
 \section{Rathaxes, un héritage}
 Le choix des technologies à été, en grande parti, choisi par l'équipe 2009 de Rathaxes.
-Cependant notre rôle dans le devloppement de l'application sera de comprendre et de redevlopper ces technologies.
+
+Le C à été choisie comme langage pour la partie Black Library et compilateur. 
+C'est un langage dit de bas niveaux qui reste proche de l'univers machine.
+Par aillieur, les principaux Système d'exploitation (Linux, Windows, OpenBSD) on fait le choix de ce langage pour déveloper leur pilotes de périphérique.
+Enfin ce choix nous convient car c'est un langage que toute l'équipe maitrise.
+
 
 \section{Le RTX, un Meta-Langage en construction}
 
 L'un des objectifs du projet rathaxes est d'inclure les technologies DMA et IRQ.
 Cest technologies, utilisent des fonctionnalité dite asynchrone
 
-Commande existante
-* xdfg
-* sth
-* sfdth
+Commande existante :
 
-Commande à ecrire
+\begin {itemize}
+\item XXX
+\item BBB
+\item CCC \ldots
+\end
 
-* xxx
-* xxx
+Commande existante :
+
+\begin {itemize}
+\item XXX
+\item BBB
+\item CCC \ldots
+\end
 
 \section{La black Library}
 
