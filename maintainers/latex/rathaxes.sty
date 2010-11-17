@@ -1,0 +1,77 @@
+% Load additional packages
+\RequirePackage{array}
+\RequirePackage[american]{babel}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{lmodern}
+\RequirePackage{tabularx}
+
+\RequirePackage[pdftex,
+                colorlinks=true,
+                linkcolor=blue,
+                pdfauthor={Rathaxes},
+                pdfkeywords={epitech rathaxes driver}]{hyperref}
+
+\graphicspath{{@RATHAXES_SOURCE_DIR@/com/images/}}
+
+% Use fancyheader with default values
+\pagestyle{fancy}
+
+% Defines commands used to generated the title block
+\global\let\@doctype\@empty
+\newcommand{\rtxdoctype}[1]{\def\@doctype{#1}}
+\global\let\@docversion\@empty
+\newcommand{\rtxdocversion}[1]{\def\@docversion{#1}}
+\global\let\@docref\@empty
+\newcommand{\rtxdocref}[1]{\def\@docref{#1}}
+\global\let\@docstatus\@empty
+\newcommand{\rtxdocstatus}[1]{\def\@docstatus{#1}}
+\global\let\@dochistory\@empty
+\newcommand{\rtxdochistory}[1]{\def\@dochistory{#1}}
+
+% Define a command to generate the title block
+\def\@titleblock{
+  \begin{table}[h]\small
+  \begin{tabularx}{\textwidth}{|X|X|}
+  \hline
+  Group: & Rathaxes \\
+  \hline
+  Project name: & Rathaxes \\
+  \hline
+  \ifx\@doctype\@empty\else
+  Document Type: & \@doctype \\
+  \hline
+  \fi
+  \ifx\@docversion\@empty\else
+  Version: & \@docversion \\
+  \hline
+  \fi
+  \ifx\@docref\@empty\else
+  Reference: & \@docref \\
+  \hline
+  \fi
+  \ifx\@docstatus\@empty\else
+  Document status: & \@docstatus \\
+  \hline
+  \fi
+  \end{tabularx}
+  \caption{Document informations}
+  \end{table}
+
+  \ifx\@dochistory\@empty\else
+  \begin{table}[h]\small
+  \begin{tabularx}{\textwidth}{|l|l|l|X|}
+  \hline
+  Version & Date & Name & Summary \\
+  \hline
+  \@dochistory
+  \hline
+  \end{tabularx}
+  \caption{Versions history}
+  \end{table}
+  \fi
+}
+
+% Defines
+\newcommand{\rtx}{Rathaxes}

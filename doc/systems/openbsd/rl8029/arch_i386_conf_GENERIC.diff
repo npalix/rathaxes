@@ -1,0 +1,36 @@
+Index: GENERIC
+===================================================================
+RCS file: /cvs/src/sys/arch/i386/conf/GENERIC,v
+retrieving revision 1.638
+diff -u -r1.638 GENERIC
+--- GENERIC	24 Oct 2008 06:10:25 -0000	1.638
++++ GENERIC	7 Nov 2008 14:53:27 -0000
+@@ -506,10 +506,10 @@
+ #we2	at isa? port 0x280 iomem 0xd0000 irq 3	# WD/SMC 80x3 ethernet
+ we*	at isapnp?
+ ec0	at isa? port 0x250 iomem 0xd8000 irq 9	# 3C503 ethernet
+-ne0	at isa? port 0x240 irq 9		# NE[12]000 ethernet
+-ne1	at isa? port 0x300 irq 10		# NE[12]000 ethernet
+-ne2	at isa? port 0x280 irq 9		# NE[12]000 ethernet
+-ne*	at isapnp?				# NE[12]000 PnP ethernet
++#ne0	at isa? port 0x240 irq 9		# NE[12]000 ethernet
++#ne1	at isa? port 0x300 irq 10		# NE[12]000 ethernet
++#ne2	at isa? port 0x280 irq 9		# NE[12]000 ethernet
++#ne*	at isapnp?				# NE[12]000 PnP ethernet
+ eg0	at isa? disable port 0x310 irq 5	# 3C505/Etherlink+ ethernet
+ el0	at isa? disable port 0x300 irq 9	# 3C501 ethernet
+ ep0	at isa?					# 3C509 ethernet
+@@ -536,10 +536,11 @@
+ de*	at pci?				# DC21X4X-based ethernet
+ fxp*	at pci?				# EtherExpress 10/100B ethernet
+ fxp*	at cardbus?			# Intel PRO/100 ethernet
+-ne*	at pci?				# NE2000-compat ethernet
++#ne*	at pci?				# NE2000-compat ethernet
+ ep0	at pci?				# 3C59x ethernet
+ ep*	at pci?				# 3C59x ethernet
+-ne*	at pcmcia?			# PCMCIA based NE2000 ethernet
++rln*	at pci?				# rathaxes driver
++#ne*	at pcmcia?			# PCMCIA based NE2000 ethernet
+ ep*	at pcmcia?			# PCMCIA based 3C5xx ethernet
+ sm*	at pcmcia?			# PCMCIA based sm ethernet
+ xe*	at pcmcia?			# Xircom ethernet

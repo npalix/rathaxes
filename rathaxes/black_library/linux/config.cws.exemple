@@ -1,0 +1,12 @@
+// This is Linux black library configuration file.
+
+// Global variables used by linux black library branch
+global LINUX_MAKEFILE_LINK ="/module/makefile/path";
+global LINUX_SOURCE_PATH = "/linux/source/path";
+global LINUX_SOURCE_INCLUDE_PATH = "/linux/include/path";
+
+// Include of linux tools
+// Don't touch this!!
+#include "linux/tools/getLinuxSystemVersion.cws"
+#include "linux/tools/linuxTemporaryDirectory.cws"
+#include "linux/tools/getLinuxCMD.cws"

@@ -1,0 +1,158 @@
+\documentclass{rtxreport}
+
+\author{Thomas Luquet}
+
+\title{Bilan Architecture}
+
+\rtxdoctype{Bilan Architecture}
+\rtxdocref{2012\_AA1\_FR\_Rathaxes}
+\rtxdocversion{0.3}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.1 & 16/11/2010 & Thomas Luquet & Premier draft \\
+\hline
+0.2 & 17/11/2010 & Louis Opter & Fix compilation \\
+\hline
+0.3 & 17/11/2010 & Louis Opter & Ajout du cartouche \\
+\hline
+0.4 & 17/11/2010 & David Pineau & Completion de la section Technologie \\
+}
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{sujet (temp)}
+
+\section{Barème}
+
+Format du document (première page, cartouches, tableau des révisions, résumé,
+table des matières, clarté, organisation) /2\\
+Grammaire Orthographe /2\\
+Rappel du fonctionnel de l'application /1\\
+Digramme(s) global de l'application /2\\
+Diagramme(s) détaillé(s) /3\\
+Diagramme(s) de communication(s) (échange de flux, interactions internes des
+composants, interactions externes, n'hésitez pas à modéliser via les différentes
+représentations UML à votre disposition) /3\\
+Modélisation conceptuelle (même remarque que le point d'avant) /3\\
+Modélisation conceptuelle / physique de la DB /2\\
+Choix des technologies (avantages / inconvénients, étude de pérennité, …) /2\\
+Malus global /-20\\
+
+\chapter{Rappel du projet}
+
+\section{Qu'est ce que Rathaxes ?} 
+
+Rathaxes est un ensemble d'outils permettant de simplifier l'écriture de pilote
+de périphérique. Le projet permet de générer un code source écrit en C pour
+Linux, Windows 7 et openBSD a partir d'un seul fichier de description de pilote.
+Ses principaux outils sont :
+
+Le projet Rathaxes 2012 est une amélioration d'un EIP réalisé en 2009. Il
+incorpore de nouvelles fonctionnalités comme l’asynchronicité. Rathaxes 2012
+sera capable de générer un pilote de souris USB et celui d'une carte son en
+preuve de concepte.  C'est un projet à visée scientifique distribué sous
+licences libres.
+
+
+\section{Structuration générale de Rathaxes}
+
+Rathaxes est fonctionne avec3 parties :
+
+\begin{itemize}
+        \item Le langages Rathaxes : C'est un langage dédié (DSL),
+            il est utilisé pour décrire un pilote.
+        \item La black-librairie :  Elle permet l'interfacage entre le DSL
+            et le compilateur;
+        \item Le compilateur : Il transforme les fichiers rathaxes (.rtx),
+            à l'aide de la black-librairie, en fichier .c spécifique à la
+            plate-forme. \ldots
+\end{itemize}
+
+\chapter{Diagramme}
+
+\section{Diagramme global}
+
+Diagrame à insérer (et a dessiner) 
+=>> voir EIP 2009
+
+
+\section{Diagramme détaillé}
+
+(Obligatoire selon le barem mais je ne vois pas ce qu'on vas pouvoir
+mettre dedans)
+
+\chapter{Technologie}
+
+\section{Rathaxes, un héritage}
+
+Un grand nombre de choix sur les technologies ont été effectués par
+l'équipe 2009 de Rathaxes. Ils avaient en effet pour ce projet le besoin d'une
+technologie permettant d'implementer facilement un compilateur, qui puisse
+utiliser des modèles de code.
+
+\subsection{Le Compilateur}
+
+Pour écrire le compilateur, l'outil retenu par la première équipe de Rathaxes
+fut le CodeWorker, un langage interpreté accompagné par un executable
+(l'interpreteur), distribué gratuitement sous licence LGPL (GNU Lesser General
+Public Licence).
+\\
+\\
+Cet outil présente l'avantage d'être facilement abordable, et de permettre
+une analyse syntaxique et lexicale avancée, tout en permettant la génération
+de code en se basant sur l'arbre de syntaxe abstraite généré par le code
+précédemment analysé. Son avantage sur les autres outils de type similaire tels
+que
+De plus, la syntaxe proposée pour le langage de script de CodeWorker est pour
+la partie analyse syntaxique relativement proche de la syntaxe Backus-Naur Form,
+sous sa version étendue; et la syntaxe proposée pour le script de manipulation
+d'arbre syntaxique et de génération est dérivée du C, la rendant relativement
+familière a l'ensemble de l'équipe qui maitrise le C.
+
+\subsection{Le Backend : une série de modèles}
+
+L'objectif du projet était de générer des drivers en C pour différents systèmes
+d'exploitation. Ceci devait être fait en abstrayant les problématiques de
+connaissances spécifiques à un OS. Il était donc nécessaire de posséder un
+système de modèles de code utilisables pour générer du code C sous un système
+spécifique.
+\\
+\\
+C'est pour cela qu'une fois de plus CodeWorker fut choisi comme l'outil le plus
+pratique. En effet, la solution la plus simple pour avoir des modèles de code
+qui permettaient de générer du code C était d'écrire directement des modèles
+en script CodeWorker, de manière a réduire la quantité de travail nécessaire
+du côté du backend de Rathaxes (pour la partie parsing).
+
+
+\section{Rathaxes, un Meta-Langage en construction}
+
+Forts de l'expérience acquise par l'équipe 2009 de Rathaxes, l'objectif de
+notre groupe est de rechercher et implémenter de nouveaux concepts dans
+Rathaxes. Parmi ceux-ci, s'illustre notemment les notions d'asynchronicité,
+de DMA (Direct Memory Access), d'IRQ (Interrupt Request) et enfin l'ensemble
+des concepts liés a l'utilisation de BUS tels que le PCI dans les pilotes de
+périphériques.
+\\
+Un autre objectif de notre équipe est d'apporter des améliorations dans le
+fonctionnement même de Rathaxes. Jusqu'alors, le code C était généré par
+activation des modèles en fonction du contenu de l'arbre de syntaxe abstraite.
+Nous désirons changer cela, pour d'une part rendre le coeur du compilateur
+plus générique, et permettre de tester efficacement chaque étape
+d'implémentation du langage.
+\\
+\\
+Pour cela, nous allons conserver le CodeWorker, qui par sa simplicite, nous
+permettra de modifier le coeur du compilateur, afin par la suite de pouvoir
+facilement intégrer de nouveaux concepts et mots clefs au compilateur,
+ainsi que d'intégrer plus aisément les contributeurs externes au projet.
+
+
+\end{document}

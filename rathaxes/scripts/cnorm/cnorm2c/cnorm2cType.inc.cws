@@ -1,0 +1,65 @@
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+
+function	cnorm2cType<T>(block : node)
+{
+  traceLine("Unkown node Type:" + T);
+  traceLine("Must be implemented");
+  exit(1);
+}
+
+function	cnorm2cType<"">(block : node)
+{
+  traceLine("Empty node Block.type");
+  traceObject(block);
+  exit(1);
+}
+
+// typedef comme une variable
+function	cnorm2cType<"__TYPE__">(block : node)
+{
+  return cnorm2cType<"__VARIABLE__">(block);
+}
+
+// prototype de fonction
+function	cnorm2cType<"__PROTOTYPE__">(block : node)
+{
+  local list;
+  pushItem list = cnorm2cCtype<block.ctype.type>(block.ctype);
+  pushItem list = block.name;
+  pushItem list = cnorm2cListParameters(block);
+  pushItem list = _joinString(block.comment_suffix, " ");
+  local sContent = _joinString(list, " ");
+  if (sContent)
+    sContent += ";";
+  return sContent;
+}
+
+// implementation d'une fonction
+function	cnorm2cType<"__FUNCTION__">(block : node)
+{
+  local list;
+  pushItem list = cnorm2cCtype<block.ctype.type>(block.ctype);
+  pushItem list = block.name;
+  pushItem list = cnorm2cListParameters(block) + _joinString(block.comment_suffix, " ") +_newLine();
+  return _joinString(list, " ") + cnorm2cCompoundStmt(block);
+}
+
+// declaration d'une variable
+function	cnorm2cType<"__VARIABLE__">(block : node)
+{
+  local list;
+  pushItem list = cnorm2cCtype<block.ctype.type>(block.ctype);
+  pushItem list = cnorm2cName(block);
+  pushItem list = cnorm2cArray(block.ctype);
+  pushItem list = cnorm2cBitfield(block);
+  pushItem list = cnorm2cListParameters(block) + _joinString(block.comment_suffix, " ");
+  pushItem list = cnorm2cInit(block);
+  local sContent = _joinString(list, " ");
+  if (sContent)
+    sContent += ";";
+  return sContent;
+}
