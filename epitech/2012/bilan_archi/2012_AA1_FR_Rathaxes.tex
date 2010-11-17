@@ -6,7 +6,7 @@
 
 \rtxdoctype{Bilan Architecture}
 \rtxdocref{2012\_AA1\_FR\_Rathaxes}
-\rtxdocversion{0.7}
+\rtxdocversion{0.8}
 \rtxdocstatus{Finale}
 
 \rtxdochistory{
@@ -22,7 +22,9 @@
 \hline
 0.6 & 17/11/2010 & Thomas Luquet & Reformulation, inssertion de graphique \\
 \hline
-0.7 & 17/11/2010 & Louis Opter & Relecture et corrections \\
+0.7 & 17/11/2010 & Luquet Thomas & Reformulation, corrections diverses \\
+\hline
+0.8 & 17/11/2010 & Louis Opter & Relecture et corrections \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -60,7 +62,7 @@ Le projet est divisé en trois parties :
 Language.}) utilisé pour décrire un pilote~;
 \item La black-librarie : Elle permet l'interfaçage entre le DSL et le
 compilateur~;
-\item Le compilateur : Il transforme les fichiers rathaxes (.rtx) ---à l'aide
+\item Le compilateur : Il transforme les fichiers \rtx\ (.rtx) ---à l'aide
 de la black-librairie--- en fichier .c spécifiques au système d'exploitation choisi.
 \end{enumerate}
 
@@ -160,9 +162,10 @@ Nous désirons changer cela, pour d'une part rendre le coeur du compilateur
 plus générique, et permettre de tester efficacement chaque étape
 d'implémentation du langage.
 
-Pour cela, nous allons conserver le CodeWorker, qui par sa simplicite, nous
+Pour cela, nous allons conserver le CodeWorker, qui par sa simplicité, nous
 permettra de modifier le coeur du compilateur, afin par la suite de pouvoir
-facilement intégrer de nouveaux concepts et mots clefs au compilateur,
-ainsi que d'intégrer plus aisément les contributeurs externes au projet.
+facilement intégrer de nouveaux concepts et mots clefs au compilateur. Par
+ailleurs nous pourrons intégrer plus aisément des contributeurs externes au
+projet.
 
 \end{document}
