@@ -1,0 +1,14 @@
+/*
+**	rdsl_declaration_sequence.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** -----------------------------------------------------------------------------
+*/
+
+declare function checkSequenceId(aSequenceHash : node, sSequenceName : value);
+
+function checkSequenceId(aSequenceHash : node, sSequenceName : value)
+{
+	if (findElement(sSequenceName, aSequenceHash))
+		rtxError("SEQUENCES: " + sSequenceName + " already exists.");
+}

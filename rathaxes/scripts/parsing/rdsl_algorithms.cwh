@@ -1,0 +1,32 @@
+/*
+**	rdsl_algorithms.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**
+**	---------------------------------------------------------------------------
+*/
+
+#include "rdsl_algorithms.cwf"
+#include "rdsl_algorithms_common.cwh"
+#include "rdsl_algorithms_set.cwh"
+#include "rdsl_algorithms_wait.cwh"
+#include "rdsl_algorithms_concat.cwh"
+#include "rdsl_algorithms_copy.cwh"
+#include "rdsl_algorithms_log.cwh"
+
+rdsl_algorithms(nScope : node) ::=
+	#pushItem(nScope)
+	=> insert nScope#back.rtype = "algorithms";
+    => ref nScope#back.locals = nScope#parent.locals;
+	[
+		rdsl_algorithms_set(nScope#back)
+		| rdsl_algorithms_wait(nScope#back)
+		| rdsl_algorithms_concat(nScope#back)
+		| rdsl_algorithms_copy(nScope#back)
+		| rdsl_algorithms_log(nScope#back)
+	]
+	=> insert this.driver.semantic["algorithms"] = TRUE;
+    => pushItem this.driver.algorithms_calls;
+    // Save algorithms call for future manip : ie parameters resolution.
+    => ref this.driver.algorithms_calls#back = nScope#back;
+;

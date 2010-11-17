@@ -1,0 +1,171 @@
+/*
+**	registers.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Thor
+**	modified by Thor, Adrien and Jack
+*/
+
+#include "rdsl_declaration_registers.cwf"
+
+/*
+**	File rules:
+**
+**		- range
+**		- variableState
+**		- variableBlock
+**		- variableDefinition
+**		- registerVariable
+**		- registerDefinition
+**		- registerBlock
+**		- registerSet
+*/
+
+
+/*
+** reads a range
+*/
+range(len : node, theRange : node) ::=
+	#readInteger:sFrom
+	[".." #readInteger:sTo]?
+	=> {
+		if (existVariable(sTo))
+		{ 
+		  if (sFrom < sTo)
+		  {
+		    len = $sTo - sFrom + 1$; 
+		    theRange = sFrom + ".." + sTo;
+		  }
+		  else
+		  {
+		    len = $sFrom - sTo + 1$;
+		    theRange = sTo + ".." + sFrom;
+		  }
+		}
+		else { len = 1; theRange = sFrom; }
+	   }
+;
+
+/*
+** reads a variable state expression
+*/
+variableState(theState : node) ::=
+	'('
+	=> local sStateValue = "";
+	['0' | '1']+:sStateValue
+	')' "->"
+	#readIdentifier:sStateName ';'
+	=> insert theState[sStateValue] = sStateName;
+;
+
+/*
+** reads several variable states
+*/
+variableBlock(theBlock : node) ::= 
+	'{'
+		[ variableState(theBlock) ]*
+	'}'
+;
+
+/*
+** reads the variable definition: range and name
+*/
+variableDefinition(theDefinition : node) ::=
+	=> local sVarLen;
+	=> local sVarRange;
+	'[' range(sVarLen, sVarRange) ']'
+	#readIdentifier:{"AS"}
+	#readIdentifier:sVarId
+	=> {
+			checkRegisterVariableId(theDefinition#parent#parent.variablesTable, sVarId);
+			insert theDefinition.name = sVarId;
+			insert theDefinition.range = sVarRange;
+			insert theDefinition.length = sVarLen;
+	   }
+;
+
+/*
+** reads a whole variable expression
+*/
+registerVariable(theVariable : node) ::=
+	variableDefinition(theVariable.definition)
+	[variableBlock(theVariable.block)]?
+	';'
+	=> {
+		if (isEmpty(theVariable.block))
+		{
+			insert theVariable.block["1"] = theVariable.definition.name;
+		}
+	}
+;
+
+/*
+** reads the register's access mode
+*/
+registerMode ::=
+	['R' | 'W']*
+;
+
+/*
+** reads the register's mapping information
+*/
+registerMap(resourceInfo : node) ::=
+	"@(" [[#readIdentifier "::"]? #readIdentifier:sResource ] ['+']:sOperator #readInteger:iOffset ')'
+	=> {
+		insert resourceInfo.resource = sResource;
+		insert resourceInfo.operator = sOperator;
+		insert resourceInfo.offset = iOffset;
+	}
+;
+
+/*
+** reads a register definition: name, length, mode, shape
+*/
+registerDefinition(theDefinition : node) ::=
+	=> local mapedOn;
+	#readIdentifier:{"REGISTER"}
+	#continue
+	[
+		'(' registerMode:sRegMode ')'
+		rathaxes_basic_types:sRegisterType '[' #continue #readInteger:iRegSize ']' #readIdentifier:sRegId
+	 	#readIdentifier:{"LIKE"} '(' ['1' | '0' | '.' | '*']+:sRegShape ')'
+		registerMap(mapedOn)
+	]
+	=> {
+		insert theDefinition.name = sRegId;
+		insert theDefinition.type = sRegisterType;
+		insert theDefinition.size = iRegSize;
+		insert theDefinition.mode = sRegMode;
+		insert theDefinition.shape = sRegShape;
+		setall theDefinition.map = mapedOn;
+	   }
+;
+
+/*
+** reads several variables in a register block
+*/
+registerBlock(theBlock : node) ::=
+	'{'
+	#continue
+	[
+		#pushItem(theBlock)
+		registerVariable(theBlock#back)
+		=>  ref theBlock.variablesTable[theBlock#back.definition.name] = theBlock#back;
+	]*
+	'}'
+;
+
+/*
+** reads a register SET block for its initialization
+*/
+registerSet(theSet : node) ::=
+	#readIdentifier:{"SET"}
+	#continue
+	[
+	 '{'
+	 [
+	  [#readIdentifier:sVar '.' #readIdentifier:sState] [',']?
+	  => insert theSet[sVar] = toUpperString(sVar) + "_" + sState;
+	 ]*
+	 '}'
+	]
+;

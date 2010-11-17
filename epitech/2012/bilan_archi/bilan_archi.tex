@@ -1,0 +1,168 @@
+\documentclass{rtxreport}
+
+\author{Thomas Luquet}
+
+\title{Bilan Architecture}
+
+\rtxdoctype{Bilan Architecture}
+\rtxdocref{2012\_AA1\_FR\_Rathaxes}
+\rtxdocversion{0.5}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.1 & 16/11/2010 & Thomas Luquet & Premier draft \\
+\hline
+0.2 & 17/11/2010 & Louis Opter & Fix compilation \\
+\hline
+0.3 & 17/11/2010 & Louis Opter & Ajout du cartouche \\
+\hline
+0.4 & 17/11/2010 & David Pineau & Completion de la section Technologie \\
+\hline
+0.5 & 17/11/2010 & Louis Opter & Reformulations et ajout de notes \\
+\hline
+0.6 & 17/11/2010 & Luquet Thomas & Reformulation, inssertion de graphique \\
+\hline
+0.7 & 17/11/2010 & Luquet Thomas & Reformulation, corrections diverses \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{Rappel du projet}
+
+\section{Qu'est ce que \rtx\ ?}
+
+\rtx\ est un ensemble d'outils permettant de simplifier l'écriture de pilote de
+périphérique. Le projet permet de générer un code source écrit en C pour Linux,
+Windows 7 et openBSD à partir d'un seul fichier de description de pilote.
+
+C'est un projet à visée scientifique distribué sous licences libres.
+
+Le projet \rtx\ 2012 est une amélioration de l'EIP réalisé en 2009. Il
+incorpore de nouvelles fonctionnalitées comme l’asynchronicité. \rtx\ 2012 sera
+capable de générer un pilote de souris USB et celui d'une carte son qui serviont a prouver que le concept fonctionne.
+
+
+\section{Structure du projet}
+
+\rtx\ est divisé en trois parties :
+
+\begin{enumerate}
+\item Le langage \rtx\ : un langage dédié (DSL) utilisé pour décrire un pilote~;
+\item La black-librarie : Elle permet l'interfaçage entre le DSL et le
+compilateur~;
+\item Le compilateur : Il transforme les fichiers \rtx\ (.rtx) ---à l'aide
+de la black-librairie--- en fichier .c spécifiques au système d'exploitation choisi.
+\end{enumerate}
+
+\chapter{Diagramme}
+
+\section{Description Fonctionel}
+
+\includegraphics[scale=0.7]{epitech/2012/bilan_architecture/diagramme_general.png}
+
+\rtx\ est un compilateur.
+Il utilise le langage Codeworker pour l'analyse du DSL ainsi que la génénation d'AST. 
+Enfin, Codeworker utilise cette AST, pour générer le code C du driver.
+Afin de pouvoir générer du code C à partir du DSL de \rtx\, 
+le compilateur utilise une bibliothèque de modele appelé Backend Library.
+
+
+\section{Diagramme détaillé}
+
+\includegraphics[scale=0.7]{epitech/2012/bilan_architecture/diagramme_fonctionel.png}
+
+Actuellement le compilateur \rtx\ issu de la promotion 2009 fonctionne ainsi :
+
+\begin{enumerate}
+\item Il transforme les fichier .RTX (DSL) en arbre de synthaxe abstraite (AST).
+\item Puis il parcoure cette arbre. En fonction des mots clefs rencontré, 
+le compilateur selctionne des fichiers BLT issus de la backend Library.
+\item Enfin il génère des fichiers de pilote de périphérique selon l'arbre reconstruit 
+à partir des modèles de la BLT.
+\end{enumerate}
+
+Notre objectif est de modifier le comportement du compilateur dans le but 
+rendre les modifications futur du langage plus simple à implémenter.
+Pour cela l'étape de transformation de l'AST en fichier .C sera ségmenter en 2 étapes :
+
+La 1er sera la modification de l'AST généré a partir du DSL. L'équipe insserera des
+bouts d'AST généré à partir de fichiers de la Backend Librarie activé selon 
+les mots clefs du DSL.
+
+La 2em partie sera la transcription de l'arbre finale en code C.
+
+
+\chapter{La technologie \rtx\ }
+
+\section{Un héritage}
+
+Un grand nombre de choix technologiques ont été effectués par l'équipe 2009.
+Ils avaient besoin d'une technologie permettant d'implémenter facilement un
+compilateur, qui puisse utiliser des modèles de code.
+
+\subsection{Un compilateur}
+
+Pour écrire le compilateur, l'outil retenu par la première équipe est
+CodeWorker. CodeWorker est un langage interprété dont la syntaxe s'inspire la
+notation EBNF. L'interpréteur CodeWorker est distribué gratuitement sous la
+licence libre LGPL.
+%\note{REFERENCE NEEDED}
+
+CodeWorker, présente l'avantage d'être facilement abordable et permet une
+analyse syntaxique et lexicale avancée, tout en permettant la génération de
+code en se basant sur l'arbre de syntaxe abstraite généré par le code
+précédemment analysé
+%\note{EPHRASETOOLONG}.
+
+De plus, la syntaxe proposée pour le langage de script de CodeWorker est
+syntaxique relativement proche de la syntaxe Backus-Naur Form 
+sous sa version étendue.  Sa syntaxe proposée pour la manipulation
+d'arbre syntaxique et de génération de driver est dérivée du C. 
+Langage que l'équipe \rtx\ 2012 maitrise.
+
+\subsection{Une série de modèles}
+
+%\note{AU PRÉSENT, mais pas très clair}
+
+L'objectif du projet est de générer des drivers en C pour différents systèmes
+d'exploitation. Ceci doit être fait en indépendance des 
+connaissances spécifiques à un OS. Il est donc nécessaire de posséder un
+système de modèles utilisables pour générer du code C pour chaque système
+spécifique.
+
+C'est aussi pour cela que l'équipe 2009 a choisi CodeWorker. C'est l'outil le plus
+pratique. En effet, c'est la solution la plus simple pour avoir des modèles 
+qui permetent de générer du code C.
+CodeWorker permet de réduire la quantité de travail nécessaire
+du côté du backend de \rtx\ et ce, nottament pour la partie parsing.
+
+\section{Un langage}
+
+Forts de l'expérience acquise par l'équipe 2009 de \rtx, l'objectif de
+notre groupe est de rechercher et implémenter de nouveaux concepts dans
+\rtx. Parmi ceux-ci, s'illustre notemment les notions d'asynchronicité,
+de DMA (Direct Memory Access), d'IRQ (Interrupt ReQuest) et enfin l'ensemble
+des concepts liés a l'utilisation de BUS tels que le PCI dans les pilotes de
+périphériques.
+
+Un autre objectif de notre équipe est d'apporter des améliorations dans le
+fonctionnement même de \rtx. Jusqu'alors, le code C était généré par
+activation des modèles en fonction du contenu de l'arbre de syntaxe abstraite.
+Nous désirons changer cela, pour d'une part rendre le coeur du compilateur
+plus générique, et permettre de tester efficacement chaque étape
+d'implémentation du langage.
+
+Pour cela, nous allons conserver le CodeWorker, qui par sa simplicité, nous
+permettra de modifier le coeur du compilateur, afin par la suite de pouvoir
+facilement intégrer de nouveaux concepts et mots clefs au compilateur.
+Par aillieur nous pourrons intégrer plus aisément des contributeurs externes au projet.
+
+\end{document}

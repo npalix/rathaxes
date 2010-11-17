@@ -1,0 +1,23 @@
+<%
+
+/*
+**  _open.blt in black_library/linux/user_interface
+**  for Rathaxes project
+**  made by StuFF
+*/
+local	sDriverName = this.name;
+localref nSelf = project.references.currentContext;
+
+%>
+
+ADVICE open PART_OF kernel_interfaces
+{
+    int @sDriverName@_open(struct inode *inode, struct file *filp)
+    {
+        <% local sToken = getContextToken(nSelf.block); %>
+        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+    exit:
+        return(0);
+    }
+};
+
