@@ -4,6 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 
 FIND_PACKAGE(LATEX)
 
+INCLUDE(AddFileDependencies)
 INCLUDE(maintainers/CMakeScripts/FileCopy.cmake)
 INCLUDE(maintainers/CMakeScripts/RathaxesCopyLatexClasses.cmake)
 
