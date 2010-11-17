@@ -21,7 +21,8 @@
 0.5 & 17/11/2010 & Louis Opter & Reformulations et ajout de notes \\
 \hline
 0.6 & 17/11/2010 & Luquet Thomas & Reformulation, inssertion de graphique \\
-
+\hline
+0.7 & 17/11/2010 & Luquet Thomas & Reformulation, corrections diverses \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -33,33 +34,6 @@
 \rtxmaketitleblock
 
 \tableofcontents
-
-\chapter{sujet (temp)}
-
-\section{Barème}
-
-Format du document (première page, cartouches, tableau des révisions, résumé,
-table des matières, clarté, organisation) /2
-
-Grammaire Orthographe /2
-
-Rappel du fonctionnel de l'application /1
-
-Digramme(s) global de l'application /2
-
-Diagramme(s) détaillé(s) /3
-
-Diagramme(s) de communication(s) (échange de flux, interactions internes des
-composants, interactions externes, n'hésitez pas à modéliser via les différentes
-représentations UML à votre disposition) /3
-
-Modélisation conceptuelle (même remarque que le point d'avant) /3
-
-Modélisation conceptuelle / physique de la DB /2
-
-Choix des technologies (avantages / inconvénients, étude de pérennité, …) /2
-
-Malus global /-20
 
 \chapter{Rappel du projet}
 
@@ -84,7 +58,7 @@ capable de générer un pilote de souris USB et celui d'une carte son qui servio
 \item Le langage \rtx\ : un langage dédié (DSL) utilisé pour décrire un pilote~;
 \item La black-librarie : Elle permet l'interfaçage entre le DSL et le
 compilateur~;
-\item Le compilateur : Il transforme les fichiers rathaxes (.rtx) ---à l'aide
+\item Le compilateur : Il transforme les fichiers \rtx\ (.rtx) ---à l'aide
 de la black-librairie--- en fichier .c spécifiques au système d'exploitation choisi.
 \end{enumerate}
 
@@ -139,35 +113,36 @@ compilateur, qui puisse utiliser des modèles de code.
 Pour écrire le compilateur, l'outil retenu par la première équipe est
 CodeWorker. CodeWorker est un langage interprété dont la syntaxe s'inspire la
 notation EBNF. L'interpréteur CodeWorker est distribué gratuitement sous la
-licence libre LGPL.\note{REFERENCE NEEDED}
+licence libre LGPL.
+%\note{REFERENCE NEEDED}
 
 CodeWorker, présente l'avantage d'être facilement abordable et permet une
 analyse syntaxique et lexicale avancée, tout en permettant la génération de
 code en se basant sur l'arbre de syntaxe abstraite généré par le code
-précédemment analysé\note{EPHRASETOOLONG}.
+précédemment analysé
+%\note{EPHRASETOOLONG}.
 
 De plus, la syntaxe proposée pour le langage de script de CodeWorker est
-pour\note{c'est moi ou ce paragraphe veut rien dire ?} la
-partie analyse syntaxique relativement proche de la syntaxe Backus-Naur Form,
-sous sa version étendue; et la syntaxe proposée pour le script de manipulation
-d'arbre syntaxique et de génération est dérivée du C, la rendant relativement
-familière a l'ensemble de l'équipe qui maitrise le C.
+syntaxique relativement proche de la syntaxe Backus-Naur Form 
+sous sa version étendue.  Sa syntaxe proposée pour la manipulation
+d'arbre syntaxique et de génération de driver est dérivée du C. 
+Langage que l'équipe \rtx\ 2012 maitrise.
 
 \subsection{Une série de modèles}
 
-\note{AU PRÉSENT, mais pas très clair}
+%\note{AU PRÉSENT, mais pas très clair}
 
 L'objectif du projet est de générer des drivers en C pour différents systèmes
 d'exploitation. Ceci doit être fait en indépendance des 
 connaissances spécifiques à un OS. Il est donc nécessaire de posséder un
-système de modèles de code utilisables pour générer du code C pour chaque système
+système de modèles utilisables pour générer du code C pour chaque système
 spécifique.
 
-C'est aussi pour cela que l'équipe 2009 a choisi CodeWorker comme l'outil le plus
-pratique. En effet, la solution la plus simple pour avoir des modèles de code
-qui permetent de générer du code C est d'écrire directement des modèles
-en script CodeWorker, de manière a réduire la quantité de travail nécessaire
-du côté du backend de \rtx\ (pour la partie parsing).
+C'est aussi pour cela que l'équipe 2009 a choisi CodeWorker. C'est l'outil le plus
+pratique. En effet, c'est la solution la plus simple pour avoir des modèles 
+qui permetent de générer du code C.
+CodeWorker permet de réduire la quantité de travail nécessaire
+du côté du backend de \rtx\ et ce, nottament pour la partie parsing.
 
 \section{Un langage}
 
@@ -185,9 +160,9 @@ Nous désirons changer cela, pour d'une part rendre le coeur du compilateur
 plus générique, et permettre de tester efficacement chaque étape
 d'implémentation du langage.
 
-Pour cela, nous allons conserver le CodeWorker, qui par sa simplicite, nous
+Pour cela, nous allons conserver le CodeWorker, qui par sa simplicité, nous
 permettra de modifier le coeur du compilateur, afin par la suite de pouvoir
-facilement intégrer de nouveaux concepts et mots clefs au compilateur,
-ainsi que d'intégrer plus aisément les contributeurs externes au projet.
+facilement intégrer de nouveaux concepts et mots clefs au compilateur.
+Par aillieur nous pourrons intégrer plus aisément des contributeurs externes au projet.
 
 \end{document}
