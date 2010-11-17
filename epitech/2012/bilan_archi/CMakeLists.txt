@@ -1,5 +1,5 @@
 RATHAXES_COPY_LATEX_CLASSES()
 
-ADD_LATEX_DOCUMENT(bilan_archi.tex
+ADD_LATEX_DOCUMENT(2012_AA1_FR_Rathaxes.tex
                    DEFAULT_PDF MANGLE_TARGET_NAMES
                   )
