@@ -1,11 +1,12 @@
 % Load additional packages
 \RequirePackage{array}
-\RequirePackage[american]{babel}
+\RequirePackage{lmodern}
 \RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
 \RequirePackage[utf8]{inputenc}
-\RequirePackage{lmodern}
+\RequirePackage[T1]{fontenc} % babel warns with french if it's not here.
 \RequirePackage{tabularx}
+\expandafter\RequirePackage[\@rtxlanguage]{babel}
 
 % Hook the \title{} command to generate the pdf meta-datas
 \renewcommand{\title}[1]{
@@ -35,17 +36,30 @@
 \global\let\@dochistory\@empty
 \newcommand{\rtxdochistory}[1]{\def\@dochistory{#1}}
 
+% Define a macro to compare to \@rtxlanguage
+\def\@americanlanguage{american}
+
+% Define the title of the `documentation control' section
+%
+% « Contrôle de la documentation » is too long to fit on one
+% line as a chapter title, so use something smaller.
+\def\@titleblocksectiontitle{\ifx\@rtxlanguage\@americanlanguage Documentation control\else Contrôle du document\fi}
+
+% This is black magic to do \ifx in a array:
+% http://newsgroups.derkeiler.com/Archive/Comp/comp.text.tex/2010-04/msg00701.html
+\long\def\firstofone#1{#1}
+
 % Define a command to generate the title block
 \def\@titleblock{
   \begin{table}[h]\small
   \begin{tabularx}{\textwidth}{|X|X|}
   \hline
-  Group: & Rathaxes \\
+  \ifx\@rtxlanguage\@americanlanguage Group: \else Groupe :\fi & Rathaxes \\
   \hline
-  Project name: & Rathaxes \\
+  \ifx\@rtxlanguage\@americanlanguage Project name: \else Nom du projet :\fi & Rathaxes \\
   \hline
   \ifx\@doctype\@empty\else
-  Document Type: & \@doctype \\
+  \ifx\@rtxlanguage\@americanlanguage Document Type: \else Type de document :\fi & \@doctype \\
   \hline
   \fi
   \ifx\@docversion\@empty\else
@@ -53,27 +67,27 @@
   \hline
   \fi
   \ifx\@docref\@empty\else
-  Reference: & \@docref \\
+  \ifx\@rtxlanguage\@americanlanguage Reference: \else Référence : \fi & \@docref \\
   \hline
   \fi
   \ifx\@docstatus\@empty\else
-  Document status: & \@docstatus \\
+  \ifx\@rtxlanguage\@americanlanguage Document status: \else Status du document : \fi & \@docstatus \\
   \hline
   \fi
   \end{tabularx}
-  \caption{Document informations}
+  \caption{\ifx\@rtxlanguage\@americanlanguage Document informations\else Informations sur le document\fi}
   \end{table}
 
   \ifx\@dochistory\@empty\else
   \begin{table}[h]\small
   \begin{tabularx}{\textwidth}{|l|l|l|X|}
   \hline
-  Version & Date & Name & Summary \\
+  Version & Date & \ifx\@rtxlanguage\@americanlanguage Author \firstofone{&} Summary\else Auteur \firstofone{&} Résumé\fi \\
   \hline
   \@dochistory
   \hline
   \end{tabularx}
-  \caption{Versions history}
+  \caption{\ifx\@rtxlanguage\@americanlanguage Versions history\else Historique des versions\fi}
   \end{table}
   \fi
 }

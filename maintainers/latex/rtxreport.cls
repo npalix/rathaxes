@@ -33,6 +33,10 @@
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{rtxreport}[2010/11/08 Rathaxes report document class]
 
+\global\def\@rtxlanguage{francais}
+\DeclareOption{francais}{\def\@rtxlanguage{francais}}
+\DeclareOption{american}{\def\@rtxlanguage{american}}
+
 % Apply given options to the report class
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{report}}
 
@@ -105,4 +109,4 @@
   \vskip 1.5em}
 
 % Define a command to generate the title block
-\newcommand{\rtxmaketitleblock}{\newpage\chapter*{Documentation control}\@titleblock}
+\newcommand{\rtxmaketitleblock}{\newpage\chapter*{\@titleblocksectiontitle}\@titleblock}
