@@ -7,11 +7,16 @@
 \RequirePackage{lmodern}
 \RequirePackage{tabularx}
 
+% Hook the \title{} command to generate the pdf meta-datas
+\renewcommand{\title}[1]{
+\gdef\@title{#1}
 \RequirePackage[pdftex,
                 colorlinks=true,
                 linkcolor=blue,
+                pdftitle={#1},
                 pdfauthor={Rathaxes},
                 pdfkeywords={epitech rathaxes driver}]{hyperref}
+}
 
 \graphicspath{{@RATHAXES_SOURCE_DIR@/com/images/}}
 
