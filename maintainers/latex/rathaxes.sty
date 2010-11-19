@@ -63,7 +63,7 @@
   \hline
   \fi
   \ifx\@docversion\@empty\else
-  \textbf{Version}: & \@docversion \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Version}: \else \textbf{Version} : \fi & \@docversion \\
   \hline
   \fi
   \ifx\@docref\@empty\else
