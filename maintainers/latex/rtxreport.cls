@@ -103,7 +103,7 @@
     \vskip 4cm%
     \includegraphics[height=0.5\textwidth]{logortx2}%
     \vskip 1cm%
-    \includegraphics[height=1.4cm]{logo_epitech}%
+    \includegraphics[height=1.4cm]{logo_eip}%
   \end{center}%
   \par
   \vskip 1.5em}

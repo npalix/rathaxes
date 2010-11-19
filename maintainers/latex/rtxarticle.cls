@@ -102,7 +102,7 @@
     {\large \@date}%
     \vskip 2em%
     \includegraphics[height=1.3cm]{logortx2}\hskip 3em%
-    \includegraphics[height=1.3cm]{logo_epitech}%
+    \includegraphics[height=1.3cm]{logo_eip}%
   \end{center}%
   \par
   \vskip 1.5em}
