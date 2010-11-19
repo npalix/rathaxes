@@ -54,24 +54,24 @@
   \begin{table}[h]\small
   \begin{tabularx}{\textwidth}{|X|X|}
   \hline
-  \ifx\@rtxlanguage\@americanlanguage Group: \else Groupe :\fi & Rathaxes \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Group}: \else \textbf{Groupe} :\fi & Rathaxes \\
   \hline
-  \ifx\@rtxlanguage\@americanlanguage Project name: \else Nom du projet :\fi & Rathaxes \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Project name}: \else \textbf{Nom du projet} :\fi & Rathaxes \\
   \hline
   \ifx\@doctype\@empty\else
-  \ifx\@rtxlanguage\@americanlanguage Document Type: \else Type de document :\fi & \@doctype \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Document Type}: \else \textbf{Type de document} :\fi & \@doctype \\
   \hline
   \fi
   \ifx\@docversion\@empty\else
-  Version: & \@docversion \\
+  \textbf{Version}: & \@docversion \\
   \hline
   \fi
   \ifx\@docref\@empty\else
-  \ifx\@rtxlanguage\@americanlanguage Reference: \else Référence : \fi & \@docref \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Reference}: \else \textbf{Référence} : \fi & \@docref \\
   \hline
   \fi
   \ifx\@docstatus\@empty\else
-  \ifx\@rtxlanguage\@americanlanguage Document status: \else Status du document : \fi & \@docstatus \\
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Document status}: \else \textbf{Status du document} : \fi & \@docstatus \\
   \hline
   \fi
   \end{tabularx}
@@ -82,7 +82,7 @@
   \begin{table}[h]\small
   \begin{tabularx}{\textwidth}{|l|l|l|X|}
   \hline
-  Version & Date & \ifx\@rtxlanguage\@americanlanguage Author \firstofone{&} Summary\else Auteur \firstofone{&} Résumé\fi \\
+  \textbf{Version} & \textbf{Date} & \ifx\@rtxlanguage\@americanlanguage \textbf{Author} \firstofone{&} \textbf{Summary}\else \textbf{Auteur} \firstofone{&} \textbf{Résumé}\fi \\
   \hline
   \@dochistory
   \hline
