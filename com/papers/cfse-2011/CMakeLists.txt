@@ -1,10 +1,6 @@
 ADD_LATEX_DOCUMENT(CFSE-2011.tex
-                   INPUTS
-                   bibliography.tex
-                   sec-introduction.tex
-                   titlepage.tex
                    IMAGE_DIRS
-                   images
+                   ../../images/
                    DEFAULT_PDF
                    MANGLE_TARGET_NAMES
                   )
