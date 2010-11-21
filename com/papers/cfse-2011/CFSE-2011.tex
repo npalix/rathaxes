@@ -1,38 +1,39 @@
-\documentclass[a4paper,11pt]{article}
+\documentclass[a4paper,twocolumn]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[american]{babel}
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage[pdftex,
+            colorlinks=true,
+            pdftitle={CFSE 2011},
+            pdfauthor={Rathaxes 2012 Team}]{hyperref}
+
+\author{Syl}
+
+\title{This will be a paper for CFSE--2011}
 
 % Also allow to change to "Backend Library" if needed
 \newcommand{\BL}{"Black Library"}
 
-% Will be used by sec-documentation-control
-\newcommand{\doctype}{Specifications}
-\newcommand{\docversion}{1.0}
-\newcommand{\docref}{CFSE-2011}
-\newcommand{\docstatus}{To be validated}
-
-\usepackage[utf8]{inputenc}
-\usepackage[american]{babel}
-\usepackage{array,
-            fancyhdr,
-            graphicx,
-            indentfirst}
-\usepackage[pdftex,
-            colorlinks=true,
-            pdftitle={Specifications 2012 Rathaxes},
-            pdfauthor={Rathaxes 2012 Team}]{hyperref}
-
-\pagestyle{fancy}
-%\lhead{\includegraphics[height=1.2cm]{../images/logo_epitech}}
-%\chead{Rathaxes \\ \doctype}
-%\rhead{\includegraphics[height=1.2cm]{../images/logo_rathaxes}}
-
-\setlength{\headheight}{38.22325pt} % there I fixed it
-
 \begin{document}
 
-\include{sec-documentation-control}
+\maketitle
 
-\tableofcontents
-\newpage
+\begin{abstract}
+This is a latex skeleton for Syl.
+\end{abstract}
+
+\section{Rathaxes}
+
+\lipsum[1]
+
+\section{Test}
+
+\lipsum[2]
+
+\section{Conclusion}
+
+\lipsum[3]
 
 \end{document}
-
