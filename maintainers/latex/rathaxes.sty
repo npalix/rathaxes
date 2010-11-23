@@ -6,7 +6,11 @@
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc} % babel warns with french if it's not here.
 \RequirePackage{tabularx}
+\RequirePackage[fixlanguage]{babelbib}
 \expandafter\RequirePackage[\@rtxlanguage]{babel}
+
+% Localize our bibliography
+\expandafter\selectbiblanguage{\@rtxlanguage}
 
 % Hook the \title{} command to generate the pdf meta-datas
 \renewcommand{\title}[1]{
@@ -90,6 +94,12 @@
   \caption{\ifx\@rtxlanguage\@americanlanguage Versions history\else Historique des versions\fi}
   \end{table}
   \fi
+}
+
+% Command to insert our bibliography
+\newcommand{\rtxbibliography}{%
+\bibliographystyle{plain}
+\bibliography{@RATHAXES_SOURCE_DIR@/doc/bibliography.bib}
 }
 
 % Defines
