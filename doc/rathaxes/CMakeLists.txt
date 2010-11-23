@@ -1,7 +1,7 @@
 # Copy the style file to the build directory
-FILE_COPY(rathaxes.sty ${CMAKE_CURRENT_BINARY_DIR})
+FILE_COPY(rathaxesmmix.sty ${CMAKE_CURRENT_BINARY_DIR})
 # The style file is also needed into doc/soa
-FILE_COPY(rathaxes.sty ${CMAKE_CURRENT_BINARY_DIR}/../soa)
+FILE_COPY(rathaxesmmix.sty ${CMAKE_CURRENT_BINARY_DIR}/../soa)
 
 SET(RATHAXES_TEX_FILE
     introduction_to_Rathaxes.tex
