@@ -5,5 +5,7 @@ ADD_LATEX_DOCUMENT(article.tex
                    DEFAULT_PDF MANGLE_TARGET_NAMES
                   )
 ADD_LATEX_DOCUMENT(report.tex
+                   BIBFILES
+                   ../../../doc/bibliography.bib # Must be relative
                    DEFAULT_PDF MANGLE_TARGET_NAMES
                   )
