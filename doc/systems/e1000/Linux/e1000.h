@@ -10,35 +10,24 @@ typedef struct s_e1000_data t_e1000_data;
 
 enum e_register
 {
-  EEPROM_READ = 0x14,
+	CTRL_REG	= 0x00000,
+	EEPROM_READ	= 0x00014,
+	FCAL_REG	= 0x00028,
+	FCAH_REG	= 0x0002c,
+	FCT_REG		= 0x00030,
+	FCTTV_REG	= 0x00170,
 };
 
-static inline
-uint32_t* e1000_get_register(t_e1000_data* data, enum e_register reg)
+enum e_register_value
 {
-	return (uint32_t*)(data->bar + reg);
-}
+	CTRL_ASDE	= (1 << 5),
+	CTRL_RST	= (1 << 3),
+	CTRL_SLU	= (1 << 6),
+	CTRL_VMDE	= (1 << 30),
+	CTRL_PHYRST	= (1 << 31),
+};
 
-static inline
-uint32_t e1000_read_register(t_e1000_data* data, enum e_register reg)
-{
-	return *e1000_get_register(data, reg);
-}
-
-static inline
-void e1000_set_register_preserve(t_e1000_data* data, enum e_register reg, uint32_t value)
-{
-	uint32_t old;
-
-	old = e1000_read_register(data, reg);
-	*e1000_get_register(data, reg) = old | value;
-}
-
-static inline
-void e1000_set_register(t_e1000_data* data, enum e_register reg, uint32_t value)
-{
-	*e1000_get_register(data, reg) = value;
-}
+#include "e1000_reg_primitive.h"
 
 static inline
 int e1000_read_eeprom(t_e1000_data* data, int addr)
@@ -49,6 +38,5 @@ int e1000_read_eeprom(t_e1000_data* data, int addr)
   while(!((res = e1000_read_register(data, EEPROM_READ)) & (1 << 4)));
   return res >> 16;
 }
-
 
 #endif
