@@ -92,6 +92,7 @@ static void e1000_set_mac_address()
   t_e1000_data	*data;
   int			i, tmp;
 
+  data = netdev_priv(card);
   for (i = 0; i < 3; ++i)
   {
 	tmp = e1000_read_eeprom(data, i);
