@@ -13,11 +13,11 @@
 /****************************************************************************/
 /*******************************ACTUAL DRIVER IMPL***************************/
 /****************************************************************************/
-static int e1000_open(struct net_device *dev);
-static int e1000_close(struct net_device *dev);
-static netdev_tx_t e1000_start_xmit(struct sk_buff *skb,
-				    struct net_device *dev);
-static int not_implemented_fct();
+static int		e1000_open(struct net_device *dev);
+static int		e1000_close(struct net_device *dev);
+static void		e1000_set_mac_address(void);
+static netdev_tx_t 	e1000_start_xmit(struct sk_buff *skb,
+					 struct net_device *dev);
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
@@ -35,15 +35,11 @@ static const struct net_device_ops e1000_ops = {
 //  .ndo_set_mac_address                = not_implemented_fct,
 };
 
-static int not_implemented_fct()
-{
-	printk(KERN_ERR "NOT IMPLEMENTED\n");
-	return -1;
-}
-
 static int e1000_open(struct net_device *dev)
 {
 	printk(KERN_ERR "Open the e1000 card\n");
+	e1000_set_mac_address();
+
 	return 0;
 }
 
@@ -85,7 +81,7 @@ static int register_hw(struct pci_dev *dev)
 	return 0;
 }
 
-static void e1000_set_mac_address()
+static void e1000_set_mac_address(void)
 {
 	t_e1000_data *data;
 	int i, tmp;
@@ -157,7 +153,6 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 	data = netdev_priv(card);
 	data->bar = (u32) pci_ioremap_bar(dev, 0);
 
-	e1000_set_mac_address();
 	return 0;
 }
 
