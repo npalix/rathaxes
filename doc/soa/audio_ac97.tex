@@ -5,11 +5,13 @@
 \title{AC `97 Sound Cards Implementations}
 
 \rtxdoctype{State Of the Art}
-\rtxdocversion{0.1}
+\rtxdocversion{0.2}
 \rtxdocstatus{Work In Progress}
 
 \rtxdochistory{
 0.1 & 11/23/2010 & Louis Opter & Skeleton and abstract \\
+\hline
+0.2 & 11/26/2010 & Louis Opter & Add entries in the bibliography \\
 }
 
 \begin{document}
@@ -43,6 +45,13 @@ A working AC~`97 driver can be found on each of our supported Operating System:
 \item[OpenBSD:] \texttt{/sys/dev/pci/auich.c};
 \item[Windows:] \ldots
 \end{description}
+
+\section{Linux/ALSA driver}
+
+On Linux the driver interacts with both the PCI\cite[chap. 12]{LDD3} and
+ALSA\cite{ALSADriver,ALSAAPI} APIs.
+
+\section{OpenBSD driver}
 
 \newpage
 
