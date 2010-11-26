@@ -18,6 +18,7 @@ static int		e1000_close(struct net_device *dev);
 static void		e1000_set_mac_address(void);
 static netdev_tx_t 	e1000_start_xmit(struct sk_buff *skb,
 					 struct net_device *dev);
+static void init_hw(struct net_device* dev);
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
@@ -37,9 +38,15 @@ static const struct net_device_ops e1000_ops = {
 
 static int e1000_open(struct net_device *dev)
 {
+	t_e1000_data *data;
+
 	printk(KERN_ERR "Open the e1000 card\n");
 	e1000_set_mac_address();
 
+	data = netdev_priv(dev);
+	init_hw(dev);
+
+	netif_start_queue(dev);
 	return 0;
 }
 
@@ -53,6 +60,49 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	printk(KERN_WARNING "e1000_start_xmit called\n");
 	return NETDEV_TX_OK;
+}
+
+static void init_hw(struct net_device* dev)
+{
+	t_e1000_data *data;
+	data = netdev_priv(dev);
+
+	/* Take a look to the Intel Manual Developper
+	 * section: 14.3
+	 */
+
+	/* Activate automatic speed detection
+	 * it requires the ASDE and the SLU bit
+	 * set in the control register
+	 */
+
+	e1000_set_register_preserve(data, CTRL_REG,
+			CTRL_ASDE| CTRL_SLU);
+
+	/*
+	 * Activate automatic negociation
+	 */
+
+	e1000_unset_register_preserve(data, CTRL_REG,
+			CTRL_RST);
+
+	e1000_unset_register_preserve(data, CTRL_REG,
+			CTRL_PHYRST);
+
+	/*
+	 * Desactivate flow control
+	 */
+
+	e1000_unset_register(data, FCAL_REG,  0);
+	e1000_unset_register(data, FCAH_REG,  0);
+	e1000_unset_register(data, FCT_REG,   0);
+	e1000_unset_register(data, FCTTV_REG, 0);
+
+	/*
+	 * Do no support 802.1q vlan
+	 */
+	e1000_unset_register_preserve(data, CTRL_REG,
+			CTRL_VMDE);
 }
 
 static int register_hw(struct pci_dev *dev)
