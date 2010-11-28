@@ -1,0 +1,32 @@
+/*
+**	device.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Papy
+**	modified Papy
+** -----------------------------------------------------------------------------
+** TODO:
+**		- Essayer de faire apparaitre ce message d'erreur.
+*/
+
+declare function map_device_to_driver(theDriver : node, deviceHash : node, sDeviceName : value);
+declare function devicesVariablekAlreadyExists(theDriver : node);
+
+/*
+** This function test if a devices variable already exists.
+*/
+function devicesVariablekAlreadyExists(theDriver : node)
+{
+	if (existVariable(theDriver.devices))
+		rtxError("DRIVER devices variable alread exists.");
+}
+
+/*
+** This function search for a device and map it to the desired driver
+*/
+function map_device_to_driver(theDriver : node, deviceHash : node, sDeviceName : value)
+{
+	// XXX le message ne s'affiche pas?
+	if (!findElement(sDeviceName, deviceHash))
+		rtxError("DRIVER device " + sDeviceName + " doesn't exists.");
+	ref theDriver.devices[sDeviceName] = deviceHash[sDeviceName];
+}

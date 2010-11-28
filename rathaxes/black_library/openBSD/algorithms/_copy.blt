@@ -1,0 +1,15 @@
+<%
+/*
+**  _copy.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+%>
+
+ADVICE copy PART_OF algorithms
+{
+    void copy(void)
+    {
+    }
+};

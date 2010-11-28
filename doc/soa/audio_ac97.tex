@@ -1,0 +1,62 @@
+\documentclass[a4paper,american]{rtxarticle}
+
+\author{Louis Opter}
+
+\title{AC `97 Sound Cards Implementations}
+
+\rtxdoctype{State Of the Art}
+\rtxdocversion{0.2}
+\rtxdocstatus{Work In Progress}
+
+\rtxdochistory{
+0.1 & 11/23/2010 & Louis Opter & Skeleton and abstract \\
+\hline
+0.2 & 11/26/2010 & Louis Opter & Add entries in the bibliography \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document aims to explain how AC~`97 sound cards driver are implemented in
+our different targets. AC~`97 stands for \emph{Audio Codec `97} and has been
+developed by Intel in 1997. AC~`97 can be found in a wide range of sound cards
+and motherboards chipsets. AC~`97 hardware is cheap and easy to find. In 2004,
+this standard has been superseded by \emph{Intel High Definition Audio} (also
+called \emph{HD Audio}, \emph{HDA-Intel} or \emph{Azalia}).
+\end{abstract}
+
+\section{Specification and existing drivers}
+
+The AC~`97 specification tells us\cite[p. 11]{AC97spec} that AC~`97 is split in
+several devices:
+\begin{itemize}
+\item a digital controller connected on the PCI bus of the computer;
+\item an audio codec connected to the digital controller via an \emph{AC-link};
+\item a modem codec connected to the digital controller via the AC-link.
+\end{itemize}
+The AC~`97 specification is, actually, intended for OEM manufacturers and covers
+everything except the digital controller which makes it useless for \rtx.
+
+A working AC~`97 driver can be found on each of our supported Operating System:
+\begin{description}
+\item[Linux:] \texttt{/sound/pci/intel8x0.c};
+\item[OpenBSD:] \texttt{/sys/dev/pci/auich.c};
+\item[Windows:] \ldots
+\end{description}
+
+\section{Linux/ALSA driver}
+
+On Linux the driver interacts with both the PCI\cite[chap. 12]{LDD3} and
+ALSA\cite{ALSADriver,ALSAAPI} APIs.
+
+\section{OpenBSD driver}
+
+\newpage
+
+\rtxmaketitleblock
+
+\rtxbibliography
+
+\end{document}

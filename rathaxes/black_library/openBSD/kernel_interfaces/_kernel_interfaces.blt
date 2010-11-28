@@ -1,0 +1,14 @@
+<%
+/*
+**  _kernel_interfaces.blt in black_library/openBSD/kernel_interfaces/
+**  for Rathaxes project
+**  made by Filth 
+*/
+%>
+
+ADVICE kernel_interfaces PART_OF kernel_interfaces
+{
+    // Global variable declarations.
+    JOINPOINT global_declaration IN kernel_interfaces.common_interface.global_declaration;
+  	JOINPOINT common_interface IN kernel_interfaces.common_interface;
+};

@@ -1,0 +1,123 @@
+/*
+**	cnorm expressions generation templates
+**	made by David Giron for cnorm_2.0
+**	review by Auroux Lionel
+*/
+
+declare function	cnormPrintDeclaration(decl : node);
+declare function	cnormIterExpressions(expr : node);
+declare function	cnormPrintCallExpression(expr : node);
+declare function	cnormPrintInitializerList(list : node);
+declare function	cnormPrintCastAndCompoundLiteralExpression(cast : node);
+declare function	cnormPrintArrayExpression(expr : node);
+declare function	cnormPrintBuiltinOffsetOfExpression(expr : node);
+
+function	cnormPrintCastAndCompoundLiteralExpression(cast : node)
+{
+  %>(@cnormPrintDeclaration(cast.left.expr)@)<%
+
+  if (cast.type == "cast_expression")
+    {	cnormIterExpressions(cast.right); }
+  if (cast.type == "compound_literal_expression")
+    {	cnormPrintInitializerList(cast.right); }
+}
+
+function	cnormPrintArrayExpression(expr : node)
+{
+	  cnormIterExpressions(expr.left);
+	  foreach entry in expr.right
+	    { @[@ cnormIterExpressions(entry); @]@ }
+}
+
+function	cnormPrintBuiltinOffsetOfExpression(expr : node)
+{
+	  %>__builtin_offsetof(<%
+	  @@expr.left.type@@
+          if (existVariable(expr.left.name)) { @ @expr.left.name@@ }
+	  @, @
+          cnormIterExpressions(expr.right); @)@
+}
+
+function	cnormPrintCallExpression(expr : node)
+{
+  cnormIterExpressions(expr.left);
+  %>(<%
+  foreach param in expr.list
+  {
+    cnormIterExpressions(param);
+    if (!last(param))
+      {%>, <%}
+  }
+  %>)<%
+      // postfix expression apres un appel de fonction
+      /*
+      if (existVariable(expr.right))
+	{	
+	  traceLine("NIAAAAA!!!!");
+	  traceObject(expr.right, 6);
+	  cnormIterExpressions(expr.right); 	
+	  }*/
+}
+
+function	cnormIterExpressions(expr : node)
+{
+  // std expression
+  if (existVariable(expr.left) && existVariable(expr.left.type))
+    {
+      // array expression
+      if (expr.operator == "[]")
+	{  cnormPrintArrayExpression(expr); }
+      // cast expression
+      else if (expr.type == "cast_expression" || expr.type == "compound_literal_expression")
+	{ cnormPrintCastAndCompoundLiteralExpression(expr); }
+      // __builtin_offsetof expression
+      else if (expr.type == "builtin_offsetof_expression")
+	{ cnormPrintBuiltinOffsetOfExpression(expr); }
+      // call_expression
+      else if (expr.type == "call_expression")
+	{ cnormPrintCallExpression(expr); }
+      // common expressions
+      else
+	{
+	  cnormIterExpressions(expr.left);
+	  if (expr.operator == "." || expr.operator == "->")
+	    {@@expr.operator@@}
+	  else
+	    {@ @expr.operator@ @}
+	  cnormIterExpressions(expr.right);
+	}
+    }
+  // priority expression
+  else if (existVariable(expr.expr))
+    { @(@ cnormIterExpressions(expr.expr); @)@ }
+  // conditional expression
+  else if (existVariable(expr.condition))
+    {
+      cnormIterExpressions(expr.condition); @ ? @
+      cnormIterExpressions(expr.then); @ : @
+      cnormIterExpressions(expr.else);
+    }
+  // unary expression
+  else if (existVariable(expr.unary))
+    {
+      @@expr.operator@@
+      if (expr.operator == "sizeof")
+	{ @(@ cnormIterExpressions(expr.unary); @)@ }
+      else
+	{ cnormIterExpressions(expr.unary); }
+    }
+  // literal de type chaine de caractere
+  else if (expr.operator == "literal"
+	   && expr.ctype.identifier == "char"
+	   && existVariable(expr.ctype.pointer))
+    {
+      local sSubString = expr.value;
+      sSubString = replaceString("\n", "\\n", sSubString);
+      sSubString = replaceString("\t", "\\t", sSubString);      
+      sSubString = replaceString("\r", "\\r", sSubString);
+      %>@sSubString@<%
+    }
+  // primary expression  
+  else
+    { @@expr.value@@ }  
+}

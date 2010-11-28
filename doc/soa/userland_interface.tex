@@ -1,0 +1,2340 @@
+%
+% Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+% 
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+% 
+% THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+%
+
+\documentclass[11pt]{report}
+
+\usepackage{rathaxesmmix}
+
+\begin{document}
+
+\author{Amsallem David\\Dumont Mickael\\Gallon Sylvestre\\Suarez Tomas}
+\title{Rathaxes Userland Interface}
+\maketitle
+
+\section*{License}
+\addcontentsline{toc}{section}{License}
+Copyright (c) 2007 Rathaxes Team (team@rathaxes.org)
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Rathaxes Team is divided into three work teams:\\
+\begin{description}
+  \item{The Transverse Team, in charge of the logistic part of the project and
+    relaying informations between the two other teams.}
+  \item{The Hardware Team, in charge of the system and low level aspects of the
+    project and providing the Language Team with informations they need.}
+  \item{The Language Team, in charge of designing and implementing the Rathaxes
+    DSL, according to informations provided by the Hardware Team.\\}
+\end{description}
+
+As agreed within the Rathaxes teams, Rathaxes will be able to generate drivers
+for the four following operating systems:
+\begin{description}
+    \item{OpenBSD}
+    \item{Linux 2.6}
+    \item{MacOS X 10.5}
+    \item{Windows XP}
+\end{description}
+
+This paper deals with the concept of User Interfaces. It provides
+an abstraction layer to allow user to communicate with devices.
+% distinction des differentes familles
+
+\tableofcontents
+
+\chapter{Userland Interface}
+
+\section{Includes}
+This section describes which files are necessarly included for Userland Interface semantic
+on each operating system.
+Usually these files contain type definitions, macro definitions, function definitions, ...
+
+\subsection{OpenBSD}
+
+\begin{lstlisting}
+#include <sys/param.h>
+\end{lstlisting}
+This included file defines the NULL value and includes the {\it \textless sys/types.h\textgreater} file for all
+basic types used in a driver.
+
+\subsection{Linux 2.6}
+
+\begin{lstlisting}
+#include <linux/tpyes.h>
+#include <linux/fs.h>
+\end{lstlisting}
+Those two includes are used in most of the driver. types.h defines the kernel types such as dev\_t and fs.h defines all the file system related structure, in this article we are interresed in file\_operation, file and inode.
+\begin{lstlisting}
+#include <linux/cdev.h>
+#include <linux/ioctl.h>
+\end{lstlisting}
+This file in include to define the cdev structure and all the initialisation and registration functions related wile ioctl.h defines all the ioctl related macros.
+
+\begin{lstlisting}
+#include <asm/uacces.h>
+\end{lstlisting}
+This file defines the function allowing to copy data to/from the userland.
+
+\begin{lstlisting}
+#include <linux/sched.h>
+#include <llinux/capability.h>
+\end{lstlisting}
+Those two includes contains all the function allowing testing the permission for certain acction such as ioctl.
+
+\subsection{MaxOS X 10.5}
+\begin{lstlisting}
+#include <mach/mach_types.h>
+#include <sys/systm.h>
+#include <sys/types.h>
+#include <sys/conf.h>
+#include <sys/errno.h>
+\end{lstlisting}
+The mach\_types.h, systm.h, types.h are use for type define. The conf.h is needed by
+the device subsystem and the errno by the error subsystem.
+\subsection{Windows XP}
+
+\section{Registering and unregistering in kernel}
+
+Hardware devices are divided in two main categories, unstructured (character)
+device and structured (block) drivers.\\
+
+Structured or block devices are typified by disks and magnetic tapes, and include
+most random-access devices. The kernel allow read, modify, write and type buffering
+actions on block-oriented structured devices to allow the latter to be read and written
+in a totally random byte-addressed fashion. Filesystems are created on block devices
+(cf. "The Design and Implementation of the 4.4 BSD Operating System").
+
+Unstructured devices are those devices that do not support a block structure.
+Familiar unstructured devices are communication lines, raster plotters, and unbuffered
+magnetic tapes and disks. Unstructured devices typically support large block I/O
+transfers. Unstructured devices are called character devices because the first of these
+to be implemented were terminal device drivers.\\
+
+Operating system defines differents families of devices. To distinguish all devices
+from the same family, the system uses identifier. On a UNIX system, device families
+are named "majors" and device identifiers "minors".
+
+The kernel holds a data stucture list containing information about drivers
+registered in the system. Elements of this list contain at least routines
+assiocated with an action on a device.
+
+It always exists a protocol to make the kernel aware of a new element.
+
+\subsection{OpenBSD}
+
+A Unix system like OpenBSD is able to communicate with physical devices
+using a special file in userland known as "device" file.
+With this "device" file, a userland program can use it like a standard
+file, meaning that the program can open the "device" file, read it, write
+in it, etc. Behind these operations, the kernelland program known as "device
+driver" takes care of doing them on the physical device.\\
+
+On OpenBSD, at the registration time, the kernel has to know which type of
+device the driver will handle : structured device or unstructured device ?
+To make the interface with the userland, a C structure is used for each of
+these device types :
+\begin{lstlisting}
+struct cdevsw;
+struct bdevsw;
+\end{lstlisting}
+For a block-device interface, a device driver is described by a {\it bdevsw} structure,
+whereas for character-device interface, it accesses a {\it cdevsw} structure.\\
+All the {\it bdevsw} structures are collected in the block-device table, whereas
+{\it cdevsw} structures are similarly organized in a character-device table.\\
+
+Both structures contains many function pointers which will be called depending on the
+action made in userland. For example, both of them will implement a function
+to handle open action : when a read is performed on the device, the system
+do an open action before reading on it. This is the function implemented in
+the driver itself which will be called.\\\\
+Here is the routines for the cdevsw structure (character devices) :
+\begin{lstlisting}
+struct cdevsw {
+  int (*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
+  int (*d_close)(dev_t dev, int fflag, int devtype, struct proc *);
+  int (*d_read)(dev_t dev, struct uio *uio, int ioflag);
+  int (*d_write)(dev_t dev, struct uio *uio, int ioflag);
+  int (*d_ioctl)(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p);
+  int (*d_stop)(struct tty *tp, int rw);
+  struct tty * (*d_tty)(dev_t dev);
+  int (*d_poll)(dev_t dev, int events, struct proc *p);
+  paddr_t (*d_mmap)(dev_t, off_t, int);
+  u_int d_type;
+  u_int d_flags;
+  int (*d_kqfilter)(dev_t dev, struct knote *kn);
+};
+\end{lstlisting}
+The global purpose of these routines will be discussed later in this paper. At this
+point (registering in the kernel), this structure must be initialized by setting
+pointers with the wanted functions. All these functions are not mandatory, a
+driver will implement only those who have a corresponding device action.\\
+
+The field {\it d\_type} is to informed the system which type of driver it is.
+It can be initialized with the following value :
+\begin{lstlisting}
+  #define D_TAPE  1
+  #define D_DISK  2
+  #define D_TTY 3
+\end{lstlisting}
+By default, a value of 0 will be used.\\
+
+The field {\it d\_flags} is a flag that informs the kernel if the driver has a
+kqfilter entry or is cloned upon open action.
+It can be initialized with the following value :
+\begin{lstlisting}
+  #define D_KQFILTER  0x0001    /* has kqfilter entry */
+  #define D_CLONE   0x0002    /* clone upon open */
+\end{lstlisting}
+By default, a value of 0 will be used.\\
+
+The last Field {\it d\_kqfilter} which is a funtion pointer is used when the driver
+has a kqfilter entry. So if the field {\it d\_flags} is 0, {\it d\_kqfilter} will be
+initialized at NULL. Otherwise it can take the default value {\it ttkqfilter} which
+is a function defined in the kernel, or it can take as value a function implemented in
+the driver.\\
+
+So in addition of a simple LKM, an object of type {\it struct cdevsw} will be declared
+and defined on the global scope. For example :
+\begin{lstlisting}
+  struct cdevsw rs232_cdevsw =
+  {
+    /* open */      rs232_open,
+    /* close */     rs232_close,
+    /* read */      rs232_read,
+    /* write */     rs232_write,
+    /* ioctl */     rs232_ioctl,
+    /* stop */      (dev_type_stop((*))) lkmenodev,
+    /* tty */       (dev_type_tty((*))) lkmenodev,
+    /* poll */      (dev_type_poll((*))) lkmenodev,
+    /* mmap */      (dev_type_mmap((*))) lkmenodev,
+    /* type */      0,
+    /* flags */     0,
+    /* KQFILTER*/   NULL
+  };
+\end{lstlisting}  
+All function begun with {\it rs232\_} will be implemented in the driver, and all
+function pointer initialized with the function {\it lkmenodev} will be initialized
+with a function implemented in the system which will print that the action assiocated
+with isn't implemented.\\
+
+Here is the routines for the bdevsw structure (used for block devices) :
+\begin{lstlisting}
+  struct bdevsw {
+    int (*d_open)(dev_t dev, int oflags, int devtype,
+                  struct proc *p);
+    int (*d_close)(dev_t dev, int fflag, int devtype,
+                   struct proc *p);
+    void  (*d_strategy)(struct buf *bp);
+    int (*d_ioctl)(dev_t dev, u_long cmd, caddr_t data,
+                   int fflag, struct proc *p);
+    int (*d_dump)(dev_t dev, daddr64_t blkno, caddr_t va,
+                  size_t size);
+    daddr64_t (*d_psize)(dev_t dev);
+    u_int d_type;
+    /* u_int  d_flags; */
+};
+\end{lstlisting}
+As said above, all routines are not mandatory. They will be implemented depending on
+possible actions that can be performed on the device. The last field {\it d\_type}
+is the same than in the {\it struct cdevsw}, it informs the kernel which type of
+driver it is. It can be initialized with the following value :
+\begin{lstlisting}
+  #define D_TAPE  1
+  #define D_DISK  2
+  #define D_TTY 3
+\end{lstlisting}
+By default, a value of 0 will be used.
+
+Retrieving the LKM paper, it was said that to register a simple driver, there is
+a macro used to give some informations about the driver to the kernel. This is the
+macro {\it MOD\_DEV}.\\
+As said in the LKM paper, {\t MOD\_DEV} takes four arguments. Three of them are
+respectively : the name of the driver, the type of the driver and the major number of
+the device. Now the interesting parameter is the last one, the fourth.\\
+The fourth parameter is used to give to the kernel the address of a structure of type
+{\it struct cdevsw} or {\it struct bdevsw}. This is the structure describe above that
+contains informations about the driver itself.\\
+So to register a driver, we have to give the fourth parameter of the macro {\it
+MOD\_DEV} instead of setting it at NULL value like in a simple LKM. For instance :
+\begin{lstlisting}
+  MOD_DEV("rs232_lkm", LM_DT_CHAR, -1, &rs232_cdevsw);
+\end{lstlisting}
+Go back on the third parameter. This is the major number of the device, and as said
+in the LKM paper, a value of -1 is used for an automatic assignation. Even if the
+major number can be given, it is strongly recommended to let the kernel assign it
+by setting a value of -1. This is because on OpenBSD, the major number not only
+identify the type of device, but it is also the index of the device's entry in the
+block- or character-device table.
+
+\subsection{Linux 2.6}
+
+\subsubsection{Major and minor}
+The kernel makes the device available to userland through a special file,
+usually located in /dev. Those file are identified by their name and by a
+device number. The device number is a {\it dev\_t} type (defined in
+{\it linux/types.h}) and is composed of a higher part representing the major
+number and a lower part representing the minor.\\
+The major and minor number can be extracted from the device number using the
+two following macro.
+\begin{lstlisting}
+MAJOR(dev_t device_number);
+MINOR(dev_t device_number);
+\end{lstlisting}
+With a major and a minor the macro {\it MKDEV} create the device number;
+\begin{lstlisting}
+MKDEV(int major, int minor);
+\end{lstlisting}
+Even if major can nowadays be shared between different drivers
+one different major should be used for each type of device in order to avoid
+conflict. The major device can be specified by the programmer or given automatically
+by the kernel, this method should always be used unless you know which number
+you want and you know that it will not conflict with other device.\\
+The developer is free to set the minor number at his own
+will, usually starting at 0 for the first device.\\
+All the function needed to register and release character device are defined in {\it
+linux/fs.h}\\
+The {\it register\_chrdev\_region} permit to register a character device specifying the
+major number.
+\begin{lstlisting}
+int register_chrdev_region(dev_t device_number, unsigned int count, char *name);
+\end{lstlisting}
+{\it device\_number} is the device number returned by the macro {\it MKDEV}.\\
+{\it count} is the number of device you want to register.\\
+{\it name} is an arbitrary name, usually the name of your driver.\\
+If the call succed the function return 0, on error a negative value is returned.\\
+This lead to such a piece of code:
+
+\begin{lstlisting}
+int major;
+int devicenumber;
+
+major = 42;
+devicenumber = MKDEV(major, 0);
+if (register_chardev_region(devicenumber, 1, "my_driver"))
+{
+    return(-1);
+}
+\end{lstlisting}
+An other solution is to ask the kernel to dynamically choose the major using
+{\it alloc\_chrdev\_region()}.
+\begin{lstlisting}
+int alloc_chrdev_region(dev_t *dev, unsigned int minor, unsigned int count,
+char *name);
+\end{lstlisting}
+{\it dev} contains if the function succed the device number choosen by the
+kernel using the {\it minor} parameter.
+{\it count} and {\it name} parametters are the same as for {\it
+register\_chrdev\_region}.\\
+If the call succed the function return 0, on error a negative value is returned.\\
+in that case the code will looks like:
+\begin{lstlisting}
+dev_t   devicenumber;
+int     deviceminor;
+
+deviceminor = 0;
+if (alloc_chrdev_region(&devicenumber, deviceminor, 1, "my_driver"))
+{
+    return(-1);
+}
+\end{lstlisting}
+Aside of the choosen register function used, the region should be released using
+{\it unregister\_chrdev\_region} which takes the device number and the number
+of device that have been registred.
+\begin{lstlisting}
+void unregister_chrdev_region(dev_t dev, unsigned int count);
+\end{lstlisting}
+\begin{lstlisting}
+unregister_chrdev_region(devicenumber, 1);
+\end{lstlisting}
+Once the major has been determined the userland side special file should be
+created. The usual way to do this is by using the  {\it mknod} command.
+\begin{lstlisting}
+mknod /path/to/file c major minor
+\end{lstlisting}
+{\it c} means that the created file is a character device file, while b means block
+file.\\
+{\it major} and {\it minor} are of course the major and minor number asociated
+with the file.\\
+The major number can be read from {\it /proc/devices} so a script can read 
+{\it /proc/devices} and create the special file after loading the driver.
+
+
+\subsubsection{device registration}
+To register the device against the kernel the driver need to fill a cdev
+structure, and to give the kernel the functions corresponding to the sytem
+calls, for exemple open, close, read or write.\\
+The cdev structure represent your device from the kernel point of view.
+It need to be initialized by the kernel, this can be done in two
+different way depending if you want the kernel to initialize an alredy existing
+structure or if you prefere the kernel to allocate the structure for you.\\
+In the first case use the {\it cdev\_init} function.
+\begin{lstlisting}
+void    cdev_init(struct cdev *cdev, struct file_operations *fops);
+\end{lstlisting}
+In the second case the apropriate function is:
+\begin{lstlisting}
+struct  cdev *cdev_alloc();
+\end{lstlisting}
+Those two function and the {\it struct cdev} are defined in {\it linux/cdev.h}.
+\begin{lstlisting}
+struct cdev {
+	struct kobject kobj;
+	struct module *owner;
+	const struct file_operations *ops;
+	struct list_head list;
+	dev_t dev;
+	unsigned int count;
+};
+\end{lstlisting}
+The struct {\it kobject} and {\it list\_head} are member initiallised by the kernel, we dont need
+them for now.\\
+{\it owner} is a pointer to the parent module of the char device. The driver
+have to initialize it using the macro {\it THIS\_MODULE} defined in {\it
+linux/module.h}.\\
+{\it dev} is the device number designing our device and {\it count} is the
+number of device.\\
+ {\it count} is the number of devices number associated with the device. This
+ parametter is often one.\\
+{\it struct file\_operations} is the structure containing the function pointer
+corresponding to the different system calls.\\
+
+The structure fops is a collection of function pointer the driver needs to
+register, however not all of them are suited for a particular driver. All the
+unused function pointer should be let to NULL.\\
+The {\it file\_perations} is is defined in {\it linux/fs.h} by:
+\begin{lstlisting}
+struct file_operations {
+	struct module *owner;
+	loff_t (*llseek) (struct file *, loff_t, int);
+	ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);
+	ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
+	ssize_t (*aio_read) (struct kiocb *, const struct iovec *, unsigned long, loff_t);
+	ssize_t (*aio_write) (struct kiocb *, const struct iovec *, unsigned long, loff_t);
+	int (*readdir) (struct file *, void *, filldir_t);
+	unsigned int (*poll) (struct file *, struct poll_table_struct *);
+	int (*ioctl) (struct inode *, struct file *, unsigned int, unsigned long);
+	long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
+	long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
+	int (*mmap) (struct file *, struct vm_area_struct *);
+	int (*open) (struct inode *, struct file *);
+	int (*flush) (struct file *, fl_owner_t id);
+	int (*release) (struct inode *, struct file *);
+	int (*fsync) (struct file *, struct dentry *, int datasync);
+	int (*aio_fsync) (struct kiocb *, int datasync);
+	int (*fasync) (int, struct file *, int);
+	int (*lock) (struct file *, int, struct file_lock *);
+	ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
+	unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
+	int (*check_flags)(int);
+	int (*dir_notify)(struct file *filp, unsigned long arg);
+	int (*flock) (struct file *, int, struct file_lock *);
+	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+	int (*setlease)(struct file *, long, struct file_lock **);
+};
+\end{lstlisting}
+Here it is interesant to note the {\it \_\_USER} macro this macro does nothing
+but indicates that the variable is a userland one and therefor should not  be
+dereferenced directly. It's also used by check tool to find misused userland
+pointer.\\
+Once those two structure are initialized it is time to let the kernel know
+about the device by calling the {\it cdev\_add} function. This function take as
+parametter the device structure the device number  and the number of device you
+have requested.
+\begin{lstlisting}
+int cdev_add(struct cdev *cdev, dev_t device_number, int count);
+\end{lstlisting}
+The function returns a negative value in case of error, NULL otherwise.
+When not needed anymore the character device has to be relaesed, that the role of  {\it
+cdev\_del}
+\begin{lstlisting}
+cdev_del(&struct cdev *cdev)
+unregister_chrdev_region(rsdev.cdev.dev, rsdev.cdev.count);
+\end{lstlisting}
+
+All those steps are more likely to take place during the initialisation phase
+of the driver, leading to such code:
+
+\begin{lstlisting}
+
+struct cdev *my_dev;
+struct file_operations fops = {
+    .owner = THIS_MODULE,
+    .read = my_driver_read,
+    .write = my_driver_write,
+    [...]
+};
+
+
+static int __init my_driver_init(void)
+{
+    dev_t       devicenumber;
+    int         minor;
+    
+    mydev = kmalloc(sizeof(*my_dev), GFP_KERNEL);
+    if (!mydev)
+        return -ENOMEM;
+
+    //  registering the device
+    cdev_init(&mydev, &fops);
+    if (cdev_add(&my_dev, devicenumber, 1))
+        return -1;
+    my_dev.owner = THIS_MODULE;
+
+    return 0;
+}
+
+static void __exit    my_driver_exit(void)
+{
+    cdev_del(&my_dev);
+}
+\end{lstlisting}
+
+
+\subsection{MacOS X 10.5}
+
+MacOS X provide two functions to deal with character-device.
+Those functions take two parameters. The first
+one is an integer and represents the major number (it could
+be set at -1 if you want a dynamic number for the major). The
+second is a pointer to the driver data structure.
+
+The function to add the character-device is name cdevsw\_add and 
+the function to delete is the cdevsw\_remove.
+
+\begin{lstlisting}
+int		cdevsw_add(int major, struct cdevsw *);
+int		cdevsw_remove(int, struct cdevsw *);
+\end{lstlisting}
+
+The structure needed by these cdevsw\_XXX functions is:
+
+\begin{lstlisting}
+struct cdevsw 
+{
+	open_close_fcn_t	*d_open;
+	open_close_fcn_t	*d_close;
+	read_write_fcn_t	*d_read;
+	read_write_fcn_t	*d_write;
+	ioctl_fcn_t		*d_ioctl;
+	stop_fcn_t		*d_stop;
+	reset_fcn_t		*d_reset;
+	struct	tty 		**d_ttys;
+	select_fcn_t		*d_select;
+	mmap_fcn_t		*d_mmap;
+	strategy_fcn_t		*d_strategy;
+	getc_fcn_t		*d_getc;
+	putc_fcn_t		*d_putc;
+	int			d_type;
+};
+\end{lstlisting}
+%
+%	patch enodev
+%
+All the value of this structure finishing by fcn\_t are function pointers
+% XXX di\type is a vim typo ???
+% XXX d_stat apears nowhere in the structure WTF ?
+to device action. The d\_type is a filter which permit to prune the structure
+cdevsw at the initialization step. %%finir 
+The different possible flags for d\_type are:
+\begin{lstlisting}
+#define	D_TAPE	1
+#define	D_DISK	2
+#define	D_TTY	3
+\end{lstlisting}
+By default the d\_type flag is set to zero.
+\subsection{Windows XP}
+With WDF, the registration with the kernel will be done in EvtDeviceAdd callback, 
+described in previous ``LKM'' paper.
+
+    \subsubsection{Register Plug and play callbacks}
+The driver has to register two important plug and play callbacks :
+EvtPrepareHardware and EvtReleaseHardware.
+Let's review the prototype of the callback where this code will be inserted :
+\begin{lstlisting}
+NTSTATUS
+EvtDeviceAdd(
+    IN WDFDRIVER       Driver,
+    IN PWDFDEVICE_INIT DeviceInit
+    )
+\end{lstlisting}
+WDFDRIVER Driver parameter is the driver object the function receive from the framework.
+PWDFDEVICE\_INIT DeviceInit is a pointer to an opaque structure, 
+no operation are to do on it, it only must be passed to
+device initialization functions.\\
+To set PnP callbacks, a WDF\_PNPPOWER\_EVENT\_CALLBACK structure will be used.\\
+The macro WDF\_PNPPOWER\_EVENT\_CALLBACKS\_INIT initialize this structure.
+So, EvtPrepareHardware and EvtReleaseHardware callbacks can be indicated, and
+finally call the function WdfDeviceInitSetPnpPowerEventCallbacks:
+\begin{lstlisting}
+VOID
+WdfDeviceInitSetPnpPowerEventCallbacks(
+   IN PWDFDEVICE_INIT                DeviceInit,
+   IN PWDF_PNPPOWER_EVENT_CALLBACKS  PnpPowerEventCallbacks
+   );
+\end{lstlisting}
+This will lead to such a piece of code :
+\begin{lstlisting}
+WDF_PNPPOWER_EVENT_CALLBACK pnpPowerCallbacks;
+
+WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
+pnpPowerCallbacks.EvtDevicePrepareHardware = EvtPrepareHardware;
+pnpPowerCallbacks.EvtDeviceReleaseHardware = EvtReleaseHardware;
+WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
+\end{lstlisting}
+
+     \subsubsection{Create a WDF device object}
+The driver must create a WDF device object to be 
+known by the kernel.
+To do so, a call to WdfDeviceCreate must be present.
+\begin{lstlisting}
+NTSTATUS
+  WdfDeviceCreate(
+    IN OUT PWDFDEVICE_INIT*             DeviceInit,
+    IN OPTIONAL PWDF_OBJECT_ATTRIBUTES  DeviceAttributes,
+    OUT WDFDEVICE*                      Device
+    );
+\end{lstlisting}
+The driver could specify the Io Type for input/output operations
+for this device, by calling WdfDeviceInitSetIoType before creating
+the device object.
+\begin{lstlisting}
+VOID
+  WdfDeviceInitSetIoType(
+    IN PWDFDEVICE_INIT  DeviceInit,
+    IN WDF_DEVICE_IO_TYPE  IoType
+    );
+\end{lstlisting}
+The IoType can be one of the following
+\begin{description}
+        \item{WdfDeviceIoBuffered:}
+          This is the default I/O type.
+          Access to userland buffers will be buffered.
+          A nonpaged buffer will be created by the framework of equal size to
+          userland buffer. The I/O manager will copy the datas to userland
+          buffer after the request completed.
+        \item{WdfDeviceIoDirect:}
+          The application's buffer is locked in memory.
+          The driver uses Memory Descriptor List (MDL) to get access to locked memory.
+          A MDL is a list that stores informations about locked memory pages.
+        \item{WdfDeviceIoNeither:}
+          Neither buffered nor direct access.
+          The userland buffer virtual adress is given to the driver, so the buffer
+          is only avaible when the driver is running in the application's thread context.
+\end{description}
+
+A sample code to create a WDF device, without passing to driver a personnal
+data structure, which will be adressed in a future paper.
+It does not call WdfDeviceInitSetIoType, so the I/O type will be WdfDeviceIoBuffered.
+\begin{lstlisting}
+  NTSTATUS  status;
+  WDFDEVICE device;
+
+  ...
+
+  status = WdfDeviceCreate(&DeviceInit, WDF_NO_OBJECT_ATTRIBUTES, &device);
+  if (!NT_SUCCESS(status))
+  {
+    KdPrint((DRIVER_NAME "WdfDeviceCreate failed 0x%x\n", status));
+    return status;
+  }
+\end{lstlisting}
+
+
+     \subsubsection{Giving access to device from userland}
+There are several ways to give access to the device from the the userland.
+
+\begin{description}
+\item{Naming the device\\}
+A name can be given to a device, so that userland programs can
+access to device by calling
+CreateFile(``\textbackslash \textbackslash Device
+\textbackslash \textbackslash MyDevice'', ...).\\
+The function WdfDeviceInitAssignName is used to give this name :
+\begin{lstlisting}
+NTSTATUS
+  WdfDeviceInitAssignName(
+    IN PWDFDEVICE_INIT   DeviceInit,
+    IN PCUNICODE_STRING  DeviceName
+    );
+\end{lstlisting}
+Unicode string are used to deal with characters in WDF, some informations about
+it will be given in other paper.
+\begin{lstlisting}
+DECLARE_CONST_UNICODE_STRING(deviceName, ``\\Device\\MyDevice\0'');
+
+...
+
+status = WdfDeviceInitAssignName(DeviceInit, &deviceName);
+if (!NT_SUCCESS(status))
+{
+  KdPrint((DRIVER_NAME "Unable to assign device name [0x%x]\n", status));
+  return status;
+}
+\end{lstlisting}
+WdfDeviceInitAssignName must be called BEFORE WdfDeviceCreate.\\
+In order to handle applications which require such type of names,
+the driver can create a symbolic link by using WdfDeviceCreateSymbolicLink
+function.
+\begin{lstlisting}
+NTSTATUS
+  WdfDeviceCreateSymbolicLink(
+    IN WDFDEVICE         Device,
+    IN PCUNICODE_STRING  SymbolicLinkName
+    );
+\end{lstlisting}
+
+\begin{lstlisting}
+DECLARE_CONST_UNICODE_STRING(symbolicLinkName, ``\\DosDevice\\MyDevice'');
+
+...
+
+status = WdfDeviceCreateSymbolicLink(device, &symbolicLinkName);
+if (!NT_SUCCESS(status))
+{
+  KdPrint((DRIVER_NAME "Unable to create symbolic link.\n"));
+  return status;
+}
+\end{lstlisting}
+
+\item{Use an Interface\\}
+An unique interface can be used instead of a name to avoid collisions.
+This interface is a GUID, and can be generated by many tools, such as
+guidgen.
+This GUID can be defined in a header file, using DEFINE\_GUID macro, 
+after including initguid.h.
+\begin{lstlisting}
+# include <initguid.h>
+
+DEFINE_GUID(GUID_DEVINTERFACE_MYDEVICE, 
+0xe692e8d4, 0xdf9e, 0x455e, 0xbc, 0xf4, 0x42, 0x76, 0x97, 0x2f, 0x11, 0xf4);
+\end{lstlisting}
+
+\begin{lstlisting}
+status = WdfDeviceCreateDeviceInterface(device,
+             &GUID_DEVINTERFACE_MYDEVICE,
+             NULL
+             );
+if (!NT_SUCCESS(status))
+{
+  ...
+}
+\end{lstlisting}
+\end{description}
+        \subsubsection{Specify routines}
+Once the device created, the driver must specify which functions to call
+to handle interactions between user and kernel land.
+So, a queue object has to be created. A queue is designed to receive requests
+to be handled by the driver. Any number of queues can be created.
+A default queue can be specified to handle request which are not explicitly
+handled elsewhere.
+The macros
+WDF\_IO\_QUEUE\_CONFIG\_INIT
+or
+WDF\_IO\_QUEUE\_CONFIG\_INIT\_DEFAULT\_QUEUE
+can be used to initialize
+a queue. They take a
+WDF\_IO\_QUEUE\_CONFIG
+object and
+a
+WDF\_IO\_QUEUE\_DISPATCH\_TYPE
+as parameters.
+There are three different dispatch type (the way the framework
+send request to the driver) possible for a queue:
+\begin{description}
+  \item{WdfIoQueueDispatchSequential}
+    The requests are sent to the driver one at a time.
+  \item{WdfIoQueueDispatchParallel}
+    The requests are sent as soon as they come to the framework.
+  \item{WdfIoQueueDispatchManual}
+    The requests are not sent automatically to the driver.
+    It musts call WdfIoQueueRetrieveNextRequest to get them.
+\end{description}
+Many callbacks (read, write, ioctl, ...) can be indicated to the queue config object.
+A callback EvtIoDefault can be specified, which will handle any request
+with no associated callback.
+This sample code initialize a default queue with a parallel dispatching.
+\begin{lstlisting}
+  WDFQUEUE                      defaultqueue;
+  WDF_IO_QUEUE_CONFIG           queueConfig;
+
+  ...
+
+  WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig, WdfIoQueueDispatchParallel);
+  queueConfig.EvtIoRead                 = EvtIoRead;
+  queueConfig.EvtIoWrite                = EvtIoWrite;
+  queueConfig.EvtIoDeviceControl        = EvtIoIoctl;
+  queueConfig.EvtIoDefault              = EvtIoDefault;
+
+  status = WdfIoQueueCreate(device, &queueConfig, WDF_NO_OBJECT_ATTRIBUTES, &defaultqueue);
+  if (!NT_SUCCESS(status))
+  {
+    KdPrint((DRIVER_NAME "WdfIoQueueCreate failed 0x%xn", status));
+    return status;
+  }
+\end{lstlisting}
+
+
+\subsection{Generalisation}
+\begin{description}
+  \item{- It must be possible to identify the device in order to allow userland processes
+to use it giving the name and the family of the device.}
+  \item{- It must be possible to give the type of the device : block- or character-device.}
+  \item{- It must be possible to name routines related to device's interactions.
+Example : open, read, write, etc.}
+\end{description}
+
+\section{Service routines}
+
+Before talking about service routines, some concepts may be known
+
+One of them is about address spaces. For kernel memory protection,
+userland and kernelland don't share the same memory space. Therefore
+when the userland buffer is accessed in kernelland, the system has to
+perform operations to ensure the accessibility of this buffer. These operations
+are parts of the kernel API, depending on which system the driver is.\\
+
+Service routines are callbacks associated with one semantic operation.
+These semantic operations will be define in different subsections below.\\
+
+When an operation is performed on a device, the related callback will be called.\\
+
+\subsection{Init and release the Controller}
+
+Initialize a device is the first operation performed by the kernel
+before any other action. This step is associated with the {\it open} action.
+
+{\it open :} Open the device in preparation for I/O operations.
+
+
+Release a device is the last operation done by the kernel. This is associated
+with the {\it close}  action.
+
+{\it close :} Close a device. The close routine is called after the final
+client interested in using the device terminates.
+
+\subsubsection{OpenBSD}
+
+As written in the first section "Registering and unregistering in kernel", the
+prototype of the function {\it open()}, declared in the {\it cdevsw / bdevsw}
+structure as a function pointer, is :
+\begin{lstlisting}
+int (*d\_open)(dev\_t dev, int oflags, int devtype, struct proc *p);
+\end{lstlisting}
+This function takes four parameters :
+\begin{description}
+  \item{- {\it dev\_t dev :} It's a 32 bits identifiers which contains the major and the
+  minor of the device used. The OpenBSD system holds two macro which take this
+  {\it dev\_t dev} in parameter to extract the {\it major} or the {\it minor} number;
+  respectively : major() and minor(). For example :
+  \begin{lstlisting}
+int minor = minor(dev);
+  \end{lstlisting}
+  }
+  \item{- {\it int oflags :} It's not used for the moment}
+  \item{- {\it int devtype :} It's not used for the moment}
+  \item{- {\it struct proc *p :} It's not used for the moment}
+\end{description}
+This function returns 0 in case of success or a value different of 0 in other case.\\
+Here is an example of the implementation and the use of its parameters :
+\begin{lstlisting}
+int rs232_open(dev_t dev, int oflags, int devtype, struct proc *p)
+{
+  rs232_device_t  *dev_current;
+  int             minor;
+
+  minor = minor(dev);
+  if (minor >= NB_DEVS)
+    return ENXIO;
+  dev_current = &gl_devs[minor];
+  if (dev_current->busy)
+    return EBUSY;
+  dev_current->busy = 1;
+  init_device(dev_current);
+  return (0);
+}
+\end{lstlisting}
+This is the example from a rs232 simple driver. It could be useful to know that the most of times,
+there is four possibly serial entry in a system : COM1, COM2, COM3, COM4.\\
+In this example, the {\it dev\_t dev} parameter is used. By the {\it minor()} macro, the minor
+which identify the device used in a family of devices is intialized in order to select which device
+is used between COM1, COM2, COM3 and COM4. This is exactly what the following line do :
+\begin{lstlisting}
+dev_current = &gl_devs[minor];
+\end{lstlisting}
+{\it gl\_devs} array holds four structures which represents their own device COM1, COM2, COM3
+and COM4, and {\it dev\_current} takes the address of the structure related to the device used.\\
+By this line :
+\begin{lstlisting}
+init_device(dev_current);
+\end{lstlisting}
+it is easy to see that the main purpose of the {\it open()} function is to initialize the device.\\
+
+Here is the prototype of the function {\it close()}, declared in the {\it cdevsw / bdevsw} structure
+as a function pointer :
+\begin{lstlisting}
+int (*d\_close)(dev\_t dev, int oflags, int devtype, struct proc *p);
+\end{lstlisting}
+This function takes exactly the same paramaters than {\it open()} function :
+\begin{description}
+  \item{- {\it dev\_t dev :} It's a 32 bits identifiers which contains the major and the
+  minor of the device used. The OpenBSD system holds two macro which take this
+  {\it dev\_t dev} in parameter to extract the {\it major} or the {\it minor} number;
+  respectively : major() and minor(). For example :
+  \begin{lstlisting}
+int minor = minor(dev);
+  \end{lstlisting}
+  }
+  \item{- {\it int oflags :} It's not used for the moment}
+  \item{- {\it int devtype :} It's not used for the moment}
+  \item{- {\it struct proc *p :} It's not used for the moment}
+\end{description}
+This function returns 0 in case of success or a value different of 0 in other case.\\
+Here is an example of the implementation and the use of its parameters :
+\begin{lstlisting}
+int rs232_close(dev_t dev, int fflag, int devtype, struct proc *p)
+{
+  rs232_device_t  *dev_current;
+  int             minor;
+
+  minor = minor(dev);
+  if (minor >= NB_DEVS)
+    return ENXIO;
+  dev_current = &gl_devs[minor];
+  dev_current->busy = 0;
+  return (0);
+}
+\end{lstlisting}
+The {\it close()} routine of a character-device isn't really exhaustive. For sure, this routine
+could be included in the {\it open()} routine and so that only one routine should be sufficiant
+to do the {\it open} and {\it close} job of the device.
+For example, replace this little code in {\it open()} routine :
+\begin{lstlisting}
+if (dev_current->busy)
+  return EBUSY;
+\end{lstlisting}
+by :
+\begin{lstlisting}
+if (dev_current->busy)
+{
+  dev_current->busy = 0;
+  return 0;
+}
+\end{lstlisting}
+IT IS IMPORTANT TO NOTE THAT IT IS ONLY RELEVANT TO DO SUCH HACK WITH SIMPLE DRIVER FOR
+CHARACTER-DEVICE.
+
+\subsubsection{Linux 2.6}
+The open callbacks has to be registred in the {\it fops} data structure in order to be
+called when userland program opens the device.
+That function takes two parameters an  {\it inode} structure and a
+{\it file} structure.
+\begin{lstlisting}
+int rs232_open(struct inode *inode, struct file *filp);
+\end{lstlisting}
+The  {\it struct inode} is a kernel internal representation of a file. It is
+defined in  {\it linux/fs.h} and contains a lot of information about the file
+but only two are important here:\\
+{\it dev\_t i\_dev} containing the device number associated with actual device.
+{\it struct cdev *i\_cdev} containing the cdev structure initialized before.\\
+in order to get the minor and major from the inode two macros have been
+defined:
+\begin{lstlisting}
+unsigned int    iminor(struct inode *inode);
+unsigned int    imajor(struct inode *inode);
+\end{lstlisting}
+The {\it struct file} represent an open file in the kernel and is passed to
+every function dealing with the file. This structure is initialized by the
+kernel on {\it open} and cleared on {\it close}. This structure is defined in
+{\it linux/fs.h}:
+\begin{lstlisting}
+struct file {
+	union {
+		struct list_head	fu_list;
+		struct rcu_head 	fu_rcuhead;
+	} f_u;
+	struct path		f_path;
+#define f_dentry	f_path.dentry
+#define f_vfsmnt	f_path.mnt
+	const struct file_operations	*f_op;
+	atomic_t		f_count;
+	unsigned int 		f_flags;
+	mode_t			f_mode;
+	loff_t			f_pos;
+	struct fown_struct	f_owner;
+	unsigned int		f_uid, f_gid;
+	struct file_ra_state	f_ra;
+
+	unsigned long		f_version;
+#ifdef CONFIG_SECURITY
+	void			*f_security;
+#endif
+	void			*private_data;
+
+#ifdef CONFIG_EPOLL
+	struct list_head	f_ep_links;
+	spinlock_t		f_ep_lock;
+#endif /* #ifdef CONFIG_EPOLL */
+	struct address_space	*f_mapping;
+};
+\end{lstlisting}
+{\it mode\_t f\_mode} holds the permission the file was open for. It is used
+for checking permission on ioctl or open, but not on read or write call
+because the kernel check the permission before executing the read or write
+callback.\\
+{\it loff\_t f\_pos} is the position in the file. Except for lseek method the
+driver should not modify this value as in read and write a pointer t othis
+value is passed as argument.\\
+{\it unsigned int f\_flag} are the flags defined in  {\it linux/cntl.h} the
+most used is O\_NONBLOCK for checking if I/O should be performed blocking or
+not.\\
+{\it struct file\_operations *f\_ops} is the set of function pointer
+used by the kernel to execute system call. As the kernel doesn't copy it the
+driver is able to change those pointer at runtime.\\
+{\it void *private\_data} is a very interesting field set to NULL by the
+kernel and let to the use of the developer. It can be used to pass userdefined
+data through every system call.
+If the developer has defined a structure for his needs, it should include
+cdev in this structure, that way using {\it container\_of} declared
+in {\it linux/kernel.h} he can have his structure and store it in  {\it
+filp-\textgreater private\_data}. The cdev can be get from the inode passed as
+parameter to open.
+\begin{lstlisting}
+container_of(contained_pointer, container_type, container_filed);
+\end{lstlisting}
+{\it contained\_pointer} is a pointer to the structure the parent will be
+recovered.\\
+{\it container\_type} is the type of the parent structure.\\
+{\it container\_field} is the name of the field containing{\it contained\_pointer}
+in the parent structure.\\
+\begin{lstlisting}
+struct my_dev {
+    int data1;
+    cdev cdev;
+};
+
+int my_driver_open(struct inode *inode, struct file *filp)
+{
+    //  make the device specific function available everywhere
+    struct my_dev   *devstruct;
+    
+    devstruct = container_of(inode->i_cdev, struct my_dev, cdev);
+    filp->private_data = devstruct;
+    return 0;
+}
+\end{lstlisting}
+
+
+\subsubsection{MacOS X 10.5}
+
+Init and release operations are associated with 2 differents functions. These function
+take 4 parameters.\\
+By convention the init function is named XXX\_open where XXX is the driver 
+name.
+\begin{lstlisting}
+int	serial_open(dev_t dev, int flags, int devtype, struct proc *p)
+\end{lstlisting}
+By convention the release function is named XXX\_close where XXX is the driver 
+name.
+\begin{lstlisting}
+int	serial_close(dev_t dev, int flags, int devtype, struct proc *p)
+\end{lstlisting}
+
+The dev argument is used by the minor and major macro. These macros are used
+to get the minor and major number of the device. This is an minor example:
+\begin{lstlisting}
+int minor = minor(dev);
+\end{lstlisting}
+For the moment other arguments passed to this functions are not used for
+device development
+
+\subsubsection{Windows XP}
+To initialize and release the peripheral, the system will use previously
+given routines : EvtPrepareHardware and EvtReleaseHardware.
+The EvtPrepareHardware routine must performs operations needed to put the
+device in a state in which the driver can communicates with it.
+\begin{lstlisting}
+NTSTATUS
+EvtPrepareHardware(
+		WDFDEVICE Device,
+		WDFCMRESLIST Resources,
+		WDFCMRESLIST ResourcesTranslated
+		)
+\end{lstlisting}
+Every parameter is filled by the framework. Device is an instance
+of the corresponding WDF device.
+Resources represents a handle to a list of raw (relative to the bus
+to which the device is connected) hardware resources that the
+Plug and Play manager has assigned to the device.
+ResourcesTranslated is handle to a list of the same resources,
+in the same order, but translated (system physical addresses that
+drivers use to access the resources).
+This routine can look through the ResourcesTranslated list to retrieve
+informations such as I/O Ports, IRQ, and mapped memory used by the
+peripheral.
+To do so, a partial resource descriptor can be used. It's a structure
+composed by several unions representing hardware resources.
+\begin{lstlisting}
+typedef struct _CM_PARTIAL_RESOURCE_DESCRIPTOR {
+    UCHAR Type;
+    UCHAR ShareDisposition;
+    USHORT Flags;
+    union {
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length;
+        } Generic;
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length;
+        } Port;
+        struct {
+            ULONG Level;
+            ULONG Vector;
+            KAFFINITY Affinity;
+        } Interrupt;
+        // This member exists only on Windows Vista and later
+        struct {
+            union {
+               struct {
+                   USHORT DataPayload;
+                   USHORT MessageCount;
+                   ULONG  Vector;
+                   ULONG_PTR MessageTargetAddress;
+               } Raw;
+               struct {
+                   ULONG Level;
+                   ULONG Vector;
+                   KAFFINITY Affinity;
+               } Translated;        
+            };
+        } MessageInterrupt;
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length;
+        } Memory;
+        struct {
+            ULONG Channel;
+            ULONG Port;
+            ULONG Reserved1;
+        } Dma;
+        struct {
+            ULONG Data[3];
+        } DevicePrivate;
+        struct {
+            ULONG Start;
+            ULONG Length;
+            ULONG Reserved;
+        } BusNumber;
+        struct {
+            ULONG DataSize;
+            ULONG Reserved1;
+            ULONG Reserved2;
+        } DeviceSpecificData;
+        // The following structures provide support for memory-mapped
+        // IO resources greater than MAXULONG
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length40;
+        } Memory40;
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length48;
+        } Memory48;
+        struct {
+            PHYSICAL_ADDRESS Start;
+            ULONG Length64;
+        } Memory64;
+    } u;
+} CM_PARTIAL_RESOURCE_DESCRIPTOR, *PCM_PARTIAL_RESOURCE_DESCRIPTOR;
+\end{lstlisting}
+
+For example, this piece of code looks for I/O port assigned to the device:
+\begin{lstlisting}
+NTSTATUS
+EvtPrepareHardware(
+		WDFDEVICE Device,
+		WDFCMRESLIST Resources,
+		WDFCMRESLIST ResourcesTranslated
+		)
+{
+  ULONG                                 i;
+  PCM_PARTIAL_RESOURCE_DESCRIPTOR	descriptor;
+  
+  KdPrint((DRIVER_NAME "-->EvtPrepareHardware\n"));
+  for (i = 0; i < WdfCmResourceListGetCount(ResourcesTranslated); i++)
+  {
+    descriptor = WdfCmResourceListGetDescriptor(ResourcesTranslated, i);
+    if (!descriptor)
+        return STATUS_DEVICE_CONFIGURATION_ERROR;
+    switch (descriptor->Type)
+    {
+      case CmResourceTypePort:
+        KdPrint((DRIVER_NAME "I/O Port: (%x)"
+              "Length: (%d)\n",
+              descriptor->u.Port.Start.LowPart,
+              descriptor->u.Port.Length));
+              /* Here, keeps this informations somewhere */
+        break;
+        /* Here, check for other hardware resources */
+      default:
+        break;
+    }
+  }
+  /* Do some device initialization here, using retrieved informations */
+  KdPrint((DRIVER_NAME "<--EvtPrepareHardware\n"));
+  return STATUS_SUCCESS;
+}
+\end{lstlisting}
+
+When releasing the peripheral, EvtReleaseHardware is called.
+It receives the WDFDEVICE object, and a list of translated resources.
+The driver must performs here any operations needed to put the device
+unaccessible.
+\begin{lstlisting}
+NTSTATUS
+EvtReleaseHardware(
+    IN  WDFDEVICE Device,
+    IN  WDFCMRESLIST ResourcesTranslated
+    )
+{
+	KdPrint((DRIVER_NAME "-->EvtReleaseHardware\n"));
+        /* Insert any treatment here */
+	KdPrint((DRIVER_NAME "<--EvtReleaseHardware\n"));
+	return STATUS_SUCCESS;
+}
+\end{lstlisting}
+
+\subsection{Synchronous Input Output}
+
+There is two operations of synchronous I/O associated with device actions.
+The input operation, also called {\it read} and the output operation, named
+{\it write}.
+
+{\it read :} Read data from a device. Most of the time, this function requires
+that the specified data be copied into the kernel's address space and then be
+passed to the device's special file.
+
+{\it write :} Write data to a device. This routine is a direct parallel of the read
+routine. Most of time, this function requires that the specified data be copied from
+the userland's address space to the kernel's address space and then be passed to the
+hardware device.
+
+\subsubsection{OpenBSD}
+Reported to the section "Registering and unregistering in kernel", the function {\it read()}
+has the following declaration :
+\begin{lstlisting}
+int (*d_read)(dev_t dev, struct uio *uio, int ioflag);
+\end{lstlisting}
+This function takes three parameters :
+\begin{description}
+  \item{- {\it dev\_t dev :} It's a 32 bits identifiers which contains the major and the
+  minor of the device used. The OpenBSD system holds two macro which take this
+  {\it dev\_t dev} in parameter to extract the {\it major} or the {\it minor} number;
+  respectively : major() and minor(). For example :
+  \begin{lstlisting}
+int minor = minor(dev);
+  \end{lstlisting}
+  }
+  \item{- {\it struct uio *uio :} This is a structure used by the kernel API to performed
+  operations on userland or kernelland memory space. This structure make an interface
+  between userland land and kernelland spaces. Here is the definition of the structure :
+  \begin{lstlisting}
+struct uio {
+  struct  iovec *uio_iov; /* pointer to array of iovecs */
+  int uio_iovcnt; /* number of iovecs in array */
+  off_t uio_offset; /* offset into file this uio corresponds to */
+  size_t  uio_resid;  /* residual i/o count */
+  enum  uio_seg uio_segflg; /* see above */
+  enum  uio_rw uio_rw;  /* see above */
+  struct  proc *uio_procp;/* associated process or NULL */
+};}
+  \end{lstlisting}
+  For information, in a read() context, the field {\it uio-\textgreater uio\_rw} contains
+the action which should be performed on the device (UIO\_READ OR UIO\_WRITE) and the field
+{\it uio-\textgreater uio\_resid} represents the amount of data to read on the device.}
+  \item{- {\it int ioflag :} This parameter isn't yet used.}
+\end{description}
+Here is an example of a read() function for a rs232 driver :
+\begin{lstlisting}
+int rs232_read(dev_t dev, struct uio *uio, int ioflag)
+{
+  rs232_device_t  *dev_current;
+  int             minor;
+
+  /* Check if data should be read into the space */
+  if (uio->uio_rw != UIO_READ)
+    return EPERM;
+  /* Check if the device is implemented */
+  minor = minor(dev);
+  if (minor >= NB_DEVS)
+    return ENXIO;
+  dev_current = &gl_devs[minor];
+  /* Test if the device is busy */
+  if (dev_current->busy == 0)
+    return EBUSY;
+  read_on_device(dev_current, uio);
+  return 0;
+}
+\end{lstlisting}
+
+The function {\it write()} has the following declaration :
+\begin{lstlisting}
+int (*d_write)(dev_t dev, struct uio *uio, int ioflag);
+\end{lstlisting}
+This function takes the same three parameters than the {\it read()} function :
+\begin{description}
+  \item{- {\it dev\_t dev :} It's a 32 bits identifiers which contains the major and the
+  minor of the device used. The OpenBSD system holds two macro which take this
+  {\it dev\_t dev} in parameter to extract the {\it major} or the {\it minor} number;
+  respectively : major() and minor(). For example :
+  \begin{lstlisting}
+   int minor = minor(dev);
+  \end{lstlisting}
+  }
+  \item{- {\it struct uio *uio :} This is a structure used by the kernel API to performed
+  operations on userland or kernelland memory space. This structure make an interface
+  between userland and kernelland spaces. Here is the definition of the structure :
+  \begin{lstlisting}
+    struct uio {
+      struct  iovec *uio_iov; /* pointer to array of iovecs */
+      int uio_iovcnt; /* number of iovecs in array */
+      off_t uio_offset; /* offset into file this uio corresponds to */
+      size_t  uio_resid;  /* residual i/o count */
+      enum  uio_seg uio_segflg; /* see above */
+      enum  uio_rw uio_rw;  /* see above */
+      struct  proc *uio_procp;/* associated process or NULL */
+    };}
+  \end{lstlisting}
+  For information, in a {\it write()} context, the field {\it uio-\textgreater uio\_rw} contains
+  the action which should be performed on the device (UIO\_READ or UIO\_WRITE) and
+  the field {\it uio-\textgreater uio\_resid} represents the amount of data to write on the device.}
+  \item{- {\it int ioflag :} This parameter isn't yet used.}
+\end{description}
+Here is an example of the write() function for a rs232 driver :
+\begin{lstlisting}
+int rs232_write(dev_t dev, struct uio *uio, int ioflag)
+{
+  rs232_device_t  *dev_current;
+  int             minor;
+
+  /* Check if data should be write from the space */
+  if (uio->uio_rw != UIO_WRITE)
+    return EPERM;
+  /* Check if the device is implemented */
+  minor = minor(dev);
+  if (minor >= NB_DEVS)
+    return ENXIO;
+  dev_current = &gl_devs[minor];
+  /* Test if the device is busy */
+  if (dev_current->busy == 0)
+    return EBUSY;
+  write_on_device(dev_current, uio);
+  return (0);
+}
+\end{lstlisting}
+
+By convention, these two functions perform a check on the event {\it uio-\textgreater uio\_rw} to
+validate if it is relevant to do the read() action or the write() action.
+
+\subsubsection{Linux 2.6}
+
+ {\it read} and  {\it write} perform very similar task, they just copy data
+ between userland and kernelland. They are defined as follow:
+ \begin{lstlisting}
+   ssize_t read(struct file *filp, char __user *buff, size_t count, loff_t *offp);
+   ssize_t write(struct file *filp, const char__user *buff, size_t count, loff_t*offp);
+ \end{lstlisting}
+The first argument is a pointer to a  {\it struct file} that correspond to the
+file descriptor the userland is working on. If it has been set during open
+the {\it private\_data} member contains user defined structure.
+{\it buff} is a userland buffer as shows the \_\_user macro, userland buffers
+should never be dereferenced in kernelland because they may be invalid (located
+in swapped area or simply wrong). To access the userland buffers the kernel
+provides two function defined in {\it asm/uaccess.h}:
+\begin{lstlisting}
+copy_to_user(void __user *to, const void *from, unsigned long n)
+copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
+\end{lstlisting}
+Those two function behave like memcopy but perform all the necessary test to
+grant the driver it has a valid pointer, if an invalid pointer is encountered
+no copy is made. 
+In case the data cannot be copyed, or partially copyed the funtion return the
+amount of data still to be copied.\\
+If the parameter is not a scalar type (int, char,...) and is passed by pointer,
+it has to be safe copyed between userland and kernelland. For optimisation
+purpose two faster maro are designed to work on those small types.
+\begin{lstlisting}
+put_user(data, ptr)
+get_user(data, ptr)
+\end{lstlisting}
+ {\it data} is the kernelside data to be filled/copied and  {\it ptr} is the
+ userland pointer to read/write.
+
+The base code of a read function will looks like the following:
+\begin{lstlisting}
+ssize_t my_driver_read(struct file *filp, char __user *user_buff, size_t size, loff_t *offp)
+{
+    int             ret;
+    struct my_dev   *devstruct;
+    
+    devstruct = filp->private_data;
+
+    if (size > devstruct->size)
+        size = devstruct-> size;
+    ret = copy_to_user(user_buff, devstruct->buffer, size);
+    if (ret)
+        return -EFAULT;
+    return size;
+}
+\end{lstlisting}
+
+
+
+\subsubsection{MacOS X 10.5}
+
+Mac OS X provides two functions to handle the synchronous IO. They are
+XXX\_read and XXX\_write :
+
+\begin{lstlisting}
+int	serial_read(dev_t dev, struct uio *uio, int ioflag)
+\end{lstlisting}
+
+\begin{lstlisting}
+int	serial_write(dev_t dev, struct uio *uio, int ioflag)
+\end{lstlisting}
+
+Lets look to the params : 
+The dev argument is used by the minor and major macro. These macros are used
+to get the minor and major number of the device. This is an minor example:
+\begin{lstlisting}
+int minor = minor(dev);
+\end{lstlisting}
+The struct uio params is a part of an api  named kpi. The data we want to 
+extract from the uio for te moment is just the userland buffer, the buffer 
+length and some information about this buffer. To do this stuff the kpi offer 
+four functions :
+
+\begin{lstlisting}
+user_ssize_t uio_resid( uio_t a_uio );
+int uiomove(const char * cp, int n, struct uio *uio);
+nt uio_rw( uio_t a_uio );
+int uio_isuserspace( uio_t a_uio );
+\end{lstlisting}
+
+Function uio\_resid take the uio and returns the buff length. The uiomove
+function permits to copy in the buffer cp n byte of the buffer thats uio
+contains. uio\_rw permit at the developper to know if the buffer is for
+read or write use. The last function used is to know where is placed the
+buffer : in user\_land adressing space or in kernel\_land adressing space
+and take twice for argument an uio.
+
+If the buffer is not in your addressing space this function permit you
+to get th buff:
+
+\begin{lstlisting}
+int	copyin(const void *uaddr, void *kaddr, size_t len);
+int     copyinstr(const void *uaddr, void *kaddr, size_t len, size_t *done);
+int     copyout(const void *kaddr, void *uaddr, size_t len);
+int     copystr(const void *kfaddr, void *kdaddr, size_t len, size_t *done);
+\end{lstlisting}
+Like the man 9 copyinstr say :
+copyin()      Copies len bytes of data from the user-space address uaddr to the kernel-space address kaddr.
+copyinstr()   Copies a NUL-terminated string, at most len bytes long, from user-space address uaddr to kernel-space address kaddr.  The number of bytes
+              actually copied, including the terminating NUL, is returned in *done.
+copyout()     Copies len bytes of data from the kernel-space address kaddr to the user-space address uaddr.
+copystr()     Copies a NUL-terminated string, at most len bytes long, from kernel-space address kfaddr to kernel-space address kdaddr.  The number of bytes
+              actually copied, including the terminating NUL, is returned in *done.
+
+\subsubsection{Windows XP}
+On Windows, synchronous read and write operations are performed by
+two callbacks registered during WDDeviceCreate(), EvtIoRead and EvtIoWrite.
+EvtIoRead is called when an user wants to retrieve some data from
+the device.
+
+\begin{lstlisting}
+VOID
+EvtIoRead(
+    IN WDFQUEUE         Queue,
+    IN WDFREQUEST       Request,
+    IN size_t           Length
+    )
+\end{lstlisting}
+
+It receives a WDFQUEUE, which is a framework queue associated to the current request.
+The WDFREQUEST parameter is the current request. The third parameter is the lenght
+of the given userland buffer, to fill with datas.
+To treat the request, the driver can use WdfRequestRetrieveOutputMemory
+to get a WDFMEMORY object, which contains methods to copy data to userland buffer.
+\begin{lstlisting}
+NTSTATUS
+  WdfRequestRetrieveOutputMemory(
+    IN WDFREQUEST       Request,
+    OUT WDFMEMORY*      Memory
+    );
+\end{lstlisting}
+
+WdfMemoryCopyFromBuffer allows such copy.
+\begin{lstlisting}
+NTSTATUS
+  WdfMemoryCopyFromBuffer(
+    IN WDFMEMORY        DestinationMemory,
+    IN size_t           DestinationOffset,
+    IN PVOID            Buffer,
+    IN size_t           NumBytesToCopyFrom
+    );
+\end{lstlisting}
+
+Finally, the driver must complete the request using
+WdfRequestComplete or WdfRequestCompleteWithInformation.
+For the second version, the Information parameter
+correspond to the value returned to userland.
+For a read request, this should be the number of characters read.
+\begin{lstlisting}
+VOID
+  WdfRequestComplete(
+    IN WDFREQUEST  Request,
+    IN NTSTATUS    Status
+   );
+
+VOID
+  WdfRequestCompleteWithInformation(
+    IN WDFREQUEST  Request,
+    IN NTSTATUS    Status,
+    IN ULONG_PTR   Information
+   );
+\end{lstlisting}
+
+This sample code always respond to a read request by filling
+the userland buffer with ``foo''.
+\begin{lstlisting}
+VOID 
+EvtDeviceIoRead(
+        IN WDFQUEUE	Queue,
+        IN WDFREQUEST	Request,
+        size_t		Length
+        )
+{
+  WDFMEMORY		memory;
+  NTSTATUS		status;
+  char                  source[4] = "foo";
+  
+
+  KdPrint((DRIVER_NAME "--> EvtDeviceIoRead\n"));
+  status = WdfRequestRetrieveOutputMemory(Request, &memory);
+  if(NT_SUCCESS(status))
+  {
+    status = WdfMemoryCopyFromBuffer(memory,
+                0,
+                source,
+                (sizeof(source) > Length) ? Length : sizeof(source));
+    WdfRequestCompleteWithInformation(Request, status, sizeof(source) > Length ? Length : sizeof(source));
+  }
+  else
+  {
+    WdfRequestCompleteWithInformation(Request, status, 0L);
+  }
+  KdPrint((DRIVER_NAME "<-- EvtDeviceIoRead\n"));
+}
+\end{lstlisting}
+
+Similarly, the EvtIoWrite allows userland to give datas to device.
+Its parameters are the same than EvtIoRead, except for the Length,
+that no longer represents output, but input buffer.
+\begin{lstlisting}
+VOID 
+EvtIoWrite(
+    IN WDFQUEUE		Queue,
+    IN WDFREQUEST	Request,
+    size_t		Length
+    );
+\end{lstlisting}
+
+The memory object provides a way to write to kernel buffer.
+\begin{lstlisting}
+NTSTATUS
+  WdfMemoryCopyToBuffer(
+    IN WDFMEMORY        SourceMemory,
+    IN size_t           SourceOffset,
+    IN PVOID            Buffer,
+    IN size_t           NumBytesToCopyTo
+    );
+\end{lstlisting}
+
+Assuming a local hardcoded buffer of 42 bytes, this code provides
+an (useless) example of a basic write operation.
+\begin{lstlisting}
+VOID 
+EvtDeviceIoWrite(
+    IN WDFQUEUE		Queue,
+    IN WDFREQUEST	Request,
+    size_t		Length
+    )
+{
+  WDFMEMORY	memory;
+  NTSTATUS	status;
+  char          buffer[42];
+
+  KdPrint((DRIVER_NAME "--> EvtDeviceIoWrite\n"));
+  if(Length > 42)
+  {
+    KdPrint(("EvtIoWrite Buffer Length to big %d, Max is %d\n",
+    Length, 42));
+    WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
+    KdPrint((DRIVER_NAME "<-- EvtIoWrite\n"));
+    return;
+  }
+  status = WdfRequestRetrieveInputMemory(Request, &memory);
+  if(!NT_SUCCESS(status))
+  {
+    KdPrint((DRIVER_NAME "EvtIoWrite could not get request memory buffer 0x%x\n",
+                status));
+    WdfRequestComplete(Request, status);
+    KdPrint((DRIVER_NAME "<-- EvtDeviceIoWrite\n"));
+    return;
+  }
+  status = WdfMemoryCopyToBuffer(memory,
+                        0,
+                        buffer,
+                        Length);
+  if(!NT_SUCCESS(status))
+  {
+    KdPrint((DRIVER_NAME "WdfMemoryCopyToBuffer failed 0x%x\n", status));
+    WdfRequestComplete(Request, status);
+    return;
+  }
+  WdfRequestCompleteWithInformation(Request, status, Length);
+  KdPrint((DRIVER_NAME "<-- EvtIoWrite\n"));
+}
+\end{lstlisting}
+
+%\subsection{Asynchronous Input Output}
+%%FIXME%
+%Incomming ...
+
+\subsection{Configuration and control}
+To do some control or configuration operations on a device, or to simply performed
+an operation which is not a read or a write, the routine {\it ioctl} is used.
+
+{\it ioctl :} Do an operation other than a read or write. This routine originally
+provided a mechanism to get and set device parameters for terminal devices;
+its use has expanded to other types of devices as well.
+
+\subsubsection{OpenBSD}
+The implementation of the ioctl routine follows this declaration :
+\begin{lstlisting}
+int (*d_ioctl)(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p);
+\end{lstlisting}
+The ioctl function takes five parameters :
+\begin{description}
+  \item{- {\it dev\_t dev :} It's a 32 bits identifiers which contains the major and the
+  minor of the device used. The OpenBSD system holds two macro which take this
+  {\it dev\_t dev} in parameter to extract the {\it major} or the {\it minor} number;
+  respectively : major() and minor(). For example :
+  \begin{lstlisting}
+   int minor = minor(dev);
+  \end{lstlisting}}
+  \item{- {\it u\_long cmd :} It's a 32 bits command used by {\it ioctl()} to perform
+  the operation related to. {\it Ioctl()} have the command encoded in this format :
+    \begin{description}
+      \item{{\it 8 bits (lowest) :} The command itself.}
+      \item{{\it 8 bits :} The family of the command which is a magic number.}
+      \item{{\it 13 bits :} The size of any in or out parameters.}
+      \item{{\it 3 bits :} the in/out status of the parameter.}
+    \end{description}
+  So it is important to know that it isn't relevant to compare the command parameter
+  with constant values because the parameter has been already encoded. The value used
+  for comparison must be passed to macros defines in the kernel API
+  (/usr/include/sys/ioccom.h) in order to encode it. The following macros are used to
+  encode a command value :
+    \begin{description}
+      \item{{\it \_IO(g, n) :} Used to encode a command which doesn't have a parameter.
+      The 'g' parameter is the group (or family) of the command, the 'n' parameter is the
+      command number.}
+      \item{{\it \_IOR(g, n, s) :} Used to encode a command performing read
+      operations (copy parameters out). The 'g' and 'n' parameter is the same than above,
+      the 's' parameter is the type of the parameters (used to determine the size).}
+      \item{{\it \_IOW(g, n, s) :} Used to encode a command performing write
+      operations (copy parameters in). The 'g', 'n', and 's' parameter are the same than
+      above.}
+      \item{{\it \_IOWR(g, n, s) :} Used to encode a command performing both read and
+      write operations (copy parameters in and out). The 'g', 'n', and 's' parameter
+      are still the same.}
+    \end{description}}
+  \item{- {\it caddr\_t data :} This is the parameter of the command. The {\it caddr\_t
+data} is a pointer to the memory space that contains the value of a write command
+(known as the parameter of the command) or a pointer to the memory space which
+will be filled in a read command.}
+  \item{- {\it int fflag :} It's not yet used.}
+  \item{- {\it struct proc *p :} It's not yet used.}
+\end{description}
+Here is an exemple of a simple ioctl() for a rs232 driver :
+\begin{lstlisting}
+# define SET_PARITY _IOW(42, 1, int)
+# define GET_LCRSTATUS _IOR(42, 11, int)
+
+int rs232_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
+{
+  rs232_device_t  *dev_current;
+  int             minor;
+
+  minor = minor(dev);
+  if (minor >= NB_DEVS)
+    return ENXIO;
+  dev_current = &gl_devs[minor];
+  switch(cmd)
+  {
+    case SET_PARITY:
+      write_on_device_register(dev_current, UART_LCR, *data);
+      break;
+    case GET_LCRSTATUS:
+      *data = read_on_device_register(dev_current, UART_LCR);
+      break;
+    default:
+      return ENOTTY;
+      break;
+  }
+  return (0);
+}
+\end{lstlisting}
+This example shows clearly the analogy between the code itself and the above
+explaination. The value {\it 42} is used as the family of the command {\it SET\_PARITY}
+and the command {\it GET\_LCRSTATUS} because this value isn't used by the system as a
+family of commands.
+
+\subsubsection{Linux 2.6}
+Under linux most of the device configuration are done through the  {\it ioctl}
+system call. The ioctl system call as the following prototype:
+\begin{lstlisting}
+	int ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+\end{lstlisting}
+The userland ioctl systemcall is defined with his last argument as a vararg
+however it is just to supress the type checking on the last parameter because this
+parameter is the data passed to the system call and can be a pointer or an
+integer depending on the ioctl called.
+The two parameterss  {\it inode} and  {\it filp} are the same that in open.
+The  {\it cmd} parameter is an integer composed of severals bit fields.
+\begin{description}
+    \item {type} is in fact a magic number of 8 bit. This number should be
+    unique across the system, the alredy used so called magic number are listed
+    in {\it Documentation/ioctl-number.txt} 
+    \item {number} is a 8 bit wide number the developper can choose to
+    represent it's different ioctl.
+    \item {direction} indicates the sense of data transfer from the aplication
+    point of view. Possible values are  {\it \_IOC\_NONE, \_IOC\_READ, \_IOC\_WRITE}
+    or  {\it \_IOC\_READ | \_IOC\_WRITE}.
+    \item {size} indicates the size of the parametre to be passed
+\end{description}
+The header  {\it linux/ioctl.h} defines usefull macro that permit to create the
+ioctl numbers.
+\begin{lstlisting}
+#define _IO(type,nr)
+#define _IOR(type,nr,size)
+#define _IOW(type,nr,size)
+#define _IOWR(type,nr,size)
+\end{lstlisting}
+ {\it \_IO} is used if the command doesnt have parametters and the other
+ respectively are for command that perform read, write or bidirectionnal operation from the
+ dirver.\\
+ {\it type} is the magic number for the device,  {\it nr} is the cardianl
+ number for the ioctl command, and  {\it size} the size of the parameter, here
+ the c type of the parameter should be passed as it is passed as parameter to
+ sizeof.\\
+ Some other macro permit to extract the diffenrent information from the ioctl
+ number permitting to make error checking.
+\begin{lstlisting}
+#define _IOC_DIR(nr)	
+#define _IOC_TYPE(nr)	
+#define _IOC_NR(nr)		
+#define _IOC_SIZE(nr)	
+\end{lstlisting}
+Those macro extract respectively the the direction (writing or reading both or
+none), the type (magic number), the number, and the size part of the ioctl
+number passed as parameter.\\
+The driver have to check if the user or program that is performing ioctl have
+the right to, the  {\it capable} function permit to check if the user has or
+not the permission, capable is defined in  {\it linux/sched.h}.
+\begin{lstlisting}
+int capable(int capability);
+\end{lstlisting}
+Capabilities are split into several separate groups, here are shown those that
+are more likely be usefull to driver developper, the complete set can be found
+in  {\it linux/capability.h}
+\begin{lstlisting}
+#define CAP_DAC_OVERRIDE     1
+#define CAP_NET_ADMIN        12
+#define CAP_SYS_MODULE       16
+#define CAP_SYS_RAWIO        17
+#define CAP_SYS_ADMIN        21
+#define CAP_SYS_TTY_CONFIG   26
+\end{lstlisting}
+\begin{description}
+    \item{CAP\_DAC\_OVERRIDE} is the permission to bypass access restriction on
+    file.
+    \item{CAP\_NET\_ADMIN} is the ability to control network device.
+    \item{CAP\_SYS\_MODULE} is the ability to manipulate kernel module.
+    \item{CAP\_SYS\_RAWIO} is the ability to communicate directly with the
+    hardware layer.
+    \item{CAP\_SYS\_ADMIN} is set of capabilities that permit to perform several
+    administration task.
+    \item{CAP\_SYS\_TTY\_CONFIG} is the ability to configure the ttys.
+\end{description}
+
+So the skeleton code for the ioclt system call looks like the following code:\\
+my\_driver.h is the file defining the device related ioctl command, this file
+will be included in userland programmes.
+\begin{lstlisting}
+#ifndef IOCTL_UI_H
+#define IOCTL_UI_H
+
+#include <linux/ioctl.h>
+
+//  IOCTL defines
+#define MD_IOCTL_MAGIC  0xf5
+#define MD_GET_TSIZE     _IOR(MD_IOCTL_MAGIC, 1, int)
+#define MD_SET_TSIZE     _IOW(MD_IOCTL_MAGIC, 2, int)
+#define MD_FLUSH        _IO(MD_IOCTL_MAGIC, 3)
+
+#endif  // IOCTL_UI_H
+\end{lstlisting}
+
+my\_driver.c
+\begin{lstlisting}
+int     my_driver_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    struct my_dev   *devstruct;
+    int             ret = 0;
+    
+    //  getting the specific structure
+    devstruct = filp->private_data;
+    switch (cmd)
+    {
+        case MD_GET_TSIZE:
+            put_user(devstruct->tsize, (int *)arg);
+            break;
+        case MD_SET_TSIZE:
+            ret = my_device_set_size(devstruct, arg);
+            break;
+        case MD_FLUSH:
+            //  verify the user has the right to perform io
+            if (!capable(CAP_SYS_RAWIO))
+                return -EPERM;
+            devstruct->size = 0;
+            break;
+        default:
+            return -EINVAL;     // invalid command supplied
+    }
+    return ret;
+}
+\end{lstlisting}
+
+\subsubsection{MacOS X 10.5}
+
+Max OS X provide a function for IOcontrol named ioctl.
+\begin{lstlisting}
+int			serial_ioctl(dev_t dev, u_long cmd,
+			caddr_t data, int fflag,  struct proc *p)
+\end{lstlisting}
+Here we just need the cmd args and the data args. The cmd is used by the userland to
+notify which IOControl it would call and the data is data that could be needed by this 
+IOControl.
+
+Mac OS X follow the BSD 4.4 API for IOctl cmd choosing. So when you defined the number
+which will set cmd you must used this api : 
+\begin{lstlisting}
+#define	SET_BAUDRATE		_IOW(42, 0, int)
+#define	SET_BITS		_IOW(42, 1, int)
+\end{lstlisting}
+This api concern on a define of the name you wan't for your ioctl that refers to one macro.
+The macro coulb be \_IOR \_IOW \_IORW. That depend of if you ioctl do read on the data write
+or both. the first args of this macro is a number corresponding at the ioctl familly like 5 for
+ttys. the second is an incremential num to differenced your devices. The third args is the type
+of data.
+
+\subsubsection{Windows XP}
+Device control is done using Ioctls, using a callback specified during EvtAddDevice.
+Contrary to read and write, ioctl operations can be input and output operation
+at the same time. So, the callback takes output and input buffer length as parameters.
+The last parameter is the I/O control code itself, which can be driver defined
+or a common device ioctl provided by the framework.
+\begin{lstlisting}
+VOID EvtIoIoctl(
+    IN WDFQUEUE		Queue,
+    IN WDFREQUEST	Request,
+    IN size_t		OutputBufferLength,
+    IN size_t		InputBufferLength,
+    IN ULONG		IoControlCode
+    );
+\end{lstlisting}
+Typically, the various control code are handled in a switch case block.
+A skeleton of ioctl treatment could looks like this sample code.
+\begin{lstlisting}
+VOID EvtIoIoctl(
+    IN WDFQUEUE		Queue,
+    IN WDFREQUEST	Request,
+    IN size_t		OutputBufferLength,
+    IN size_t		InputBufferLength,
+    IN ULONG		IoControlCode
+    )
+{
+  NTSTATUS	status = STATUS_SUCCESS;
+
+  KdPrint((DRIVER_NAME "-->EvtIoIoctl\n"));
+  switch (IoControlCode)
+  {
+    case MY_DEVICE_IOCTL_1:
+        status = WdfRequestRetrieveOutputBuffer(Request,
+        /*size of wanted buffer for this ioctl*/,
+        /*buffer to fill*/,
+        /*adress of word to store number of bytes filled*/);
+        if(!NT_SUCCESS(status))
+        {
+          KdPrint(("Could not get request memory buffer %X\n", status));
+          break;
+        }
+        /*Insert some treatment here*/
+        WdfRequestCompleteWithInformation(Request, status, /*sizeof of wanted buffer for this ioctl*/);
+        return;
+    
+        case MY_DEVICE_IOCTL_2:
+                ...
+                return;
+default:
+                break;
+	}
+  WdfRequestComplete(Request, STATUS_NOT_IMPLEMENTED);
+  KdPrint((DRIVER_NAME "<--EvtIoIoctl\n"));
+}
+\end{lstlisting}
+
+%\subsection{systemcall list}
+%This paragraph mainly aim to list the system calls available under the different operating systems, to serv as a reference. The goal of this section is not to explain eaxh of theses system call. The list will be limited to the standart system call provided by the system.
+%% bof bof bof je suis pas tres content du texte de presentation de la partie vous devez le modifier pour qu'il soit exacte
+%\subsubsection{OpenBSD}
+%\subsubsection{Linux2.6}
+%All the following system call are define in {\it linux/fs.h}
+%\begin{lstlisting}
+%loff_t (*llseek) (struct file*, loff_t, int);
+%
+%ssize_t (*read) (struct file*, char __user *, size_t, loff_t);
+%
+%ssize_t (*aio_read) (struct kiocb *, char __user, size_t, loff_t *);
+%
+%ssize_t (*write) (struct file*, char const __user *, size_t, loff_t);
+%
+%ssize_t (*aio_write) (struct kiocb *, char const __user, size_t, loff_t *);
+%
+%int (*readdir) (struct file *, void *, filldir_t);
+%
+%unsigned int (*poll) (struct file*, struct poll_table_struct *);
+%
+%int (*ioclt) (strcut inode *, struct file *, unsigned int, unsigned long);
+%
+%int (*mmap) (struct file *, struct vm_area_struct *);
+%
+%int (*open) (struct inode *, struct file *);
+%
+%int (*flush) (struct file *);
+%
+%int (*relaese) (struct inode *, struct file *);
+%
+%int (*fsync) (struct file *, struct dentry *, int);
+%
+%int (*aio_fsync) (struct kiocb *, int);
+%
+%int (*fasync) (int, struct file *, int);
+%
+%int (*lock) (struct file *, int, struct file_lock *);
+%
+%ssize_t (*readv) (struct file *, const struct iovec , unsigned long, off_t *);
+%
+%ssize_t (*writev) (struct file *, const struct iovec , unsigned long, off_t *);
+%
+%ssize_t (*sendfile) (struct file *, struct page *, int, size_t, loff_t, int);
+%
+%ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t, int);
+%
+%unsigned long (*get_unmapped_area) (struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
+%
+%int check_flags(int);
+%
+%int (*dir_notify) (struct file *, unsigned long);
+%\end{lstlisting}
+%\subsubsection{Windows XP}
+%\subsection{To be continued...}
+
+\section{Requirements}
+\begin{description}
+  \item{- It must be possible to identify the device in order to allow userland processes to use it giving the name and the family of the device.}
+  \item{- It must be possible to give the type of the device : block- or character-device.}
+  \item{- It must be possible to name routines related to device's interactions. Example : open, read, write, etc.}
+  \item{- It must be possible to disable the use of userland interface}
+\end{description}
+
+\newpage
+\section{Appendices}
+    \subsection{OpenBSD code exemple}
+    ui.h
+\begin{lstlisting}
+#ifndef UI_H_
+# define UI_H_
+
+int     ui_open(dev_t dev, int oflags, int devtype, struct proc *p);
+int     ui_close(dev_t dev, int fflag, int devtype, struct proc *p);
+int     ui_read(dev_t dev, struct uio *uio, int ioflag);
+int     ui_write(dev_t dev, struct uio *uio, int ioflag);
+int     ui_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p);
+
+#endif
+\end{lstlisting}
+    ui\_mod.c
+\begin{lstlisting}
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/exec.h>
+#include <sys/systm.h>
+#include <sys/lkm.h>
+#include "ui.h"
+
+struct cdevsw ui_cdevsw =
+{
+    ui_open,
+    ui_close,
+    ui_read,
+    ui_write,
+    ui_ioctl,
+    (dev_type_stop((*))) lkmenodev,
+    (dev_type_tty((*))) lkmenodev,
+    (dev_type_poll((*))) lkmenodev,
+    (dev_type_mmap((*))) lkmenodev,
+    0,
+    0,
+    NULL
+};
+
+MOD_DEV("ui_lkm", LM_DT_CHAR, -1, &ui_cdevsw); 
+
+static int  ui_load(struct lkm_table *lkmt, int cmd)
+{
+    printf("ui_lkm loaded !\n");
+    return (0);
+}
+
+static int  ui_unload(struct lkm_table *lkmt, int cmd)
+{
+    printf("ui_lkm unloaded !\n");
+    return (0);
+}
+
+static int  ui_stat(struct lkm_table *lkmt, int cmd)
+{
+    printf("ui_lkm stated !\n");
+    return (0);
+}
+
+int ui_lkm(struct lkm_table *lkmt, int cmd, int ver)
+{
+    DISPATCH(lkmt, cmd, ver, ui_load, ui_unload, ui_stat)
+}
+\end{lstlisting}
+    ui.c
+\begin{lstlisting}
+#include <sys/param.h>
+#include <sys/conf.h> 
+#include <sys/exec.h>
+#include <sys/systm.h>
+#include <sys/lkm.h>
+#include "ui.h"
+    
+int ui_open(dev_t dev, int oflags, int devtype, struct proc *p)
+{
+  printf("open\n");
+  return (0);
+}
+
+int ui_close(dev_t dev, int fflag, int devtype, struct proc *p)
+{
+  printf("close\n");
+  return (0);
+}
+
+int ui_read(dev_t dev, struct uio *uio, int ioflag)
+{
+  printf("read\n");
+  return (0);
+}
+
+int ui_write(dev_t dev, struct uio *uio, int ioflag)
+{
+  printf("write\n");
+  return (0);
+}
+
+int ui_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
+{
+  printf("ioctl\n");
+  return (0);
+}
+\end{lstlisting}
+
+    \subsection{Linux 2.6 code exemple}
+    ioctl\_ui.h
+    \begin{lstlisting}
+#ifndef IOCTL_UI_H
+#define IOCTL_UI_H
+
+#include <linux/ioctl.h>
+
+//  IOCTL defines
+#define MD_IOCTL_MAGIC  0xf5
+#define MD_GET_TSIZE     _IOR(MD_IOCTL_MAGIC, 1, int)
+#define MD_SET_TSIZE     _IOW(MD_IOCTL_MAGIC, 2, int)
+#define MD_FLUSH        _IO(MD_IOCTL_MAGIC, 3)
+
+#endif  // IOCTL_UI_H
+    
+    \end{lstlisting}
+    userland\_interface.h
+    \begin{lstlisting}
+#ifndef USERLAND_INTERFACE_H
+#define USERLAND_INTERFACE_H
+
+#include <linux/cdev.h>
+#include <linux/types.h>
+
+#include "ioctl_ui.h"
+
+#define DEVICE_NAME "my_driver"
+
+struct my_dev
+{
+    char            *buffer;
+    int             size;
+    int             tsize;
+    struct cdev     cdev;
+};
+
+//  functions prototypes
+int my_driver_open(struct inode *inode, struct file *filp);
+static int __init my_driver_init(void);
+static void __exit  my_driver_exit(void);
+ssize_t my_driver_write(struct file *filp, const char __user *user_buff, size_t size, loff_t *offp);
+ssize_t my_driver_read(struct file *filp, char __user *user_buff, size_t size, loff_t *offp);
+int     my_driver_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+int my_device_set_size(struct my_dev *devstruct, int new_size);
+#endif  // USERLAND_INTERFACE_H
+    
+    \end{lstlisting}
+    userland\_interface.c
+    \begin{lstlisting}
+/************************************************/
+/*  This device store a string on write         */
+/*  and give it back on read. using ioctl       */
+/*  it is possible to change the buffer size    */
+/*  and tu flush it                             */
+/*  The device will remeber the content of his  */
+/*  buffer accross different open               */
+/************************************************/
+
+#include <linux/module.h>
+#include <linux/kernel.h>   //container_of
+#include <linux/init.h>
+#include <linux/fs.h>       // chardev functions, file_operations
+#include <linux/types.h>    // dev_t, ...
+#include <linux/cdev.h>     // cdev structure and related functions
+#include <asm/uaccess.h>    // copy_to/from_user, put/get_user
+
+#include "userland_interface.h"
+
+struct my_dev   *datas;
+struct file_operations fops = 
+{
+    .owner = THIS_MODULE,
+    .open = my_driver_open,
+    .write = my_driver_write,
+    .read = my_driver_read,
+    .ioctl = my_driver_ioctl
+};
+
+int     my_driver_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    struct my_dev   *devstruct;
+    int             ret = 0;
+    
+    //  getting the specific structure
+    devstruct = filp->private_data;
+    switch (cmd)
+    {
+        case MD_GET_TSIZE:
+            put_user(devstruct->tsize, (int *)arg);
+            break;
+        case MD_SET_TSIZE:
+            ret = my_device_set_size(devstruct, arg);
+            break;
+        case MD_FLUSH:
+            //  verify the user has the right to perform io
+            if (!capable(CAP_SYS_RAWIO))
+                return -EPERM;
+            devstruct->size = 0;
+            break;
+        default:
+            return -EINVAL;     // invalid command supplied
+    }
+    return ret;
+}
+
+
+int my_device_set_size(struct my_dev *devstruct, int new_size)
+{
+    //  realloc a buffer at the size requested by the user
+    kfree (devstruct->buffer);
+    devstruct->buffer = kmalloc(sizeof(char) * new_size +1, GFP_KERNEL);
+    if (!devstruct->buffer)
+    {
+        return -ENOMEM;
+    }
+    devstruct->tsize = new_size;
+    return 0;
+}
+
+ssize_t my_driver_read(struct file *filp, char __user *user_buff, size_t size, loff_t *offp)
+{
+    int             ret;
+    struct my_dev   *devstruct;
+    
+    //  getting the specific structure
+    devstruct = filp->private_data;
+
+    //  read only present data
+    if (size > devstruct->size)
+        size = devstruct-> size;
+    ret = copy_to_user(user_buff, devstruct->buffer, size);
+    if (ret)
+    {
+        //  userland corrupt pointer => segfault
+        return -EFAULT;
+    }
+    //  if everything is ok return the size readed
+    return size;
+}
+
+ssize_t my_driver_write(struct file *filp, const char __user *user_buff, size_t size, loff_t *offp)
+{
+    int             ret;
+    struct my_dev   *devstruct;
+    
+    //  getting the specific structure
+    devstruct = filp->private_data;
+
+    if(size > devstruct->tsize)
+    {
+        //  trying to copy outside the buffer => segfault
+        return -EFAULT;
+    }
+    ret = copy_from_user(devstruct->buffer, user_buff, size);
+    if (ret)
+    {
+        //  userland corrupt pointer => segfault
+        return -EFAULT;
+    }
+    devstruct->size = size;
+    devstruct->buffer[size] = '\0';
+        //  if everything is ok return the size readed
+    return size;
+}
+
+int my_driver_open(struct inode *inode, struct file *filp)
+{
+    //  no particular initialisation to be made in this case
+
+    //  make the device specific function available everywhere
+    struct my_dev   *devstruct;
+    
+    devstruct = container_of(inode->i_cdev, struct my_dev, cdev);
+    filp->private_data = devstruct;
+    return 0;
+}
+
+static int __init my_driver_init(void)
+{
+    dev_t       devicenumber;
+    int         minor;
+    
+    // preparing the device specific data structure setting default parameters
+    datas = kmalloc(sizeof(*datas), GFP_KERNEL);
+    if (!datas)
+        return -ENOMEM;
+    datas->buffer = kmalloc(sizeof(char) * 42 + 1, GFP_KERNEL);
+    if (!datas->buffer)
+        return -ENOMEM;
+    datas->size = 0;
+    datas->tsize = 42;
+    
+    //  registering the char dev number (automatic method)
+    minor = 0;
+    if (alloc_chrdev_region(&devicenumber, minor, 1, DEVICE_NAME))
+    {
+        //  cannot register a char device number
+        return -1;
+    }
+
+    //  registering the device
+    cdev_init(&datas->cdev, &fops);
+    if (cdev_add(&datas->cdev, devicenumber, 1))
+    {
+        //  the device cannot be added leaving...
+        return -1;
+    }
+    datas->cdev.owner = THIS_MODULE;
+
+    return 0;
+}
+
+
+static void __exit  my_driver_exit(void)
+{
+        //  release the char dev number
+    unregister_chrdev_region(datas->cdev.dev, 1);
+    //  release the deivce
+    cdev_del(&datas->cdev);
+}
+
+module_init(my_driver_init);
+module_exit(my_driver_exit);
+
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("rathaxes");
+    \end{lstlisting}
+    \subsection{MacOS X 10.5 code exemple}
+    \subsection{Windows XP code exemple}
+
+
+\end{document}

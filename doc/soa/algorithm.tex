@@ -1,0 +1,296 @@
+%
+% Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+% 
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+% 
+% THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+%
+
+\documentclass[11pt]{report}
+\usepackage{listings}
+\lstset{language=C}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+  showspaces=false, showstringspaces=false}
+\usepackage{color}
+\usepackage[english]{babel}
+\usepackage{listings}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\author{Amsallem David\\Dumont Mickael\\Gallon Sylvestre\\Suarez Tomas}
+\title{Algorithms}
+\maketitle
+
+\section*{Licence}
+\addcontentsline{toc}{section}{Licence}
+Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Rathaxes Team is divided into three work teams:\\
+\begin{description}
+  \item{The Transverse Team, in charge of the logistic part of the project and
+    relaying informations between the two other teams.}
+  \item{The Hardware Team, in charge of the system and low level aspects of the
+    project and providing the Language Team with informations they need.}
+  \item{The Language Team, in charge of designing and implementing the Rathaxes
+    DSL, according to informations provided by the Hardware Team.\\}
+\end{description}
+
+As agreed within the Rathaxes teams, Rathaxes will be able to generate drivers
+for the four following operating systems:
+\begin{description}
+    \item{OpenBSD}
+    \item{Linux 2.6}
+    \item{MacOS X 10.5}
+    \item{Windows XP}
+\end{description}
+
+This paper deals with the concept of Algorithms. It provides
+an abstraction layer to describe the most commonly code use to 
+developped drivers.
+% distinction des differentes familles
+
+\tableofcontents
+
+\chapter{algorithms}
+
+We have introduced register in last chapter as 'type'. On each langage
+type can be multiplex with operators to perform an action. Algorithms
+are something like a operators in a rathaxes, and each algorithm correspond
+to a specied action for a specifed register. An algorithm could be use
+by 0 or N differents type of register. A register must have 1 or N algorithm.\\\\
+The algorithm are mapped with the userland interface and the callback interface.
+Each sub semantic present in an interface provide some block of code where we 
+can use algorithms on registers. We are going to describe all the differents action 
+that we need to define for handling and generate all different algorithms.
+
+\section{Set}
+Set allow the programmer to set a register with a value. The differents prototypes 
+in rathaxes of this algorithms correspond to : 
+\begin{lstlisting}
+	VOID	SET(REGISTER_DEST, VALUE);
+	VOID	SET(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+	\item{Ping Pong registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{Get}
+Get allow the programmer to get the value of a register. The differents prototypes 
+in rathaxes of this algorithms correspond to :
+\begin{lstlisting}
+	VALUE	GET(REGISTER);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+	\item{Ping Pong registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{poll}
+The poll operator allow us to wait until a register have the same value than 
+the value specified or the value of another register. The differents prototypes 
+in rathaxes of this algorithms correspond to :
+\begin{lstlisting}
+VOID	POLL(REGISTER_DEST, VALUE);
+VOID	POLL(REGISTER_DEST, REGISTER_SRC);
+VOID	POLL(REGISTER_DEST, BOOLEEN);
+\end{lstlisting}
+If the third poll is used the poll unblock if the value is true.\\
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{pop}
+The pop algorithm retrieve data from a stack based register. The differents 
+prototypes in rathaxes of this algorithms correspond to :
+\begin{lstlisting}
+VALUE	POP(REGISTER);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{push}
+The push algorithm write data to a stack based register. The differents 
+prototypes in rathaxes of this algorithms correspond to :
+\begin{lstlisting}
+VOID	PUSH(REGISTER_DEST, VALUE);
+VOID	PUSH(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+	\item{Ping Pong registers}
+\end{description}
+
+\section{eq}
+Eq execute a block of code if the register is equal to a value or another register.
+The block of code is optionnal.
+The different prototypes in rathaxes of this algorithm correspond to:
+\begin{lstlisting}
+BOOL	EQ(REGISTER_DEST, VALUE) {...};
+BOOL	EQ(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{neq}
+Neq execute a block of code if the register is not equal to a value or another register.
+The block of code is optionnal.
+The different prototypes in rathaxes of this algorithm correspond to:
+\begin{lstlisting}
+BOOL	NEQ(REGISTER_DEST, VALUE) {...};
+BOOL	NEQ(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{le}
+LE execute a block of code if the register is less or equal to a value
+ or another register.The block of code is optionnal.
+The different prototypes in rathaxes of this algorithm correspond to:
+\begin{lstlisting}
+BOOL	LE(REGISTER_DEST, VALUE) {...};
+BOOL	LE(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{ge}
+Ge execute a block of code if the register is greater or equal to a value
+or another register. The block of code is optionnal.
+The different prototypes in rathaxes of this algorithm correspond to:
+\begin{lstlisting}
+BOOL	GE(REGISTER_DEST, VALUE) {...};
+BOOL	GE(REGISTER_DEST, REGISTER_SRC);
+\end{lstlisting}
+This algorithm is usable with these registers : 
+\begin{description}
+	\item{Common registers}
+	\item{Indexed registers}
+	\item{Shared registers}
+	\item{Rotate registers}
+\end{description}
+This algorithm is not usable with these registers : 
+\begin{description}
+	\item{Ping Pong registers}
+	\item{Stacks registers}
+	\item{Ping Pong Stack registers}
+\end{description}
+
+\section{times}
+The times operator repeat a block of code n times. The different prototypes in
+rathaxes of this algorithm correspond to:
+\begin{lstlisting}
+VOID	TIMES(N) {...}
+\end{lstlisting}
+This algorithm is usable with all registers because is independant of the use 
+of the registers. 
+\end{document}
