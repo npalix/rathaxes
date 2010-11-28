@@ -19,6 +19,9 @@ static void		e1000_set_mac_address(void);
 static netdev_tx_t 	e1000_start_xmit(struct sk_buff *skb,
 					 struct net_device *dev);
 static void init_hw(struct net_device* dev);
+static void uninit_hw(struct net_device* dev);
+static void init_queue(struct net_device* dev);
+static void uninit_queue(struct net_device* dev);
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
@@ -45,6 +48,7 @@ static int e1000_open(struct net_device *dev)
 
 	data = netdev_priv(dev);
 	init_hw(dev);
+	init_queue(dev);
 
 	netif_start_queue(dev);
 	return 0;
@@ -53,6 +57,9 @@ static int e1000_open(struct net_device *dev)
 static int e1000_close(struct net_device *dev)
 {
 	printk(KERN_ERR "Close the e1000 card\n");
+	netif_stop_queue(dev);
+	uninit_queue(dev);
+	uninit_hw(dev);
 	return 0;
 }
 
@@ -65,6 +72,8 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 static void init_hw(struct net_device* dev)
 {
 	t_e1000_data *data;
+	int i;
+
 	data = netdev_priv(dev);
 
 	/* Take a look to the Intel Manual Developper
@@ -103,6 +112,93 @@ static void init_hw(struct net_device* dev)
 	 */
 	e1000_unset_register_preserve(data, CTRL_REG,
 			CTRL_VMDE);
+
+	/*
+	 * Initialize the MTA table (128 bytes)
+	 */
+
+	for (i = 0; i < 128; ++i)
+		e1000_set_register(data, MTA_REG + i, 0);
+
+	/*
+	 * "The Statistics registers are not hardware initialized. Their default value is unknown. 
+	 * Software should read the contents of all registers in order to clear them prior to enabling
+	 * the receive and transmit channels."
+	 */
+
+	/*
+	 * Some addresses are read like the 4028h but it is not a stat
+	 * register.
+	 */
+	for (i = 0; i < NB_STAT_REG; ++i)
+		e1000_read_register(data, CRCERRS_REG + (i * 4));
+
+
+}
+
+static void uninit_hw(struct net_device* dev)
+{
+}
+
+static void init_queue(struct net_device* dev)
+{
+	t_e1000_data* data;
+	uint32_t phys;
+	int i;
+
+	data = netdev_priv(dev);
+
+	/*
+	 * use NB_RCV_DESC with BUF_SIZE_BY_DESC size
+	 * for each
+	 */
+
+	data->recv.descriptors = kmalloc(sizeof(*data->recv.descriptors) * NB_RCV_DESC,
+			GFP_KERNEL);
+
+	if (((uint32_t)data->recv.descriptors) % 16)
+	{
+		printk(KERN_ERR "Address non aligned, reboot :(");
+		return ;
+	}
+
+	data->recv.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_RCV_DESC,
+			GFP_KERNEL);
+
+	memset(data->recv.descriptors, 0, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
+
+	phys = virt_to_phys((volatile void*)data->recv.buff);
+	/* init the buffer address for each descriptor */
+	for (i = 0; i < NB_RCV_DESC; ++i)
+		data->recv.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
+
+	phys = virt_to_phys(data->recv.descriptors);
+
+	/* Initialize the ring buffer (address, len, head, tail) */
+	e1000_set_register(data, RDBAL_REG, phys);
+	e1000_set_register(data, RDBAH_REG, 0);
+	e1000_set_register(data, RDLEN_REG, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
+	e1000_set_register(data, RDH_REG, 0);
+	e1000_set_register(data, RDT_REG, NB_RCV_DESC - 1);
+
+	/* Set the size of the buffer in control register */
+	e1000_unset_register_preserve(data, CTRL_REG, CTRL_BSEX);
+	e1000_unset_register_preserve(data, CTRL_REG, CTRL_BSIZE_CLR);
+	e1000_set_register_preserve(data, CTRL_REG, CTRL_BSIZE_2048);
+
+	/* enable receiving */
+	e1000_set_register_preserve(data, CTRL_REG, CTRL_ENABLE);
+
+}
+
+static void uninit_queue(struct net_device* dev)
+{
+	t_e1000_data* data;
+
+	data = netdev_priv(dev);
+	e1000_unset_register_preserve(data, CTRL_REG, CTRL_ENABLE);
+	kfree((void*)data->recv.buff);
+	kfree(data->recv.descriptors);
 }
 
 static int register_hw(struct pci_dev *dev)
