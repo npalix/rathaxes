@@ -182,12 +182,12 @@ static void init_queue(struct net_device* dev)
 	e1000_set_register(data, RDT_REG, NB_RCV_DESC - 1);
 
 	/* Set the size of the buffer in control register */
-	e1000_unset_register_preserve(data, CTRL_REG, CTRL_BSEX);
-	e1000_unset_register_preserve(data, CTRL_REG, CTRL_BSIZE_CLR);
-	e1000_set_register_preserve(data, CTRL_REG, CTRL_BSIZE_2048);
+	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSEX);
+	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSIZE_CLR);
+	e1000_set_register_preserve(data,   RCTL_REG, RCTL_BSIZE_2048);
 
 	/* enable receiving */
-	e1000_set_register_preserve(data, CTRL_REG, CTRL_ENABLE);
+	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);
 
 }
 
@@ -196,7 +196,7 @@ static void uninit_queue(struct net_device* dev)
 	t_e1000_data* data;
 
 	data = netdev_priv(dev);
-	e1000_unset_register_preserve(data, CTRL_REG, CTRL_ENABLE);
+	e1000_unset_register_preserve(data, RCTL_REG, RCTL_ENABLE);
 	kfree((void*)data->recv.buff);
 	kfree(data->recv.descriptors);
 }
