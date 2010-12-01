@@ -11,12 +11,26 @@ struct s_receive_descriptor
 	uint8_t		status;
 	uint8_t		errors;
 	uint16_t	special;
+};
 
+struct s_transmit_descriptor
+{
+	uint32_t	address_l;
+	uint32_t	address_h;
+	uint16_t	length;
+	uint16_t	checksum_offset;
+	uint8_t		command;
+	uint8_t		status;
+	uint8_t		checksum_start;
+	uint8_t		reserved;
+	uint16_t	special;
 };
 
 typedef struct s_receive_descriptor t_recv_desc;
+typedef struct s_transmit_descriptor t_send_desc;
 
 # define NB_RCV_DESC		512
+# define NB_SND_DESC		512
 # define BUF_SIZE_BY_DESC	2048
 struct s_e1000_data
 {
@@ -27,6 +41,12 @@ struct s_e1000_data
 	 t_recv_desc*	descriptors;
 	 uint32_t	buff;
   } recv;
+
+  struct
+  {
+	 t_send_desc*	descriptors;
+	 uint32_t	buff;
+  } send;
 };
 
 typedef struct s_e1000_data t_e1000_data;
@@ -48,6 +68,12 @@ enum e_register
 	RDH_REG		= 0x02810,
 	RDT_REG		= 0x02818,
 	RCTL_REG	= 0x00100,
+	TCTL_REG	= 0x00400,
+	TDBAL_REG	= 0x03800,
+	TDBAH_REG	= 0x03804,
+	TDLEN_REG	= 0x03808,
+	TDH_REG		= 0x03810,
+	TDT_REG		= 0x03818,
 };
 
 enum e_register_value
@@ -64,6 +90,8 @@ enum e_register_value
 	RCTL_BSIZE_256	= (3 << 16),
 	RCTL_BSIZE_CLR	= (3 << 16),
 	RCTL_BSEX	= (1 << 25),
+	TCTL_ENABLE	= (1 << 1),
+	TCTL_PAD_PACK	= (1 << 3),
 };
 
 #include "e1000_reg_primitive.h"
