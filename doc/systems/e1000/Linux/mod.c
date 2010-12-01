@@ -270,6 +270,10 @@ static void e1000_set_mac_address(void)
 		mac_address[(i * 2) + 1] = (tmp & 0xFF00) >> 8;
 	}
 
+	e1000_set_register(data, RAL_REG, *(int32_t*)(&mac_address[0]));
+	e1000_set_register(data, RAH_REG, *(int16_t*)(&mac_address[4]));
+	e1000_set_register_preserve(data, RAH_REG, RAH_AV);
+
 	card->dev_addr = mac_address;
 }
 

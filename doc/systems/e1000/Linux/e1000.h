@@ -74,6 +74,8 @@ enum e_register
 	TDLEN_REG	= 0x03808,
 	TDH_REG		= 0x03810,
 	TDT_REG		= 0x03818,
+	RAL_REG		= 0x05400,
+	RAH_REG		= 0x05404
 };
 
 enum e_register_value
@@ -92,6 +94,7 @@ enum e_register_value
 	RCTL_BSEX	= (1 << 25),
 	TCTL_ENABLE	= (1 << 1),
 	TCTL_PAD_PACK	= (1 << 3),
+	RAH_AV		= (1 << 31),
 };
 
 #include "e1000_reg_primitive.h"
