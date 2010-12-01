@@ -16,12 +16,11 @@
 static int		e1000_open(struct net_device *dev);
 static int		e1000_close(struct net_device *dev);
 static void		e1000_set_mac_address(void);
-static netdev_tx_t 	e1000_start_xmit(struct sk_buff *skb,
-					 struct net_device *dev);
-static void init_hw(struct net_device* dev);
-static void uninit_hw(struct net_device* dev);
-static void init_queue(struct net_device* dev);
-static void uninit_queue(struct net_device* dev);
+static netdev_tx_t	e1000_start_xmit(struct sk_buff *skb, struct net_device *dev);
+static void		init_hw(struct net_device* dev);
+static void		uninit_hw(struct net_device* dev);
+static void		init_queue(struct net_device* dev);
+static void		uninit_queue(struct net_device* dev);
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
