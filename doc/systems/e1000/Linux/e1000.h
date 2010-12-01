@@ -34,7 +34,9 @@ typedef struct s_transmit_descriptor t_send_desc;
 # define BUF_SIZE_BY_DESC	2048
 struct s_e1000_data
 {
+  struct pci_dev* pci;
   uint32_t	bar;
+  uint32_t	irq;
 
   struct
   {
@@ -75,7 +77,8 @@ enum e_register
 	TDH_REG		= 0x03810,
 	TDT_REG		= 0x03818,
 	RAL_REG		= 0x05400,
-	RAH_REG		= 0x05404
+	RAH_REG		= 0x05404,
+	IMS_REG		= 0x000D0,
 };
 
 enum e_register_value
@@ -95,6 +98,11 @@ enum e_register_value
 	TCTL_ENABLE	= (1 << 1),
 	TCTL_PAD_PACK	= (1 << 3),
 	RAH_AV		= (1 << 31),
+	IMS_TXDW	= (1 << 0),
+	IMS_TXQE	= (1 << 1),
+	IMS_LSC		= (1 << 2),
+	IMS_RX0		= (1 << 6),
+	IMS_RXT0	= (1 << 7),
 };
 
 #include "e1000_reg_primitive.h"
