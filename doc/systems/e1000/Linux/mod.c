@@ -227,8 +227,11 @@ static void uninit_queue(struct net_device* dev)
 
 	data = netdev_priv(dev);
 	e1000_unset_register_preserve(data, RCTL_REG, RCTL_ENABLE);
+	e1000_unset_register_preserve(data, TCTL_REG, TCTL_ENABLE);
 	kfree((void*)data->recv.buff);
 	kfree(data->recv.descriptors);
+	kfree((void*)data->send.buff);
+	kfree(data->send.descriptors);
 }
 
 static int register_hw(struct pci_dev *dev)
