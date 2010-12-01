@@ -189,6 +189,37 @@ static void init_queue(struct net_device* dev)
 	/* enable receiving */
 	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);
 
+
+	/*** TRANSMISSION SETUP ***/
+
+	data->send.descriptors = kmalloc(sizeof(*data->send.descriptors) * NB_SND_DESC,
+			GFP_KERNEL);
+
+	if (((uint32_t)data->send.descriptors) % 16)
+	{
+		printk(KERN_ERR "Address non aligned, reboot :(");
+		return ;
+	}
+
+	data->send.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_SND_DESC,
+			GFP_KERNEL);
+
+	memset(data->send.descriptors, 0, sizeof(*data->send.descriptors) * NB_SND_DESC);
+
+	phys = virt_to_phys((volatile void*)data->send.buff);
+	/* init the buffer address for each descriptor */
+	for (i = 0; i < NB_SND_DESC; ++i)
+		data->send.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
+
+	phys = virt_to_phys(data->send.descriptors);
+	e1000_set_register(data, TDBAL_REG, phys);
+	e1000_set_register(data, TDBAH_REG, 0);
+	e1000_set_register(data, TDLEN_REG, sizeof(*data->send.descriptors) * NB_SND_DESC);
+	e1000_set_register(data, TDH_REG, 0);
+	e1000_set_register(data, TDT_REG, NB_SND_DESC - 1);
+
+	/* enable transmitting */
+	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK);
 }
 
 static void uninit_queue(struct net_device* dev)
