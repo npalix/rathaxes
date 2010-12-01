@@ -17,10 +17,13 @@ static int		e1000_open(struct net_device *dev);
 static int		e1000_close(struct net_device *dev);
 static void		e1000_set_mac_address(void);
 static netdev_tx_t	e1000_start_xmit(struct sk_buff *skb, struct net_device *dev);
+static int		init_interrupt(struct net_device* dev);
+static void		uninit_interrupt(struct net_device* dev);
 static void		init_hw(struct net_device* dev);
 static void		uninit_hw(struct net_device* dev);
-static void		init_queue(struct net_device* dev);
+static int		init_queue(struct net_device* dev);
 static void		uninit_queue(struct net_device* dev);
+irqreturn_t		handler(int irq, void* dev_id);
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
@@ -38,16 +41,29 @@ static const struct net_device_ops e1000_ops = {
 //  .ndo_set_mac_address                = not_implemented_fct,
 };
 
+irqreturn_t	handler(int irq, void* dev_id)
+{
+	printk(KERN_ERR "IRQ HANDLER\n");
+	return IRQ_HANDLED;
+}
+
 static int e1000_open(struct net_device *dev)
 {
 	t_e1000_data *data;
+	int ret;
 
 	printk(KERN_ERR "Open the e1000 card\n");
-	e1000_set_mac_address();
 
 	data = netdev_priv(dev);
+
 	init_hw(dev);
-	init_queue(dev);
+	e1000_set_mac_address();
+	if ((ret = init_queue(dev)))
+		return ret;
+
+	if ((ret = init_interrupt(dev)))
+		return ret;
+
 
 	netif_start_queue(dev);
 	return 0;
@@ -57,9 +73,47 @@ static int e1000_close(struct net_device *dev)
 {
 	printk(KERN_ERR "Close the e1000 card\n");
 	netif_stop_queue(dev);
+	uninit_interrupt(dev);
 	uninit_queue(dev);
 	uninit_hw(dev);
 	return 0;
+}
+
+static int init_interrupt(struct net_device* dev)
+{
+	t_e1000_data *data;
+	int ret;
+
+	data = netdev_priv(dev);
+
+	ret = request_irq(data->irq,
+			  handler,
+			  IRQF_SHARED,
+			  "e1000_driver",
+			  data);
+
+	if (!ret) {
+		e1000_set_register(data, IMS_REG,
+				IMS_TXDW |
+				IMS_TXQE |
+				IMS_LSC  |
+				IMS_RX0  |
+				IMS_RXT0);
+	}
+
+	if (ret) {
+		printk(KERN_ERR "Not registered interrupt\n");
+	}
+
+	return ret;
+}
+
+static void uninit_interrupt(struct net_device* dev)
+{
+	t_e1000_data *data;
+
+	data = netdev_priv(dev);
+	free_irq(data->irq, data);
 }
 
 static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
@@ -139,7 +193,7 @@ static void uninit_hw(struct net_device* dev)
 {
 }
 
-static void init_queue(struct net_device* dev)
+static int init_queue(struct net_device* dev)
 {
 	t_e1000_data* data;
 	uint32_t phys;
@@ -158,11 +212,14 @@ static void init_queue(struct net_device* dev)
 	if (((uint32_t)data->recv.descriptors) % 16)
 	{
 		printk(KERN_ERR "Address non aligned, reboot :(");
-		return ;
+		return -EFAULT;
 	}
 
 	data->recv.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_RCV_DESC,
 			GFP_KERNEL);
+
+	if (!data->recv.descriptors || !data->recv.buff)
+		return -ENOMEM;
 
 	memset(data->recv.descriptors, 0, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
 
@@ -197,12 +254,14 @@ static void init_queue(struct net_device* dev)
 	if (((uint32_t)data->send.descriptors) % 16)
 	{
 		printk(KERN_ERR "Address non aligned, reboot :(");
-		return ;
+		return -EFAULT;
 	}
 
 	data->send.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_SND_DESC,
 			GFP_KERNEL);
 
+	if (!data->send.descriptors || !data->send.buff)
+		return -ENOMEM;
 	memset(data->send.descriptors, 0, sizeof(*data->send.descriptors) * NB_SND_DESC);
 
 	phys = virt_to_phys((volatile void*)data->send.buff);
@@ -219,6 +278,8 @@ static void init_queue(struct net_device* dev)
 
 	/* enable transmitting */
 	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK);
+
+	return 0;
 }
 
 static void uninit_queue(struct net_device* dev)
@@ -334,8 +395,10 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 	}
 
 	data = netdev_priv(card);
+	memset(data, 0, sizeof(*data));
 	data->bar = (u32) pci_ioremap_bar(dev, 0);
-
+	data->pci = dev;
+	data->irq = interrupt;
 	return 0;
 }
 
