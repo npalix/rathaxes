@@ -38,6 +38,9 @@ struct s_e1000_data
   struct net_device* netdev;
   uint32_t	bar;
   uint32_t	irq;
+  struct tasklet_struct intr_tasklet;
+
+  int waiting_intr;
 
   struct
   {
