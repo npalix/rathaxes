@@ -56,8 +56,11 @@ irqreturn_t	handler(int irq, void* dev_id)
 	intr = e1000_read_register(data, ICR_REG);
 
 	if (!intr) {
+		printk(KERN_ERR "There isn't interrupt to process\n");
 		return IRQ_NONE;
 	}
+
+	printk(KERN_ERR "There is interrupt to process\n");
 
 	data->waiting_intr |= intr;
 	tasklet_schedule(&data->intr_tasklet);
