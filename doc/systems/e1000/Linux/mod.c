@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/pci.h>
+#include <linux/interrupt.h>
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -25,6 +26,8 @@ static int		init_queue(struct net_device* dev);
 static void		uninit_queue(struct net_device* dev);
 static void		e1000_read(struct net_device* dev);
 irqreturn_t		handler(int irq, void* dev_id);
+static void		intr_task(unsigned long pdata);
+
 
 static struct net_device *card = NULL;
 static unsigned char mac_address[MAX_ADDR_LEN];
@@ -47,30 +50,47 @@ irqreturn_t	handler(int irq, void* dev_id)
 	t_e1000_data* data;
 	uint32_t intr;
 
+	printk(KERN_ERR "INTERRUPT HANDLER\n");
 
-	printk(KERN_ERR "IRQ HANDLER\n");
 	data = dev_id;
-
 	intr = e1000_read_register(data, ICR_REG);
 
 	if (!intr) {
 		return IRQ_NONE;
 	}
 
-	if (intr & (IMS_RX0 | IMS_RXT0))
-	{
-		e1000_read(data->netdev);
-	}
+	data->waiting_intr |= intr;
+	tasklet_schedule(&data->intr_tasklet);
 
-	if (intr & (IMS_TXDW | IMS_TXQE))
-	{
-	}
-
-	if (intr & (IMS_LSC))
-	{
-	}
 
 	return IRQ_HANDLED;
+}
+
+static void intr_task(unsigned long pdata)
+{
+	t_e1000_data *data;
+	struct net_device* dev = (struct net_device*) pdata;
+
+	dev = card;
+
+	printk(KERN_ERR "coucou Tasklet\n");
+
+	data = netdev_priv(dev);
+
+	if (!data->waiting_intr)
+		return ;
+
+	if (data->waiting_intr & (IMS_RX0 | IMS_RXT0)) {
+		e1000_read(dev);
+	}
+
+	if (data->waiting_intr & (IMS_TXDW | IMS_TXQE)) {
+	}
+
+	if (data->waiting_intr & (IMS_LSC)) {
+	}
+
+	data->waiting_intr = 0;
 }
 
 static int e1000_open(struct net_device *dev)
@@ -112,6 +132,8 @@ static int init_interrupt(struct net_device* dev)
 
 	data = netdev_priv(dev);
 
+	tasklet_init(&data->intr_tasklet, intr_task, (unsigned long)dev);
+
 	ret = request_irq(data->irq,
 			  handler,
 			  IRQF_SHARED,
@@ -139,6 +161,7 @@ static void uninit_interrupt(struct net_device* dev)
 
 	data = netdev_priv(dev);
 	free_irq(data->irq, data);
+	tasklet_disable(&data->intr_tasklet);
 }
 
 static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
@@ -177,6 +200,7 @@ static void e1000_read(struct net_device* dev)
 	const char* buff;
 	struct sk_buff *skb;
 
+	printk(KERN_ERR "Read a packet\n");
 	data = netdev_priv(dev);
 	tail = e1000_read_register(data, RDT_REG);
 	tail = (tail + 1) % NB_RCV_DESC;
@@ -184,7 +208,7 @@ static void e1000_read(struct net_device* dev)
 
 	if (!(desc->status & RX_EOP))
 	{
-		// no packet to handle
+		printk(KERN_WARNING "No packet to read\n");
 		return ;
 	}
 
