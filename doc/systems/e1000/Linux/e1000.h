@@ -83,7 +83,7 @@ enum e_register
 	RAL_REG		= 0x05400,
 	RAH_REG		= 0x05404,
 	IMS_REG		= 0x000D0,
-	ICR_REG		= 0x000D8,
+	ICR_REG		= 0x000C0,
 };
 
 enum e_register_value
