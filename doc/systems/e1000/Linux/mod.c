@@ -23,6 +23,7 @@ static void		init_hw(struct net_device* dev);
 static void		uninit_hw(struct net_device* dev);
 static int		init_queue(struct net_device* dev);
 static void		uninit_queue(struct net_device* dev);
+static void		e1000_read(struct net_device* dev);
 irqreturn_t		handler(int irq, void* dev_id);
 
 static struct net_device *card = NULL;
@@ -43,7 +44,32 @@ static const struct net_device_ops e1000_ops = {
 
 irqreturn_t	handler(int irq, void* dev_id)
 {
+	t_e1000_data* data;
+	uint32_t intr;
+
+
 	printk(KERN_ERR "IRQ HANDLER\n");
+	data = dev_id;
+
+	intr = e1000_read_register(data, ICR_REG);
+
+	if (!intr) {
+		return IRQ_NONE;
+	}
+
+	if (intr & (IMS_RX0 | IMS_RXT0))
+	{
+		e1000_read(data->netdev);
+	}
+
+	if (intr & (IMS_TXDW | IMS_TXQE))
+	{
+	}
+
+	if (intr & (IMS_LSC))
+	{
+	}
+
 	return IRQ_HANDLED;
 }
 
@@ -100,8 +126,7 @@ static int init_interrupt(struct net_device* dev)
 				IMS_RX0  |
 				IMS_RXT0);
 	}
-
-	if (ret) {
+	else {
 		printk(KERN_ERR "Not registered interrupt\n");
 	}
 
@@ -118,8 +143,67 @@ static void uninit_interrupt(struct net_device* dev)
 
 static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
+	t_e1000_data* data;
+	uint32_t tail;
+	uint32_t* buff;
+	t_send_desc* tail_desc;
+
+
 	printk(KERN_WARNING "e1000_start_xmit called\n");
+
+	data = netdev_priv(dev);
+	tail = e1000_read_register(data, TDT_REG);
+
+	tail_desc = data->send.descriptors + tail;
+	buff = phys_to_virt((phys_addr_t)tail_desc->address_l);
+	memcpy(buff, skb->data, skb->len);
+	tail_desc->length = skb->len;
+	tail_desc->command = 0;
+	tail_desc->status = 0;
+
+	tail = (tail + 1) % NB_SND_DESC;
+
+	e1000_set_register(data, TDT_REG, tail);
+
+
 	return NETDEV_TX_OK;
+}
+
+static void e1000_read(struct net_device* dev)
+{
+	t_e1000_data *data;
+	uint32_t tail;
+	t_recv_desc* desc;
+	const char* buff;
+	struct sk_buff *skb;
+
+	data = netdev_priv(dev);
+	tail = e1000_read_register(data, RDT_REG);
+	tail = (tail + 1) % NB_RCV_DESC;
+	desc = data->recv.descriptors + tail;
+
+	if (!(desc->status & RX_EOP))
+	{
+		// no packet to handle
+		return ;
+	}
+
+	buff = phys_to_virt(desc->address_l);
+	skb = dev_alloc_skb(desc->length);
+
+	if (!skb) {
+		if (printk_ratelimit())
+			printk(KERN_ERR "Could not allocate socket buffer\n");
+		return ;
+	}
+
+	memcpy(skb_put(skb, desc->length), buff, desc->length);
+	skb->dev = dev;
+	skb->protocol = eth_type_trans(skb, dev);
+	skb->ip_summed = CHECKSUM_UNNECESSARY;
+
+	e1000_set_register(data, RDT_REG, tail);
+	netif_rx(skb);
 }
 
 static void init_hw(struct net_device* dev)
@@ -361,25 +445,8 @@ MODULE_DEVICE_TABLE(pci, supported_cards);
 
 static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
-	u32 addr;
-	u8 revision;
-	u8 interrupt;
 	int err;
 	t_e1000_data *data;
-
-	printk(KERN_WARNING "PROB function called\n");
-
-	pci_read_config_byte(dev, PCI_REVISION_ID, &revision);
-	printk(KERN_WARNING "Revision: %x\n", (u32) revision);
-
-	pci_read_config_byte(dev, PCI_INTERRUPT_LINE, &interrupt);
-	printk(KERN_WARNING "Interrupt number used: %i\n", (u32) interrupt);
-
-	pci_read_config_dword(dev, PCI_ROM_ADDRESS, &addr);
-	printk(KERN_WARNING "Rom address: %x\n", addr);
-
-	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &addr);
-	printk(KERN_WARNING "BAR0: %x\n", addr);
 
 	if ((err = register_hw(dev))) {
 		printk(KERN_ERR "An error occured when registering e1000 driver\n");
@@ -397,8 +464,9 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 	data = netdev_priv(card);
 	memset(data, 0, sizeof(*data));
 	data->bar = (u32) pci_ioremap_bar(dev, 0);
+	data->netdev = card;
 	data->pci = dev;
-	data->irq = interrupt;
+	data->irq = dev->irq; // interrupt;
 	return 0;
 }
 

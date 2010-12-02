@@ -35,6 +35,7 @@ typedef struct s_transmit_descriptor t_send_desc;
 struct s_e1000_data
 {
   struct pci_dev* pci;
+  struct net_device* netdev;
   uint32_t	bar;
   uint32_t	irq;
 
@@ -79,6 +80,7 @@ enum e_register
 	RAL_REG		= 0x05400,
 	RAH_REG		= 0x05404,
 	IMS_REG		= 0x000D0,
+	ICR_REG		= 0x000D8,
 };
 
 enum e_register_value
@@ -103,6 +105,11 @@ enum e_register_value
 	IMS_LSC		= (1 << 2),
 	IMS_RX0		= (1 << 6),
 	IMS_RXT0	= (1 << 7),
+};
+
+enum e_rx_status
+{
+	RX_EOP		= (1 << 1),
 };
 
 #include "e1000_reg_primitive.h"
