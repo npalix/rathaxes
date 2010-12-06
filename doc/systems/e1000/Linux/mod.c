@@ -526,6 +526,7 @@ void remove(struct pci_dev *dev)
 	printk(KERN_WARNING "remove called\n");
 	unload_hw();
 	pci_release_region(dev, 0);
+	pci_disable_device(dev);
 }
 
 static struct pci_driver e1000_driver = {
