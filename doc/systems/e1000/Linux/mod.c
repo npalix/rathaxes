@@ -250,6 +250,8 @@ static void init_hw(struct net_device* dev)
 
 	data = netdev_priv(dev);
 
+	printk(KERN_ERR "Inititalize HW\n");
+
 	/* Take a look to the Intel Manual Developper
 	 * section: 14.3
 	 */
@@ -267,7 +269,7 @@ static void init_hw(struct net_device* dev)
 	 */
 
 	e1000_unset_register_preserve(data, CTRL_REG,
-			CTRL_RST);
+			CTRL_LRST);
 
 	e1000_unset_register_preserve(data, CTRL_REG,
 			CTRL_PHYRST);
@@ -315,6 +317,10 @@ static void init_hw(struct net_device* dev)
 
 static void uninit_hw(struct net_device* dev)
 {
+	t_e1000_data* data;
+
+	data = netdev_priv(dev);
+	e1000_set_register(data, CTRL_REG, CTRL_RST);
 }
 
 static int init_queue(struct net_device* dev)

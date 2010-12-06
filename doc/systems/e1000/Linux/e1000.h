@@ -89,9 +89,10 @@ enum e_register
 enum e_register_value
 {
 	CTRL_ASDE	= (1 << 5),
-	CTRL_RST	= (1 << 3),
+	CTRL_LRST	= (1 << 3),
 	CTRL_SLU	= (1 << 6),
 	CTRL_ILOS	= (1 << 7),
+	CTRL_RST	= (1 << 26),
 	CTRL_VMDE	= (1 << 30),
 	CTRL_PHYRST	= (1 << 31),
 	RCTL_ENABLE	= (1 << 1),
