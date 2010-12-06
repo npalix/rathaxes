@@ -112,6 +112,7 @@ enum e_register_value
 	RCTL_BSIZE_256	= (3 << 16),
 	RCTL_BSIZE_CLR	= (3 << 16),
 	RCTL_BSEX	= (1 << 25),
+	RCTL_MPE	= (1 << 4),
 	TCTL_ENABLE	= (1 << 1),
 	TCTL_PAD_PACK	= (1 << 3),
 	RAH_AV		= (1 << 31),
