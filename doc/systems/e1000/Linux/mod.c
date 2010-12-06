@@ -115,7 +115,6 @@ static int e1000_open(struct net_device *dev)
 	if ((ret = init_interrupt(dev)))
 		return ret;
 
-
 	netif_start_queue(dev);
 	return 0;
 }
@@ -336,37 +335,37 @@ static int init_queue(struct net_device* dev)
 	 * for each
 	 */
 
-	data->recv.descriptors = kmalloc(sizeof(*data->recv.descriptors) * NB_RCV_DESC,
-			GFP_KERNEL);
+	data->recv.size_desc = sizeof(*data->recv.descriptors) * NB_RCV_DESC;
+	data->recv.size_desc = ALIGN(data->recv.size_desc, 4096);
 
-	if (((uint32_t)data->recv.descriptors) % 16)
-	{
-		printk(KERN_ERR "Address non aligned, reboot :(");
-		return -EFAULT;
-	}
+	data->recv.descriptors = dma_alloc_coherent(&data->pci->dev,
+						    data->recv.size_desc,
+						    &data->recv.dma_desc,
+						    GFP_KERNEL);
 
-	data->recv.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_RCV_DESC,
-			GFP_KERNEL);
+
+	data->recv.size_buff = BUF_SIZE_BY_DESC * NB_RCV_DESC;
+	data->recv.size_buff = ALIGN(data->recv.size_desc, 4096);
+
+
+	data->recv.buff = dma_alloc_coherent(&data->pci->dev,
+					     data->recv.size_buff,
+					     &data->recv.dma_buff,
+					     GFP_KERNEL);
 
 	if (!data->recv.descriptors || !data->recv.buff)
 		return -ENOMEM;
 
-	memset(data->recv.descriptors, 0, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
-
-	phys = virt_to_phys((volatile void*)data->recv.buff);
-	printk(KERN_ERR "Phys: %p\n", phys);
+	memset(data->recv.descriptors, 0, data->recv.size_desc);
 
 	/* init the buffer address for each descriptor */
 	for (i = 0; i < NB_RCV_DESC; ++i)
-		data->recv.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
-
-	phys = virt_to_phys(data->recv.descriptors);
-	printk(KERN_ERR "Phys: %p\n", phys);
+		data->recv.descriptors[i].address_l = data->recv.dma_buff + (i * BUF_SIZE_BY_DESC);
 
 	/* Initialize the ring buffer (address, len, head, tail) */
-	e1000_set_register(data, RDBAL_REG, phys);
+	e1000_set_register(data, RDBAL_REG, data->recv.dma_desc);
 	e1000_set_register(data, RDBAH_REG, 0);
-	e1000_set_register(data, RDLEN_REG, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
+	e1000_set_register(data, RDLEN_REG, data->recv.size_desc);
 	e1000_set_register(data, RDH_REG, 0);
 	e1000_set_register(data, RDT_REG, NB_RCV_DESC - 1);
 
@@ -381,33 +380,33 @@ static int init_queue(struct net_device* dev)
 
 	/*** TRANSMISSION SETUP ***/
 
-	data->send.descriptors = kmalloc(sizeof(*data->send.descriptors) * NB_SND_DESC,
-			GFP_KERNEL);
+	data->send.size_desc = sizeof(*data->send.descriptors) * NB_SND_DESC;
+	data->send.size_desc = ALIGN(data->send.size_desc, 4096);
 
-	if (((uint32_t)data->send.descriptors) % 16)
-	{
-		printk(KERN_ERR "Address non aligned, reboot :(");
-		return -EFAULT;
-	}
+	data->send.descriptors = dma_alloc_coherent(&data->pci->dev,
+						    data->send.size_desc,
+						    &data->send.dma_desc,
+						    GFP_KERNEL);
 
-	data->send.buff = (uint32_t) kmalloc(BUF_SIZE_BY_DESC * NB_SND_DESC,
-			GFP_KERNEL);
+	data->send.size_buff = BUF_SIZE_BY_DESC * NB_SND_DESC;
+	data->send.size_buff = ALIGN(data->send.size_buff, 4096);
+
+	data->send.buff = dma_alloc_coherent(&data->pci->dev,
+					     data->send.size_buff,
+					     &data->send.dma_buff,
+					     GFP_KERNEL);
 
 	if (!data->send.descriptors || !data->send.buff)
 		return -ENOMEM;
-	memset(data->send.descriptors, 0, sizeof(*data->send.descriptors) * NB_SND_DESC);
+	memset(data->send.descriptors, 0, data->send.size_desc);
 
-	phys = virt_to_phys((volatile void*)data->send.buff);
-	printk(KERN_ERR "Phys: %p\n", phys);
 	/* init the buffer address for each descriptor */
 	for (i = 0; i < NB_SND_DESC; ++i)
-		data->send.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
+		data->send.descriptors[i].address_l = data->send.dma_buff + (i * BUF_SIZE_BY_DESC);
 
-	phys = virt_to_phys(data->send.descriptors);
-	printk(KERN_ERR "Phys: %p\n", phys);
-	e1000_set_register(data, TDBAL_REG, phys);
+	e1000_set_register(data, TDBAL_REG, data->send.dma_desc);
 	e1000_set_register(data, TDBAH_REG, 0);
-	e1000_set_register(data, TDLEN_REG, sizeof(*data->send.descriptors) * NB_SND_DESC);
+	e1000_set_register(data, TDLEN_REG, data->send.size_desc);
 	e1000_set_register(data, TDH_REG, 0);
 	e1000_set_register(data, TDT_REG, 0);
 
@@ -424,10 +423,26 @@ static void uninit_queue(struct net_device* dev)
 	data = netdev_priv(dev);
 	e1000_unset_register_preserve(data, RCTL_REG, RCTL_ENABLE);
 	e1000_unset_register_preserve(data, TCTL_REG, TCTL_ENABLE);
-	kfree((void*)data->recv.buff);
-	kfree(data->recv.descriptors);
-	kfree((void*)data->send.buff);
-	kfree(data->send.descriptors);
+
+	dma_free_coherent(&data->pci->dev,
+			  data->recv.size_desc,
+			  data->recv.descriptors,
+			  data->recv.dma_desc);
+
+	dma_free_coherent(&data->pci->dev,
+			  data->recv.size_buff,
+			  data->recv.buff,
+			  data->recv.dma_buff);
+
+	dma_free_coherent(&data->pci->dev,
+			  data->send.size_desc,
+			  data->send.descriptors,
+			  data->send.dma_desc);
+
+	dma_free_coherent(&data->pci->dev,
+			  data->send.size_buff,
+			  data->send.buff,
+			  data->send.dma_buff);
 }
 
 static int register_hw(struct pci_dev *dev)
