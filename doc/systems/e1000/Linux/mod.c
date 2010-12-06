@@ -322,8 +322,12 @@ static int init_queue(struct net_device* dev)
 {
 	t_e1000_data* data;
 	int i;
+	int err;
 
 	data = netdev_priv(dev);
+
+	if ((err = dma_set_mask(&data->pci->dev, DMA_BIT_MASK(32))))
+		return err;
 
 	/*
 	 * use NB_RCV_DESC with BUF_SIZE_BY_DESC size
