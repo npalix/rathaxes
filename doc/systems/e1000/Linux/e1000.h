@@ -21,8 +21,8 @@ struct s_transmit_descriptor
 	uint16_t	checksum_offset;
 	uint8_t		command;
 	uint8_t		status;
+//	uint8_t		reserved;
 	uint8_t		checksum_start;
-	uint8_t		reserved;
 	uint16_t	special;
 };
 
@@ -91,6 +91,7 @@ enum e_register_value
 	CTRL_ASDE	= (1 << 5),
 	CTRL_RST	= (1 << 3),
 	CTRL_SLU	= (1 << 6),
+	CTRL_ILOS	= (1 << 7),
 	CTRL_VMDE	= (1 << 30),
 	CTRL_PHYRST	= (1 << 31),
 	RCTL_ENABLE	= (1 << 1),
@@ -113,6 +114,13 @@ enum e_register_value
 enum e_rx_status
 {
 	RX_EOP		= (1 << 1),
+};
+
+enum e_tx_command
+{
+	TX_EOP		= (1 << 0),
+	TX_IFCS		= (1 << 1),
+	TX_RS		= (1 << 3),
 };
 
 #include "e1000_reg_primitive.h"

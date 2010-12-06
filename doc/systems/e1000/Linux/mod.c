@@ -88,9 +88,11 @@ static void intr_task(unsigned long pdata)
 	}
 
 	if (data->waiting_intr & (IMS_TXDW | IMS_TXQE)) {
+		printk(KERN_ERR "Packet has been sent or the transmit queue is empty\n");
 	}
 
 	if (data->waiting_intr & (IMS_LSC)) {
+		printk(KERN_ERR "The link status changed\n");
 	}
 
 	data->waiting_intr = 0;
@@ -183,8 +185,10 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	tail_desc = data->send.descriptors + tail;
 	buff = phys_to_virt((phys_addr_t)tail_desc->address_l);
 	memcpy(buff, skb->data, skb->len);
+	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tBuff(Phys): %p\n\tBuff: %p\n\tLen: %i\n",
+			tail, tail_desc->address_l, buff, skb->len);
 	tail_desc->length = skb->len;
-	tail_desc->command = 0;
+	tail_desc->command = (TX_EOP | TX_IFCS);
 	tail_desc->status = 0;
 
 	tail = (tail + 1) % NB_SND_DESC;
@@ -208,6 +212,12 @@ static void e1000_read(struct net_device* dev)
 	tail = e1000_read_register(data, RDT_REG);
 	tail = (tail + 1) % NB_RCV_DESC;
 	desc = data->recv.descriptors + tail;
+
+	printk(KERN_ERR "Tail: %i\n", tail);
+
+	int i = 0;
+	for (; i < NB_RCV_DESC; ++i)
+		printk(KERN_ERR "Status of: %i: %i\n", i, data->recv.descriptors[i].status);
 
 	if (!(desc->status & RX_EOP))
 	{
@@ -250,7 +260,7 @@ static void init_hw(struct net_device* dev)
 	 */
 
 	e1000_set_register_preserve(data, CTRL_REG,
-			CTRL_ASDE| CTRL_SLU);
+			CTRL_ASDE | CTRL_SLU);
 
 	/*
 	 * Activate automatic negociation
@@ -262,14 +272,17 @@ static void init_hw(struct net_device* dev)
 	e1000_unset_register_preserve(data, CTRL_REG,
 			CTRL_PHYRST);
 
+	/* Invert Los  of signal */
+	e1000_unset_register_preserve(data, CTRL_REG, CTRL_ILOS);
+
 	/*
 	 * Desactivate flow control
 	 */
 
-	e1000_unset_register(data, FCAL_REG,  0);
-	e1000_unset_register(data, FCAH_REG,  0);
-	e1000_unset_register(data, FCT_REG,   0);
-	e1000_unset_register(data, FCTTV_REG, 0);
+	e1000_set_register(data, FCAL_REG,  0);
+	e1000_set_register(data, FCAH_REG,  0);
+	e1000_set_register(data, FCT_REG,   0);
+	e1000_set_register(data, FCTTV_REG, 0);
 
 	/*
 	 * Do no support 802.1q vlan
@@ -335,11 +348,14 @@ static int init_queue(struct net_device* dev)
 	memset(data->recv.descriptors, 0, sizeof(*data->recv.descriptors) * NB_RCV_DESC);
 
 	phys = virt_to_phys((volatile void*)data->recv.buff);
+	printk(KERN_ERR "Phys: %p\n", phys);
+
 	/* init the buffer address for each descriptor */
 	for (i = 0; i < NB_RCV_DESC; ++i)
 		data->recv.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
 
 	phys = virt_to_phys(data->recv.descriptors);
+	printk(KERN_ERR "Phys: %p\n", phys);
 
 	/* Initialize the ring buffer (address, len, head, tail) */
 	e1000_set_register(data, RDBAL_REG, phys);
@@ -376,16 +392,18 @@ static int init_queue(struct net_device* dev)
 	memset(data->send.descriptors, 0, sizeof(*data->send.descriptors) * NB_SND_DESC);
 
 	phys = virt_to_phys((volatile void*)data->send.buff);
+	printk(KERN_ERR "Phys: %p\n", phys);
 	/* init the buffer address for each descriptor */
 	for (i = 0; i < NB_SND_DESC; ++i)
 		data->send.descriptors[i].address_l = phys + (i * BUF_SIZE_BY_DESC);
 
 	phys = virt_to_phys(data->send.descriptors);
+	printk(KERN_ERR "Phys: %p\n", phys);
 	e1000_set_register(data, TDBAL_REG, phys);
 	e1000_set_register(data, TDBAH_REG, 0);
 	e1000_set_register(data, TDLEN_REG, sizeof(*data->send.descriptors) * NB_SND_DESC);
 	e1000_set_register(data, TDH_REG, 0);
-	e1000_set_register(data, TDT_REG, NB_SND_DESC - 1);
+	e1000_set_register(data, TDT_REG, 0);
 
 	/* enable transmitting */
 	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK);

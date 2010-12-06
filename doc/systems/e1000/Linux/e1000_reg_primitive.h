@@ -37,12 +37,4 @@ void e1000_unset_register_preserve(t_e1000_data* data, enum e_register reg, uint
 	*e1000_get_register(data, reg) = old & ~value;
 }
 
-static inline
-void e1000_unset_register(t_e1000_data* data, enum e_register reg, uint32_t value)
-{
-	*e1000_get_register(data, reg) = ~value;
-}
-
-
-
 #endif
