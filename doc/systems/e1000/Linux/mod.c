@@ -172,7 +172,6 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	t_e1000_data* data;
 	uint32_t tail;
-	uint32_t* buff;
 	t_send_desc* tail_desc;
 
 
@@ -182,10 +181,9 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	tail = e1000_read_register(data, TDT_REG);
 
 	tail_desc = data->send.descriptors + tail;
-	buff = phys_to_virt((phys_addr_t)tail_desc->address_l);
-	memcpy(buff, skb->data, skb->len);
-	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tBuff(Phys): %p\n\tBuff: %p\n\tLen: %i\n",
-			tail, tail_desc->address_l, buff, skb->len);
+	memcpy((void*)((uint32_t)data->send.buff + (tail * BUF_SIZE_BY_DESC)), skb->data, skb->len);
+	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tLen: %i\n",
+			tail, skb->len);
 	tail_desc->length = skb->len;
 	tail_desc->command = (TX_EOP | TX_IFCS);
 	tail_desc->status = 0;
@@ -203,8 +201,8 @@ static void e1000_read(struct net_device* dev)
 	t_e1000_data *data;
 	uint32_t tail;
 	t_recv_desc* desc;
-	const char* buff;
 	struct sk_buff *skb;
+	int i = 0;
 
 	printk(KERN_ERR "Read a packet\n");
 	data = netdev_priv(dev);
@@ -214,7 +212,6 @@ static void e1000_read(struct net_device* dev)
 
 	printk(KERN_ERR "Tail: %i\n", tail);
 
-	int i = 0;
 	for (; i < NB_RCV_DESC; ++i)
 		printk(KERN_ERR "Status of: %i: %i\n", i, data->recv.descriptors[i].status);
 
@@ -224,7 +221,6 @@ static void e1000_read(struct net_device* dev)
 		return ;
 	}
 
-	buff = phys_to_virt(desc->address_l);
 	skb = dev_alloc_skb(desc->length);
 
 	if (!skb) {
@@ -233,7 +229,7 @@ static void e1000_read(struct net_device* dev)
 		return ;
 	}
 
-	memcpy(skb_put(skb, desc->length), buff, desc->length);
+	memcpy(skb_put(skb, desc->length), (const void*)((uint32_t)data->recv.buff + (tail * BUF_SIZE_BY_DESC)), desc->length);
 	skb->dev = dev;
 	skb->protocol = eth_type_trans(skb, dev);
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
@@ -325,7 +321,6 @@ static void uninit_hw(struct net_device* dev)
 static int init_queue(struct net_device* dev)
 {
 	t_e1000_data* data;
-	uint32_t phys;
 	int i;
 
 	data = netdev_priv(dev);
