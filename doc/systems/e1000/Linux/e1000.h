@@ -29,8 +29,8 @@ struct s_transmit_descriptor
 typedef struct s_receive_descriptor t_recv_desc;
 typedef struct s_transmit_descriptor t_send_desc;
 
-# define NB_RCV_DESC		512
-# define NB_SND_DESC		512
+# define NB_RCV_DESC		256
+# define NB_SND_DESC		256
 # define BUF_SIZE_BY_DESC	2048
 struct s_e1000_data
 {
@@ -45,13 +45,23 @@ struct s_e1000_data
   struct
   {
 	 t_recv_desc*	descriptors;
-	 uint32_t	buff;
+	 dma_addr_t	dma_desc;
+	 uint32_t	size_desc;
+
+	 void*		buff;
+	 dma_addr_t	dma_buff;
+	 uint32_t	size_buff;
   } recv;
 
   struct
   {
 	 t_send_desc*	descriptors;
-	 uint32_t	buff;
+	 dma_addr_t	dma_desc;
+	 uint32_t	size_desc;
+
+	 void*		buff;
+	 dma_addr_t	dma_buff;
+	 uint32_t	size_buff;
   } send;
 };
 
