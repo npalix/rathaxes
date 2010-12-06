@@ -185,7 +185,7 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tLen: %i\n",
 			tail, skb->len);
 	tail_desc->length = skb->len;
-	tail_desc->command = (TX_EOP | TX_IFCS);
+	tail_desc->command = (TX_EOP | TX_IFCS | TX_RS);
 	tail_desc->status = 0;
 
 	tail = (tail + 1) % NB_SND_DESC;
@@ -212,8 +212,8 @@ static void e1000_read(struct net_device* dev)
 
 	printk(KERN_ERR "Tail: %i\n", tail);
 
-	for (; i < NB_RCV_DESC; ++i)
-		printk(KERN_ERR "Status of: %i: %i\n", i, data->recv.descriptors[i].status);
+	// for (; i < NB_RCV_DESC; ++i)
+	// 	printk(KERN_ERR "Status of: %i: %i\n", i, data->recv.descriptors[i].status);
 
 	if (!(desc->status & RX_EOP))
 	{
@@ -372,6 +372,9 @@ static int init_queue(struct net_device* dev)
 	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSEX);
 	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSIZE_CLR);
 	e1000_set_register_preserve(data,   RCTL_REG, RCTL_BSIZE_2048);
+
+	/* Activate Multi Promiscuous mode */
+	e1000_set_register_preserve(data, RCTL_REG, RCTL_MPE);
 
 	/* enable receiving */
 	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);
