@@ -181,10 +181,10 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	tail = e1000_read_register(data, TDT_REG);
 
 	tail_desc = data->send.descriptors + tail;
-	memcpy((void*)((uint32_t)data->send.buff + (tail * BUF_SIZE_BY_DESC)), skb->data, skb->len);
+	memcpy((void*)((uint32_t)data->send.buff + (tail * BUF_SIZE_BY_DESC)), skb->data, skb->data_len);
 	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tLen: %i\n",
 			tail, skb->len);
-	tail_desc->length = skb->len;
+	tail_desc->length = skb->data_len;
 	tail_desc->command = (TX_EOP | TX_IFCS | TX_RS);
 	tail_desc->status = 0;
 
