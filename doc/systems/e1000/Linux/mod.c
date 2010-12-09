@@ -84,6 +84,7 @@ static void intr_task(unsigned long pdata)
 		return ;
 
 	if (data->waiting_intr & (IMS_RX0 | IMS_RXT0)) {
+		printk(KERN_ERR "Packet received\n");
 		e1000_read(dev);
 	}
 
@@ -108,13 +109,17 @@ static int e1000_open(struct net_device *dev)
 	data = netdev_priv(dev);
 
 	init_hw(dev);
+	printk(KERN_ERR "Set mac address\n");
 	e1000_set_mac_address();
+	printk(KERN_ERR "Init queues\n");
 	if ((ret = init_queue(dev)))
 		return ret;
 
+	printk(KERN_ERR "Init interrupt\n");
 	if ((ret = init_interrupt(dev)))
 		return ret;
 
+	printk(KERN_ERR "Start queue\n");
 	netif_start_queue(dev);
 	return 0;
 }
@@ -177,14 +182,20 @@ static netdev_tx_t e1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	printk(KERN_WARNING "e1000_start_xmit called\n");
 
+	if (skb_shinfo(skb)->nr_frags)
+	{
+		printk(KERN_ERR "Packet fragmented\n");
+		return NETDEV_TX_OK;
+	}
+
 	data = netdev_priv(dev);
 	tail = e1000_read_register(data, TDT_REG);
 
 	tail_desc = data->send.descriptors + tail;
-	memcpy((void*)((uint32_t)data->send.buff + (tail * BUF_SIZE_BY_DESC)), skb->data, skb->data_len);
+	memcpy((void*)((uint32_t)data->send.buff + (tail * BUF_SIZE_BY_DESC)), skb->data, skb->len);
 	printk(KERN_ERR "Transmit:\n\tTail: %i\n\tLen: %i\n",
 			tail, skb->len);
-	tail_desc->length = skb->data_len;
+	tail_desc->length = skb->len;
 	tail_desc->command = (TX_EOP | TX_IFCS | TX_RS);
 	tail_desc->status = 0;
 
@@ -307,6 +318,8 @@ static void init_hw(struct net_device* dev)
 	for (i = 0; i < NB_STAT_REG; ++i)
 		e1000_read_register(data, CRCERRS_REG + (i * 4));
 
+	printk(KERN_ERR "HW initialized\n");
+
 
 }
 
@@ -334,7 +347,7 @@ static int init_queue(struct net_device* dev)
 	 * for each
 	 */
 
-	data->recv.size_desc = sizeof(*data->recv.descriptors) * NB_RCV_DESC;
+	data->recv.size_desc = sizeof(t_recv_desc) * NB_RCV_DESC;
 	data->recv.size_desc = ALIGN(data->recv.size_desc, 4096);
 
 	data->recv.descriptors = dma_alloc_coherent(&data->pci->dev,
@@ -382,7 +395,7 @@ static int init_queue(struct net_device* dev)
 
 	/*** TRANSMISSION SETUP ***/
 
-	data->send.size_desc = sizeof(*data->send.descriptors) * NB_SND_DESC;
+	data->send.size_desc = sizeof(t_send_desc) * NB_SND_DESC;
 	data->send.size_desc = ALIGN(data->send.size_desc, 4096);
 
 	data->send.descriptors = dma_alloc_coherent(&data->pci->dev,
