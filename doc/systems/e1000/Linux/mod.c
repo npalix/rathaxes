@@ -55,6 +55,7 @@ static void e1000_print_status(t_e1000_data* data)
 	printk(KERN_ERR "\tStatus: %i\n", status);
 	printk(KERN_ERR "\tMode: %s\n", (status & 1) ? "Full": "Half");
 	printk(KERN_ERR "\tLink: %s\n", (status & 2) ? "UP" : "Down");
+	printk(KERN_ERR "\tTransmission: %s\n", (status & 4) ? "Paused" : "Ok");
 	printk(KERN_ERR "\tInterface: %s\n", (status & 3) == 3 ? "UP" : "Down");
 	{
 		int speed;
@@ -458,7 +459,7 @@ static int init_queue(struct net_device* dev)
 	e1000_set_register(data, TDT_REG, 0);
 
 	/* enable transmitting */
-	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK);
+	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK | TCTL_CT);
 
 	/* enable receiving */
 	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);

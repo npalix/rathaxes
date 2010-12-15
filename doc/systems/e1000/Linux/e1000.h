@@ -112,6 +112,7 @@ enum e_register_value
 	RCTL_MPE	= (1 << 4),
 	TCTL_ENABLE	= (1 << 1),
 	TCTL_PAD_PACK	= (1 << 3),
+	TCTL_CT		= (0xF << 4),
 	RAH_AV		= (1 << 31),
 	IMS_TXDW	= (1 << 0),
 	IMS_TXQE	= (1 << 1),
