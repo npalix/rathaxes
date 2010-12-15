@@ -36,7 +36,7 @@ struct s_e1000_data
 {
   struct pci_dev* pci;
   struct net_device* netdev;
-  uint32_t	bar;
+  uint8_t*	bar;
   uint32_t	irq;
   struct tasklet_struct intr_tasklet;
 
@@ -70,6 +70,7 @@ typedef struct s_e1000_data t_e1000_data;
 enum e_register
 {
 	CTRL_REG	= 0x00000,
+	STAT_REG	= 0x00008,
 	EEPROM_READ	= 0x00014,
 	FCAL_REG	= 0x00028,
 	FCAH_REG	= 0x0002c,
@@ -106,11 +107,7 @@ enum e_register_value
 	CTRL_VMDE	= (1 << 30),
 	CTRL_PHYRST	= (1 << 31),
 	RCTL_ENABLE	= (1 << 1),
-	RCTL_BSIZE_2048	= (0 << 16),
-	RCTL_BSIZE_1024	= (1 << 16),
-	RCTL_BSIZE_512	= (2 << 16),
-	RCTL_BSIZE_256	= (3 << 16),
-	RCTL_BSIZE_CLR	= (3 << 16),
+	RCTL_BSIZE	= ((1 << 16) | (1 << 17)),
 	RCTL_BSEX	= (1 << 25),
 	RCTL_MPE	= (1 << 4),
 	TCTL_ENABLE	= (1 << 1),
