@@ -20,7 +20,7 @@ static void		e1000_set_mac_address(void);
 static netdev_tx_t	e1000_start_xmit(struct sk_buff *skb, struct net_device *dev);
 static int		init_interrupt(struct net_device* dev);
 static void		uninit_interrupt(struct net_device* dev);
-static void		init_hw(struct net_device* dev);
+static int		init_hw(struct net_device* dev);
 static void		uninit_hw(struct net_device* dev);
 static int		init_queue(struct net_device* dev);
 static void		uninit_queue(struct net_device* dev);
@@ -44,6 +44,31 @@ static const struct net_device_ops e1000_ops = {
 //  .ndo_change_mtu                     = not_implemented_fct,
 //  .ndo_set_mac_address                = not_implemented_fct,
 };
+
+static void e1000_print_status(t_e1000_data* data)
+{
+	int status;
+
+	status = e1000_read_register(data, STAT_REG);
+
+	printk(KERN_ERR "Status of the e1000 card:\n");
+	printk(KERN_ERR "\tStatus: %i\n", status);
+	printk(KERN_ERR "\tMode: %s\n", (status & 1) ? "Full": "Half");
+	printk(KERN_ERR "\tLink: %s\n", (status & 2) ? "UP" : "Down");
+	printk(KERN_ERR "\tInterface: %s\n", (status & 3) == 3 ? "UP" : "Down");
+	{
+		int speed;
+		static char* speed_s[4] = {
+			"10Mb/s",
+			"100Mb/s",
+			"1000Mb/s",
+			"1000Mb/s",
+		};
+
+		speed = (status & (3 << 6)) >> 6;
+		printk(KERN_ERR "\tSpeed: Mode: %i -> %s\n", speed, speed_s[speed]);
+	}
+}
 
 irqreturn_t	handler(int irq, void* dev_id)
 {
@@ -85,7 +110,7 @@ static void intr_task(unsigned long pdata)
 
 	if (data->waiting_intr & (IMS_RX0 | IMS_RXT0)) {
 		printk(KERN_ERR "Packet received\n");
-		e1000_read(dev);
+		//e1000_read(dev);
 	}
 
 	if (data->waiting_intr & (IMS_TXDW | IMS_TXQE)) {
@@ -94,6 +119,7 @@ static void intr_task(unsigned long pdata)
 
 	if (data->waiting_intr & (IMS_LSC)) {
 		printk(KERN_ERR "The link status changed\n");
+		e1000_print_status(data);
 	}
 
 	data->waiting_intr = 0;
@@ -108,15 +134,7 @@ static int e1000_open(struct net_device *dev)
 
 	data = netdev_priv(dev);
 
-	init_hw(dev);
-	printk(KERN_ERR "Set mac address\n");
-	e1000_set_mac_address();
-	printk(KERN_ERR "Init queues\n");
-	if ((ret = init_queue(dev)))
-		return ret;
-
-	printk(KERN_ERR "Init interrupt\n");
-	if ((ret = init_interrupt(dev)))
+	if ((ret = init_hw(dev)))
 		return ret;
 
 	printk(KERN_ERR "Start queue\n");
@@ -128,8 +146,6 @@ static int e1000_close(struct net_device *dev)
 {
 	printk(KERN_ERR "Close the e1000 card\n");
 	netif_stop_queue(dev);
-	uninit_interrupt(dev);
-	uninit_queue(dev);
 	uninit_hw(dev);
 	return 0;
 }
@@ -239,8 +255,13 @@ static void e1000_read(struct net_device* dev)
 			printk(KERN_ERR "Could not allocate socket buffer\n");
 		return ;
 	}
-
+	uint32_t *ptr = (uint32_t*)((uint32_t)data->recv.buff + (tail * BUF_SIZE_BY_DESC));
 	memcpy(skb_put(skb, desc->length), (const void*)((uint32_t)data->recv.buff + (tail * BUF_SIZE_BY_DESC)), desc->length);
+	printk(KERN_ERR "--------------------------\n");
+	for (i = 0; i < desc->length; ++i) {
+		printk("%#x ", *ptr++);
+	}
+	printk(KERN_ERR "--------------------------\n");
 	skb->dev = dev;
 	skb->protocol = eth_type_trans(skb, dev);
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
@@ -249,14 +270,17 @@ static void e1000_read(struct net_device* dev)
 	netif_rx(skb);
 }
 
-static void init_hw(struct net_device* dev)
+static int init_hw(struct net_device* dev)
 {
 	t_e1000_data *data;
+	int ret;
 	int i;
 
 	data = netdev_priv(dev);
 
 	printk(KERN_ERR "Inititalize HW\n");
+
+	e1000_print_status(data);
 
 	/* Take a look to the Intel Manual Developper
 	 * section: 14.3
@@ -319,7 +343,21 @@ static void init_hw(struct net_device* dev)
 		e1000_read_register(data, CRCERRS_REG + (i * 4));
 
 	printk(KERN_ERR "HW initialized\n");
+	e1000_print_status(data);
 
+
+	printk(KERN_ERR "Set mac address\n");
+	e1000_set_mac_address();
+
+	printk(KERN_ERR "Init queues\n");
+	if ((ret = init_queue(dev)))
+		return ret;
+
+	printk(KERN_ERR "Init interrupt\n");
+	if ((ret = init_interrupt(dev)))
+		return ret;
+
+	return 0;
 
 }
 
@@ -328,6 +366,8 @@ static void uninit_hw(struct net_device* dev)
 	t_e1000_data* data;
 
 	data = netdev_priv(dev);
+	uninit_interrupt(dev);
+	uninit_queue(dev);
 	e1000_set_register(data, CTRL_REG, CTRL_RST);
 }
 
@@ -382,16 +422,8 @@ static int init_queue(struct net_device* dev)
 	e1000_set_register(data, RDT_REG, NB_RCV_DESC - 1);
 
 	/* Set the size of the buffer in control register */
+	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSIZE);
 	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSEX);
-	e1000_unset_register_preserve(data, RCTL_REG, RCTL_BSIZE_CLR);
-	e1000_set_register_preserve(data,   RCTL_REG, RCTL_BSIZE_2048);
-
-	/* Activate Multi Promiscuous mode */
-	e1000_set_register_preserve(data, RCTL_REG, RCTL_MPE);
-
-	/* enable receiving */
-	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);
-
 
 	/*** TRANSMISSION SETUP ***/
 
@@ -427,6 +459,11 @@ static int init_queue(struct net_device* dev)
 
 	/* enable transmitting */
 	e1000_set_register_preserve(data, TCTL_REG, TCTL_ENABLE | TCTL_PAD_PACK);
+
+	/* enable receiving */
+	e1000_set_register_preserve(data, RCTL_REG, RCTL_ENABLE);
+
+	e1000_print_status(data);
 
 	return 0;
 }
@@ -498,9 +535,13 @@ static void e1000_set_mac_address(void)
 		mac_address[(i * 2) + 1] = (tmp & 0xFF00) >> 8;
 	}
 
-	e1000_set_register(data, RAL_REG, *(int32_t*)(&mac_address[0]));
-	e1000_set_register(data, RAH_REG, *(int16_t*)(&mac_address[4]));
+	e1000_set_register(data, RAL_REG, *(uint32_t*)(&mac_address[0]));
+	e1000_set_register(data, RAH_REG, *(uint16_t*)(&mac_address[4]));
 	e1000_set_register_preserve(data, RAH_REG, RAH_AV);
+
+	/* Activate Multi Promiscuous mode */
+	e1000_set_register_preserve(data, RCTL_REG, RCTL_MPE);
+
 
 	card->dev_addr = mac_address;
 }
@@ -544,7 +585,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 	data = netdev_priv(card);
 	memset(data, 0, sizeof(*data));
-	data->bar = (u32) pci_ioremap_bar(dev, 0);
+	data->bar = pci_ioremap_bar(dev, 0);
 	data->netdev = card;
 	data->pci = dev;
 	data->irq = dev->irq; // interrupt;
