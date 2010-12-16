@@ -109,4 +109,10 @@
   \vskip 1.5em}
 
 % Define a command to generate the title block
-\newcommand{\rtxmaketitleblock}{\newpage\chapter*{\@titleblocksectiontitle}\@titleblock}
+\newcommand{\rtxmaketitleblock}{
+\newpage
+\chapter*{\@titleblocksectiontitle}
+\@titleblock
+\section*{Contact}
+\@contact
+}

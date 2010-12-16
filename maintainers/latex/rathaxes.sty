@@ -96,6 +96,13 @@
   \fi
 }
 
+\def\@contact{
+\begin{description}
+\ifx\@rtxlanguage\@americanlanguage\item[Code:] \else\item[Code :] \fi\url{http://code.google.com/p/rathaxes/}
+\ifx\@rtxlanguage\@americanlanguage\item[Mailing list:] \else\item[Liste de diffusion :] \fi\url{rathaxespublic@googlegroups.com}
+\end{description}
+}
+
 % Command to insert our bibliography
 \newcommand{\rtxbibliography}{%
 \bibliographystyle{plain}
@@ -104,3 +111,4 @@
 
 % Defines
 \newcommand{\rtx}{Rathaxes}
+\newcommand{\BL}{Black Library} % So we can change back to Backend Library if needed

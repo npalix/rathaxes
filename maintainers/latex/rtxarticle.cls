@@ -108,4 +108,9 @@
   \vskip 1.5em}
 
 % Define a command to generate the title block
-\newcommand{\rtxmaketitleblock}{\section*{\@titleblocksectiontitle}\@titleblock}
+\newcommand{\rtxmaketitleblock}{
+\section*{\@titleblocksectiontitle}
+\@titleblock
+\section*{Contact}
+\@contact
+}
