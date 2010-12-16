@@ -6,27 +6,29 @@
 
 \rtxdoctype{Bilan Architecture}
 \rtxdocref{2012\_AA2\_FR\_Rathaxes}
-\rtxdocversion{0.9}
-\rtxdocstatus{Brouillon}
+\rtxdocversion{1.0}
+\rtxdocstatus{Finale}
 
 \rtxdochistory{
 0.1 & 16/11/2010 & Thomas Luquet & Premier draft \\
 \hline
-0.2 & 17/11/2010 & Louis Opter & Fix compilation \\
+0.2 & 17/11/2010 & Louis Opter & Fixe compilation \\
 \hline
 0.3 & 17/11/2010 & Louis Opter & Ajout du cartouche \\
 \hline
-0.4 & 17/11/2010 & David Pineau & Completion de la section Technologie \\
+0.4 & 17/11/2010 & David Pineau & Complétion de la section Technologie \\
 \hline
 0.5 & 17/11/2010 & Louis Opter & Reformulations et ajout de notes \\
 \hline
-0.6 & 17/11/2010 & Thomas Luquet & Reformulation, inssertion de graphique \\
+0.6 & 17/11/2010 & Thomas Luquet & Reformulations, insertion des graphiques \\
 \hline
-0.7 & 17/11/2010 & Luquet Thomas & Reformulation, corrections diverses \\
+0.7 & 17/11/2010 & Luquet Thomas & Reformulations, corrections diverses \\
 \hline
 0.8 & 17/11/2010 & Louis Opter & Relecture et corrections \\
 \hline
 0.9 & 16/12/2010 & Louis Opter & Copie à partir de AA1 \\
+\hline
+1.0 & 16/12/2010 & Louis Opter & Prise en compte des critiques faites sur l'AA1 \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -47,12 +49,14 @@
 périphérique. Le projet permet de générer un code source écrit en C pour Linux,
 Windows 7 et OpenBSD à partir d'un fichier de description de pilote.
 
-C'est un projet à visée scientifique distribué sous licences libres.
-
 Le projet \rtx\ 2012 est une amélioration de l'EIP réalisé en 2009. Il
 incorpore de nouvelles fonctionnalitées comme l’asynchronicité. \rtx\ 2012 sera
 capable de générer un pilote de souris USB et celui d'une carte son qui
 serviront à prouver que le concept fonctionne.
+
+Nous ciblons la communauté scientifique et nous avons décidé de rendre le
+développement du projet publique grâce à un dépôt Google
+code\footnote{\url{http://code.google.com/p/rathaxes/}} et des licences libres.
 
 \section{Structure du projet}
 
@@ -62,40 +66,40 @@ Le projet est divisé en trois parties :
 \begin{enumerate}
 \item Le langage \rtx\ : un langage dédié (DSL\footnote{Domain Specific
 Language.}) utilisé pour décrire un pilote~;
-\item La black-librarie : Elle permet l'interfaçage entre le DSL et le
-compilateur~;
-\item Le compilateur : Il transforme les fichiers \rtx\ (.rtx) ---à l'aide
-de la black-librairie--- en fichier .c spécifiques au système d'exploitation choisi.
+\item La \BL: Elle permet l'interfaçage entre le DSL et le compilateur~;
+\item Le compilateur : Il transforme les fichiers \rtx\ (\texttt{.rtx}) ---à
+l'aide de la \BL--- en fichier \texttt{.c} spécifiques au système d'exploitation
+choisi.
 \end{enumerate}
+
+La \BL\ et nos documentations constituent notre base de données.
 
 \chapter{Diagrammes}
 
-\section{Description fonctionelle}
+\section{Description fonctionnelle}
 
-\includegraphics[width=\textwidth]{diagramme_general}
+\includegraphics[width=0.95\textwidth]{diagramme_general}
 
-\rtx\ est un compilateur.
-
-Il utilise le langage CodeWorker pour l'analyse du DSL ainsi que la génération
-d'un AST\footnote{Abstract Syntax Tree, Arbre de Syntaxe Abstraite.}. Enfin,
-CodeWorker utilise cet AST, pour générer le code C du driver. Afin de pouvoir
-générer du code C à partir du DSL de \rtx\, le compilateur utilise une
-bibliothèque de modele appelé Backend Library. % Qui génére quoi ?
+\rtx\ utilise le langage CodeWorker\cite{CodeWorker} pour l'analyse du DSL ainsi
+que la génération d'un AST\footnote{Abstract Syntax Tree: Arbre de Syntaxe
+Abstraite.}. Enfin, CodeWorker utilise cet AST, pour générer le code C du
+driver. Afin de pouvoir générer du code C à partir du DSL de \rtx\, le
+compilateur utilise une bibliothèque de modèles appelé \BL.
 
 \section{Diagramme détaillé}
 
-\includegraphics[width=\textwidth]{diagramme_fonctionel}
+\includegraphics[width=0.95\textwidth]{diagramme_fonctionel}
 
 Actuellement le compilateur \rtx\ de la promotion 2009 fonctionne ainsi~:
 \begin{enumerate}
-\item Il transforme les fichier \texttt{.rtx} (écrit dans le DSL \rtx) en un AST ;
+\item Il transforme les fichier \texttt{.rtx} (écrit dans le DSL \rtx) en un AST~;
 \item Il parcourt cet arbre. En fonction des mots clefs rencontrés, le
-compilateur selectionne des fichiers BLT issus de la backend Library ; % D'où sorte les mots BLT et "backend library" ?
+compilateur sélectionne des fichiers BLT issus de la \BL\~;
 \item Enfin il génère des fichiers de pilote de périphérique selon l'arbre
 reconstruit à partir des modèles de la BLT.
 \end{enumerate}
 
-Notre objectif est de modifier le comportement du compilateur dans le but
+Notre objectif est de modifier le comportement du compilateur dans le but de
 rendre les modifications futur du langage plus simple à implémenter.
 
 Pour cela l'étape de transformation de l'AST en fichier \texttt{.c} sera
@@ -104,8 +108,8 @@ segmentée en 2 étapes :
 % j'ai remplacé "bouts" par échantillons, la phrase est toujours
 % incompréhensible mais au moins on a plus l'impression du faire du patchwork :
 \item Modifier l'AST généré à partir du DSL. L'équipe insérera des échantillons
-d'AST généré à partir de fichiers de la Backend Librarie activé selon les mots
-clefs du DSL ;
+d'AST généré à partir de fichiers de la \BL\ activé selon les mots clefs du
+DSL~;
 \item Transcrire l'arbre final en langage C.
 \end{enumerate}
 
@@ -122,7 +126,7 @@ compilateur, qui puisse utiliser des modèles de code.
 Pour écrire le compilateur, l'outil retenu par la première équipe est
 CodeWorker. CodeWorker est un langage interprété dont la syntaxe s'inspire la
 notation EBNF\footnote{Extended Backus--Naur Form}. L'interpréteur CodeWorker
-est distribué gratuitement sous la licence libre LGPL.
+est distribué gratuitement sous la licence libre LGPL\cite{LGPL21}.
 
 CodeWorker, présente l'avantage d'être facilement abordable et permet une
 analyse syntaxique et lexicale avancée, tout en permettant la génération de
@@ -142,9 +146,11 @@ d'exploitation. Ceci doit être fait en indépendance des connaissances
 spécifiques à un OS. Il est donc nécessaire de posséder un système de modèles
 de code utilisables pour générer du code C pour chaque système spécifique.
 
+Ces modèles de code portent l'extension \texttt{.blt} pour \BL\ Template.
+
 C'est aussi pour cela que l'équipe 2009 a choisi CodeWorker comme l'outil le plus
 pratique. En effet, la solution la plus simple pour avoir des modèles de code
-qui permetent de générer du code C est d'écrire directement des modèles
+qui permettent de générer du code C est d'écrire directement des modèles
 en script CodeWorker, de manière a réduire la quantité de travail nécessaire
 du côté du backend de \rtx\ (pour la partie parsing).
 
@@ -152,22 +158,26 @@ du côté du backend de \rtx\ (pour la partie parsing).
 
 Forts de l'expérience acquise par l'équipe 2009 de \rtx, l'objectif de
 notre groupe est de rechercher et implémenter de nouveaux concepts dans
-\rtx. Parmi ceux-ci, s'illustre notemment les notions d'asynchronicité,
+\rtx. Parmi ceux-ci, s'illustre notamment les notions d'asynchronicité,
 de DMA\footnote{Direct Memory Access.}, d'IRQ\footnote{Interrupt ReQuest.} et
-enfin l'ensemble des concepts liés a l'utilisation de BUS tels que le PCI dans
+enfin l'ensemble des concepts liés à l'utilisation de BUS tels que le PCI dans
 les pilotes de périphériques.
 
 Un autre objectif de notre équipe est d'apporter des améliorations dans le
 fonctionnement même de \rtx. Jusqu'alors, le code C était généré par
 activation des modèles en fonction du contenu de l'arbre de syntaxe abstraite.
-Nous désirons changer cela, pour d'une part rendre le coeur du compilateur
+Nous désirons changer cela, pour d'une part rendre le cœur du compilateur
 plus générique, et permettre de tester efficacement chaque étape
 d'implémentation du langage.
 
 Pour cela, nous allons conserver le CodeWorker, qui par sa simplicité, nous
-permettra de modifier le coeur du compilateur, afin par la suite de pouvoir
+permettra de modifier le cœur du compilateur, afin par la suite de pouvoir
 facilement intégrer de nouveaux concepts et mots clefs au compilateur. Par
 ailleurs nous pourrons intégrer plus aisément des contributeurs externes au
 projet.
+
+\newpage
+
+\rtxbibliography
 
 \end{document}
