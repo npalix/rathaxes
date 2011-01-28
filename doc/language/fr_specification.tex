@@ -1,0 +1,370 @@
+\documentclass{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{Thomas Sanchez}
+
+\title{Spécification du language}
+
+\rtxdoctype{Spécification du language}
+\rtxdocref{fr\_specification}
+\rtxdocversion{0.1}
+\rtxdocstatus{Brouillon}
+
+\rtxdochistory{
+0.1 & 27/01/2011 & Thomas Sanchez & Spécification du langage \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={DECLARE, SEQUENCE, INTERFACE, IMPLEMENTATION, FROM, READ, OPTIONAL, CONFIGURATION, VARIABLE, AS, WITH, SEQUENCES, EXISTS, ON, ELSE, LET, FIRST_NON_NULL, PROVIDES, REQUIRE},%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+
+
+
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{}
+
+\lstset{language=rathaxes}
+\section{Introduction}
+
+Spécifier un langage est quelque chose de difficile. Cela requiert de connaitre
+tous les cas dans lequel il va etre utilise.
+
+Par chance, nous n'avons qu'un DSL a specifier, donc quelque chose par nature
+specifique a une tache. Cependant la conception d'un driver est quelque chose
+de complexe et demande d'etre sur et sans bugs.
+
+Comment proposer un langage de ce genre ?
+
+L'equipe de Rathaxes 2009 a fait un bon boulot en defrichant le sujet, beaucoup
+de concept en seront donc retire.
+
+Le seul reproche que l'on pourrait leur faire est le manque d'expressivite.
+Par expressivite, je veux dire qu'il ne permet pas d'exprimer certains concept
+lies aux pilotes.
+
+Le langage que je vais vous proposer va essayer de repondre a ces besoin. Il
+sera tres verbeux et different des langages qu'on a l'habitude de voir par
+sa syntaxe. Il n'y aura qu'un moyen d'ecrire une instruction:
+Par exemple en C, on peut incrementer une variable comme ceci:
+\begin{lstlisting}
+i++
+\end{lstlisting}
+Mais aussi:
+\begin{lstlisting}
+++i
+\end{lstlisting}
+Ou encore
+\begin{lstlisting}
+i += 1
+\end{lstlisting}
+
+Ca rend la lecture, complique, et d'infime difference peuvent etre presente (pre/post incrementation).
+J'ai comme ambition de proposer un langage qui n'en aura aucune.
+
+\chapter{Survol du langage}
+
+Lors de la conception d'un pilote, nous devons manipuler plusieurs types de
+structure de donnees differentes. Que se soit du cote systeme, ou de ce que
+le peripherique nous impose.
+
+Ces structures de donnees vont varier selon le sous-systeme que l'on va utiliser.
+Prenons un exemple sur les sk\_buff.
+
+Les sk\_buff (socket buffer) sont des structures representant un paquet
+a envoyer sur le reseau (ou a lire sur la carte). Elles ne seront donc
+utilise que dans un pilote s'enregistrant dans le sous systeme.
+
+Je n'ai pas determine si il vallait mieux creer des interfaces de manipulation
+de ces structures ou si c'est plus coherent d'appeler certaine fonctions qui,
+elles, manipuleront un sk\_buff (je penche pour la seconde).
+
+Je n'ai pas non plus determine les interface de communication avec le sous
+systeme voulu. Ca ne releve pas du langage mais de l'implementation.
+Cependant, on peut legitimement se dire qu'on devra respecter l'interface
+publique du sous systeme dont on veut beneficier. On peut s'inspirer
+des interfaces style Java/Objective-C/C\#.
+
+Lorsqu'un pilote appartient a un sous systeme, il lui
+appartient de s'enregistrer aupres du dit sous systeme.
+
+Pour cela chaque implementation devra founir le code
+necessaire a cet enregistrement sans pour autant
+que cela apparaisse effectivement dans le code
+du pilote en langage RTX.
+
+Les interfaces representeront, en general, les points
+d'acces a l'API systeme. Cela implique qu'elles
+ne sont quasiment pas implementable en RTX. Du
+coup je seche un peu pour vous proposer une maniere
+de l'exprimer.
+
+De plus, lorsqu'un pilote s'enregistre aupres d'un sous systeme,
+il doit fournir un ensemble de fonction au systeme d'exploitation.
+Il y a donc une contre partie et une complexite ajoutee a ce niveau la,
+donc est ce qu'il ne vaudrait mieux pas founir 2 interfaces:
+une interface d'implementation, et une autre d'utilisation.
+
+Lors de la declaration d'un pilote, on devra specifier a quel
+sous-systeme il appartient. Je tiens a rappeler ici, que parfois
+certain driver s'enregistre dans plusieurs sous systeme pour
+beneficier de certaine fonction. J'ai lu dans un des livres
+sur la programmation de pilote, que c'est arrive qu'une carte
+son s'enregistre aussi en tant que pilote reseau pour beneficier
+de fonctionnalitees en plus.
+
+J'ai definis/garde quelques regles:
+\begin{itemize}
+	\item Toute declaration devra commencer par un DECLARE;
+	\item Le langage devra donner l'impression de coder
+	dans un systeme evenementielle;
+	\item De la redondance;
+	\item Aucune ambiguite;
+	\item Pas de condition imperative (if, while, for, etc.);
+	\item Qu'une seule maniere de faire quelque chose.
+\end{itemize}
+
+\chapter{Les sous systemes}
+Cette section sera a completer.
+
+\section{Les interfaces}
+
+Declaration d'une interface:
+
+\begin{lstlisting}
+
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE f1(ARGS, ARGS2);
+	};
+
+	REQUIRE SEQUENCE default_func(A1);
+	OPTIONAL SEQUENCE medium(A1);
+	OPTIONAL SEQUENCE best(A1);
+};
+
+\end{lstlisting}
+
+L'implementation (on n'implemente evidemment que les SEQUENCES dans PROVIDES):
+
+\begin{lstlisting}
+
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			WITH SEQUENCES best, default_func, medium {
+				ON SEQUENCE best EXISTS best(param);
+				ON SEQUENCE medium EXISTS medium(param);
+				ELSE default_func(param)
+				};
+		};
+	};
+};
+\end{lstlisting}
+
+Un implementation ne pourra pas implementer une SEQUENCE de meme nom
+presente dans les deux interfaces.
+
+Les fonctions qui sont REQUIREs ou OPTIONALs c'est les fonctions
+que devra fournir le code qui utilise vraiment l'interface.
+
+
+Par exemple:
+
+\begin{lstlisting}
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE f1(ARGS, ARGS2);
+	};
+
+	REQUIRE SEQUENCE default_func(A1);
+	OPTIONAL SEQUENCE medium(A1);
+	OPTIONAL SEQUENCE best(A1);
+};
+
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			WITH SEQUENCES best, default_func, medium {
+				ON SEQUENCE best EXISTS best(param);
+				ON SEQUENCE medium EXISTS medium(param);
+				ELSE default_func(param)
+				};
+		};
+	};
+};
+
+DECLARE DRIVER e1000 USE interface_name interface_name2{
+	DECLARE SEQUENCE medium(ARG a) {
+	};
+};
+\end{lstlisting}
+
+Qu'en pensez vous ?
+
+Je ne pense pas qu'etre un peu batard sur l'ecriture des interfaces
+est un peu moins grave si on gagne en lisibilite dans le DSL.
+
+Je reconnais que je prefererais ce genre d'ecriture:
+
+\begin{lstlisting}
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			LET functor FIRST_NON_NULL FROM SEQUENCES[best, medium, default_func] {
+				functor(param);
+			};
+		};
+	};
+};
+\end{lstlisting}
+
+
+\chapter{La configuration et les sections}
+
+Dans la premiere version de Rathaxes, le DSL etait divise en quatre parties:
+\begin{itemize}
+	\item La declaration des registres;
+	\item La declaration/implementation des SEQUENCES;
+	\item La declaration/implementation des interfaces systeme;
+	\item La configuration.
+\end{itemize}
+
+J'aimerais qu'il n'y en ai plus que deux:
+
+\begin{itemize}
+	\item La configuration;
+	\item Le reste.
+\end{itemize}
+
+Pourquoi ?
+Au premier abord je trouve que c'est une tres bonne idee, MAIS, lorsqu'on
+va dire que notre driver va utiliser tel ou tel sous systeme, qu'il va devoir
+reimplementer certaine methodes, ou en utiliser ca va justre etre le bordel.
+
+Pour cela je pense qu'une section code et une section configuration sont
+amplement suffisante.
+
+Donc les mots clefs, \texttt{DRIVER}, \texttt{SEQUENCES},
+\texttt{KERNEL\_INTERFACES} et \texttt{DEVICE} disparraissent.
+
+On arrive a plusieurs problemes, dont un que je n'ai pas resolu et si j'utilisais
+ce que j'ai en tete, je me ferais mentir sur mes principes.
+
+Le premier probleme est simple:
+Lorsqu'on fait un driver, par exemple un pilote de type CHAR, on a besoin
+de definir un \emph{minor} et un \emph{major} qui sera utilise lors
+de l'enregistrement du peripherique. Le sous systeme \emph{devra} savoir
+quoi mettre pour ces valeurs, mais \emph{comment} peut-il les recuperer ?
+
+Je ne suis pas pour faire une craderie du genre (d'ailleur il n'y a pas de couleur na :P):
+
+\begin{lstlisting}
+DECLARE INTERFACE subsystem {
+	FROM CONFIGURATION GET minor;
+	FROM CONFIGURATION GET major;
+};
+\end{lstlisting}
+
+Meme si la configuration est tres lie au pilote,
+mais cela ne doit pas faire partie de l'interface car
+cela nous aidera pas a savoir ce que le sous systeme propose,
+ensuite selon les OS cela variera.
+
+Donc je pense que l'on devrait gerer la configuration, comme 
+les variables d'environnement:
+\begin{itemize}
+	\item Quelque chose de souvent facultatif;
+	\item Disponible dans tous le programme.
+\end{itemize}
+
+Et de proposer une syntaxe comme celle ci:
+
+\begin{lstlisting}
+READ OPTIONAL CONFIGURATION VARIABLE minor AS minor;
+READ CONFIGURATION VARIABLE major AS jefaischiermonmonde;
+\end{lstlisting}
+
+Le \texttt{AS} pourra etre optionnel.
+Si le champ de la configuration donne n'est pas trouve, et qu'il
+est obligatoire, le compilateur devra donner un message clair d'erreur.
+
+On a donc une expression claire des donnees relative a la configuration
+qui pourra etre utilise lors de l'implementation d'interface pour un
+OS, sans pour autant alourdir la lecture des en-tetes.
+
+Je ne me rends pas bien compte si on a besoin ou pas de specifier
+le type de la variable de configuration. Je pense que non:
+Il sera possible de faire de l'inference de type selon
+ou la valeur sera dans l'arbre et si besoin de rajouter des
+" autour ou pas (typiquement ca sera soit des strings, ou des int).
+
+Si l'on rajoute des types, ca alourdirait la syntaxe et j'aimerais
+(Lionel sera d'accord :)) d'eviter la surmultiplication de type
+different, qui en plus, ne seront pas utilise ailleur.
+
+
+
+\chapter{Les erreurs}
+
+\chapter{Les types}
+\section{Les registres}
+\section{Les addresses}
+\section{Les mémoires tampon}
+\section{Les collections}
+
+\chapter{Les expressions}
+
+\end{document}
