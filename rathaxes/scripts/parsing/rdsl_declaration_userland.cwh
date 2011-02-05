@@ -1,0 +1,19 @@
+/*
+**	userland.cwp in scripts/parsing
+**	for Rathaxes project
+**	made by Thor
+*/
+
+userland(theNode : node) ::=
+    => local syntaxError;
+    #readIdentifier:{"USERLAND"}
+    #continue #readIdentifier:sUserlandId
+    => insert theNode = TRUE;
+    => pushItem theNode = sUserlandId;
+    #continue(syntaxError, rtxCraftError("userland block expected."))
+    [
+        "{"
+	// futur algo stuff there
+	"}"";"
+    ]
+;

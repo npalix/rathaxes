@@ -1,0 +1,6 @@
+declare function	getTempDir<T>();
+
+function	getTempDir<T>()
+{
+	return "";
+}

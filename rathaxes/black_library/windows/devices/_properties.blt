@@ -1,0 +1,61 @@
+<%
+/*
+**      _properties.blt in black_library/linux/
+**      for Rathaxes project
+**      made by Christophe Fajardo Y Romera
+*/
+local   sDriverName = this.name;
+%>
+
+ADVICE properties PART_OF devices
+{
+    <%
+        foreach device in this.devices
+        {
+            foreach property in device.properties
+            {
+                if (existVariable(property.block.set))
+                {
+                    %>
+                    void @sDriverName@_set(@property.definition.type@ value)
+                    {
+                        <% local sToken = getContextToken(property.block.set.block); %>
+                        JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+                        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+                    exit:
+                        return;
+                    }
+                    <%
+                }
+                if (existVariable(property.block.get))
+                {
+                    %>
+                    WORD @sDriverName@_get()
+                    {
+                        @property.definition.type@    value;
+                        @property.definition.type@    temp;
+                        <% local sToken = getContextToken(property.block.get.block); %>
+                        JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+                        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+                    exit:
+                        return value;
+                    }
+                    <%
+                }
+                if (existVariable(property.block.call))
+                {
+                    %>
+                    void @sDriverName@_call()
+                    {
+                        <% local sToken = getContextToken(property.block.call.block); %>
+                        JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+                        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+                    exit:
+                        return;
+                    }
+                    <%
+                }
+            }
+        }
+    %>
+};

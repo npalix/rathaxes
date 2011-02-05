@@ -1,0 +1,940 @@
+%
+% Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+% 
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+% 
+% THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+%
+
+\documentclass[11pt]{report}
+
+%\usepackage{listings}
+%\usepackage{color}
+%\usepackage[english]{babel}
+%
+%
+%\definecolor{grey}{rgb}{0.95,0.95,0.95}
+%\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+%  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+%  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+%  showspaces=false, showstringspaces=false}
+%
+%\lstloadlanguage{C}
+%\lstset{language=C}
+
+
+\usepackage{listings}
+
+\lstset{language=C}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+  showspaces=false, showstringspaces=false}
+\usepackage{color}
+\usepackage[english]{babel}
+\usepackage{listings}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\author{Rathaxes}
+\author{Amsallem David\\Dumont Mickael\\Gallon Sylvestre\\Suarez Tomas}
+\title{Rathaxes Kernel Modules}
+\maketitle
+
+\section*{License}
+\addcontentsline{toc}{section}{License}
+Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Rathaxes Team is divided into three work teams:\\
+\begin{description}
+  \item{The Transverse Team, in charge of the logistic part of the project and
+    relaying informations between the two other teams.}
+  \item{The Hardware Team, in charge of the system and low level aspects of the
+    project and providing the Language Team with informations they need.}
+  \item{The Language Team, in charge of designing and implementing the Rathaxes
+    DSL, according to informations provided by the Hardware Team.\\}
+\end{description}
+
+As agreed within the Rathaxes teams, Rathaxes will be able to generate drivers
+for the four following operating systems:
+\begin{description}
+    \item{OpenBSD}
+    \item{Linux 2.6}
+    \item{MacOS X 10.5}
+    \item{Windows XP}
+\end{description}
+
+As a starting point, we have to understand how does the atomic part of a device 
+driver is made. From now, we'll name such atomic part a 'RKM' (cf. page \pageref{RKM}) 
+for Rathaxes Kernel Module. This term groups OpenBSD and Linux 2.6 loadable kernel modules,
+MacOS X 10.5 kernel extensions and Windows XP drivers entries.
+
+A RKM is a device driver oriented empty shell containing the minimum data
+to be loaded. Those data are very different from an operating system to
+another and we'll try to spot and sum them up in this production, to extract the
+main semantics in order to design the Rathaxes DSL (cf. page \pageref{DSL}).
+
+Although this paper aims the Rathaxes Teams, people looking for informations
+about a starting point for system development might be interested in as well.
+
+\tableofcontents
+
+\chapter{Rathaxes Kernel Modules}
+
+\section{Philosophy and OS integration}
+
+  \subsection{OpenBSD}
+OpenBSD's kernel is a monolithic one. As such, this operating system doesn't
+natively use loadable kernel modules. Historically, a kernel modules API is
+maintained in case it might be used by someone extern to the OpenBSD community.
+In respect to this OS's philosophy, each time one might want to add a kernel
+functionality, he should modify the kernel sources and then rebuild the entire
+kernel.
+
+The entire Rathaxes team would like to respect this philosophy but no decision
+has been made up yet. For reasons of caution, we'll deal with the loadable
+kernel API in this paper, but it might be updated soon to fit with the OpenBSD
+community's choice.
+
+  \subsection{Linux 2.6}
+Linux kernel can be totally monolithic or have a monolithic part and many modules
+around it. As such, loadable kernel modules are fully used to extend the kernel
+functionalities.
+
+Accordingly, by using the Linux kernel module API for our RKMs we respect the
+Linux philosophy.
+
+  \subsection{MacOS X 10.5}
+MacOS X 10.5 has a hybrid kernel, meaning it contains two distinct kernels:
+a monolithic one (BSD 4.4 kernel) and a micro-kernel (MACH 3.0).
+All critical functionalities are implemented within the BSD kernel and non-
+critical ones which potentially use a lot of system resources are implemented
+within the MACH micro-kernel.\\
+The whole is known as The XNU kernel, which provides a kernel extension
+mechanism as a means of allowing dynamic loading of pieces of code into the
+kernel, without the need to recompile.
+These pieces of code are known as kernel extensions or KEXT (cf. page \pageref{KEXT}).
+
+As the ordinary way of extending the DARWIN kernel, we'll use the KEXTs for
+our RKMs.
+
+  \subsection{Windows XP}
+Microsoft Windows XP (part of Windows NT Family) got hybrid kernel as well.
+The Windows NT design got a lot of common objectives with
+the MACH micro-kernel (multi architectures support, communication
+between modules...).
+Some modules communicate with the rest of the kernel via interfaces,
+while the (quite) small micro-kernel takes care of things like
+scheduling or prioritary interrupt handling. Both are stacked between
+the Hardware Abstraction Layer below and the 'Executive' interfaces
+on the top, which interact with user mode.
+Windows deals with kernel modules (device drivers as far as Rathaxes
+is concerned) like regulars Windows 'services' (such as DHCP client, ...)
+through the 'Services Control Manager'.
+
+RKMs will act as kernel mode drivers, so will be considered and developed 
+like modules.
+This paper will get onto WDM (Windows Driver Model) and indicates some
+differences for WDF (Windows Driver Framework).
+
+  \subsection{Generalization}
+All of the four studied operating systems seem to have nearly the same behaviour.
+All of them have a core part used for handling the system's critical functionnalities,
+and the 'micro-kernel' part which fits our needs.
+Except for OpenBSD if we want to fit to OpenBSD's Dev-team philosophy. But
+even if we have to recompile our kernel the goal is the same: extends the
+operating system possibilities statically or dynamically.\\
+Requirements:
+\begin{enumerate}
+	\item We MUST give information about LKM : author, licence, name, version and description.
+\end{enumerate}
+\newpage
+\section{RKM manipulation}
+The RKM manipulation is the way to manipulate RKM from the userland. This
+includes the loading and unloading of a module, and all others possibilities
+depending of the OS.
+  \subsection{OpenBSD}
+OpenBSD provides a set of binaries able to deal with the running kernel.\\
+These binaries are:
+    \begin{description}
+      \item{modload: loads a kernel module.}
+      \item{modunload: unloads a kernel module.}
+      \item{modstat: displays the status of a kernel module.}
+    \end{description}
+
+  \subsection{Linux 2.6}
+Linux 2.6 also provides a set of binaries able to deal with the running kernel.\\
+These binaries are:
+    \begin{description}
+      \item{insmod: loads a kernel module}
+      \item{modprobe: loads a kernel module looking for it in default directories}
+      \item{rmmod: unloads a kernel module}
+      \item{modinfo: extracts information from the Linux Kernel modules
+	given on the command line.}
+      \item{lsmod: list all loaded kernel modules}
+    \end{description}
+
+  \subsection{MacOS X 10.5}
+MacOS X 10.5 also provides a set of binaries able to deal with the running
+kernel.\\
+These binaries are:
+    \begin{description}
+      \item{kextload: loads a kernel extension}
+      \item{kextunload: unloads a kernel extension}
+      \item{modinfo: extracts information from the Linux Kernel modules
+	given on the command line.}
+      \item{kextstat: display status of dynamically loaded kernel extensions}
+    \end{description}
+
+  \subsection{Windows XP}
+Windows XP offers many ways to register services.
+The manual method consists in creating some registry keys to describe
+your driver.
+This key needs to be created:
+\begin{lstlisting}
+HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\<driver name>
+\end{lstlisting}
+So are thoses registry values:
+\begin{description}
+\item{DisplayName (String Value): The name of your driver (i.e. my\_driver)}
+\item{ImagePath (Expandable String Value): Full NT-style path to the driver, or just the
+filename if the file is in system32\textbackslash drivers (i.e. \textbackslash ??\textbackslash C:
+\textbackslash drivers\textbackslash my\_driver\textbackslash my\_driver.sys)}
+\item{Start (DWORD Value): The way the driver will be started (0=Boot |
+1=System | 2=Auto | 3=Demand)}
+\item{Type (DWORD Value): The type of service. Device drivers have a value of 1.}
+\end{description}
+Other non mandatory keys are avaible, and will be described in a future paper.\\
+Once the registry updated (you should have to reboot your computer or flush the registry),
+you can start the service ( the driver ) by running on command line :
+\begin{lstlisting}
+net start my_driver
+\end{lstlisting}
+And stop it (if the driver is unloadable) doing :
+\begin{lstlisting}
+net stop my_driver
+\end{lstlisting}
+A small user land program can also be used to register, load and unload
+module. Such a program could look like :
+\begin{lstlisting} 
+/* Use windows api */
+#include <windows.h>
+/* For printf() and getchar() */
+#include <stdio.h>
+
+int _cdecl main(void)
+{
+  HANDLE                manager;
+  HANDLE                service;
+  SERVICE_STATUS        status;
+
+  manager = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+  if(manager)
+   {
+     service = CreateService(manager, "my_driver",
+     "Example Driver",
+     SERVICE_START | DELETE | SERVICE_STOP,
+     SERVICE_KERNEL_DRIVER,
+     SERVICE_DEMAND_START,
+     SERVICE_ERROR_IGNORE,
+     "C:\\drivers\\my_driver\\my_driver.sys",
+     NULL, NULL, NULL, NULL, NULL);
+     if(service)
+       {
+         service = OpenService(manager, "hello",
+         SERVICE_START | DELETE | SERVICE_STOP);
+       }
+       if(service)
+       {
+         StartService(service, 0, NULL);
+         printf("Press a key to unload service...\r\n");
+         getchar();
+         ControlService(service, SERVICE_CONTROL_STOP, &status);
+         DeleteService(service);
+         CloseServiceHandle(service);
+       }
+       CloseServiceHandle(manager);
+   }
+   return 0;
+}
+\end{lstlisting}
+More informations about the used functions can be found in MSDN.
+(http://msdn.microsoft.com)\\
+\\
+For most users, a driver loading will be done graphically, either
+with plug'n play or by using Control Panel/Add Hardware.
+Such driver loading will require the use of a .inf file, which needs
+a paper on its own, and will so be explained in a separate paper.
+WDF drivers require an .inf file.
+
+  \subsection{Generalization}
+    Every four operating systems give a set of binaries to deal
+    with RKMs. They have the tools to at least :
+    \begin{description}
+    	\item{load a RKM}
+    	\item{unload a RKM}
+    	\item{get information about a RKM}
+    \end{description}
+
+\newpage
+\section{Includes}
+This section describes which files are necessarly included in RKM code on each
+OS. Usually these files contain type definitions, macro definitions, function
+definitions, ...
+  \subsection{OpenBSD}
+
+    \begin{lstlisting}
+        #include <sys/types.h>
+    \end{lstlisting}
+	This included file defines all the basic types used in the module.\\
+
+    \begin{lstlisting}
+        #include <sys/systm.h>
+    \end{lstlisting}
+	This included file is for lkm.h dependencies because it defines the type
+    "struct sysent". This file depends on {\bf\it\textless sys/systm.h\textgreater}.\\
+
+    \begin{lstlisting}
+        #include <sys/exec.h>
+    \end{lstlisting}
+	This included file is for lkm.h dependencies because it defines the type
+    "struct execsw".\\
+
+    \begin{lstlisting}
+        #include <sys/conf.h>
+    \end{lstlisting}
+	This included file is for lkm.h dependencies because it defines the type
+    "struct bdevsw" and "struct cdevsw".\\
+
+    \begin{lstlisting}
+        #include <sys/lkm.h>
+    \end{lstlisting}
+	This included file is the required file for the module. This file depends on
+    {\bf \it \textless sys/systm.h\textgreater,
+    \textless sys/exec.h\textgreater and
+    \textless sys/conf.h\textgreater}.\\
+
+    \begin{lstlisting}
+        #include <sys/errno.h>
+    \end{lstlisting}
+	This file defines EINVAL value in case of error in the macro DISPATCH.\\
+
+  \subsection{Linux 2.6}
+  	\begin{lstlisting}
+        #include <linux/module.h>
+    \end{lstlisting}
+	{\bf \it \#include \textless linux/module.h\textgreater } is the required file for the module.\\
+  	\begin{lstlisting}
+        #include <linux/init.h>
+    \end{lstlisting}
+	{\bf \it \#include \textless linux/init.h\textgreater } defines the two macros for entry point and exit point.
+
+  \subsection{MacOS X 10.5}
+    \begin{lstlisting}
+#include <mach/mach_types.h>
+    \end{lstlisting}
+		{\bf \it \#include \textless mach/mach\_types.h\textgreater } is the required file for the module.\\ 
+  \subsection{Windows XP}
+    \begin{lstlisting}
+      #include <ntddk.h>
+    \end{lstlisting}
+	{\bf \it \#include \textless ntddk.h\textgreater } is the required file for the module.\\
+    WDF drivers may also includes wdf.h.
+    \begin{lstlisting}
+      #include <wdf.h>
+    \end{lstlisting}
+  \subsection{Generalization}
+    All of the four OS have at least a mandatory file included for basic RKM.
+    No included file is associated with only one kernel functionnality.
+    They just define some macros, structures and dependencies specific to each system.\\
+    Requirements:
+  \begin{enumerate}
+  	\item It MUST be possible to define dependencies between headers file (OpenBSD) 
+	\item For kernelmodule registration a set of header files must be given.
+  \end{enumerate}
+
+\newpage
+\section{Symbols Declarations}
+One of the most important part in a RKM is the definition of an entry point
+and an exit point.
+
+  \subsection{OpenBSD}
+  Three entry points (represented by functions pointers) are needed on OpenBSD.
+  Each one is associated to a pending user command (modload, modunload, modstat).
+  They can be defined separately, like :
+    \begin{lstlisting}
+int entry_point(struct lkm_table *l, int cmd);
+int exit_point(struct lkm_table *l, int cmd);
+int misc_point(struct lkm_table *l, int cmd);
+    \end{lstlisting}
+    Where :\\
+{\bf \it lkm\_table *l} is a table description of LKM loaded.\\
+{\bf \it int cmd} is a parameter informing which event has occured (modload, modunload, modstat).\\\\
+Alternatively, entry points can be summarized into one function that hold 
+all the possible events using cmd parameter (with a switch case for instance).\\\\
+For example, the following function can handle all module events instead of three functions
+like defined above :
+    \begin{lstlisting}
+int entry_point(struct lkm_table *l, int cmd);
+    \end{lstlisting}
+
+  \subsection{Linux 2.6}
+On Linux 2.6 entry and exit points doesn't have parameters, and only the module
+entry point return an error on module load failure.
+    \begin{lstlisting}
+static int __init entry_point(void);
+static void __exit exit_point(void);
+    \end{lstlisting}
+\_\_init and \_\_exit are gcc attributes.
+\_\_init allows the memory used by the function to be freed after the first call.
+\_\_exit permits the compiler not to build the function in case it's used as a built-in
+part of the kernel.
+
+  \subsection{MacOS X 10.5}
+  On MacOS X entry and exit point have the same parameters. By default the name of this function follow this example but you can change the name of this functions.
+    \begin{lstlisting}
+kern_return_t modulename_start(kmod_info_t *ki, void *d)
+kern_return_t modulename_stop(kmod_info_t *ki, void *d)
+    \end{lstlisting}
+{\bf \it kmod\_info\_t} is an data structure used by the kernel module internals, it contains information like info\_version of the module or like a pointer to the next module in the kmod\_table.\\
+The param {\bf \it void *d} is named "data" in the kernel headers but kextload don't permit to pass args to kernel module so we don't know now what is the utility of this param.\\ %si quelqu'un pouvait verifier ca j'en suis pas tres sur.
+This functions return an status code {\bf \it kern\_return\_t} like KERN\_SUCCESS or KERN\_FAILURE.
+	
+  \subsection{Windows XP}
+  The driver entry point on Windows XP is set as a flag on compilation line
+  (-entry:EntryPoint).
+  However, historically the name DriverEntry is commonly used, so the Driver Development Kit use
+  it by default.\\
+  A WDM driver entry point looks like :
+    \begin{lstlisting}    
+NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject,
+IN PUNICODE_STRING RegistryPath);
+    \end{lstlisting}
+{\bf \it PDRIVER\_OBJECT} is a pointer to a data structure representing the driver.
+Accessibles members of this structure are :
+    \begin{lstlisting}
+PDEVICE_OBJECT DeviceObject
+PDRIVER_EXTENSION DriverExtension
+PUNICODE_STRING HardwareDatabase
+PFAST_IO_DISPATCH FastIoDispatch
+PDRIVER_INITIALIZE DriverInit
+PDRIVER_STARTIO DriverStartIo
+PDRIVER_UNLOAD DriverUnload
+PDRIVER_DISPATCH MajorFunction[IRP_MJ_MAXIMUM_FUNCTION+1]
+    \end{lstlisting}
+{\bf \it DeviceObject} is updated automatically by the {\it IoCreateDevice}\\
+{\bf \it DriverExtension} is a pointer to the extension structure:\\
+DriverExtension-\textgreater AddDevice is the only accessible member.\\
+{\bf \it HardwareDatabase} is the path to the hardware configuration in the registry.\\
+{\bf \it FastIoDispatch} is a pointer to the fastI/O structure which define the fastI/O entry point.\\
+{\bf \it DriverInit} is the entry point for the DriverEntry.\\
+{\bf \it DriverStartIo} is the entry point for the startI/O routine.\\
+{\bf \it DriverUnload} the function called at unload time.\\
+{\bf \it MajorFunction} is an array containing the function pointer to the
+dispatch routines (read, write, ...).\\
+In order to be able to unload the driver it is important to set the unload
+field of the PDRIVER\_OBJECT to a function matching this prototype :
+	\begin{lstlisting}
+void DriverUnload(PDRIVER_OBJECT pDriverObject);
+    \end{lstlisting}
+  {\bf \it PUNICODE\_STRING} is a pointer to a structure containing the registry path of the driver.
+  A WDF driver entry point got the same entry point prototype.
+
+  \subsection{Generalization}
+  In spite of their differences about data types and point of view, each
+  operating systems need a least an entry point.
+  They also all provide a way to indicate a cleanup function which will be
+  called on the driver unload.\\
+  Requirement :
+  \begin{enumerate}
+	\item It MUST have implement an entrypoint.(all OS)
+	\item It SHOULD have an exit point , a log point or a stat point.(all)
+  \end{enumerate}
+
+\newpage
+\section{RKM registration}
+This part is used to attach the previously seen main functions to the kernel.
+It allows the compiler to fill the data structures with specific informations,
+and to use the previously defined entry/exit points. After this step the
+kernel will be able to use the module.
+
+  \subsection{OpenBSD}
+Now we have to tell to the OpenBSD kernel which functions will be our entry,
+exit or miscellaneous point (or the function that handle this three actions).
+    \begin{lstlisting}
+MOD_DEV("my_mod", LM_DT_CHAR, -1, NULL)
+my_mod(struct lkm_table *l, int cmd, int ver)
+{
+    DISPATCH(l, cmd, ver, entry_point, exit_point, misc_point);
+}
+    \end{lstlisting}
+Or
+    \begin{lstlisting}
+MOD_DEV("my_mod", LM_DT_CHAR, -1, NULL)
+my_mod(struct lkm_table *l, int cmd, int ver)
+{
+    DISPATCH(l, cmd, ver, point_handler, point_handler, point_handler);
+}
+    \end{lstlisting}
+The MOD\_DEV macro that gives to the kernel informations about the driver.
+It takes four parameters : the first one is the driver name, the second is
+the type of the driver :
+\begin{description}
+\item{LM\_DT\_CHAR for a character device.}
+\item{LM\_DT\_BLOCK for a block device.}
+\end{description}
+The third one is the device major device number (-1 to get this number automatically),
+and finally, the fourth one is a pointer to a structure describing the driver.
+This last point is not mandatory to describe a basic RKM for OpenBSD.\\
+We will go deeper in a future paper about driver implementation.
+
+  \subsection{Linux 2.6}
+  At loadtime the {\bf \it module\_init} macro is called. This macro
+is used to define the function that should be called to initialize
+the module. The pending macro {\bf \it module\_exit} is called when the
+module is unloaded.
+The parameter of the macro is the pointer to the function to be called.
+    \begin{lstlisting}
+module_init(entry_point);
+module_exit(exit_point);
+    \end{lstlisting}
+
+  \subsection{MacOS X 10.5}
+Registration is made with the target information in XCode. You have to set the value if the properties MODULE\_START and MODULE\_STOP located in build information configuration of the target in XCode. If you keep the default name of the module entry or exit functions this fields are already fill. \\
+  \subsection{Windows XP}
+        No code is needed to perform entry point registration.
+  	As explained above, the driver entry point is given at compile time.
+  	As a reminder, it was done by indicating the -entry:DriverEntry flag
+  	as compilation argument.\\
+  	The driver cleanup function must be registered during initialization
+  	if the module has to be unloaded. That's done by setting the DriverUnload
+  	field of the DriverEntry's first parameter of type PDRIVER\_OBJECT.\\
+  	In this example, rathaxesUnload is the pointer to the cleanup function :
+    \begin{lstlisting}
+DriverObject->DriverUnload = rathaxesUnload;
+    \end{lstlisting}
+    WDF drivers can ommit to indicate an unload callback, as the framework
+    provides a default one.
+  \subsection{Generalization}
+In the four operating systems, the aim is the same : register the driver to the
+kernel, meaning at least defining an entry point and an exit point.\\
+Unfortunately, the four implementations are completely differents.\\
+Requirement:
+  \begin{enumerate}
+	\item During the registration step the module MUST have a name.(OpenBSD) 
+	\item During the registration phase the module MUST have device informations.(like LM\_DT\_CHAR for OpenBSD).
+	\item It should have driver description. (Windows OpenBSD).
+	\item It must informed the differents entry points. (all)
+  \end{enumerate}
+
+
+\newpage
+\section{Compilation}
+Compiling a RKM is the final step to get a working module from source files.
+This consists, like any compilation, in taking source files in input to build an
+object or binary file.
+  \subsection{OpenBSD}
+  A kernel module is compiled like any other binary, just adding
+  the -D\_KERNEL flag to indicate that it will be a kernel module.
+  For example :
+  \begin{lstlisting}
+  gcc hello.c -D_KERNEL -I/sys
+  \end{lstlisting}
+  A basic Makefile like this one could also be used :
+    \begin{lstlisting}
+SRCS=hello.c
+OBJS=$(SRCS:.c=.o)
+
+NAME=hello
+CFLAGS+= -D_KERNEL -I/sys
+
+all:	$(OBJS)
+
+clean:
+	rm -f $(OBJS) $(NAME)
+
+load:
+	modload -o $(NAME) -e$(NAME)
+
+unload:
+	modunload -n $(NAME)
+    \end{lstlisting}
+
+  \subsection{Linux 2.6}
+The easiest way to compile a module is to use the standard kernel build
+mecanism (kbuild). Since the kernel 2.6 there is a '.ko' extention for kernel 
+modules insted of the old '.o'.
+This simple Makefile compiles a module called 'module'
+from a 'module.c' file.
+    \begin{lstlisting}
+obj-m += module.o
+
+all:
+make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+    \end{lstlisting}
+To build a module out of multiple file we have first to
+create an unique combined object, then to tell make what file are part
+of that combined object. The following makefile compile a module 
+named 'combined\_module' from module\_file1.c and module\_file2.c.
+    \begin{lstlisting}
+obj-m += combined_module.o
+combined_module-objs := module_file1.o module_file2.o
+
+all:
+    make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+    \end{lstlisting}
+
+  \subsection{MacOS X 10.5}
+To compile a module we need to fill an xml file. This file is name Info.plist and provide information for the XCode build engine.
+That is an example of Info.plist file :
+    \begin{lstlisting}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${EXECUTABLE_NAME}</string>
+	<key>CFBundleName</key>
+	<string>${PRODUCT_NAME}</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.rathaxes.kext.serial</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.0d1</string>
+	<key>OSBundleLibraries</key>
+	<dict>
+		<key>com.apple.kernel.bsd</key>
+		<string>6.9.9</string>
+		<key>com.apple.kernel.mach</key>
+		<string>6.9.9</string>
+	</dict>
+</dict>
+</plist>
+    \end{lstlisting}
+Most of the data stored in this xml is always the same but only a piece of it is interesting. For exemple the CFBundleIdentifier must contain the same value of the key MODULE\_NAME present is the info build configuration of the target. The value of CFBundleVersion must also be the same of the constant MODULE\_VERSION present on the build configuration of the target of the project.\\
+The most important key is the OSBundleLibraries one. It s a dictionary who contains all the library linked at the compilation time. The key correspond at the library name and the value at the version number.\\
+
+  \subsection{Windows}
+To compile a module under Windows XP the DDK (Driver Development
+Kit) is needed. It can be found on the Microsoft website.
+In order to build the driver two more files are needed: the sources file and the makefile.\\
+Here is an example of a makefile :
+\begin{lstlisting}
+!INCLUDE $(NTMAKEENV)\makefile.def
+\end{lstlisting}
+And here an example of sources file :
+\begin{lstlisting}
+TARGETNAME=driverName
+TARGETPATH=.
+TARGETTYPE=DRIVER
+INCLUDES= $(BASEDIR)\inc;.
+SOURCES=driver.c
+\end{lstlisting}
+If multiple files are needed as sources, they have to be inserted
+whitespace separated on the SOURCES variable.
+Example:
+\begin{lstlisting}
+SOURCES=driver.c driver_2.c driver_3.c
+\end{lstlisting}
+For WDF driver, a line indicating the Kernel Mode Driver Framework version used
+must be added :
+\begin{lstlisting}
+KMDF_VERSION=1
+\end{lstlisting}
+  \subsection{Generalization}
+  Even if the compilation process is different on the four operating systems,
+  each operating system needs the module to be compiled.
+  In this compilation step, a Makefile and multiple source
+  files could be used.\\
+  Requirements:
+  \begin{enumerate}
+	\item It MUST contain used Frameworks or librairies and contain the differents frameworks versions. (Mac OS \& Win)
+  \end{enumerate}
+  
+\newpage
+\section{Requirements}
+\begin{enumerate}
+	\item Informations about LKM MUST be given : author, licence, name, version and description.
+  	\item It MUST be possible to define dependencies between headers file (OpenBSD) 
+	\item For kernel module registration, a set of header files must be given.
+	\item It MUST implement an entry point.(all OS)
+	\item It SHOULD have an exit point , a log point or a stat point.(all)
+	\item It MUST contains used frameworks or librairies and contains the differents frameworks versions. (Mac OS \& Win)
+	\item During the registration step the module MUST have a name.(OpenBSD) 
+	\item During the registration phase the module MUST have device informations.(like LM\_DT\_CHAR for OpenBSD).
+	\item It should have driver description. (Windows OpenBSD).
+	\item It must indicates the different entry points. (all)
+\end{enumerate}
+\newpage
+\section{Glossary}
+\begin{description}
+	\label{DSL}
+	\item{DSL : A Domain Specific Language is a programming language that
+        applies to a specific domain (for exemple SQL is a DSL for databases
+        domain).}
+	\label{RKM}
+	\item{RKM : A Rathaxes Kernel Module is a device driver oriented empty shell 
+	containing the minimum data to be loaded.}
+	\label{LKM}
+	\item{LKM : A Loadable Kernel Module is a module that can be loaded in a running kernel.}
+	\label{KEXT}
+	\item{KEXT : A Kernel Extension is the MacOSX entity which will be loaded as a module in the running kernel.}
+	\label{WDM}
+	\item{WDM : Windows Driver Model}
+	\label{WDF}
+	\item{WDF : Windows Driver Foundation, a framework based upon WDM, which simplify Windows driver writing.}
+\end{description}
+
+\newpage
+\section{Appendices}
+  \subsection{OpenBSD hello world RKM}
+    \begin{lstlisting}
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/exec.h>
+#include <sys/conf.h>
+#include <sys/lkm.h>
+#include <stdio.h>
+
+int entry_point(struct lkm_table *l, int cmd)
+{
+    printf("Hello World");
+    return (0);
+}
+
+int exit_point(struct lkm_table *l, int cmd)
+{
+    printf("Bye World");
+    return (0);
+}
+
+int misc_point(struct lkm_table *l, int cmd)
+{
+    printf("An Other World");
+    return (0);
+}
+
+MOD_DEV("my_mod", LM_DEV, -1, NULL)
+
+my_mod( struct lkm_table *lkmtp, int cmd, int ver)
+{
+    DISPATCH(lkmtp, cmd, ver, entry_point, exit_point, misc_point)
+}
+    \end{lstlisting}
+Or
+    \begin{lstlisting}
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/exec.h>
+#include <sys/conf.h>
+#include <sys/lkm.h>
+#include <stdio.h>
+
+int my_handler(struct lkm_table *l, int cmd)
+{
+    switch (cmd)
+    {
+        case LKM_E_LOAD:
+            printf("Hello World");
+        break;
+        case LKM_E_UNLOAD:
+            printf("Bye World");
+        break;
+        case LKM_E_STAT:
+            printf("An Other World");
+        break;
+    }
+}
+
+MOD_DEV("my_mod", LM_DEV, -1, NULL)
+
+my_mod( struct lkm_table *lkmtp, int cmd, int ver)
+{
+    DISPATCH(lkmtp, cmd, ver, my_handler, my_handler, my_handler)
+}
+    \end{lstlisting}
+
+\newpage
+  \subsection{Linux 2.6 hello world RKM}
+    \begin{lstlisting}
+/*
+ * hello.c
+ * Basic Hello World.
+ */
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("C. Norris");
+MODULE_ALIAS("goodbye");
+MODULE_VERSION("0.1");
+
+static int __init hello(void)
+{
+  printk(KERN_INFO "Hello, kernel World !\n");
+  return (0);
+}
+
+static void __exit goodbye(void)
+{
+  printk(KERN_INFO "Goodbye, kernel World !\n");
+}
+
+module_init(hello);
+module_exit(goodbye);
+    \end{lstlisting}
+
+\newpage
+  \subsection{MacOS X 10.5 hello world RKM}
+    \begin{lstlisting}
+#include <mach/mach_types.h>
+#include <sys/systm.h>
+
+kern_return_t serial_start (kmod_info_t * ki, void * d) 
+{
+	printf("Hello World\n");
+    	return KERN_SUCCESS;
+}
+
+kern_return_t serial_stop (kmod_info_t * ki, void * d) 
+{
+	printf("Bye World\n");
+	return KERN_SUCCESS;
+}
+    \end{lstlisting}
+
+\newpage
+  \subsection{Windows XP hello world RKM}
+    \begin{lstlisting}
+/*
+** Hello World, WDM version
+*/
+#include <ntddk.h>
+
+void DriverUnload(PDRIVER_OBJECT pDriverObject)
+{
+        DbgPrint("Bye World\n");
+}
+
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject,
+                        PUNICODE_STRING RegistryPath)
+{
+        DbgPrint("Hello world\n");
+	DriverObject->DriverUnload = DriverUnload;
+
+        return(STATUS_SUCCESS);
+}
+    \end{lstlisting}
+
+    \begin{lstlisting}
+/*
+** Hello World, WDF version
+** wdf_hello.c
+*/
+#include ``wdf_hello.h''
+
+NTSTATUS
+DriverEntry(
+    IN PDRIVER_OBJECT  DriverObject,
+    IN PUNICODE_STRING RegistryPath
+    )
+{
+    NTSTATUS            status = STATUS_SUCCESS;
+    WDF_DRIVER_CONFIG   config;
+
+    KdPrint((``Hello WDF World.\n''));
+    KdPrint((``Built %s %s\n'', __DATE__, __TIME__));
+
+        WDF_DRIVER_CONFIG_INIT(
+        &config,
+        WdfHelloEvtDeviceAdd
+        );
+
+    status = WdfDriverCreate(
+        DriverObject,
+        RegistryPath,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &config,
+        WDF_NO_HANDLE
+        );
+
+    if (!NT_SUCCESS(status)) {
+        KdPrint( (``WdfDriverCreate failed with status 0x%x\n'', status));
+    }
+    return status;
+}
+
+NTSTATUS
+WdfHelloEvtDeviceAdd(
+    IN WDFDRIVER       Driver,
+    IN PWDFDEVICE_INIT DeviceInit
+    )
+{
+    NTSTATUS               status = STATUS_SUCCESS;
+
+    UNREFERENCED_PARAMETER(Driver);
+    PAGED_CODE();
+    KdPrint((``WdfHelloEvtDeviceAdd called\n''));
+    return status;
+}
+    \end{lstlisting}
+    \begin{lstlisting}
+/*
+** Hello World, WDF version
+** wdf_hello.h
+*/
+#ifndef _WDF_HELLO_H_
+# define _WDF_HELLO_H_
+
+# include <ntddk.h>
+# include <wdf.h>
+
+//Prototypes of the DriverEntry point ( defined in <wdf.h> )
+DRIVER_INITIALIZE DriverEntry;
+
+NTSTATUS
+WdfHelloEvtDeviceAdd(
+    IN WDFDRIVER Driver,
+    IN PWDFDEVICE_INIT DeviceInit
+    );
+#endif  // ! _WDF_HELLO_H_
+
+    \end{lstlisting}
+\end{document}

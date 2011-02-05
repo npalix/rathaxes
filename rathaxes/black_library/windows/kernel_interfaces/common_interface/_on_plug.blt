@@ -1,0 +1,26 @@
+<%
+/*
+**  _on_plug.blt in black_library/windows/kernel_interfaces/common_interfaces
+**  for Rathaxes project
+**  made by Micka
+*/
+
+local	sDriverName = this.name;
+localref nSelf = project.references.currentContext;
+
+%>
+
+ADVICE on_plug PART_OF kernel_interfaces
+{
+    NTSTATUS @sDriverName@_on_plug(WDFDEVICE Device,
+		WDFCMRESLIST Resources,
+		WDFCMRESLIST ResourcesTranslated)
+    {
+        <% local sToken = getContextToken(nSelf.block); %>
+        JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+
+    exit:
+        return STATUS_SUCCESS;
+    }
+};

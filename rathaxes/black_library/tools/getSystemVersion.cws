@@ -1,0 +1,9 @@
+// Default function for unimplemented getSystemVersion OS.
+
+declare function	getSystemVersion<T>();
+
+function	getSystemVersion<T>()
+{
+    return "";
+}
+

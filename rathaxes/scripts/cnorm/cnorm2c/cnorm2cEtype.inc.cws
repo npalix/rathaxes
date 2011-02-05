@@ -1,0 +1,55 @@
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+
+function	cnorm2cEtype<T>(block : node)
+{
+  traceLine("Unkown node Etype:" + T);
+  traceLine("Must be implemented");
+  exit(1);
+}
+
+function	cnorm2cEtype<"">(block : node)
+{
+  traceLine("Empty node Block.etype");
+  traceObject(block, 2);
+  exit(1);
+}
+
+// toutes les declarations
+function	cnorm2cEtype<"declaration">(block : node)
+{
+  return cnorm2cType<block.type>(block);
+}
+
+// toutes les declarations de type dans un typeof
+function	cnorm2cEtype<"typename">(block : node)
+{
+  return cnorm2cOtype<"typecast">(block);
+}
+
+// toutes les expressions
+function	cnorm2cEtype<"expression">(block : node)
+{
+  return cnorm2cOtype<block.otype>(block) + ";";
+}
+
+// toutes les expressions assembleur
+function	cnorm2cEtype<"asmexpr">(block : node)
+{
+  return   block.asm;
+}
+
+// les expressions dans l'initializer_list
+function	cnorm2cEtype<"init">(block : node)
+{
+  return cnorm2cOtype<block.otype>(block);
+}
+
+// les structures de controles
+function	cnorm2cEtype<"statement">(block : node)
+{
+  return cnorm2cOtype<block.otype>(block);
+}
