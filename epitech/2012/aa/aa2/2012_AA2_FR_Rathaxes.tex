@@ -99,14 +99,12 @@ compilateur sélectionne des fichiers BLT issus de la \BL~;
 reconstruit à partir des modèles de la BLT.
 \end{enumerate}
 
-\hbox{}
 Notre objectif est de modifier le comportement du compilateur dans le but de
 rendre les modifications futures du langage plus simples à implémenter.
 Nous pourrons ainsi identifier les éléments principaux du compilateur comme
 suit :
 \includegraphics[width=0.95\textwidth]{diagramme_architecture.pdf}
 
-\hbox{}
 On constate donc plusieurs éléments qui se démarquent les uns des
 autres au sein du compilateur, chacun ayant son rôle défini :
 \begin{itemize}
@@ -137,7 +135,6 @@ autres au sein du compilateur, chacun ayant son rôle défini :
         code C au sein des modèles de code de manière simplifiée.
 \end{itemize}
 
-\hbox{}
 Pour cette raison, plusieurs éléments du compilateur vont changer
 fondamentalement :
 \begin{itemize}
@@ -145,7 +142,6 @@ fondamentalement :
 \item Approche de la construction de l'Arbre de Syntaxe Abstraite final.
 \end{itemize}
 
-\hbox{}
 Commençons par la conception que nous avons du langage Rathaxes
 lui-même. L'équipe 2009 visualisait le \emph{DSL} du \emph{Front-end},
 contenu dans les fichiers \texttt{.rtx} comme un language tout à fait
@@ -157,7 +153,6 @@ aussi constater l'apparition d'un \emph{Middle-end}, correspondant plutôt
 à la partie du language \emph{interne} au compilateur. Y seront liés
 notamment les différents builtins que celui-ci comportera.
 
-\hbox{}
 De plus, la construction de l'Arbre de Syntaxe Abstraite va être
 découpée de manière beaucoup plus claire et explicite au sein du
 compilateur.
@@ -173,10 +168,8 @@ pourra donc être traité différemment qu'il ne l'est actuellement.
 Le schéma ci-dessous détaille ce processus de génération d'un
 AST à partir d'un fichier passé en paramètre au compilateur.
 
-\hbox{}
 %\includegraphics{diagramme_logique}
 
-\hbox{}
 Pour cela l'étape de transformation de l'AST en fichier \texttt{.c} sera
 segmentée en 2 étapes :
 \begin{enumerate}
