@@ -30,7 +30,7 @@
 \hline
 1.0 & 16/12/2010 & Louis Opter & Prise en compte des critiques faites sur l'AA1 \\
 \hline
-1.1 & 04/02/2011 & David Pineau & Correction de la section fonctionnelle d\'{e}taill\'{e}e selon les \'{e}volutions du projet \\
+1.1 & 04/02/2011 & David Pineau & Correction de la section fonctionnelle détaillée selon les évolutions du projet \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -85,7 +85,7 @@ La \BL\ et nos documentations constituent notre base de données.
 \rtx\ utilise le langage CodeWorker\cite{CodeWorker} pour l'analyse du DSL ainsi
 que la génération d'un AST\footnote{Abstract Syntax Tree: Arbre de Syntaxe
 Abstraite.}. Enfin, CodeWorker utilise cet AST, pour générer le code C du
-driver. Afin de pouvoir générer du code C à partir du DSL de \rtx\, le
+driver. Afin de pouvoir générer du code C à partir du DSL de \rtx, le
 compilateur utilise une bibliothèque de modèles appelé \BL.
 
 \section{Diagramme détaillé}
@@ -107,38 +107,38 @@ suit :
 \includegraphics[width=0.95\textwidth]{diagramme_architecture.pdf}
 
 \hbox{}
-On constate donc plusieurs \'{e}l\'{e}ments qui se d\'{e}marquent les uns des
-autres au sein du compilateur, chacun ayant son r\^{o}le d\'{e}fini :
+On constate donc plusieurs éléments qui se démarquent les uns des
+autres au sein du compilateur, chacun ayant son rôle défini :
 \begin{itemize}
-\item CNorm : biblioth\`{e}que externe se chargeant de tout code relevant du
+\item CNorm : bibliothèque externe se chargeant de tout code relevant du
         langage C. Elle contient :
         \begin{itemize}
-        \item Parse : \'{e}l\'{e}ment charg\'{e} de construire un AST \`{a}
+        \item Parse : élément chargé de construire un AST à
                 partir de code source C ;
-        \item PatchLib : ensemble de fonctionnalit\'{e}s permettant de manipuler
+        \item PatchLib : ensemble de fonctionnalités permettant de manipuler
                 et d'annoter un AST ;
-        \item CNormToC : \'{e}l\'{e}ment g\'{e}n\'{e}rant du code C \`{a} partir
+        \item CNormToC : élément générant du code C à partir
                 d'un AST ;
-        \item CNormNode : biblioth\`{e}que de normalisation d'AST ;
-        \item TypeHandling : \'{e}l\'{e}ment se chargeant de v\'{e}rifier la
-                validit\'{e} des expressions contenues dans un AST ;
+        \item CNormNode : bibliothèque de normalisation d'AST ;
+        \item TypeHandling : élément se chargeant de vérifier la
+                validité des expressions contenues dans un AST ;
         \end{itemize}
 \item Tool : suite d'outils permettant d'instrumentaliser la manipulation de
-        l'AST g\'{e}n\'{e}r\'{e} par RTX\_Parse ;
-\item RTX\_Parse : \'{e}l\'{e}ment charg\'{e} de construire un AST \`{a} partir
+        l'AST généré par RTX\_Parse ;
+\item RTX\_Parse : élément chargé de construire un AST à partir
         de n'importe quelle partie du DSL (Front-end, Middle-end ou Back-end) ;
-\item RTX\_Tree : biblioth\`{e}que de normalisation d'AST pour rathaxes ;
-\item RTX\_Link : \'{e}l\'{e}ment s\'{e}lectionnant des mod\`{e}les de code
-        \`{a} instancier, selon les informations contenues dans l'AST actuel et
-        effectue les v\'{e}rifications de validit\'{e} des expressions contenues
+\item RTX\_Tree : bibliothèque de normalisation d'AST pour rathaxes ;
+\item RTX\_Link : élément sélectionnant des modèles de code
+        à instancier, selon les informations contenues dans l'AST actuel et
+        effectue les vérifications de validité des expressions contenues
         dans l'AST ;
 \item RTX\_Tpl : ensemble d'outils permettant d'instrumenter le tissage de
-        plusieurs AST entre eux. Cela permettra \`{a} terme d'int\'{e}grer du
-        code C au sein des mod\`{e}les de code de mani\`{e}re simplifi\'{e}e.
+        plusieurs AST entre eux. Cela permettra à terme d'intégrer du
+        code C au sein des modèles de code de manière simplifiée.
 \end{itemize}
 
 \hbox{}
-Pour cette raison, plusieurs \'{e}l\'{e}ments du compilateur vont changer
+Pour cette raison, plusieurs éléments du compilateur vont changer
 fondamentalement :
 \begin{itemize}
 \item Conception du langage Rathaxes ;
@@ -146,32 +146,32 @@ fondamentalement :
 \end{itemize}
 
 \hbox{}
-Commen\,{c}ons par la conception que nous avons du langage Rathaxes
-lui-m\^{e}me. L'\'{e}quipe 2009 visualisait le \emph{DSL} du \emph{Front-end},
-contenu dans les fichiers \texttt{.rtx} comme un language tout \`{a} fait
-distinct du language pr\'{e}sent dans les fichiers \texttt{.rtx} du\
-\emph{Back-end}. D\'{e}sormais, aussi bien du point de vue du compilateur que
-du point de vue d'un utilisateur, nous d\'{e}sirons que le \emph{Front-end} et
-le \emph{Back-end} de Rathaxes soit un seul et m\^{e}me language. On pourra
-aussi constater l'apparition d'un \emph{Middle-end}, correspondant plut\^{o}t
-\`{a} la partie du language \emph{interne} au compilateur. Y seront li\'{e}s
-notamment les diff\'{e}rents builtins que celui-ci comportera.
+Commençons par la conception que nous avons du langage Rathaxes
+lui-même. L'équipe 2009 visualisait le \emph{DSL} du \emph{Front-end},
+contenu dans les fichiers \texttt{.rtx} comme un language tout à fait
+distinct du language présent dans les fichiers \texttt{.rtx} du
+\emph{Back-end}. Désormais, aussi bien du point de vue du compilateur que
+du point de vue d'un utilisateur, nous désirons que le \emph{Front-end} et
+le \emph{Back-end} de Rathaxes soit un seul et même language. On pourra
+aussi constater l'apparition d'un \emph{Middle-end}, correspondant plutôt
+à la partie du language \emph{interne} au compilateur. Y seront liés
+notamment les différents builtins que celui-ci comportera.
 
 \hbox{}
-De plus, la construction de l'Arbre de Syntaxe Abstraite va \^{e}tre
-d\'{e}coup\'{e}e de mani\`{e}re beaucoup plus claire et explicite au sein du
+De plus, la construction de l'Arbre de Syntaxe Abstraite va être
+découpée de manière beaucoup plus claire et explicite au sein du
 compilateur.
-En effet, jusqu'\`{a} maintenant, le code que l'on pouvait \'{e}crire dans un
-fichier \texttt{.rtx} d\'{e}pendait de ce qui \'{e}tait impl\'{e}ment\'{e} au
-niveau des mod\`{e}les de code, les fichier \texttt{.blt}. Nous souhaitons
-all\'{e}ger cette relation entre \emph{Front-end} et \emph{Back-end}, en
+En effet, jusqu'à maintenant, le code que l'on pouvait écrire dans un
+fichier \texttt{.rtx} dépendait de ce qui était implémenté au
+niveau des modèles de code, les fichier \texttt{.blt}. Nous souhaitons
+alléger cette relation entre \emph{Front-end} et \emph{Back-end}, en
 normalisant le langage, ce qui nous permettra non seulement de le documenter
-plus facilement, mais aussi de rendre ces deux parties quasi-ind\'{e}pendantes.
+plus facilement, mais aussi de rendre ces deux parties quasi-indépendantes.
 
-Le flux d'entr\'{e}e de Rathaxes, selon les mots clefs qu'il contient,
-pourra donc \^{e}tre trait\'{e} diff\'{e}remment qu'il ne l'est actuellement.  
-Le sch\'{e}ma ci-dessous d\'{e}taille ce processus de g\'{e}n\'{e}ration d'un
-AST \`{a} partir d'un fichier pass\'{e} en param\`{e}tre au compilateur.
+Le flux d'entrée de Rathaxes, selon les mots clefs qu'il contient,
+pourra donc être traité différemment qu'il ne l'est actuellement.
+Le schéma ci-dessous détaille ce processus de génération d'un
+AST à partir d'un fichier passé en paramètre au compilateur.
 
 \hbox{}
 %\includegraphics{diagramme_logique}
