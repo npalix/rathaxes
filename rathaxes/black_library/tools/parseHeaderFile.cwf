@@ -1,0 +1,193 @@
+// parseHeaderFile.cwf
+//-----------------------------------------------------------------------------
+// Created by Christophe Fajardo Y Romera	- Mon Jun  9 12:25:49 CEST 2008
+// Modified by Christophe Fajardo Y Romera	- Mon Jun  9 12:26:00 CEST 2008
+//-----------------------------------------------------------------------------
+// These function a related to generation of C type tree linked to a semantic.
+// The main function parseHeaderFile system headers to all C types, because we
+// need to resolve kernel C types to check if black library templates are
+// valid or not.
+// Kernel C types tree is cached for future usage, then we don't need to parse
+// too many lines of kernel headers.
+//-----------------------------------------------------------------------------
+// NOTES
+// - This functions are operating systems independent
+// - Cache system may be slower than parsing header files.
+//-----------------------------------------------------------------------------
+// Todo list:
+// TODO	export cache code from parseHeaderFile function.
+// TODO	export tree generation from parseHeaderFile function.
+// TODO	check if os dependent cache directory exist or not. (find a way to test
+//		it)
+//-----------------------------------------------------------------------------
+
+/*
+ * parseHeaderFile.cwf functions declaration
+ */
+declare	function	parseHeaderFile(types : node, list : node, os : value);
+declare function	getCacheFilename(os : value);
+declare function	getCachedTree();
+declare function	generateTree();
+
+/* getCacheFilename
+ *-----------------------------------------------------------------------------
+ * This function get the full path of a cache file from a given semantic.
+ *-----------------------------------------------------------------------------
+ * TODO code this function.
+ */
+function	getCacheFilename(os : value)
+{
+	local	cacheFile;
+	local	systemVersion;
+
+    //traceObject(project.configuration, 5);
+	if (existVariable(project.configuration["RKM"]["VERSION"]))
+	{
+		systemVersion = replaceString("\"", "", project.configuration["RKM"]["VERSION"]);
+	}
+	else
+	{
+		systemVersion = getSystemVersion<os>();
+	}
+	if (!systemVersion)
+	{
+		error("parseHeaderFile: getSystemVersion cannot get system version.");
+		return;
+	}
+	cacheFile = RTX_BLACK_LIBRARY_PATH + os + getOperatingSystemPathSeparator() + HEADER_CACHE_PATH;
+	cacheFile = cacheFile + systemVersion;
+    foreach sem in project.references.driver.require
+    {
+        if (sem == TRUE)
+        {
+            cacheFile += "_" + sem.key();
+        }
+    }
+
+    //traceLine("cache file: " + cacheFile);
+	return cacheFile;
+}
+
+/* getCachedTree
+ *-----------------------------------------------------------------------------
+ * This function get a kernel C type tree.
+ *-----------------------------------------------------------------------------
+ * TODO code this function.
+ */
+function	getCachedTree()
+{
+}
+
+/* generateTree
+ *-----------------------------------------------------------------------------
+ * This function generate a kernel C type tree.
+ *-----------------------------------------------------------------------------
+ * TODO code this function.
+ */
+function	generateTree()
+{
+}
+
+/*
+ * parseHeaderFile
+ * ----------------------------------------------------------------------------
+ * This function parse a header file, passed as file agument, for a given
+ * operating system (os : value).
+ * All C type parsed by cnorm are merged with project.references.driver.types
+ * ----------------------------------------------------------------------------
+ * TODO find a way to found if a file is cached.
+ * TODO export cache code to a function.
+ * TODO cache a semantic tree.
+ */
+function	parseHeaderFile(types : node, list : node, os : value)
+{
+	local	foo;
+	local	filePath;
+    local   cwd;
+    local   outputTempFile;
+    
+    cwd = getCurrentDirectory();
+    changeDirectory(getTempDir<os>());
+	
+    outputTempFile = "rathaxesOutputHeaderFile_" + os;	
+    if (existFile("rathaxesHeaderTemp"))
+        deleteFile("rathaxesHeaderTemp");	
+    foreach item in list
+    {
+        appendFile("rathaxesHeaderTemp", "#include <" + item + ">\n");
+    }
+
+    // TODO check if the directory exist.
+	//if (!exploreDirectory(foo, cachePath, true))
+	//{
+	//    if(!createDirectory(cachePath))
+	//		error("parseHeaderFile: cannot create directory " + cachePath);
+	//}
+	//else
+	//{
+	//  traceLine("cachePath: " + cachePath);
+	//	error("parseHeaderFile: cannot find directory.");
+	//}	
+
+	filePath = getCacheFilename(os);	
+	// Here we will test if the tree is cached.
+	if (existFile(filePath))
+	{
+        // Get the cached tree and return it
+        //loadProject(filePath, "types", types); Utilisation du loadproject de codeworker
+		loadProject(filePath, types);
+		merge project.references.driver.types = types;
+
+        if (!existVariable(types))
+        {
+            error("parseHeaderFile: cannot load project file.");
+            return;
+        }
+	}
+	else
+	{
+		// Get the command line and execute it.
+		local command = getCMD<os>("rathaxesHeaderTemp", outputTempFile);
+		if (command)
+		{
+			local headerNode;
+			local subTree;
+
+			system(command);
+
+			insert subTree.gl_pctx;
+			insert project.references.driver.pctx;
+			ref subTree.gl_pctx = project.references.driver;
+
+			parseStringAsBNF(CNORM, subTree, loadFile(outputTempFile));
+			if (existVariable(subTree.block.types))
+			{
+			    merge project.references.driver.types = subTree.block.types;
+			    //removeVariable(types.gl_pctx); // FIXME segfault
+			}
+            else
+            {
+                print("parseHeaderFile: subTree.block.types does not exist.");
+                return "";
+            }
+
+
+			if (existVariable(subTree))
+			{
+				saveProject(filePath, subTree.block.types);
+			}
+            else
+            {
+                print("parseHeaderFile: subTree does not exist.");
+                return "";
+            }
+		}
+		else
+		{
+			error("parseHeaderFile: getCMD: cannot get command line.");
+			return "";
+		}
+	}
+    changeDirectory(cwd);
+	return;
+}

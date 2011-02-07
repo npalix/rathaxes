@@ -1,0 +1,27 @@
+/*
+**	rdsl_declaration_sequences_interfaces_common.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** -----------------------------------------------------------------------------
+**	TODO:
+**		- May we should give the function name and namespace in the error
+**		message.
+*/
+
+declare function checkSequenceInterfaceFunction(aSequenceInterfaceHash : node, sFunctionName : value);
+declare function checkSequenceInterfaceParameter(aSequenceInterfaceParametersHash : node, sParameterName : value, sParameterType : value);
+
+function checkSequenceInterfaceFunction(aSequenceInterfaceHash : node, sFunctionName : value)
+{
+	if (findElement(sFunctionName, aSequenceInterfaceHash))
+		rtxError("This function " + sFunctionName + " already exists in the current scope.");
+}
+
+function checkSequenceInterfaceParameter(aSequenceInterfaceParametersHash : node, sParameterName : value, sParameterType : value)
+{
+	foreach parameter in aSequenceInterfaceParametersHash
+	{
+		if (parameter.name == sParameterName && parameter.type == sParameterType)
+			rtxError("This parameter already.");
+	}
+}
