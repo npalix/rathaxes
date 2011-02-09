@@ -14,7 +14,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.47 r22583"
-   sodipodi:docname="logigramme.svg">
+   sodipodi:docname="logigramme.pdf">
   <defs
      id="defs4">
     <marker
@@ -489,9 +489,9 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
      inkscape:cx="110.22228"
-     inkscape:cy="456.15514"
+     inkscape:cy="354.26654"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g6153"
      showgrid="false"
      inkscape:snap-nodes="true"
      inkscape:snap-bbox="false"
@@ -1261,50 +1261,53 @@
        id="g6153"
        transform="translate(37.379077,36.502911)">
       <g
-         id="g4502-5-5-1"
-         transform="matrix(0.1698753,0,0,0.16127168,440.86896,128.97668)">
+         id="g8151">
         <g
-           transform="matrix(1,0,0,1.0441975,175.77063,-224.26169)"
-           style="display:inline"
-           id="g4173-1-0-2"
-           inkscape:label="title_bg_circle">
-          <rect
-             ry="101.44333"
-             rx="76.962944"
-             y="269.79852"
-             x="130.3503"
-             height="146.47212"
-             width="511.13721"
-             id="rect4179-1-7-5"
-             style="fill:#d1392e;fill-opacity:1" />
+           transform="matrix(0.12655453,0,0,0.16127168,476.27321,128.97668)"
+           id="g4502-5-5-1">
+          <g
+             inkscape:label="title_bg_circle"
+             id="g4173-1-0-2"
+             style="display:inline"
+             transform="matrix(1,0,0,1.0441975,175.77063,-224.26169)">
+            <rect
+               style="fill:#d1392e;fill-opacity:1"
+               id="rect4179-1-7-5"
+               width="511.13721"
+               height="146.47212"
+               x="130.3503"
+               y="269.79852"
+               rx="76.962944"
+               ry="101.44333" />
+          </g>
+          <g
+             style="display:inline"
+             id="g4183-6-9-5"
+             inkscape:label="title_bg"
+             transform="translate(175.77063,-207.15832)">
+            <rect
+               ry="95.871071"
+               rx="74.929832"
+               y="271.29599"
+               x="137.10158"
+               height="138.42644"
+               width="497.63464"
+               id="rect4187-6-4-9"
+               style="fill:#000000" />
+          </g>
         </g>
-        <g
-           transform="translate(175.77063,-207.15832)"
-           inkscape:label="title_bg"
-           id="g4183-6-9-5"
-           style="display:inline">
-          <rect
-             style="fill:#000000"
-             id="rect4187-6-4-9"
-             width="497.63464"
-             height="138.42644"
-             x="137.10158"
-             y="271.29599"
-             rx="74.929832"
-             ry="95.871071" />
-        </g>
+        <text
+           transform="scale(0.96815721,1.0328901)"
+           id="text4508-0-9-6"
+           y="149.51546"
+           x="541.97797"
+           style="font-size:13.18373966px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+           xml:space="preserve"><tspan
+             y="149.51546"
+             x="541.97797"
+             sodipodi:role="line"
+             id="tspan5950-6">CNorm</tspan></text>
       </g>
-      <text
-         xml:space="preserve"
-         style="font-size:13.18373966px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-         x="515.41791"
-         y="149.51546"
-         id="text4508-0-9-6"
-         transform="scale(0.96815721,1.0328901)"><tspan
-           id="tspan5950-6"
-           sodipodi:role="line"
-           x="515.41791"
-           y="149.51546">RTX_CNorm</tspan></text>
     </g>
     <g
        id="g7391">
