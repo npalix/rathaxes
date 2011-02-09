@@ -31,6 +31,8 @@
 1.0 & 16/12/2010 & Louis Opter & Prise en compte des critiques faites sur l'AA1 \\
 \hline
 1.1 & 04/02/2011 & David Pineau & Correction de la section fonctionnelle détaillée selon les évolutions du projet \\
+\hline
+1.2 & 09/02/2011 & David Pineau & Ajout d'un logigramme décrivant le fonctionnement du compilateur \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -89,6 +91,8 @@ driver. Afin de pouvoir générer du code C à partir du DSL de \rtx, le
 compilateur utilise une bibliothèque de modèles appelé \BL.
 
 \section{Diagramme détaillé}
+
+\subsection{Les composants du compilateur}
 
 Actuellement le compilateur \rtx\ de la promotion 2009 fonctionne ainsi~:
 \begin{enumerate}
@@ -164,23 +168,50 @@ alléger cette relation entre \emph{Front-end} et \emph{Back-end}, en
 normalisant le langage, ce qui nous permettra non seulement de le documenter
 plus facilement, mais aussi de rendre ces deux parties quasi-indépendantes.
 
+\subsection{Logigramme d'exécution}
+
 Le flux d'entrée de Rathaxes, selon les mots clefs qu'il contient,
-pourra donc être traité différemment qu'il ne l'est actuellement.
-Le schéma ci-dessous détaille ce processus de génération d'un
-AST à partir d'un fichier passé en paramètre au compilateur.
+pourra être traité différemment qu'il l'est actuellement.
+Le schéma ci-dessous détaille ce processus de génération de code source
+\texttt{.c} à partir d'un fichier \texttt{.rtx} passé en entrée du
+compilateur.
 
-%\includegraphics{diagramme_logique}
+\includegraphics[width=0.95\textwidth]{logigramme.pdf}
 
-Pour cela l'étape de transformation de l'AST en fichier \texttt{.c} sera
-segmentée en 2 étapes :
-\begin{enumerate}
-% j'ai remplacé "bouts" par échantillons, la phrase est toujours
-% incompréhensible mais au moins on a plus l'impression du faire du patchwork :
-\item Modifier l'AST généré à partir du DSL. L'équipe insérera des échantillons
-d'AST généré à partir de fichiers de la \BL\ activé selon les mots clefs du
-DSL~;
-\item Transcrire l'arbre final en langage C.
-\end{enumerate}
+Le premier élément entrant en jeu dans le compilateur sera  RTX\_Parse.
+Celui-ci, en fonction du mot-clef identifié, fera appel aux fonctionnalités
+d'analyse syntaxique du Front-end (contenu usuel d'un fichier \texttt{.rtx}),
+du Middle-end (fonctionnement interne du compilateur), ou du Back-end
+(contenu usuel d'un fichier \texttt{.blt}). Dans le cas d'un mot-clef dirigeant
+l'analyse syntaxique du flux vers l'élément Back-end de RTX\_Parse, il est
+possible que le CNorm soit directement utilisé, puisque cette partie du langage
+prévoit d'embarquer du code C.
+
+L'arbre de syntaxe abstraite(\emph{AST}) généré par RTX\_Parse (quel que soit
+l'élément réellement utilisé lors de l'analyse du fichier source), va tout
+d'abord être transformé à l'aide de l'élément RTX\_Tree, afin de normaliser
+sa structure.
+
+Alors seulement, le composant RTX\_Link sera utilisé pour détecter et
+sélectionner les fichiers \texttt{.blt} correspondant à des algorithmes et
+des types contenus dans les fichiers \texttt{.rtx} sources. Chacun de ces
+fichiers modèles va alors permettre de générer un \emph{AST}, qui sera par
+la suite assemblé avec l'\emph{AST} principal généré lors de l'analyse des
+fichiers \texttt{.rtx}.
+
+Ces différents arbres seront donc assemblés a l'aide du composant
+RTX\_TPL du compilateur. En effet, son rôle est de \emph{tisser} différents
+arbres de syntaxe ensemble, en conservant les relations de type, et en
+associant correctement les éléments des différents arbres, que ce soit des
+types ou des algorithmes.
+
+De plus, les différents outils contenus par Tool seront utilisés afin
+de générer non seulement les fichiers \texttt{.c} mais aussi les éléments
+nécessaires à la compilation et au bon fonctionnement du pilote résultant.
+Par exemple, dans le cas de Windows, des fichiers \texttt{.inf} sont requis
+afin de charger le pilote dans le système d'exploitation. La génération de ce
+type de fichier serait une des tâches du composant Tool.
+
 
 \chapter{La technologie \rtx}
 
