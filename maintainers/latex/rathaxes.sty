@@ -5,9 +5,14 @@
 \RequirePackage{graphicx}
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc} % babel warns with french if it's not here.
+\RequirePackage{libertine}
+\RequirePackage{inconsolata}
 \RequirePackage{tabularx}
 \RequirePackage[fixlanguage]{babelbib}
 \expandafter\RequirePackage[\@rtxlanguage]{babel}
+
+% Needed to use the libertine font package
+\renewcommand*\oldstylenums[1]{{\fontfamily{fxlj}\selectfont #1}}
 
 % Localize our bibliography
 \expandafter\selectbiblanguage{\@rtxlanguage}
@@ -28,6 +33,13 @@
 % Use fancyheader with default values
 \pagestyle{fancy}
 
+% Tweak the fonts: use the sans-serif fonts for titles, captions and page
+% numbers (the goal is to use the serif font only for text blocks).
+\setkomafont{disposition}{\sffamily}
+\setkomafont{caption}{\sffamily}
+\setkomafont{captionlabel}{\sffamily}
+\setkomafont{pagenumber}{\sffamily}
+
 % Defines commands used to generated the title block
 \global\let\@doctype\@empty
 \newcommand{\rtxdoctype}[1]{\def\@doctype{#1}}
@@ -40,14 +52,21 @@
 \global\let\@dochistory\@empty
 \newcommand{\rtxdochistory}[1]{\def\@dochistory{#1}}
 
-% Define a macro to compare to \@rtxlanguage
+% Define macros to compare to \@rtxlanguage
 \def\@americanlanguage{american}
+\def\@frenchlanguage{francais}
 
 % Define the title of the `documentation control' section
 %
 % « Contrôle de la documentation » is too long to fit on one
 % line as a chapter title, so use something smaller.
 \def\@titleblocksectiontitle{\ifx\@rtxlanguage\@americanlanguage Documentation control\else Contrôle du document\fi}
+
+% Fix captions in french
+\ifx\@rtxlanguage\@frenchlanguage\renewcommand*{\captionformat}{~--~}\fi
+\PackageWarning{rathaxes.sty}%
+{Ignore the warning on captions in frenchb.ldf,\MessageBreak
+this is a bug in the french babel implementation\MessageBreak and a workaround is in place.\MessageBreak reported}
 
 % This is black magic to do \ifx in a array:
 % http://newsgroups.derkeiler.com/Archive/Comp/comp.text.tex/2010-04/msg00701.html
@@ -56,6 +75,7 @@
 % Define a command to generate the title block
 \def\@titleblock{
   \begin{table}[h]\small
+  \textsf{
   \begin{tabularx}{\textwidth}{|X|X|}
   \hline
   \ifx\@rtxlanguage\@americanlanguage \textbf{Group}: \else \textbf{Groupe} :\fi & Rathaxes \\
@@ -78,19 +98,20 @@
   \ifx\@rtxlanguage\@americanlanguage \textbf{Document status}: \else \textbf{Status du document} : \fi & \@docstatus \\
   \hline
   \fi
-  \end{tabularx}
+  \end{tabularx}}
   \caption{\ifx\@rtxlanguage\@americanlanguage Document informations\else Informations sur le document\fi}
   \end{table}
 
   \ifx\@dochistory\@empty\else
   \begin{table}[h]\small
+  \textsf{
   \begin{tabularx}{\textwidth}{|l|l|l|X|}
   \hline
   \textbf{Version} & \textbf{Date} & \ifx\@rtxlanguage\@americanlanguage \textbf{Author} \firstofone{&} \textbf{Summary}\else \textbf{Auteur} \firstofone{&} \textbf{Résumé}\fi \\
   \hline
   \@dochistory
   \hline
-  \end{tabularx}
+  \end{tabularx}}
   \caption{\ifx\@rtxlanguage\@americanlanguage Versions history\else Historique des versions\fi}
   \end{table}
   \fi
@@ -98,7 +119,7 @@
 
 \def\@contact{
 \begin{description}
-\ifx\@rtxlanguage\@americanlanguage\item[Code:] \else\item[Code :] \fi\url{http://code.google.com/p/rathaxes/}
+\ifx\@rtxlanguage\@americanlanguage\item[\textsf{Code:}] \else\item[\textsf{Code :}] \fi\url{http://code.google.com/p/rathaxes/}
 \ifx\@rtxlanguage\@americanlanguage\item[Mailing list:] \else\item[Liste de diffusion :] \fi\url{rathaxespublic@googlegroups.com}
 \end{description}
 }
