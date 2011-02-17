@@ -51,7 +51,7 @@
 % Add our logos in the titlepage
 \def\@publishers{%
 \vskip 1.5em
-\includegraphics[height=1.3cm]{logortx2}%
+\includegraphics[height=1.3cm]{logo_latex}\color{rathaxesred}{\sffamily{Rathaxes}}%
 \hskip 3em
 \includegraphics[height=1.3cm]{logo_eip}%
 }
