@@ -53,11 +53,8 @@
 \input{@RATHAXES_BINARY_DIR@/maintainers/latex/rathaxes.sty}
 
 % Add our logos in the titlepage
-\def\@publishers{%
-\includegraphics[height=0.5\textwidth]{logortx2}%
-\vskip 1.5em%
-\includegraphics[height=1.4cm]{logo_eip}%
-}
+\def\@subject{\includegraphics[height=5cm]{logo_latex}Rathaxes}
+\def\@publishers{\includegraphics[height=1.4cm]{logo_eip}}
 
 % Define a command to generate the title block
 \newcommand{\rtxmaketitleblock}{

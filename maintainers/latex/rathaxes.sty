@@ -1,5 +1,6 @@
 % Load additional packages
 \RequirePackage{array}
+\RequirePackage{color}
 \RequirePackage{lmodern}
 \RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
@@ -16,6 +17,8 @@
 
 % Localize our bibliography
 \expandafter\selectbiblanguage{\@rtxlanguage}
+
+\definecolor{rathaxesred}{RGB}{190,36,31}
 
 % Hook the \title{} command to generate the pdf meta-datas
 \renewcommand{\title}[1]{
@@ -39,6 +42,10 @@
 \setkomafont{caption}{\sffamily}
 \setkomafont{captionlabel}{\sffamily}
 \setkomafont{pagenumber}{\sffamily}
+% \itshape doesn't exist for Biolinum at least in TexLive 2009, it certainly
+% exists in TexLive 2010.
+\setkomafont{subject}{\sffamily\Huge\color{rathaxesred}}
+\setkomafont{title}{\sffamily}
 
 % Defines commands used to generated the title block
 \global\let\@doctype\@empty
