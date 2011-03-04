@@ -4,7 +4,7 @@
 
 #include "cwTool.inc.cws"
 #include "cnorm.inc.cws"
-
+#include "cnorm2c/cnorm2c.inc.cws"
 
 ///////////////////// PARTIE BLT
 local dummy;
@@ -55,11 +55,12 @@ parseStringAsBNF({
 				rtxNode(local_node);
 				local_node.type = "__rtx_tpl__";
 				insert local_node.tpl_type = "__decl__";
+				// pour l'instant on met le proto comme string, mais faudra le compil aussi
 				insert local_node.prototype = input;
-				insert local_node.compile;
-				insert local_node.compile.nbplaceholder = 0;
 				insert local_node.body;
 				cnormNodeBlock(local_node.body);
+				insert local_node.body.compile;
+				insert local_node.body.compile.nbplaceholder = 0;
 				ref out_ref_block = local_node.body;
 				return true;
 			}
@@ -94,11 +95,14 @@ parseStringAsBNF({
 
 			rtx_stmt<"template">(theBlock : node) ::=
 				=>traceLine("TEMPLATE!");
-				// TODO
-				[#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // on est des boeufs
+				// TODO: on ne parse pas correctement le proto on prend tout
+					[#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // on est des boeufs
+				////////
+					// on cree un block pour heberger le code C
 					#pushItem(theBlock.block)
 					=> local lastNode;
 					#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+					// on cree un rtxTPL et c_block va reference le block de C
 					=> local c_block;
 					#check(rtxNodeTpl(lastNode, head, c_block))
 					=> traceLine("chunk:" + head + " next:" + peekChar());
@@ -110,6 +114,7 @@ parseStringAsBNF({
 				'}'
 			;
 
+			// on s'emmerde pas...pour l'instant :P
 			rtx_template_code ::= "${" -> '}' 
 			;
 			
@@ -144,7 +149,7 @@ function	rtxTpl_walk<T>(local_node : node)
 function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
 {
 	traceLine("walk on " + local_node.prototype);
-	rtxTpl_compile<local_node.body.type>(local_node.body, local_node.compile);
+	rtxTpl_compile<local_node.body.type>(local_node.body, local_node.body.compile);
 }
 
 ////////
@@ -241,16 +246,52 @@ foreach item in source.block
 
 saveProject("__rtx_compil__.tree", source);
 
+/// le code generer aura besoin de ca
+function	instanceTpl<T>(ast_context : node, c_tree : node)
+{
+	// grosso modo si ca c appel ya un pb de link
+	error("BAD LINK - Unkown registry value:" + T);
+}
 
+////////////////// la on genere du codeworker et on y croit :)
 function	gencodeworker(tpl_node : node)
 {
+	////////// workaround super tricky de la mort du slip qui pue
+	/// on va rendre Position Code Independant les references issues de la serialisation du sous AST :)
+	local workaround;
+	parseStringAsBNF({
+			// cauchemard begins here
+			trauma ::=
+				=> traceLine("WORKAROUND");
+				// la premiere CString contient le node serialise, on prends tout jusqu'au ".body" du node rtxTpl
+				'"' ->(:this.tree_ref)".body" '"'
+				// on prends le reste
+				->(:this.code_pic)#empty
+				=> insert this.tree_replace = "&ref \"" + this.tree_ref + ".";
+			;
+	}, workaround, toString(tpl_node.body));
+	// on translate les ref pour etre relatif a "tree", la variable local de notre instanciateur de template
+	workaround.code_pic = "\"tree\"" + replaceString(workaround.tree_replace, "&ref \"tree.", workaround.code_pic);
+	traceLine("TREE REF:" + workaround.tree_ref);
+	traceLine("TREE REPLACE:" + workaround.tree_replace);
+	traceLine("NEW CODE PIC:" + workaround.code_pic);
+	// on met la chaine de code PIC dans notre tpl_node pour etre accessible pendant la generation du code codeworker
+	local sAstFile = "__rtx_codeworker_XXX.tree";//pour l'instant en dur
+	saveToFile(sAstFile, workaround.code_pic);
+	insert tpl_node.save_ast = sAstFile;
 	local	source_codeworker;
 	generateString({
 
 		// auto generated codeworker DO NOT EDIT
+		// ici une version specialiser de l'instanceTPL .... on met this.prototype mets a terme generer des UID c'est mieux
 		function	instanceTpl<"@this.prototype@">(ast_context : node, c_tree : node)
 		{
-		
+			local tree;
+			loadProject("@this.save_ast@", tree);
+
+			// on crache juste le code template
+			traceLine("INSTANCIATION DU TEMPLATE");
+			traceLine(cnorm2c(tree));
 		}
 
 	@}, tpl_node, source_codeworker);
@@ -262,5 +303,14 @@ function	gencodeworker(tpl_node : node)
 /// foreach brutale a terme on devrait walk le tree pour gerer correctement les __rtx_tpl__, __rtx_with__ etc...
 foreach item in source.block
 {
+	// racine de la generation des templates
 	gencodeworker(item);
+	// on a tout generer on charge :P.... a terme delegue a RTX_LINK
+	extendExecutedScript(loadFile("__rtx_codeworker.cws"));
+	
+	// on l'appel ... ici en dur tout moche pour faire un test
+	local a;
+	local b;
+	instanceTpl<item.prototype>(a, b);
 }
+
