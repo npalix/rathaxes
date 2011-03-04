@@ -1,0 +1,266 @@
+/*
+	TEST GENERAL DE TEMPLATE
+*/
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+
+
+///////////////////// PARTIE BLT
+local dummy;
+local input;
+generateString({
+
+		template open(Context ctx) decl
+		{
+			typedef int ${KK};
+
+			typedef int ${TYPE};
+			
+			enum pop${niania} {A, B, C};
+
+			${TYPE} bla;
+
+			int	open(int a)
+			{
+				int	bal${KKK} = 13;
+				printf("COUCOU\n");
+				// alors ATTENTION ceci est vue comme une decl :(... effet de bord de l'aspect "int par defaut"
+				${BUGGY} = 42;
+				${TOTO} += 3;
+				return 0;
+			}
+		}
+
+@}, dummy, input);
+
+traceLine("input:\n" + input);
+
+////////////////////
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF({
+			#include "cnorm.cwp"
+		
+		// PARTIE RTX_TREE
+			function	rtxNode(local_node : node)
+			{
+				cnormNode(local_node);
+				local_node.type = "__rtx_node__";
+				return true;
+			}
+
+			function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
+			{
+				rtxNode(local_node);
+				local_node.type = "__rtx_tpl__";
+				insert local_node.tpl_type = "__decl__";
+				insert local_node.prototype = input;
+				insert local_node.compile;
+				insert local_node.compile.nbplaceholder = 0;
+				insert local_node.body;
+				cnormNodeBlock(local_node.body);
+				ref out_ref_block = local_node.body;
+				return true;
+			}
+		/////////////////////////////
+
+		// RTX_PARSE
+
+			/* root of grammar */
+			#overload
+			translation_unit ::=
+				=> traceLine("PARSE!");
+				#try
+					#ignore
+					#check(cnormNodeRoot(this))
+					[
+						#check(cnormNodeCtx(this))
+						rtx_declaration(this)
+					]*
+					#continue(sError, "bad token at end of file, unexpected " + peekChar())
+					#empty
+				#catch (sError)
+					| #check(cnormLogError(this, sError))
+			;
+
+			rtx_declaration(theBlock : node) ::=
+				#readIdentifier:sStmt rtx_stmt<sStmt>(theBlock)
+			;
+
+			rtx_stmt<sKeyword>(theBlock : node) ::= 
+				=> error("Unknown statement :" + sKeyword);
+			;
+
+			rtx_stmt<"template">(theBlock : node) ::=
+				=>traceLine("TEMPLATE!");
+				// TODO
+				[#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // on est des boeufs
+					#pushItem(theBlock.block)
+					=> local lastNode;
+					#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+					=> local c_block;
+					#check(rtxNodeTpl(lastNode, head, c_block))
+					=> traceLine("chunk:" + head + " next:" + peekChar());
+					=>traceLine("CODE C!");
+					[
+						#check(cnormNodeCtx(c_block))
+						declaration(c_block)
+					]*
+				'}'
+			;
+
+			rtx_template_code ::= "${" -> '}' 
+			;
+			
+			/*
+			 * This rule overload allows the template identifier concatenation
+			 * for Rathaxes.
+			 */
+			#overload
+			rootidentifier ::= #!ignore
+			    [ 'a'..'z' | 'A'..'Z' | '_' | rtx_template_code ]
+			    [ 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | rtx_template_code ]*
+			;
+		/////////////////////////////
+}, source, input);
+// enleve dialect
+removeVariable(source.dialect);
+
+traceLine("result of parsing:" + toString(source));
+saveProject("__rtx_parse__.tree", source);
+
+////////////// PARTIE RTX_TPL
+
+declare function	rtxTpl_walk<T>(local_node : node);
+declare function	rtxTpl_compile(local_node : node, out : node);
+
+
+function	rtxTpl_walk<T>(local_node : node)
+{
+	error("Unknown rtx_node :" + T);
+}
+
+function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
+{
+	traceLine("walk on " + local_node.prototype);
+	rtxTpl_compile<local_node.body.type>(local_node.body, local_node.compile);
+}
+
+////////
+// fonctions outils pour trouver les placeHolders
+
+function	rtxTpl_havePlaceHolder(ref_node : reference)
+{
+	traceLine("havePH?:" + ref_node);
+	return (findString(ref_node, "${") != -1);
+}
+
+function	rtxTpl_mapPlaceHolder(ref_node : reference, compile : node)
+{
+	compile.nbplaceholder = $compile.nbplaceholder + 1$;
+	local sKey = "_" + compile.nbplaceholder;
+	insert compile[sKey].ref_placeholder;
+	ref compile[sKey].ref_placeholder = ref_node;
+	insert compile[sKey].template_expr = compile[sKey].ref_placeholder;
+	compile[sKey].ref_placeholder = sKey;
+	// TODO: ici il faudrait parser le contenu de template_expr et le preparer pour la generation de codeworker
+}
+
+////////
+
+declare function	rtxTpl_compile<T>(local_node : node, compile : node);
+
+function	rtxTpl_compile<"__decl__">(local_node : node, compile : node)
+{
+	traceLine("COMPILE DECL");
+	// walk le ctype
+	localref ctype_ref = local_node.ctype;
+	do
+	{
+		// nom d'un type
+		if (existVariable(ctype_ref.identifier) && rtxTpl_havePlaceHolder(ctype_ref.identifier))
+		{
+			traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
+			rtxTpl_mapPlaceHolder(ctype_ref.identifier, compile);
+		}
+		// recurs param list
+		//...
+		// recurs fields list
+		//...
+		if (!existVariable(ctype_ref.pointer))
+		{break;}
+		// deref
+		ref ctype_ref = ctype_ref.pointer;
+	} while(true);
+	// nom de variable
+	if (existVariable(local_node.name) && rtxTpl_havePlaceHolder(local_node.name))
+	{
+		traceLine("MAP PLACE HOLDER:" + toString(local_node.name));
+		rtxTpl_mapPlaceHolder(local_node.name, compile);
+	}
+	// recurs sur code de fonction
+	if (existVariable(local_node.body))
+	{	rtxTpl_compile<local_node.body.type>(local_node.body, compile);}
+}
+
+function	rtxTpl_compile<"__expr__">(local_node : node, compile : node)
+{
+	if (existVariable(local_node.left))
+	{	rtxTpl_compile<local_node.left.type>(local_node.left, compile);}
+	if (existVariable(local_node.right))
+	{	rtxTpl_compile<local_node.right.type>(local_node.right, compile);}
+	if (existVariable(local_node.id) && rtxTpl_havePlaceHolder(local_node.id))
+	{
+		traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+		rtxTpl_mapPlaceHolder(local_node.id, compile);
+	}
+}
+
+function	rtxTpl_compile<"__stmt__">(local_node : node, compile : node)
+{
+	// pour l'instant seulement les expressions
+	if (local_node.stmt_type == "__expr__")
+	{	rtxTpl_compile<local_node.expr.type>(local_node.expr, compile);}
+	else
+		traceLine("SKIP");
+}
+
+function	rtxTpl_compile<"__block__">(local_node : node, compile : node)
+{
+	traceLine("COMPILE BLOCK");
+	// cherche dans l'ast du Cnorm tous les placeHolders
+	foreach item in local_node.block
+	{	rtxTpl_compile<item.type>(item, compile);}
+}
+
+foreach item in source.block
+{
+	rtxTpl_walk<item.type>(item);
+}
+
+saveProject("__rtx_compil__.tree", source);
+
+
+function	gencodeworker(tpl_node : node)
+{
+	local	source_codeworker;
+	generateString({
+
+		// auto generated codeworker DO NOT EDIT
+		function	instanceTpl<"@this.prototype@">(ast_context : node, c_tree : node)
+		{
+		
+		}
+
+	@}, tpl_node, source_codeworker);
+
+	// on considere qu'il n'y a qu'un template donc
+	saveToFile("__rtx_codeworker.cws", source_codeworker);
+}
+
+/// foreach brutale a terme on devrait walk le tree pour gerer correctement les __rtx_tpl__, __rtx_with__ etc...
+foreach item in source.block
+{
+	gencodeworker(item);
+}
