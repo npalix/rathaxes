@@ -5,6 +5,7 @@
 #include "cwTool.inc.cws"
 #include "cnorm.inc.cws"
 #include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
 
 ///////////////////// PARTIE BLT
 local dummy;
@@ -315,29 +316,6 @@ function	instanceTpl<T>(ast_context : node, c_tree : node)
 ////////////////// la on genere du codeworker et on y croit :)
 function	gencodeworker(tpl_node : node, uid : value)
 {
-
-	////////// workaround super tricky de la mort du slip qui pue
-	/// on va rendre Position Code Independant les references issues de la serialisation du sous AST :)
-	local workaround;
-	parseStringAsBNF({
-			// cauchemard begins here
-			trauma ::=
-				=> traceLine("WORKAROUND");
-				// la premiere CString contient le node serialise, on prends tout jusqu'au ".body" du node rtxTpl
-				'"' ->(:this.tree_ref) [^"\\":c '"']
-				=>this.tree_ref += c;
-				// on prends le reste
-				->(:this.code_pic)#empty
-				=> insert this.tree_replace = "&ref \"" + this.tree_ref + ".";
-			;
-
-	}, workaround, toString(tpl_node.body, true));
-	// on translate les ref pour etre relatif a "tree", la variable local de notre instanciateur de template
-	workaround.code_pic = "\"tree\"" + replaceString(workaround.tree_replace, "&ref \"tree.", workaround.code_pic);
-	traceLine("TREE REF:" + workaround.tree_ref);
-	traceLine("TREE REPLACE:" + workaround.tree_replace);
-	traceLine("NEW CODE PIC:" + workaround.code_pic);
-
 	// on met la chaine de code PIC dans notre tpl_node pour etre accessible pendant la generation du code codeworker
 	local sAstFile = "__04_rtx_codeworker_" + uid + ".tree";//pour l'instant en dur
 	local sCwsFile = "__05_rtx_codeworker_" + uid + ".cws";//pour l'instant en dur
@@ -358,6 +336,29 @@ function	gencodeworker(tpl_node : node, uid : value)
 			// on resauve pour une comparaison a froid
 			saveProject("@this.save_ast@2", tree);
 	
+			// ici ca doit etre generer
+			// execution de ${} et mapping dans les _1,_2,_3,_4
+			foreach injectpoint in tree.compile
+			{
+				traceLine("inject for " + injectpoint.template_expr);
+				// cas d'injection de base sur la valeur de la variable de la BLT
+				if (injectpoint.template_expr == "${TYPE}")
+				{	injectpoint.ref_placeholder = "JE_SUIS_MOCHE";}
+				// cas d'injection par la valeur du placeholder
+				if (injectpoint.key() == "_1")
+				{	injectpoint.ref_placeholder = "GROSSE_TATA";}
+				// injection d'une expression
+				if (injectpoint.key() == "_7")
+				{	
+					local new_code;	
+					cnormPatchExpression(new_code, "(*grumf)->nia");
+					setall injectpoint.ref_placeholder#parent = new_code;
+				}
+			}
+
+			// on resauve pour une comparaison a froid
+			saveProject("@this.save_ast@3", tree);
+
 			// on crache juste le code template
 			traceLine("INSTANCIATION DU TEMPLATE");
 			traceLine(cnorm2c(tree));
