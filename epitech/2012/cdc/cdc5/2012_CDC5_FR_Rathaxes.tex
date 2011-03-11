@@ -1,5 +1,7 @@
 \documentclass[chapterprefix=off]{rtxreport}
 
+\usepackage{pdflscape}
+
 \author{Louis Opter}
 \title{Cahier des charges pour 2012}
 
@@ -197,8 +199,7 @@ tests, trois machines x86 seront donc nécessaires. Cependant elles pourront
 être virtualisées afin d'unifier l'environnement de test ;
 \item Les périphériques de test seront obtenus à partir du LSE ou achetés si
 besoin ;
-\item Le code est hébergé sur GoogleCode à l'adresse :
-\url{http://code.google.com/p/rathaxes/} ;
+\item Le code est hébergé sur GoogleCode : \url{http://code.google.com/p/rathaxes/} ;
 \item Le wiki du google code propose un point de départ pour installer et
 tester \rtx\ ;
 \item Le code est versionné avec
@@ -225,9 +226,13 @@ sur le canal IRC suivant: \url{irc://rathaxes@irc.freenode.org}.
 \item Participer aux RMLL et Fosdem.
 \end{enumerate}
 
-%\begin{center}
-%\includegraphics[angle=90,scale=0.35]{../images/gantt}
-%\end{center}
+\begin{landscape}
+\begin{table}
+\centering
+\captionabove{Diagramme de Gantt pour 2011}
+\includegraphics[scale=0.55]{../../gantt/ganttRathaxes_v2}
+\end{table}
+\end{landscape}
 
 \rtxbibliography
 
