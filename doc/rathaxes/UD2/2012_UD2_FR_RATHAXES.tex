@@ -1,0 +1,146 @@
+\documentclass{rtxreport}
+
+%\usepackage{lipsum}
+\usepackage[utf8]{inputenc}
+
+\title{Documentation Utilisateur}
+\author{Thomas Luquet}
+
+
+\rtxdoctype{Documentation utilisateur}
+\rtxdocstatus{Brouillon}
+\rtxdocversion{0.1}
+
+\rtxdochistory
+{
+0.1 & 11/03/2011 & Thomas Luquet & start\\
+%\hline
+%0.2 & 11/09/2010 & Thomas Sanchez & Test with a longer name \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\rtx 
+
+
+This document is the user documentation for the \emph{Rathaxes 2012} project. It
+includes guide and exemple to install and use Rathaxes. It contain also a description of the language.
+
+\rtx project is a multi-platform peripheral driver generator.
+
+It is realized by the Rathaxes EIP team of year 2012 and comes in the
+continuity with the work done by the year 2009 team.
+
+This document is designed for Rathaxes driver coders and for the EIP laboratory
+team.
+
+\end{abstract}
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{Hardware and software needed}
+
+\section{Hardware needed}
+
+X86 ? 64 bit ?
+
+\section{Software needed}
+
+Code Worker is needed. You can download it on the official website :
+http://codeworker.free.fr/
+
+To install the last version of Rathaxes you need to use Mercurial.
+Mercurial is a version control software.
+You can download and instruction to install it on the official web site :
+http://mercurial.selenic.com/
+
+
+\chapter{Install Rathaxes}
+
+\section{Downloading last version of Rathaxes}
+To download the last build of rathaxes. Open a terminal and type :
+\begin{verbatim}
+hg clone https://rathaxes.googlecode.com/hg/ rathaxes 
+\end{verbatim}
+
+\section{Compiling Rathaxes}
+\lipsum[3]
+
+\chapter{Driver development}
+
+\section{Intro}
+The chapter will learnt you how to develop  driver in Rathaxes.
+
+
+\section{RTX Language}
+%---Conditions-------------------------------
+
+\subsection{Condition}
+
+
+\subsubsection{Conditional Operator}
+
+Simple condition :
+
+\begin{lstlisting}
+ON expression LET sequence(param);
+\end{lstlisting}
+
+
+\subsubsection{Logical Operator}
+\begin{lstlisting}
+ON expression1 OR expression2 LET sequence1(param)
+ON expression3 AND expression4 LET sequence2(param)
+ON expression5 AND NOT expression6 LET sequence3(param)
+ELSE sequence4(param);
+\end{lstlisting}
+
+\subsubsection{Loop}
+\begin{lstlisting}
+FOREACH TYPE e IN collection {
+	// do something
+};
+\end{lstlisting}
+
+
+%---Types---------------------------------
+\subsection{Types}
+
+\subsubsection{Register}
+Syntax :
+\begin{lstlisting}
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
+\end{lstlisting}
+
+Instance :
+\begin{lstlisting}
+DECLARE REGISTER Register_type Register_name Register_type MAPPED_AT
+address ;
+\end{lstlisting}
+
+Example :
+
+\subsubsection{Logical connector}
+
+\subsubsection{Loop}
+
+%---Algorithm----------------------
+\subsubsection{Algorithm}
+
+\subsubsection{Affectation}
+\subsubsection{Waiting}
+\subsubsection{POST and PRE condition}
+
+\subsection{Hello World}
+
+\chapter{Kernel developer}
+\subsection {BLT}
+
+\rtxbibliography
+
+\end{document}
