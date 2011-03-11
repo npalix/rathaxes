@@ -1,0 +1,258 @@
+\documentclass[american]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\usepackage[utf8]{inputenc}
+
+\title{User documentation}
+\author{Thomas Luquet}
+
+\rtxdoctype{UD2}
+\rtxdocstatus{Draft}
+\rtxdocversion{0.1}
+
+\rtxdochistory
+{
+0.1 & 11/03/2011 & Thomas Luquet & Initial Import \\
+\hline
+0.2 & 11/03/2010 & Louis Opter & Some corrections and make it compile \\
+}
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={DECLARE, SEQUENCE, INTERFACE, IMPLEMENTATION, FROM, READ,
+        OPTIONAL, CONFIGURATION_VARIABLE, USE, AS, WITH, SEQUENCES, ON, ELSE,
+        LET, PROVIDES, REQUIRE, THROWS, FINALLY, FOREACH, IN, AND, OR, THROW,
+        HANDLE_ERROR, NOT, REGISTER, LIKE, BIT, INTEGER, DOUBLE, BOOLEAN,
+        STRING, MAPPED_AT, PCI},%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+This document is the user documentation for the \emph{\rtx\ 2012} project.
+
+It includes a guide and an example to install and use \rtx. It contains also a
+description of the language.
+
+\rtx\ is a multi-platform peripheral driver generator.
+
+It is realized by the \rtx\ EIP team of year 2012 and comes in the continuity
+with the work done by the year 2009 team.
+
+This document is designed for \rtx\ driver coders and for the EIP laboratory
+team.
+
+\end{abstract}
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{Prerequisites}
+
+\section{Hardware}
+
+X86 ? 64 bit ?
+
+\section{Software}
+
+Code Worker is needed. You can download it from the official website:
+\url{http://codeworker.free.fr/}.
+
+To install the latest version of \rtx\ you need to use Mercurial, the version
+control software.
+
+You can download it and find its installation instructions on the following
+website: \url{http://mercurial.selenic.com/}.
+
+\chapter{Install \rtx}
+
+\section{Download \rtx}
+
+To download the last build of \rtx. Open a terminal and type:
+
+\begin{verbatim}
+hg clone https://rathaxes.googlecode.com/hg/ rathaxes
+\end{verbatim}
+
+\section{Compiling \rtx}
+
+\chapter{Driver development}
+
+\section{Intro}
+
+The chapter will learnt you how to develop driver in \rtx.
+
+
+\section{RTX Language}
+%---Conditions-------------------------------
+
+\subsection{Condition}
+
+
+\subsubsection{Conditional Operator}
+
+Simple condition :
+
+\begin{lstlisting}
+ON expression LET sequence(param);
+\end{lstlisting}
+
+
+\subsubsection{Logical Operator}
+\begin{lstlisting}
+ON expression1 OR expression2 LET sequence1(param)
+ON expression3 AND expression4 LET sequence2(param)
+ON expression5 AND NOT expression6 LET sequence3(param)
+ELSE sequence4(param);
+\end{lstlisting}
+
+\subsubsection{Loop}
+\begin{lstlisting}
+FOREACH TYPE e IN collection {
+	// do something
+};
+\end{lstlisting}
+
+
+%---Types---------------------------------
+\subsection{Types}
+
+\subsubsection{Register}
+Syntax :
+\begin{lstlisting}
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
+\end{lstlisting}
+
+Instance :
+\begin{lstlisting}
+DECLARE REGISTER Register_type Register_name Register_type MAPPED_AT
+address ;
+\end{lstlisting}
+
+Example :
+\begin{lstlisting}
+DECLARE REGISTER SomeE1000Register eerd PCI MAPPED_AT PCI_BAR_1 +
+some_offset ;
+\end{lstlisting}
+
+
+\subsubsection{Primary types}
+
+\begin{lstlisting}
+DECLARE
+DECLARE
+DECLARE
+DECLARE
+INTEGER i_name = 123;
+DOUBLE d_name = 123.123;
+BOOLEAN b = TRUE OR FALSE ;
+STRING str = `` hello , world ! `` ;
+\end{lstlisting}
+
+\subsubsection{Adress}
+\begin{lstlisting}
+DECLARE ADDRESS addr1 ALIGNED_ON nbrbits OFFSET off ;
+\end{lstlisting}
+
+\subsubsection{Buffer}
+
+Example :
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
+DECLARE MyBufferType mybuffer ;
+SET ( my_buffer [3] , unoctet ) ;
+\end{lstlisting}
+
+
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
+  [0..4] AS low_address ;
+  [5] AS status {
+    (0) -> OK ;
+    (1) -> ERROR ;
+  };
+};
+DECLARE MyBufferType mybuffer ;
+SET ( my_buffer . status , MyBufferType . status . OK ) ;
+\end{lstlisting}
+
+\subsubsection{Collections}
+
+\begin{lstlisting}
+DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
+DECLARE VectorType my_vector ;
+PUSH ( my_vector , element ) ;
+POP ( my_vector ) ;
+REALLOC_VECTOR ( my_vector , new_size ) ;
+\end{lstlisting}
+
+%---Algorithm----------------------
+\subsubsection{Algorithm}
+
+\subsubsection{Affectation}
+
+\begin{lstlisting}
+DECLARE INTEGER i = 2; // Premiere initialisation
+i = 3; // ERROR
+SET (i , 3) ; // OK
+// Le comportement dans ce cas reste a determiner :
+DECLARE VECTOR vtype .....;
+DECLARE vtype v ;
+SET (v , ...) ; // ERREUR ?
+\end{lstlisting}
+
+\subsubsection{Waiting}
+
+\subsubsection{POST and PRE condition}
+
+\subsection{Hello World}
+
+\chapter{Kernel developer}
+
+\section {BLT}
+
+%\rtxbibliography
+
+\end{document}
