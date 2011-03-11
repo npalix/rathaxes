@@ -1,0 +1,67 @@
+/*
+**	rdsl.cwp in scripts/parsing
+**	for Rathaxes project
+**	made by Thor
+**	modified by Adrien and Jack
+*/
+
+
+/******************************
+ **	   Ignore rule	     **
+ ******************************/
+
+/*
+** Rathaxes DSL supports C, C++ and
+** scripts comment syntaxes
+*/
+
+#ignore ::= 
+	[
+		['#' ->[['\r']? '\n']]
+		| ["//" ->[['\r']? '\n']]
+		| ["/*" ->"*/"]
+		| ' '
+		| '\t'
+		| '\n'
+		| '\r'
+	]+
+;
+
+
+/******************************
+ **	   Root rule	     **
+ ******************************/
+
+/*
+** Here is where everything begins...
+** A simple and innocent root rule...
+*/
+
+root ::=
+	#ignore
+	[
+	    declaration
+	]*
+	#continue
+	#empty
+;
+
+/******************************
+ **  BEGIN RATHAXES GRAMMAR  **
+ ******************************/
+
+
+
+
+#include "rdsl_declaration.cwp"
+
+
+/*
+
+c_embed(parseTreeRoot : node) ::=
+	#readIdentifier:{"__C__"}
+	'{'
+	translation_unit(project.c_embed)
+	'}'
+;
+*/

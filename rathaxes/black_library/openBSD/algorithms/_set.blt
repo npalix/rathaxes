@@ -1,0 +1,15 @@
+<%
+/*
+**  _set.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+%>
+
+ADVICE set PART_OF algorithms
+{
+    void set(void)
+    {
+    }
+};

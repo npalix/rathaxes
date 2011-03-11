@@ -1,0 +1,141 @@
+/*
+**      bdsl.cwp in script/parsing
+**      for Rathaxes project
+**      made by Thor
+*/
+
+/******************************
+ **    Ignore rule       **
+ ******************************/
+
+/*
+** Rathaxes DSL supports C, C++ and
+** scripts comment syntaxes
+*/
+
+#ignore["rathaxes"] ::= 
+    [
+        ['#' ->[['\r']? '\n']]
+        | ["//" ->[['\r']? '\n']]
+        | ["/*" ->"*/"]
+        | ' '
+        | '\t'
+        | '\n'
+        | '\r'
+    ]+
+;
+
+
+/******************************
+ **    Root rule         **
+ ******************************/
+
+#include "../cnorm/cnorm.cwp"
+#include "bdsl_metaStatements.cwp"
+
+#overload
+translation_unit ::=
+    #ignore("rathaxes")
+    [
+        blt_keyword<"advice">(this)
+    ]*
+    #continue
+    #empty
+;
+
+blt_keyword<"advice">(theNode : node) ::=
+    #readIdentifier:{"ADVICE"} 
+    => local syntaxError;
+    #continue(syntaxError, rtxCraftError("ADVICE identifier expected in file [" + project.references.currentBLTFile+ "]." + syntaxError))
+    [
+        #readIdentifier:sAdivceName
+    ]
+    => insert project.references.currentAdvice = sAdivceName;
+
+    #readIdentifier:{"PART_OF"}
+    #continue(syntaxError, rtxCraftError("semantic reference expected." + syntaxError))
+    [
+        #readIdentifier:sSemanticReference
+    ]
+
+    #continue(syntaxError, rtxCraftError("block error" + syntaxError))
+    [
+        "{"
+        [ instrumented_c_code(theNode) ]*
+        "}" [";"]?
+    ]
+;
+
+instrumented_c_code(theNode : node) ::=
+     blt_keyword<"joinpoint">(theNode)
+     |
+     => localref sLocalScope = theNode;
+     => local    nNull;
+     [
+         [
+            =>
+            {
+                if (project.references.targetAdvice != project.references.currentAdvice)
+                    sLocalScope = nNull;
+                ref sLocalScope.block.pctx = project.references.driver;
+                ref this.gl_pctx = project.references.driver;
+                insert project.references.driver.pctx = this;
+                
+            }
+            [
+                declaration(sLocalScope)
+                | single_statement(sLocalScope)
+            ]
+            =>
+            {
+                if (existVariable(sLocalScope.types))
+                {
+                    merge project.references.driver.types = sLocalScope.types;
+                }
+            }
+         ]
+     ]
+;
+
+
+blt_keyword<"joinpoint">(theNode : node) ::=
+    #readIdentifier:{"JOINPOINT"}
+    => local syntaxError;
+    => local aFileName;
+    => local sSemanticReference;
+    #continue(syntaxError, rtxCraftError("JOINPOINT location expected."))
+    [
+        #readIdentifier:sAdvice
+        [
+            '(' #readInteger:sToken ')'
+            => getContextFromToken(sToken);
+        ]?
+        #readIdentifier:{"IN"}
+        [
+            #readIdentifier:sFilename
+            => pushItem aFileName;
+            => insert aFileName#back = sFilename;
+            [ 
+                => sSemanticReference = aFileName#back;
+                "." #readIdentifier:sFilename
+                => pushItem aFileName;
+                => insert aFileName#back = sFilename;
+            ]*
+        ]:sFullPath
+    ]";"
+    =>
+    {
+        if (project.references.targetAdvice == project.references.currentAdvice)
+        {
+            insert aFileName#back = "_" + aFileName#back + ".blt";
+            local sPath = buildPath(aFileName);
+            computeJoinPoint(theNode, sPath, sSemanticReference, sAdvice);
+        }
+    }
+;
+
+#overload
+block_item_list(theStatement : node) ::=
+    => insert theStatement.type = "{}";
+    [ instrumented_c_code(theStatement) ]*
+;

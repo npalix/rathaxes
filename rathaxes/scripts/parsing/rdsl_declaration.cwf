@@ -1,0 +1,29 @@
+/*
+**	rdsl_declaration.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Thor and Adrien
+**	modified by Christophe Fajardo Y Romera
+*/
+
+declare function createSemanticsArray(aSemantic : node);
+
+function createSemanticsArray(aSemantic : node)
+{
+    // Part of the old black library configuration.
+  	insert aSemantic["lib_bus"] = FALSE;
+  	insert aSemantic["callback"] = FALSE;
+  	insert aSemantic["io"] = FALSE;
+
+    // Current black library configuration
+	insert aSemantic["RKM"] = TRUE;
+        insert aSemantic["entry_point"] = FALSE;
+        insert aSemantic["kernel_registration"] = FALSE;
+  	insert aSemantic["algorithms"] = FALSE;
+  	insert aSemantic["devices"] = FALSE;
+  	insert aSemantic["kernel_interfaces"] = FALSE;
+  	    insert aSemantic["common_interfaces"] = FALSE;
+  	insert aSemantic["registers"] = FALSE;
+  	insert aSemantic["sequences"] = FALSE;
+
+  	return;
+}
