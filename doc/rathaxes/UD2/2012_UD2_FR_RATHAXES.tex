@@ -124,15 +124,78 @@ address ;
 \end{lstlisting}
 
 Example :
+\begin{lstlisting}
+DECLARE REGISTER SomeE1000Register eerd PCI MAPPED_AT PCI_BAR_1 +
+some_offset ;
+\end{lstlisting}
 
-\subsubsection{Logical connector}
 
-\subsubsection{Loop}
+\subsubsection{Primary types}
+
+\begin{lstlisting}
+DECLARE
+DECLARE
+DECLARE
+DECLARE
+INTEGER i_name = 123;
+DOUBLE d_name = 123.123;
+BOOLEAN b = TRUE OR FALSE ;
+STRING str = `` hello , world ! `` ;
+\end{lstlisting}
+
+\subsubsection{Adress}
+\begin{lstlisting}
+DECLARE ADDRESS addr1 ALIGNED_ON nbrbits OFFSET off ;
+\end{lstlisting}
+
+\subsubsection{Buffer}
+
+Example :
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
+DECLARE MyBufferType mybuffer ;
+SET ( my_buffer [3] , unoctet ) ;
+\end{lstlisting}
+
+
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
+  [0..4] AS low_address ;
+  [5] AS status {
+    (0) -> OK ;
+    (1) -> ERROR ;
+  };
+};
+DECLARE MyBufferType mybuffer ;
+SET ( my_buffer . status , MyBufferType . status . OK ) ;
+\end{lstlisting}
+
+\subsubsection{Collections}
+
+\begin{lstlisting}
+DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
+DECLARE VectorType my_vector ;
+PUSH ( my_vector , element ) ;
+POP ( my_vector ) ;
+REALLOC_VECTOR ( my_vector , new_size ) ;
+\end{lstlisting}
 
 %---Algorithm----------------------
 \subsubsection{Algorithm}
 
 \subsubsection{Affectation}
+
+\begin{lstlisting}
+DECLARE INTEGER i = 2; // Premiere initialisation
+i = 3; // ERROR
+SET (i , 3) ; // OK
+// Le comportement dans ce cas reste a determiner :
+DECLARE VECTOR vtype .....;
+DECLARE vtype v ;
+SET (v , ...) ; // ERREUR ?
+\end{lstlisting}
+
+
 \subsubsection{Waiting}
 \subsubsection{POST and PRE condition}
 
