@@ -63,7 +63,9 @@ traceLine("input:\n" + input);
 		return true;
 	}
 
-	function rtxNodeWith(local_node : node, out_ref_var_map : reference, out_ref_body : reference)
+	function rtxNodeWith(local_node         : node,
+                         out_ref_var_map    : reference,
+                         out_ref_body       : reference)
 	{
 		rtxNode(local_node);
 		local_node.type = "__rtx_with__";
@@ -74,6 +76,98 @@ traceLine("input:\n" + input);
 		ref out_ref_body = local_node.body;
 		return true;
 	}
+
+    function rtxNodeTplPlaceHolder(local_node   : node)
+    {
+        rtxNode(local_node);
+        local_node.type = "__rtx_tpl_placeHolder__";
+        insert local_node.prefix;
+        insert local_node.body;
+        insert local_node.sufix;
+        return true;
+    }
+
+    function rtxNodeTplIdentifier(local_node : node)
+    {
+        local_node.type = "__rtx_tpl_id__";
+        insert local_node.name;
+    }
+
+    function rtxNodeTplVar_addField(local_node : node, theField : value)
+    {
+        cnormNodeBlock_AddNode(local_node.body);
+        local lastNode;
+        cnormNodeBlock_GetLastNode(local_node.body, lastNode);
+        rtxNodeTplIdentifier(lastNode);
+        lastNode.name = theField;
+        return true;
+    }
+
+    function rtxNodeTplVar(local_node   : node,
+                           theVar       : value,
+                           out_ref_body : reference)
+    {
+        rtxNode(local_node);
+        local_node.type = "__rtx_tpl_var__";
+        insert local_node.body;
+
+        // In the block will be pushed the different parts
+        // of the identifier
+        cnormNodeBlock(local_node.body);
+        // Add the var as the first field
+        rtxNodeTplVar_addField(local_node, theVar);
+
+        ref out_ref_body = local_node.body;
+        return true;
+    }
+
+    function rtxNodeLink(local_node     : node,
+                         tpl_vars       : node,
+                         linked         : node)
+    {
+        rtxNode(local_node);
+        local_node.type = "__rtx_link__";
+        insert local_node.body;
+
+        // Add the list of link variables
+        insert local_node.body.vars;
+        setall local_node.body.vars = tpl_vars;
+
+        // For now, let's insert the prototype as-is
+        // but it will need to be compiled later...
+        insert local_node.body.linked_template;
+        local_node.body.linked_template = linked;
+
+        return true;
+    }
+
+    function rtxNodeEach(local_node     : node,
+                         tpl_vars       : node,
+                         item_name      : value,
+                         linked         : value,
+                         out_ref_body   : reference)
+    {
+        rtxNode(local_node);
+        local_node.type = "__rtx_each__";
+        insert local_node.body;
+
+        // Add the list of link variables
+        insert local_node.body.vars;
+        setall local_node.body.vars = tpl_vars;
+
+        // Add the referent item name (should be a simple identifier)
+        insert local_node.body.item;
+        local_node.body.item = item_name;
+
+        // For now, let's insert the prototype as-is
+        // but it will need to be compiled later...
+        insert local_node.body.linked_template;
+        local_node.body.linked_template = linked;
+
+        ref out_ref_body = local_node.body;
+        return true;
+    }
+
 /////////////////////////////
 ////////////////////
 local source;
@@ -306,6 +400,117 @@ foreach item in source.block
 
 saveProject("__02_rtx_compil__.tree", source);
 
+// Now, we must parse each template_expr of the compile node
+// In order to build AST parts
+function    build_compile_tree(compile : node)
+{
+    local treepart;
+    cnormDialect<"__std__">(treepart);
+    parseStringAsBNF({
+
+        #include "cnorm.cwp"
+        /*
+         *
+         * BNF rules for the placeHolders
+         *
+         */
+
+        /* Root of the placeHolder grammar */
+		#overload
+		translation_unit ::=
+			=> traceLine("TEMPLATE EXPRESSION PARSE!");
+			#try
+				#ignore
+				#check(rtxNodeTplPlaceHolder(this))
+				[
+					rtx_place_holder(this)
+				]
+				#continue(sError, "bad token at end of file, unexpected " + peekChar())
+				#empty
+			#catch (sError)
+				| #check(cnormLogError(this, sError))
+		;
+
+        rtx_place_holder(theNode : node) ::=
+            [
+                identifier:prefix
+/**/            => theNode.prefix = prefix;
+            ]?
+            "${"
+            [
+                tpl_identifier(theNode.body)
+            |
+                tpl_link_expr(theNode.body)
+//          |
+//              tpl_each_expr(theNode.body)
+            ]
+            '}'
+            [
+                identifier:sufix
+/**/            => theNode.sufix = sufix;
+            ]?
+            [ ";" ]?
+        ;
+
+        // This rule dissects an identifier in parts separated by dots.
+        tpl_identifier(theNode : node) ::=
+            identifier:varId
+            // Create the node from 
+/**/        => local body;
+            #check(rtxNodeTplVar(theNode, varId, body))
+            [
+                '.' identifier:tplField
+                // add the field into the block
+                #check(rtxNodeTplVar_addField(theNode, tplField))
+            ]*
+        ;
+
+        // Here we can identify a list of template variables
+        tpl_var_list(theBlock : node) ::=
+/**/        => local lastNode;
+            #check(cnormNodeBlock_AddNode(theBlock))
+            #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+            tpl_identifier(lastNode)
+            [
+                ','
+                #check(cnormNodeBlock_AddNode(theBlock))
+                #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+                tpl_identifier(lastNode)
+            ]*
+        ;
+
+        tpl_link_expr(theLink : node) ::=
+            "link"
+/**/        => local theVars;
+            #check(cnormNodeBlock(theVars))
+            tpl_var_list(theVars)
+            "to"
+/**/        => local theType;
+            #check(rtxNode(theType))
+            tpl_type(theType)
+            #check(rtxNodeLink(theLink, theVars, theType))
+        ;
+
+//      tpl_each_expr ::=
+//      ;
+
+    }, treepart, compile.template_expr);
+    traceLine("Just built node for template_expr : "+compile.template_expr);
+    insert compile.node;
+    setall compile.node = treepart;
+}
+
+local phidx = $0$;
+while (inf(phidx, source.block["0"].body.block["0"].body.compile.nbplaceholder))
+{
+    increment(phidx);
+    local sKey = "_" + phidx;
+    traceLine("Building Node for item for key "+sKey);
+    build_compile_tree(source.block["0"].body.block["0"].body.compile[sKey]);
+}
+
+saveProject("__03_rtx_compil_tplnode__.tree", source);
+
 /// le code generer aura besoin de ca
 function	instanceTpl<T>(ast_context : node, c_tree : node)
 {
@@ -317,8 +522,8 @@ function	instanceTpl<T>(ast_context : node, c_tree : node)
 function	gencodeworker(tpl_node : node, uid : value)
 {
 	// on met la chaine de code PIC dans notre tpl_node pour etre accessible pendant la generation du code codeworker
-	local sAstFile = "__04_rtx_codeworker_" + uid + ".tree";//pour l'instant en dur
-	local sCwsFile = "__05_rtx_codeworker_" + uid + ".cws";//pour l'instant en dur
+	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";//pour l'instant en dur
+	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";//pour l'instant en dur
 	//saveToFile(sAstFile, workaround.code_pic);
 	saveProject(sAstFile, tpl_node.body);
 	insert tpl_node.save_ast = sAstFile;
@@ -397,7 +602,7 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 {
 	traceLine("GEN TPL");
 	// on sauve pour analyse a froit le node a generer
-	saveProject("__03_rtx_gen_" + uid + ".tree", local_node);
+	saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
 	// racine de la generation des templates
 	gencodeworker(local_node, uid);
 	// on a tout generer on charge :P.... a terme delegue a RTX_LINK
