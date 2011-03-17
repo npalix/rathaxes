@@ -92,7 +92,7 @@ parseStringAsBNF({
 					#ignore
 					#check(cnormNodeRoot(this))
 					[
-						#check(cnormNodeCtx(this))
+						//#check(cnormNodeCtx(this))
 						rtx_declaration(this)
 					]*
 					#continue(sError, "bad token at end of file, unexpected " + peekChar())
@@ -125,7 +125,7 @@ parseStringAsBNF({
 					=> traceLine("chunk:" + head + " next:" + peekChar());
 					=>traceLine("CODE C!");
 					[
-						#check(cnormNodeCtx(c_block))
+						//#check(cnormNodeCtx(c_block))
 						declaration(c_block)
 					]*
 				'}'
@@ -154,7 +154,7 @@ parseStringAsBNF({
 					// le block du with
 					'{'
 						[
-							#check(cnormNodeCtx(body))
+							//#check(cnormNodeCtx(body))
 							rtx_declaration(body)
 						]*
 						
