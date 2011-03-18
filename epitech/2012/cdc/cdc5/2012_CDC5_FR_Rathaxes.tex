@@ -7,16 +7,25 @@
 
 \rtxdoctype{Test Document}
 \rtxdocstatus{Brouillon}
-\rtxdocversion{0.1}
+\rtxdocversion{0.2}
 
 \rtxdochistory
 {
 0.1 & 11/03/2011 & Louis Opter & Reprise du CDC1 \\
+\hline
+0.2 & 17/03/2011 & Louis Opter & Prise en compte des remarques faites lors du DA2 \\
 }
 
 \begin{document}
 
 \maketitle
+
+\begin{abstract}
+\rtx\ est un générateur, multi-plateformes, de pilotes de périphériques
+matériels. Le fonctionnement du périphérique est décrit dans le langage
+spécialisé \rtx\ avant d'être compilé vers un module noyau écrit en C pour
+Linux, Windows ou OpenBSD.
+\end{abstract}
 
 \rtxmaketitleblock
 
@@ -32,8 +41,8 @@ Ce document est le cahier des charges pour le projet \rtx\  2012. Il comporte
 une description du travail à accomplir pour achever ce projet. \rtx\  est un
 générateur de pilote de périphériques d'ordinateurs multi-plateformes.
 
-\rtx est réalisé par l'équipe EIP \rtx 2012 et s'inscrit dans la continuité du
-travail effectué par l'équipe 2009.
+\rtx\ est réalisé par l'équipe EIP \rtx\ 2012 et s'inscrit dans la continuité
+du travail effectué par l'équipe 2009.
 
 Ce document s'adresse aux développeurs \rtx\  et à l'équipe du laboratoire EIP.
 Il décrit le projet \rtx, ses buts, ses moyens et ses limites.
@@ -75,38 +84,41 @@ problèmes :
 
 \section{Vue d'ensemble du projet}
 
-Le projet est divisé en quatre parties :
+Le projet \rtx\ 2009 était divisé en trois parties :
 \begin{enumerate}
 \item Le DSL\footnote{\emph{Domain Specific Language}} qui décrit un pilote
-périphérique.
+périphérique ;
 \item La \BL\ est une bibliothèque de patrons utilisée lors de la génération
-du pilote.
-\item Un compilateur qui traduit le DSL \rtx\  et génère un pilote.
-\item Une documentation abondante sur le langage et la \BL\ pour les
-utilisateurs et contributeurs de \rtx.
+du pilote ;
+\item Un compilateur qui traduit le DSL \rtx\ et génère un pilote.
 \end{enumerate}
 
-Le DSL et le compilateur sont distribués sous licence GPLv3\cite{GPL3} et
-la \BL\ sous licence BSD\cite{BSD}.
+Le projet comporte aussi une documentation abondante sur le DSL, la \BL\ et une
+référence, \emph{«~l'état de l'art~»} sur la rédaction de pilotes de
+périphériques. Cette documentation s'adresse aux développeurs \rtx\ (aussi bien
+du groupe d'EIP ou des contributeurs externes) et aux utilisateurs.
 
-Actuellement, \rtx\  est une preuve de concept qui peut générer un pilote RS-232.
+Actuellement, \rtx\ est une preuve de concept qui peut générer un pilote RS-232.
 
 \chapter{Objectifs pour 2012}
 
-À la fin de la session EIP 2012, le projet devra être utilisable par n'importe
-quel programmeur de pilote avec des exemples sur du matériel actuel.
-
-Le projet suivra plusieurs étapes qui comportent :
+L'EIP \rtx\ 2012 a quatre objectifs :
 \begin{enumerate}
-\item Des recherches sur la sémantique des bus (comme PCI, USB, i2c, \ldots) ;
-\item Implémentation des bus et de leurs algorithmes dans le DSL ;
-\item Ajouter de nouveaux patrons de code dans la \BL.
+\item Rendre le développement publique sous des licences Open Source ;
+\item Contribuer à l'état de l'art qui ne couvre que les modules noyaux
+(\emph{LKM}) et un pilote série RS-232 ;
+\item Dégager de nouveaux concepts clefs de l'état de l'art sur
+des bus utilisés couramment tel que PCI ou I\textsuperscript{2}C et leurs
+mécanismes associés (interruptions, asynchrone, DMA) ;
+\item Devenir plus actif dans la communauté Open Source.
 \end{enumerate}
 
-Tout au long du projet, l'équipe \rtx\  sera montrera active dans la communauté
-Open Source.
+Au delà de l'EIP, l'équipe \rtx\ souhaite rendre le projet attractif pour la
+communauté de développeurs de pilotes open source.
 
 \chapter{Contraintes}
+
+\rtx\ 2012 conserve la même organisation qu'en 2009 (DSL, compilateur et \BL).
 
 \section{Le DSL}
 
@@ -121,6 +133,11 @@ Le DSL \rtx\ doit :
 
 Le code C généré doit être robuste puisque le système d'exploitation dépend de lui.
 
+L'organisation du DSL change par rapport à la version 2009 : au front-end et au
+back-end du langage s'ajoute le middle-end qui va être capable de relier les
+deux parties en déclarant les types, séquences (algorithmes) et variables
+disponibles.
+
 \section{Le compilateur}
 
 Avec le multi-plateforme, la capacité de réutiliser le code devient un enjeu.
@@ -130,9 +147,12 @@ Pour chaque plateforme, le générateur de pilote doit :
 \item Être capable d'être lancé en ligne de commande ;
 \item Vérifier la syntaxe du DSL ;
 \item Vérifier la sémantique de ses entrées ;
-\item Utiliser le CodeWorker\cite{CodeWorker} ;
-\item Utiliser les outils natifs \`a chaque plateforme.
+\item Utiliser CodeWorker\cite{CodeWorker} ;
+\item Utiliser les outils natifs à chaque plateforme.
 \end{itemize}
+
+L'architecture du compilateur va être revue pour tenir en compte les
+changements sur le DSL.
 
 \section{La \BL}
 
@@ -147,25 +167,17 @@ La \BL\ doit :
 
 Actuellement, \rtx\ supporte seulement la communication synchrone avec les
 périphériques. Cependant, la plupart des périphériques communiquent de manière
-asynchrone (comme l'USB) et sa gestion dans le DSL est incontournable.
-
-\section{Nouveaux pilotes}
-
-A la fin du projet, les pilotes suivants devront être disponibles :
-\begin{itemize}
-\item souris USB ;
-\item clef de stockage USB ;
-\item carte Ethernet ;
-\item sondes a travers l'i2c.
-\end{itemize}
+asynchrone (avec des mécanismes d'interruptions) et sa gestion dans le DSL est
+incontournable.
 
 \section{Licence}
 
 En tant que projet scientifique \rtx\ est distribué selon deux licences open
 source :
 \begin{description}
-\item[GPLv3:] Pour le compilateur, afin de garder une propriété intellectuelle ;
-\item[BSD:] Pour la \BL\ afin de rendre possible l'adoption de \rtx\ par des
+\item[GPLv3 :] Pour le compilateur, afin de garder une propriété intellectuelle
+et de s'assurer qu'il n'existera qu'une seule version du langage ;
+\item[BSD :] Pour la \BL\ afin de rendre possible l'adoption de \rtx\ par des
 entreprises.
 \end{description}
 
@@ -181,10 +193,9 @@ besoins du projet.
 
 Dépenses prévues :
 \begin{itemize}
-\item Achat de périphériques (souris, carte réseaux, \ldots) ;
-\item Voyage (RMLL\footnote{Rencontres Mondiales du Logiciel
-Libre(\url{http://rmll.info/}).},
-Fosdem\footnote{\url{http://www.fosdem.org/}.}) ;
+\item Voyage (RMLL Strasbourg\footnote{Rencontres Mondiales du Logiciel
+Libre (\url{http://rmll.info/}).}, T-Dose
+Eindhoven\footnote{\url{http://www.t-dose.org/}.}) ;
 \item Nom de domaine (rathaxes.org).
 \end{itemize}
 
@@ -220,10 +231,10 @@ sur le canal IRC suivant: \url{irc://rathaxes@irc.freenode.org}.
 \item Étudier des pilotes existant sur chaque plateforme ;
 \item Écrire des pilotes sur chaque plateforme ;
 \item Définir les concepts à implémenter dans le DSL ;
-\item Commencer \`a travailler avec le code de \rtx\ ;
-\item Mettre \`a jour le DSL ;
+\item Commencer à travailler avec le code de \rtx\ ;
+\item Mettre à jour le DSL ;
 \item Écrire des pilotes avec \rtx\ ;
-\item Participer aux RMLL et Fosdem.
+\item Participer aux RMLL à Strasbourg et au T-Dose à Eindhoven.
 \end{enumerate}
 
 \begin{landscape}
