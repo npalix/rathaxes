@@ -1,0 +1,15 @@
+<%
+/*
+**  _algorithms.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+%>
+
+ADVICE algorithms PART_OF algorithms
+{
+    void algorithms(void)
+    {
+    }
+};

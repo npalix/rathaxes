@@ -1,0 +1,14 @@
+declare function	getSystemVersion<"openBSD">();
+
+function	getSystemVersion<"openBSD">()
+{
+	local name;
+
+	if (system("uname -r > name") != "")
+	{
+		return "";
+	}
+	name = loadFile("name");
+	deleteFile("name");
+	return replaceString("\n", "", name);
+}

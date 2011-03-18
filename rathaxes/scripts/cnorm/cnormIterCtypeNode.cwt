@@ -1,0 +1,31 @@
+<%
+function	cnorm_iter_ctype_node(ctype : node)
+{
+  local	i;
+
+  if (ctype.infoType > 0)
+    foreach infoType in ctype.infoType
+      { @@infoType.key()@ @ }
+
+  @@ctype.sign@ @
+
+  if (ctype.type == "primeType")
+    {
+      @@ctype.type.specifier@ @
+      if (ctype.type.specifier.occ = 2)
+	{ @@ctype.type.specifier@ @ }
+      @@ctype.type.identifier@ @
+    }
+  else /* if (ctype.type == "userType") */
+    {
+      @@ctype.type.identifier@ @
+    }
+  
+  i = 1;
+  while (i <= ctype.pointer["*"])
+    { @*@ i = $ i + 1 $;}
+}
+
+cnorm_iter_ctype_node(this.ctype);
+
+%>
