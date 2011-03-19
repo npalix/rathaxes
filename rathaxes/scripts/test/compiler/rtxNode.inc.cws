@@ -1,0 +1,143 @@
+#if !existFunction(rtxNode_version)
+
+function rtxNode_version()
+{return "1.0";}
+
+
+function	rtxNode(local_node : node)
+{
+    cnormNode(local_node);
+    local_node.type = "__rtx_node__";
+    return true;
+}
+
+function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl__";
+    insert local_node.tpl_type = "__decl__";
+    // pour l'instant on met le proto comme string, mais faudra le compil aussi
+    insert local_node.prototype = input;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body, true);
+    insert local_node.body.compile;
+    insert local_node.body.compile.nbplaceholder = 0;
+    ref out_ref_block = local_node.body;
+    return true;
+}
+
+function rtxNodeWith(local_node         : node,
+                     out_ref_var_map    : reference,
+                     out_ref_body       : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_with__";
+    insert local_node.var_map;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_var_map = local_node.var_map;
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+function rtxNodeTplPlaceHolder(local_node   : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_placeHolder__";
+    insert local_node.prefix;
+    insert local_node.body;
+    insert local_node.sufix;
+    return true;
+}
+
+function rtxNodeTplIdentifier(local_node : node)
+{
+    local_node.type = "__rtx_tpl_id__";
+    insert local_node.name;
+}
+
+function rtxNodeTplVar_addField(local_node : node, theField : value)
+{
+    cnormNodeBlock_AddNode(local_node.body);
+    local lastNode;
+    cnormNodeBlock_GetLastNode(local_node.body, lastNode);
+    rtxNodeTplIdentifier(lastNode);
+    lastNode.name = theField;
+    return true;
+}
+
+function rtxNodeTplVar(local_node   : node,
+                       theVar       : value,
+                       out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_var__";
+    insert local_node.body;
+
+    // In the block will be pushed the different parts
+    // of the identifier
+    cnormNodeBlock(local_node.body);
+    // Add the var as the first field
+    rtxNodeTplVar_addField(local_node, theVar);
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+function rtxNodeTplType(local_node : node,
+                        content : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type__";
+    insert local_node.body = content;
+    return true;
+}
+
+function rtxNodeLink(local_node     : node,
+                     tpl_vars       : node,
+                     linked         : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_link__";
+    insert local_node.body;
+
+    // Add the list of link variables
+    insert local_node.body.vars;
+    setall local_node.body.vars = tpl_vars;
+
+    // For now, let's insert the prototype as-is
+    // but it will need to be compiled later...
+    insert local_node.body.linked_template;
+    local_node.body.linked_template = linked;
+
+    return true;
+}
+
+function rtxNodeEach(local_node     : node,
+                     tpl_vars       : node,
+                     item_name      : value,
+                     linked         : value,
+                     out_ref_body   : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_each__";
+    insert local_node.body;
+
+    // Add the list of link variables
+    insert local_node.body.vars;
+    setall local_node.body.vars = tpl_vars;
+
+    // Add the referent item name (should be a simple identifier)
+    insert local_node.body.item;
+    local_node.body.item = item_name;
+
+    // For now, let's insert the prototype as-is
+    // but it will need to be compiled later...
+    insert local_node.body.linked_template;
+    local_node.body.linked_template = linked;
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+#end
