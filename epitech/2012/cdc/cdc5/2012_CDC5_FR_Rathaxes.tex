@@ -7,13 +7,15 @@
 
 \rtxdoctype{Test Document}
 \rtxdocstatus{Brouillon}
-\rtxdocversion{0.2}
+\rtxdocversion{0.3}
 
 \rtxdochistory
 {
 0.1 & 11/03/2011 & Louis Opter & Reprise du CDC1 \\
 \hline
 0.2 & 17/03/2011 & Louis Opter & Prise en compte des remarques faites lors du DA2 \\
+\hline
+0.3 & 19/03/2011 & Louis Opter & Ajout du schéma du compilateur \\
 }
 
 \begin{document}
@@ -151,8 +153,16 @@ Pour chaque plateforme, le générateur de pilote doit :
 \item Utiliser les outils natifs à chaque plateforme.
 \end{itemize}
 
-L'architecture du compilateur va être revue pour tenir en compte les
-changements sur le DSL.
+L'architecture du compilateur va être revue pour prendre en compte les
+changements sur le DSL, voir figure \ref{diagramme} page \pageref{diagramme}.
+
+\begin{figure}
+\begin{center}
+\caption{Architecture du compilateur}
+\includegraphics[width=0.95\textwidth]{../../../../doc/rathaxes/technical/diagramme_architecture.pdf}
+\label{diagramme}
+\end{center}
+\end{figure}
 
 \section{La \BL}
 
