@@ -1,0 +1,104 @@
+/*
+	TEST GENERAL DE TEMPLATE
+*/
+
+local dummy;
+local input;
+generateString({
+
+		with OS=pigeonMouette,maj=0,min=1
+		{
+			template open(Context ctx) decl
+			{
+				typedef int ${KK};
+	
+				typedef int ${TYPE};
+				
+				enum pop${ctx.name} {A, B, C};
+	
+				${TYPE} bla;
+	
+				int	open(int a)
+				{
+					int	bal${KKK} = 13;
+					printf("COUCOU\n");
+					// alors ATTENTION ceci est vue comme une decl :(...
+                    // effet de bord de l'aspect "int par defaut"
+					${ctx.name} = 42;
+					${TOTO} += 3;
+					return 0;
+				}
+
+                ${link ctx to test(Context) stmt};
+
+			}
+
+            template test(Context ctx) decl
+            {
+                int test_${ctx.name}(void)
+                {
+                    int ret = strcmp("open", param);
+                    return ret;
+                }
+            }
+		}
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+
+traceLine("input:\n" + input);
+
+
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtxBack.cwp", source, input);
+// enleve dialect
+removeVariable(source.dialect);
+
+traceLine("result of parsing:" + toString(source, true));
+saveProject("__01_rtx_parse__.tree", source);
+
+
+
+
+#include "rtxTpl/rtxCompile.inc.cws"
+foreach item in source.block
+{
+    traceLine("compiling item : "+toString(item));
+	rtxTpl_walk<item.type>(item);
+}
+
+saveProject("__02_rtx_compil__.tree", source);
+
+
+
+#include "rtxTpl/rtxMeta.inc.cws"
+// Now, we must parse each template_expr of the compile node
+// In order to build AST parts
+foreach item in source.block["0"].body.block["0"].body.compile
+{
+    traceLine("Building Node for item for key "+item.key());
+    build_compile_tree(item);
+}
+
+saveProject("__03_rtx_compil_tplnode__.tree", source);
+
+
+
+#include "rtxTpl/rtxGen.inc.cws"
+/// le code generer aura besoin de ca
+// foreach brutal, a terme on devrait walk le tree pour gerer correctement
+// les __rtx_tpl__, __rtx_with__ etc...
+foreach item in source.block
+{
+	local uid = 0;
+	rtxGen<item.type>(item, uid);
+	uid = $uid + 1$;
+}
+
