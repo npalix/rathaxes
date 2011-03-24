@@ -8,10 +8,22 @@ function rtxMeta_version()
 function    build_compile_tree(compile : node)
 {
     local treepart;
-    cnormDialect<"__std__">(treepart);
     parseStringAsBNF({
 
-        #include "cnorm.cwp"
+        #ignore ::=
+        [
+            ['#' ->[['\r']? '\n']]
+            | ["//" ->[['\r']? '\n']]
+            | ["/*" ->"*/"]
+            | ' '
+            | '\t'
+            | '\n'
+            | '\r'
+            | '\f' // form feed, sometimes Windows kernel headers have this character.
+        ]+:skip
+        ;
+
+
         /*
          *
          * BNF rules for the placeHolders
@@ -19,8 +31,7 @@ function    build_compile_tree(compile : node)
          */
 
         /* Root of the placeHolder grammar */
-		#overload
-		translation_unit ::=
+		template_expr ::=
 			=> traceLine("TEMPLATE EXPRESSION PARSE!");
 			#try
 				#ignore
@@ -94,13 +105,16 @@ function    build_compile_tree(compile : node)
             tpl_var_list(theVars)
             "to"
 /**/        => local theType;
-            #check(rtxNode(theType))
             tpl_type(theType)
             #check(rtxNodeLink(theLink, theVars, theType))
         ;
 
 //      tpl_each_expr ::=
 //      ;
+
+        identifier ::=
+                #readIdentifier
+        ;
 
     }, treepart, compile.template_expr);
     traceLine("Just built node for template_expr : "+compile.template_expr);

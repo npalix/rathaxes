@@ -78,9 +78,10 @@ function rtxNodeIdentifier(local_node : node)
 
 function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
 {
-    pushItem local_node.identifier;
+    pushItem local_node.identifiers;
 
-    localref theIdentifier = local_node.identifiers#back;
+    local theIdentifier;
+    ref theIdentifier = local_node.identifiers#back;
     rtxNodeIdentifier(theIdentifier);
         
     theIdentifier.name = theField;

@@ -19,6 +19,12 @@ function getField<T>(theNode : node, theField : reference)
     return true;
 }
 
+function inject<"">(ctxNode:node, treeNode : node, tplNode:node)
+{
+    // we should NEVER fallback here.
+    error("BAD NODE - Empty Template Node Type !");
+    return false;
+}
 
 function    inject<sNodeType>(ctxNode : node, treeNode : node, tplNode : node)
 {
@@ -56,6 +62,11 @@ function    inject<"__rtx_tpl_var__">(ctxNode : node, treeNode : node,
     finalString = finalString + ctxNode;
     finalString = finalString + treeNode.sufix;
     treeNode#parent.ref_placeholder = finalString;
+}
+
+function    inject<"__rtx_tpl_link__">(ctxNode : node, treeNode : node,
+                                       tplNode : node)
+{
 }
 
 
