@@ -1,0 +1,7 @@
+RATHAXES_COPY_LATEX_CLASSES()
+
+ADD_LATEX_DOCUMENT(2012_UD2_EN_Rathaxes.tex
+#                  BIBFILES
+#                  ../../bibliography.bib # Must be relative
+                   DEFAULT_PDF MANGLE_TARGET_NAMES
+                  )

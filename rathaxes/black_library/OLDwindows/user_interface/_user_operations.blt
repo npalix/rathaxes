@@ -1,0 +1,16 @@
+<%
+
+/*
+**      _kernel_registration.blt in black_library/windows/user_interface
+**      for Rathaxes project
+**      made by Micka
+*/
+
+%>
+
+ADVICE user_operations PART_OF user_interface
+{
+   JOINPOINT read IN user_interface.user_operations.read; 
+   JOINPOINT write IN user_interface.user_operations.write; 
+   JOINPOINT prepare IN user_interface.user_operations.prepare;
+};

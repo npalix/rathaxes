@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(legacy)
+ADD_SUBDIRECTORY(technical)

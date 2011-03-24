@@ -1,0 +1,111 @@
+#include "rtxNode.inc.cws"
+
+#if !existFunction(rtxMeta_version)
+
+function rtxMeta_version()
+{return "1.0";}
+
+function    build_compile_tree(compile : node)
+{
+    local treepart;
+    cnormDialect<"__std__">(treepart);
+    parseStringAsBNF({
+
+        #include "cnorm.cwp"
+        /*
+         *
+         * BNF rules for the placeHolders
+         *
+         */
+
+        /* Root of the placeHolder grammar */
+		#overload
+		translation_unit ::=
+			=> traceLine("TEMPLATE EXPRESSION PARSE!");
+			#try
+				#ignore
+				#check(rtxNodePlaceHolder(this))
+				[
+					rtx_place_holder(this)
+				]
+				#continue(sError, "bad token at end of file, unexpected "
+                          + peekChar())
+				#empty
+			#catch (sError)
+				| #check(cnormLogError(this, sError))
+		;
+
+        rtx_place_holder(theNode : node) ::=
+            [
+                identifier:prefix
+/**/            => theNode.prefix = prefix;
+            ]?
+            "${"
+            [
+                tpl_identifier(theNode.body)
+            |
+                tpl_link_expr(theNode.body)
+//          |
+//              tpl_each_expr(theNode.body)
+            ]
+            '}'
+            [
+                identifier:sufix
+/**/            => theNode.sufix = sufix;
+            ]?
+            [ ";" ]?
+        ;
+
+        // This rule dissects an identifier in parts separated by dots.
+        tpl_identifier(theNode : node) ::=
+            identifier:varId
+            // Create the node from 
+            #check(rtxNodeVar(theNode, varId))
+            [
+                '.' identifier:tplField
+                // add the field into the block
+                #check(rtxNodeVar_AddIdentifier(theNode, tplField))
+            ]*
+        ;
+
+        // Here we can identify a list of template variables
+        tpl_var_list(theBlock : node) ::=
+/**/        => local lastNode;
+            tpl_identifier(lastNode)
+            #check(rtxNodeList_AddNode(theBlock, lastNode))
+            [
+                ','
+/**/            => local lastVar;
+                tpl_identifier(lastVar)
+                #check(rtxNodeList_AddNode(theBlock, lastVar))
+            ]*
+        ;
+
+        // Here, a hard-coded test for a one-param function template
+        tpl_type(theType : node) ::=
+            "test(Context) stmt"
+            #check(rtxNodeLinkType(theType, "test(Context) stmt"))
+        ;
+
+        tpl_link_expr(theLink : node) ::=
+            "link"
+/**/        => local theVars;
+            #check(rtxNodeVarList(theVars))
+            tpl_var_list(theVars)
+            "to"
+/**/        => local theType;
+            #check(rtxNode(theType))
+            tpl_type(theType)
+            #check(rtxNodeLink(theLink, theVars, theType))
+        ;
+
+//      tpl_each_expr ::=
+//      ;
+
+    }, treepart, compile.template_expr);
+    traceLine("Just built node for template_expr : "+compile.template_expr);
+    insert compile.node;
+    setall compile.node = treepart;
+}
+
+#end
