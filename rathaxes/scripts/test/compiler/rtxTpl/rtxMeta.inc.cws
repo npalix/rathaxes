@@ -24,7 +24,7 @@ function    build_compile_tree(compile : node)
 			=> traceLine("TEMPLATE EXPRESSION PARSE!");
 			#try
 				#ignore
-				#check(rtxNodeTplPlaceHolder(this))
+				#check(rtxNodePlaceHolder(this))
 				[
 					rtx_place_holder(this)
 				]
@@ -60,39 +60,37 @@ function    build_compile_tree(compile : node)
         tpl_identifier(theNode : node) ::=
             identifier:varId
             // Create the node from 
-/**/        => local body;
-            #check(rtxNodeTplVar(theNode, varId, body))
+            #check(rtxNodeVar(theNode, varId))
             [
                 '.' identifier:tplField
                 // add the field into the block
-                #check(rtxNodeTplVar_addField(theNode, tplField))
+                #check(rtxNodeVar_AddIdentifier(theNode, tplField))
             ]*
         ;
 
         // Here we can identify a list of template variables
         tpl_var_list(theBlock : node) ::=
 /**/        => local lastNode;
-            #check(cnormNodeBlock_AddNode(theBlock))
-            #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
             tpl_identifier(lastNode)
+            #check(rtxNodeList_AddNode(theBlock, lastNode))
             [
                 ','
-                #check(cnormNodeBlock_AddNode(theBlock))
-                #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-                tpl_identifier(lastNode)
+/**/            => local lastVar;
+                tpl_identifier(lastVar)
+                #check(rtxNodeList_AddNode(theBlock, lastVar))
             ]*
         ;
 
         // Here, a hard-coded test for a one-param function template
         tpl_type(theType : node) ::=
             "test(Context) stmt"
-            #check(rtxNodeTplType(theType, "test(Context) stmt"))
+            #check(rtxNodeLinkType(theType, "test(Context) stmt"))
         ;
 
         tpl_link_expr(theLink : node) ::=
             "link"
 /**/        => local theVars;
-            #check(cnormNodeBlock(theVars))
+            #check(rtxNodeVarList(theVars))
             tpl_var_list(theVars)
             "to"
 /**/        => local theType;

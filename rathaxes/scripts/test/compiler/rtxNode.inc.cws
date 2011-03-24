@@ -40,56 +40,95 @@ function rtxNodeWith(local_node         : node,
     return true;
 }
 
-function rtxNodeTplPlaceHolder(local_node   : node)
+
+
+/*
+ *
+ * The following function are functions made to build rathaxes-specific
+ * nodes to be used for the template compilation and instanciation.
+ *
+ * Therefore, it does not have any need to depend on the cnormNode functions
+ *
+ */
+
+function rtxNodePlaceHolder(local_node   : node)
 {
-    rtxNode(local_node);
+    insert local_node.type;
     local_node.type = "__rtx_tpl_placeHolder__";
+
+    // The potential concatenation prefix
     insert local_node.prefix;
+
+    // The content of the placeHolder (between "${" and '}')
     insert local_node.body;
+
+    // The potential concatenation sufix
     insert local_node.sufix;
+
     return true;
 }
 
-function rtxNodeTplIdentifier(local_node : node)
+function rtxNodeIdentifier(local_node : node)
 {
+    insert local_node.type;
     local_node.type = "__rtx_tpl_id__";
+
     insert local_node.name;
 }
 
-function rtxNodeTplVar_addField(local_node : node, theField : value)
+function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
 {
-    cnormNodeBlock_AddNode(local_node.body);
-    local lastNode;
-    cnormNodeBlock_GetLastNode(local_node.body, lastNode);
-    rtxNodeTplIdentifier(lastNode);
-    lastNode.name = theField;
+    pushItem local_node.identifier;
+
+    localref theIdentifier = local_node.identifiers#back;
+    rtxNodeIdentifier(theIdentifier);
+        
+    theIdentifier.name = theField;
+
     return true;
 }
 
-function rtxNodeTplVar(local_node   : node,
-                       theVar       : value,
-                       out_ref_body : reference)
+function rtxNodeVar(local_node   : node,
+                    theVar       : value)
 {
-    rtxNode(local_node);
+    insert local_node.type;
     local_node.type = "__rtx_tpl_var__";
-    insert local_node.body;
 
-    // In the block will be pushed the different parts
-    // of the identifier
-    cnormNodeBlock(local_node.body);
-    // Add the var as the first field
-    rtxNodeTplVar_addField(local_node, theVar);
+    // A list of chained identifiers constituting the real field identifier
+    insert local_node.identifiers;
+    // Add the var as the first identifier
+    rtxNodeVar_AddIdentifier(local_node, theVar);
 
-    ref out_ref_body = local_node.body;
     return true;
 }
 
-function rtxNodeTplType(local_node : node,
-                        content : value)
+function rtxNodeList_AddNode(local_node : node,
+                             theVar     : node)
 {
-    rtxNode(local_node);
-    local_node.type = "__rtx_tpl_type__";
+    pushItem local_node.list;
+    setall local_node.list#back = theVar;
+
+    return true;
+}
+
+function rtxNodeVarList(local_node : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_varlist__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+function rtxNodeLinkType(local_node : node,
+                         content    : value)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_link_type__";
+
     insert local_node.body = content;
+
     return true;
 }
 
@@ -97,18 +136,17 @@ function rtxNodeLink(local_node     : node,
                      tpl_vars       : node,
                      linked         : node)
 {
-    rtxNode(local_node);
+    insert local_node.type;
     local_node.type = "__rtx_tpl_link__";
-    insert local_node.body;
 
     // Add the list of link variables
-    insert local_node.body.vars;
-    setall local_node.body.vars = tpl_vars;
+    insert local_node.vars;
+    setall local_node.vars = tpl_vars;
 
     // For now, let's insert the prototype as-is
     // but it will need to be compiled later...
-    insert local_node.body.linked_template;
-    local_node.body.linked_template = linked;
+    insert local_node.linkedType;
+    local_node.linkedType = linked;
 
     return true;
 }
@@ -116,27 +154,24 @@ function rtxNodeLink(local_node     : node,
 function rtxNodeEach(local_node     : node,
                      tpl_vars       : node,
                      item_name      : value,
-                     linked         : value,
-                     out_ref_body   : reference)
+                     linked         : value)
 {
-    rtxNode(local_node);
+    insert local_node.type;
     local_node.type = "__rtx_tpl_each__";
-    insert local_node.body;
 
     // Add the list of link variables
-    insert local_node.body.vars;
-    setall local_node.body.vars = tpl_vars;
+    insert local_node.vars;
+    setall local_node.vars = tpl_vars;
 
     // Add the referent item name (should be a simple identifier)
-    insert local_node.body.item;
-    local_node.body.item = item_name;
+    insert local_node.alias;
+    local_node.alias = item_name;
 
     // For now, let's insert the prototype as-is
     // but it will need to be compiled later...
-    insert local_node.body.linked_template;
-    local_node.body.linked_template = linked;
+    insert local_node.linkedType;
+    local_node.linkedType = linked;
 
-    ref out_ref_body = local_node.body;
     return true;
 }
 
