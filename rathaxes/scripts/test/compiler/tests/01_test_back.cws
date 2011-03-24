@@ -83,7 +83,12 @@ saveProject("__02_rtx_compil__.tree", source);
 // In order to build AST parts
 foreach item in source.block["0"].body.block["0"].body.compile
 {
-    traceLine("Building Node for item for key "+item.key());
+    traceLine("Building Node in first template for item for key "+item.key());
+    build_compile_tree(item);
+}
+foreach item in source.block["0"].body.block["1"].body.compile
+{
+    traceLine("Building Node in second template for item for key "+item.key());
     build_compile_tree(item);
 }
 
@@ -101,4 +106,3 @@ foreach item in source.block
 	rtxGen<item.type>(item, uid);
 	uid = $uid + 1$;
 }
-

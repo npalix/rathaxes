@@ -19,54 +19,59 @@ function getField<T>(theNode : node, theField : reference)
     return true;
 }
 
-function inject<"">(ctxNode:node, treeNode : node, tplNode:node)
+/*
+ *
+ * resolverValues -> the hash mapping of values used in the template
+ * treeNode -> the root of the __rtx_tpl__ node
+ * tplNode -> current node
+ *
+ */
+function inject<"">(resolverValues:node, treeNode : node, tplNode:node)
 {
     // we should NEVER fallback here.
     error("BAD NODE - Empty Template Node Type !");
     return false;
 }
 
-function    inject<sNodeType>(ctxNode : node, treeNode : node, tplNode : node)
+function    inject<sNodeType>(resolverValues : node, treeNode : node, tplNode : node)
 {
     // we should NEVER fallback here.
     error("BAD NODE - Unknown Template Node Type : "+sNodeType);
 }
 
-function    inject<"__rtx_tpl_placeHolder__">(ctxNode : node, treeNode : node,
+function    inject<"__rtx_tpl_placeHolder__">(resolverValues : node, treeNode : node,
                                               tplNode : node)
 {
-    //traceLine("Injecting into placeHolder : "+toString(tplNode));
-    inject<treeNode.body.type>(ctxNode, treeNode, tplNode.body);
+    //traceLine("Injecting into placeHolder : realType = "+treeNode.body.type);
+    inject<treeNode.body.type>(resolverValues, treeNode, tplNode.body);
 }
 
-function    inject<"__rtx_tpl_var__">(ctxNode : node, treeNode : node,
+function    inject<"__rtx_tpl_var__">(resolverValues : node, treeNode : node,
                                       tplNode : node)
 {
     //traceLine("Injecting into var : "+toString(tplNode));
-    localref curCtxNode = ctxNode;
-    localref field = ctxNode;
-    local fieldPath = "";
+    local curCtxNode;
+    local fieldValue;
     local finalString = "";
+
+    // First concat prefix
     finalString = finalString + treeNode.prefix;
-    foreach item in treeNode.body.body.block
-    {
-        if (fieldPath != "")
-        {
-            fieldPath += ".";
-            if (!getField<item.name>(ctxNode, field))
-                error("Inject Error : Wrong mapping between context and Template Nodes : No such node "+fieldPath+item.name);
-            ref ctxNode = field;
-        }
-        fieldPath = fieldPath + item.name;
-    }
-    finalString = finalString + ctxNode;
+
+    // Next resolve the value and concat it
+    rtxNodeResVal_GetField(resolverValues, tplNode.identifiers, fieldValue);
+    finalString = finalString + fieldValue;
+
+    // Finally, concat suffix
     finalString = finalString + treeNode.sufix;
+
     treeNode#parent.ref_placeholder = finalString;
 }
 
-function    inject<"__rtx_tpl_link__">(ctxNode : node, treeNode : node,
+function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
                                        tplNode : node)
 {
+    traceLine("rtx_tpl_link not implemented yet...");
+    return false;
 }
 
 
@@ -98,26 +103,27 @@ function	gencodeworker(tpl_node : node, uid : value)
 			// execution de ${} et mapping dans les _1,_2,_3,_4
 			foreach injectpoint in tree.compile
 			{
-				traceLine("inject for " + injectpoint.template_expr);
+				traceLine("inject for " + injectpoint.template_expr
+                          + "(" + injectpoint.node.type + ")");
                 // cas d'injection de base sur la value de la variable de la BLT
-				if (injectpoint.template_expr == "${TYPE}")
-				{	injectpoint.ref_placeholder = "JE_SUIS_MOCHE";}
+				//if (injectpoint.template_expr == "${TYPE}")
+				//{	injectpoint.ref_placeholder = "JE_SUIS_MOCHE";}
 				// cas d'injection par la valeur du placeholder
-                else if (injectpoint.key() == "_1")
-				{	injectpoint.ref_placeholder = "GROSSE_TATA";}
+                //else if (injectpoint.key() == "_1")
+				//{	injectpoint.ref_placeholder = "GROSSE_TATA";}
 				// injection d'une expression
-                else if (injectpoint.key() == "_7")
-				{	
-					local new_code;	
-					cnormPatchExpression(new_code, "(*grumf)->nia");
-					setall injectpoint.ref_placeholder#parent = new_code;
-				}
-                else
-                {
+                //else if (injectpoint.key() == "_7")
+				//{	
+				//	local new_code;	
+				//	cnormPatchExpression(new_code, "(*grumf)->nia");
+				//	setall injectpoint.ref_placeholder#parent = new_code;
+				//}
+                //else
+                //{
                     // injecting a variable from the front-end
                     inject<injectpoint.node.type>(ast_context, injectpoint.node,
                                              injectpoint.node);
-                }
+                //}
 			}
 
 			// on resauve pour une comparaison a froid
@@ -172,27 +178,25 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 	// on a tout generer on charge :P.... a terme delegue a RTX_LINK
 	extendExecutedScript(loadFile(local_node.save_cws));
 	
-	// on l'appel ... ici en dur tout moche pour faire un test
-    // Let's consider we already associated the ast_ctx with
-    // the template for this test. Buid a fake front-end (call) node
-    // and weave it with the template's node.
-	local ast_ctx;
-    local ctxbody;
-    rtxNode(ast_ctx);
-    cnormNodeStmt_Expr(ast_ctx, ctxbody);
-    cnormNode_ToCall(ast_ctx, ctxbody);
-    insert ast_ctx.name;
-    ast_ctx.name = "open";
-    localref openParam = ast_ctx;
-    cnormNode_CallParam(ctxbody, openParam);
-    cnormNodeDecl(openParam);
-    cnormNodeDecl_SetName(openParam, "context");
-    localref ctypeRef = ast_ctx;
-    cnormNodeDecl_GetCtype(ast_ctx, ctypeRef);
-    cnormNodeDecl_SetIdentifier(ctypeRef, "Context");
+    // Let's consider we already associated the resolution Values
+    // with the necessary fields of the main AST instanciating this template
+	local resVals;
+    rtxNodeResVal(resVals);
+    insert resVals["KK"];
+    rtxNodeResValLeaf(resVals["KK"], "caca");
+    insert resVals["KKK"];
+    rtxNodeResValLeaf(resVals["KKK"], "_tri_k");
+    insert resVals["TOTO"];
+    rtxNodeResValLeaf(resVals["TOTO"], "(*grumf)->nia");
+    insert resVals["TYPE"];
+    rtxNodeResValLeaf(resVals["TYPE"], "t_theType");
+    insert resVals["ctx"];
+    rtxNodeResVal(resVals["ctx"]);
+    insert resVals["ctx"]["name"];
+    rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
     
 	local c_tree;
-	instanceTpl<local_node.prototype>(ast_ctx, c_tree);
+	instanceTpl<local_node.prototype>(resVals, c_tree);
 	uid = $uid + 1$;
 }
 
