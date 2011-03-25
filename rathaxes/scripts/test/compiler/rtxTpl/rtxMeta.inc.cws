@@ -53,11 +53,9 @@ function    build_compile_tree(compile : node)
             ]?
             "${"
             [
-                tpl_identifier(theNode.body)
-                // XXX This is horrible, can we not do better ?
-                #check(peekChar() == '}')
-            |
                 tpl_link_expr(theNode.body)
+            |
+                tpl_identifier(theNode.body)
 //          |
 //              tpl_each_expr(theNode.body)
             ]
