@@ -26,20 +26,22 @@ function getField<T>(theNode : node, theField : reference)
  * tplNode -> current node
  *
  */
-function inject<"">(resolverValues:node, treeNode : node, tplNode:node)
+function inject<"">(resolverValues : node, treeNode : node, tplNode : node)
 {
     // we should NEVER fallback here.
     error("BAD NODE - Empty Template Node Type !");
     return false;
 }
 
-function    inject<sNodeType>(resolverValues : node, treeNode : node, tplNode : node)
+function    inject<sNodeType>(resolverValues : node, treeNode : node,
+                                                     tplNode : node)
 {
     // we should NEVER fallback here.
     error("BAD NODE - Unknown Template Node Type : "+sNodeType);
 }
 
-function    inject<"__rtx_tpl_placeHolder__">(resolverValues : node, treeNode : node,
+function    inject<"__rtx_tpl_placeHolder__">(resolverValues : node,
+                                              treeNode : node,
                                               tplNode : node)
 {
     //traceLine("Injecting into placeHolder : realType = "+treeNode.body.type);
@@ -76,22 +78,71 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
 
 
 ////////////////// la on genere du codeworker et on y croit :)
+///////////////// FUNCTIONS FOR GENERATING PLACE HOLDER SPECIFIC CODEWORKER
+function    rtxGenPlaceHolder<T>(item : node, theKey : value)
+{
+    error("Unknown place holder type:"+T);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+            // Resolving VALUE (place Holder @this.key@)
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.type@)");
+            inject<tree.compile["@this.key@"].node.type>(ast_context, tree.compile["@this.key@"].node,
+                                                tree.compile["@this.key@"].node);
+        @}, item, item.cws_expr);
+    removeVariable(item.key);
+    traceLine("Generated code : "+item.cws_expr);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+            // Resolving LINK (place Holder @this.key@)
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.type@)");
+            inject<tree.compile["@this.key@"].node.type>(ast_context, tree.compile["@this.key@"].node,
+                                                tree.compile["@this.key@"].node);
+        @}, item, item.cws_expr);
+    removeVariable(item.key);
+    traceLine("Generated code : "+item.cws_expr);
+}
+
+
 function	gencodeworker(tpl_node : node, uid : value)
 {
-	// on met la chaine de code PIC dans notre tpl_node pour etre accessible pendant la generation du code codeworker
-	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";//pour l'instant en dur
-	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";//pour l'instant en dur
+	// on met la chaine de code PIC dans notre tpl_node pour etre
+    // accessible pendant la generation du code codeworker
+	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
+	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
 	//saveToFile(sAstFile, workaround.code_pic);
 	saveProject(sAstFile, tpl_node.body);
 	insert tpl_node.save_ast = sAstFile;
 	insert tpl_node.save_cws = sCwsFile;
+
+
+    // Here, we must iterate on each tpl_node's .compile to generate the bits
+    // of codeworker matching each of these placeHolders.
+    foreach item in tpl_node.body.compile
+    {
+        traceLine("GENERATING CWS For placeHolder "+key(item));
+        rtxGenPlaceHolder<item.node.body.type>(item, key(item));
+    }
+
+
 	local	source_codeworker;
 	generateString({
 
 
 		// auto generated codeworker DO NOT EDIT
-		// ici une version specialiser de l'instanceTPL .... on met this.prototype mets a terme generer des UID c'est mieux
-		function	instanceTpl<"@this.prototype@">(ast_context : node, c_tree : node)
+		// ici une version specialiser de l'instanceTPL ....
+        // on met this.prototype mets a terme generer des UID c'est mieux
+		function	instanceTpl<"@this.prototype@">(ast_context : node,
+                                                    c_tree : node)
 		{
 			local tree;
 			cwLoadProject("@this.save_ast@", tree);
@@ -99,32 +150,11 @@ function	gencodeworker(tpl_node : node, uid : value)
 			// on resauve pour une comparaison a froid
 			saveProject("@this.save_ast@2", tree);
 	
-			// ici ca doit etre generer
-			// execution de ${} et mapping dans les _1,_2,_3,_4
-			foreach injectpoint in tree.compile
-			{
-				traceLine("inject for " + injectpoint.template_expr
-                          + "(" + injectpoint.node.type + ")");
-                // cas d'injection de base sur la value de la variable de la BLT
-				//if (injectpoint.template_expr == "${TYPE}")
-				//{	injectpoint.ref_placeholder = "JE_SUIS_MOCHE";}
-				// cas d'injection par la valeur du placeholder
-                //else if (injectpoint.key() == "_1")
-				//{	injectpoint.ref_placeholder = "GROSSE_TATA";}
-				// injection d'une expression
-                //else if (injectpoint.key() == "_7")
-				//{	
-				//	local new_code;	
-				//	cnormPatchExpression(new_code, "(*grumf)->nia");
-				//	setall injectpoint.ref_placeholder#parent = new_code;
-				//}
-                //else
-                //{
-                    // injecting a variable from the front-end
-                    inject<injectpoint.node.type>(ast_context, injectpoint.node,
-                                             injectpoint.node);
-                //}
-			}
+			// mapping data into placeholders :
+            <%
+            foreach item in this.body.compile
+            { %>@item.cws_expr@<% }
+            %>
 
 			// on resauve pour une comparaison a froid
 			saveProject("@this.save_ast@3", tree);
@@ -132,10 +162,10 @@ function	gencodeworker(tpl_node : node, uid : value)
 			// on crache juste le code template
 			traceLine("INSTANCIATION DU TEMPLATE");
 			traceLine(cnorm2c(tree));
-            //traceLine("^^^^^^^^^^^^^^\n==============\nvvvvvvvvvvvvvv");
-            // Here, weave the ASTs, but take care of using the right things
-            // (stmt for an expression, etc)
-            
+			//traceLine("^^^^^^^^^^^^^^\n==============\nvvvvvvvvvvvvvv");
+			// Here, weave the ASTs, but take care of using the right things
+			// (stmt for an expression, etc)
+			
 			//traceLine(cnorm2c(ast_context));
 		}
 
@@ -145,7 +175,8 @@ function	gencodeworker(tpl_node : node, uid : value)
 	saveToFile(tpl_node.save_cws, source_codeworker);
 }
 
-/////////////////////////// FONCTIONS DE PARCOURS POUR LA GENERATION DE CODE CODEWORKER
+
+/////////////////  FONCTIONS DE PARCOURS POUR LA GENERATION DE CODE CODEWORKER
 function	rtxGen<T>(local_node : node, uid : node)
 {
 	error("unknown type for generation:" + T);
@@ -175,12 +206,24 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 	saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
 	// racine de la generation des templates
 	gencodeworker(local_node, uid);
+
+
+
+
+    // NOW, Test the generation (simulate the C code generation from somewhere else) :)
+    // So : load the generated script :)
+
 	// on a tout generer on charge :P.... a terme delegue a RTX_LINK
 	extendExecutedScript(loadFile(local_node.save_cws));
 	
-    // Let's consider we already associated the resolution Values
-    // with the necessary fields of the main AST instanciating this template
-	local resVals;
+
+
+
+
+    // Now, try the C code generation out : simulate an input (the resVal node)
+    // And start the resolution of the placeHolders.
+
+    local resVals;
     rtxNodeResVal(resVals);
     insert resVals["KK"];
     rtxNodeResValLeaf(resVals["KK"], "caca");
@@ -194,10 +237,9 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
     rtxNodeResVal(resVals["ctx"]);
     insert resVals["ctx"]["name"];
     rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
-    
-	local c_tree;
-	instanceTpl<local_node.prototype>(resVals, c_tree);
-	uid = $uid + 1$;
+
+    local c_tree;
+    instanceTpl<local_node.prototype>(resVals, c_tree);
 }
 
 #end
