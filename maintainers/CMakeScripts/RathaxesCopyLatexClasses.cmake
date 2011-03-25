@@ -4,6 +4,7 @@ SET(RATHAXES_LATEX_CLASSES
     maintainers/latex/rtxarticle.cls
     maintainers/latex/rtxreport.cls
     maintainers/latex/rathaxes.sty
+    maintainers/latex/rtxslides.sty
    )
 
 # Make sure they are configured before any call to
