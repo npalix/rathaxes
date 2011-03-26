@@ -47,7 +47,7 @@ IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     ADD_SUBDIRECTORY(epitech)
     ADD_SUBDIRECTORY(maintainers)
 ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
-    MESSAGE(SEND_ERROR "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
+    MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
 ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 
 # CPack stuff ##################################################################
@@ -62,6 +62,7 @@ SET(IGNORE_PATTERNS
     ".*(Makefile|CTest).*"
     ".*CPack.*([^t][^x][^t])$"
     "/Test_.*/"
+    "/build/"
     # delete some legacy stuff and save some space
     "/management/"
     "/epitech/2009/"
