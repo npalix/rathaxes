@@ -13,3 +13,6 @@ FOREACH(I ${RATHAXES_TEX_FILE})
                       )
 ENDFOREACH(I ${RATHAXES_TEX_FILE})
 
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/technical_documentation.pdf
+        DESTINATION share/doc/rathaxes/
+        RENAME technical_documentation_en.pdf)
