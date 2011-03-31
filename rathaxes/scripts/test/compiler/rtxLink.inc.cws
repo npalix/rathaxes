@@ -1,0 +1,74 @@
+#if !existFunction(rtxLink_version)
+
+function rtxLink_version()
+{return "1.0";}
+
+
+function rtxLink_IsWithNodeCompatible(withNode : node, theID : value)
+{
+    // For now, let's assume the with nodes are compatible
+    return true;
+}
+
+function rtxLink_GetIDFromTpl(templateType : node, withValues : node, out_ref : reference)
+{
+    foreach entry in this.cache.typemap
+    {
+        if (entry.tplType == templateType
+            && rtxLink_IsWithNodeCompatible(entry.withValues, key(entry)))
+        {
+            ref out_ref = key(entry);
+            return true;
+        }
+    }
+    return false;
+}
+
+function rtxLink_LoadFromCache(tplID : value)
+{
+    if (!existVariable(this.cache))
+        error("ERROR: Cache uninitialized ! Cannot load scripts.");
+
+    if (existVariable(this.cache.scripts[tplID]))
+    {
+        extendExecutedScript(loadFile(this.cache.scripts[tplID]));
+        return true;
+    }
+
+    return false;
+}
+
+function rtxLink_RegisterToCache(templateType : node, withValues : node, scriptFile : value)
+{
+    if (!existVariable(this.cache))
+    {
+        insert this.cache;
+        insert this.cache.nextID = $0$;
+        insert this.cache.typemap;
+        insert this.cache.scripts;
+    }
+
+    local refID;
+    if (rtxLink_GetIDFromTpl(templateType, withValues, refID))
+        error("Template already present in cache:"+templateType);
+
+    insert this.cache.typemap[this.cache.nextID];
+    insert this.cache.typemap[this.cache.nextID].tplType = templateType;
+    insert this.cache.typemap[this.cache.nextID].with = withValues;
+
+    insert this.cache.scripts[this.cache.nextID] = scriptFile;
+    
+    this.cache.nextID.increment();
+
+    return false;
+}
+
+function rtxLink_InstallScript(templateType : node, withValues : node, script : value)
+{
+    if (!rtxLink_RegisterToCache(templateType, withValues, script))
+        return false;
+
+    return true;
+}
+
+#end
