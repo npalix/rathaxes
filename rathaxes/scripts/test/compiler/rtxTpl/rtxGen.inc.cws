@@ -79,6 +79,8 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
 
 ////////////////// la on genere du codeworker et on y croit :)
 ///////////////// FUNCTIONS FOR GENERATING PLACE HOLDER SPECIFIC CODEWORKER
+// That will allow specialization of generated code depending on the type of
+// place holders being treated.
 function    rtxGenPlaceHolder<T>(item : node, theKey : value)
 {
     error("Unknown place holder type:"+T);
