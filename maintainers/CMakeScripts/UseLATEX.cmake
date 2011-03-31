@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.2
+# Version: 1.7.4
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -20,7 +20,8 @@
 #                       [CONFIGURE] <tex_files>
 #                       [DEPENDS] <tex_files>
 #                       [USE_INDEX] [USE_GLOSSARY]
-#                       [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
+#                       [DEFAULT_PDF] [DEFAULT_SAFEPDF]
+#                       [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -61,6 +62,14 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.4 Added the DEFAULT_SAFEPDF option (thanks to Raymond Wan).
+#
+#       Added warnings when image directories are not found (and were
+#       probably not given relative to the source directory).
+#
+# 1.7.3 Fix some issues with interactions between makeglossaries and bibtex
+#       (thanks to Mark de Wever).
 #
 # 1.7.2 Use ps2pdf to convert eps to pdf to get around the problem with
 #       ImageMagick dropping the bounding box (thanks to Lukasz Lis).
@@ -493,7 +502,7 @@ MACRO(LATEX_PROCESS_IMAGES dvi_outputs pdf_outputs)
           "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
       ENDIF (is_raster)
     ELSE (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-      MESSAGE("Could not find file \"${CMAKE_CURRENT_SOURCE_DIR}/${file}\"")
+      MESSAGE(WARNING "Could not find file ${CMAKE_CURRENT_SOURCE_DIR}/${file}.  Are you sure you gave relative paths to IMAGES?")
     ENDIF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
   ENDFOREACH(file)
 ENDMACRO(LATEX_PROCESS_IMAGES)
@@ -551,7 +560,7 @@ ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -562,7 +571,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -610,6 +619,9 @@ MACRO(ADD_LATEX_TARGETS)
   # place them in LATEX_IMAGES.
   FOREACH(dir ${LATEX_IMAGE_DIRS})
     FOREACH(extension ${LATEX_IMAGE_EXTENSIONS})
+      IF (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir})
+        MESSAGE(WARNING "Image directory ${CMAKE_CURRENT_SOURCE_DIR}/${dir} does not exist.  Are you sure you gave relative directories to IMAGE_DIRS?")
+      ENDIF (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir})
       FILE(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*${extension})
       FOREACH(file ${files})
         GET_FILENAME_COMPONENT(filename ${file} NAME)
@@ -635,6 +647,33 @@ MACRO(ADD_LATEX_TARGETS)
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
   ENDFOREACH(input)
+
+  IF (LATEX_USE_GLOSSARY)
+    FOREACH(dummy 0 1)   # Repeat these commands twice.
+      SET(make_dvi_command ${make_dvi_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makeglossaries
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+      SET(make_pdf_command ${make_pdf_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makeglossaries
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+    ENDFOREACH(dummy)
+  ENDIF (LATEX_USE_GLOSSARY)
 
   IF (LATEX_BIBFILES)
     SET(make_dvi_command ${make_dvi_command}
@@ -662,31 +701,6 @@ MACRO(ADD_LATEX_TARGETS)
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
 
-  IF (LATEX_USE_GLOSSARY)
-    SET(make_dvi_command ${make_dvi_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${CMAKE_COMMAND}
-      -D LATEX_BUILD_COMMAND=makeglossaries
-      -D LATEX_TARGET=${LATEX_TARGET}
-      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
-      -P ${LATEX_USE_LATEX_LOCATION}
-      )
-    SET(make_pdf_command ${make_pdf_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${CMAKE_COMMAND}
-      -D LATEX_BUILD_COMMAND=makeglossaries
-      -D LATEX_TARGET=${LATEX_TARGET}
-      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
-      -P ${LATEX_USE_LATEX_LOCATION}
-      )
-  ENDIF (LATEX_USE_GLOSSARY)
-
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
@@ -703,13 +717,13 @@ MACRO(ADD_LATEX_TARGETS)
     COMMAND ${make_dvi_command}
     DEPENDS ${make_dvi_depends}
     )
-  IF (LATEX_DEFAULT_PDF)
+  IF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
     ADD_CUSTOM_TARGET(${dvi_target}
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ELSE (LATEX_DEFAULT_PDF)
+  ELSE (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
     ADD_CUSTOM_TARGET(${dvi_target} ALL
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ENDIF (LATEX_DEFAULT_PDF)
+  ENDIF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
 
   # Add commands and targets for building pdf outputs (with pdflatex).
   IF (PDFLATEX_COMPILER)
@@ -737,10 +751,17 @@ MACRO(ADD_LATEX_TARGETS)
       # Since both the pdf and safepdf targets have the same output, we
       # cannot properly do the dependencies for both.  When selecting safepdf,
       # simply force a recompile every time.
-      ADD_CUSTOM_TARGET(${safepdf_target}
-        ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
-        )
+      IF (LATEX_DEFAULT_SAFEPDF)
+        ADD_CUSTOM_TARGET(${safepdf_target} ALL
+          ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          )
+      ELSE (LATEX_DEFAULT_SAFEPDF)
+        ADD_CUSTOM_TARGET(${safepdf_target}
+          ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          )
+      ENDIF (LATEX_DEFAULT_SAFEPDF)
       ADD_DEPENDENCIES(${safepdf_target} ${ps_target})
     ENDIF (PS2PDF_CONVERTER)
   ENDIF (DVIPS_CONVERTER)
