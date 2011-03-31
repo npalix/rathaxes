@@ -4,78 +4,12 @@ function rtxGen_version()
 {return "1.0";}
 
 
+declare function instanceTpl<T>(ast_context : node, c_tree : node);
 function	instanceTpl<T>(ast_context : node, c_tree : node)
 {
 	// grosso modo si ca c appel ya un pb de link
 	error("BAD LINK - Unkown registry value:" + T);
 }
-
-declare function getField<T>(theNode : node, theField : reference);
-function getField<T>(theNode : node, theField : reference)
-{
-    if (!existVariable(#evaluateVariable("theNode."+T)))
-    {return false;}
-    ref theField = #evaluateVariable("theNode."+T);
-    return true;
-}
-
-/*
- *
- * resolverValues -> the hash mapping of values used in the template
- * treeNode -> the root of the __rtx_tpl__ node
- * tplNode -> current node
- *
- */
-function inject<"">(resolverValues : node, treeNode : node, tplNode : node)
-{
-    // we should NEVER fallback here.
-    error("BAD NODE - Empty Template Node Type !");
-    return false;
-}
-
-function    inject<sNodeType>(resolverValues : node, treeNode : node,
-                                                     tplNode : node)
-{
-    // we should NEVER fallback here.
-    error("BAD NODE - Unknown Template Node Type : "+sNodeType);
-}
-
-function    inject<"__rtx_tpl_placeHolder__">(resolverValues : node,
-                                              treeNode : node,
-                                              tplNode : node)
-{
-    //traceLine("Injecting into placeHolder : realType = "+treeNode.body.type);
-    inject<treeNode.body.type>(resolverValues, treeNode, tplNode.body);
-}
-
-function    inject<"__rtx_tpl_var__">(resolverValues : node, treeNode : node,
-                                      tplNode : node)
-{
-    //traceLine("Injecting into var : "+toString(tplNode));
-    local curCtxNode;
-    local fieldValue;
-    local finalString = "";
-
-    // First concat prefix
-    finalString = finalString + treeNode.prefix;
-
-    // Next resolve the value and concat it
-    rtxNodeResVal_GetField(resolverValues, tplNode.identifiers, fieldValue);
-    finalString = finalString + fieldValue;
-
-    // Finally, concat suffix
-    finalString = finalString + treeNode.sufix;
-
-    treeNode#parent.ref_placeholder = finalString;
-}
-
-function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
-                                       tplNode : node)
-{
-    traceLine("rtx_tpl_link not implemented yet...");
-    return false;
-}
-
 
 ////////////////// la on genere du codeworker et on y croit :)
 ///////////////// FUNCTIONS FOR GENERATING PLACE HOLDER SPECIFIC CODEWORKER
@@ -92,12 +26,12 @@ function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.type@)");
-            inject<tree.compile["@this.key@"].node.type>(ast_context, tree.compile["@this.key@"].node,
-                                                tree.compile["@this.key@"].node);
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_context, c_tree.compile["@this.key@"].node,
+                                                           c_tree.compile["@this.key@"].node);
         @}, item, item.cws_expr);
     removeVariable(item.key);
-    traceLine("Generated code : "+item.cws_expr);
+    //traceLine("Generated code : "+item.cws_expr);
 }
 
 function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
@@ -106,12 +40,12 @@ function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving LINK (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.type@)");
-            inject<tree.compile["@this.key@"].node.type>(ast_context, tree.compile["@this.key@"].node,
-                                                tree.compile["@this.key@"].node);
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_context, c_tree.compile["@this.key@"].node,
+                                                           c_tree.compile["@this.key@"].node);
         @}, item, item.cws_expr);
     removeVariable(item.key);
-    traceLine("Generated code : "+item.cws_expr);
+    //traceLine("Generated code : "+item.cws_expr);
 }
 
 
@@ -146,11 +80,10 @@ function	gencodeworker(tpl_node : node, uid : value)
 		function	instanceTpl<"@this.prototype@">(ast_context : node,
                                                     c_tree : node)
 		{
-			local tree;
-			cwLoadProject("@this.save_ast@", tree);
+			cwLoadProject("@this.save_ast@", c_tree);
 
 			// on resauve pour une comparaison a froid
-			saveProject("@this.save_ast@2", tree);
+			saveProject("@this.save_ast@2", c_tree);
 	
 			// mapping data into placeholders :
             <%
@@ -159,16 +92,7 @@ function	gencodeworker(tpl_node : node, uid : value)
             %>
 
 			// on resauve pour une comparaison a froid
-			saveProject("@this.save_ast@3", tree);
-
-			// on crache juste le code template
-			traceLine("INSTANCIATION DU TEMPLATE");
-			traceLine(cnorm2c(tree));
-			//traceLine("^^^^^^^^^^^^^^\n==============\nvvvvvvvvvvvvvv");
-			// Here, weave the ASTs, but take care of using the right things
-			// (stmt for an expression, etc)
-			
-			//traceLine(cnorm2c(ast_context));
+			saveProject("@this.save_ast@3", c_tree);
 		}
 
 	@}, tpl_node, source_codeworker);
@@ -209,39 +133,10 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 	// racine de la generation des templates
 	gencodeworker(local_node, uid);
 
-
-
-
-    // NOW, Test the generation (simulate the C code generation from somewhere else) :)
-    // So : load the generated script :)
-
-	// on a tout generer on charge :P.... a terme delegue a RTX_LINK
-	extendExecutedScript(loadFile(local_node.save_cws));
-	
-
-
-
-
-    // Now, try the C code generation out : simulate an input (the resVal node)
-    // And start the resolution of the placeHolders.
-
-    local resVals;
-    rtxNodeResVal(resVals);
-    insert resVals["KK"];
-    rtxNodeResValLeaf(resVals["KK"], "caca");
-    insert resVals["KKK"];
-    rtxNodeResValLeaf(resVals["KKK"], "_tri_k");
-    insert resVals["TOTO"];
-    rtxNodeResValLeaf(resVals["TOTO"], "(*grumf)->nia");
-    insert resVals["TYPE"];
-    rtxNodeResValLeaf(resVals["TYPE"], "t_theType");
-    insert resVals["ctx"];
-    rtxNodeResVal(resVals["ctx"]);
-    insert resVals["ctx"]["name"];
-    rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
-
-    local c_tree;
-    instanceTpl<local_node.prototype>(resVals, c_tree);
+    // Now we register the blt to be able to use it.
+    local theWith;
+    local theID;
+    rtxLink_SessionRegister(local_node.prototype, theWith, local_node.save_cws, theID);
 }
 
 #end
