@@ -147,7 +147,7 @@ function rtxNodeLink(local_node     : node,
     // For now, let's insert the prototype as-is
     // but it will need to be compiled later...
     insert local_node.linkedType;
-    local_node.linkedType = linked;
+    setall local_node.linkedType = linked;
 
     return true;
 }

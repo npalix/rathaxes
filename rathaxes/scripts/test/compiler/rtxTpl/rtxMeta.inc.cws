@@ -94,8 +94,8 @@ function    build_compile_tree(compile : node)
 
         // Here, a hard-coded test for a one-param function template
         tpl_type(theType : node) ::=
-            "test(Context) stmt"
-            #check(rtxNodeLinkType(theType, "test(Context) stmt"))
+            "test(Context ctx) decl"
+            #check(rtxNodeLinkType(theType, "test(Context ctx) decl"))
         ;
 
         tpl_link_expr(theLink : node) ::=

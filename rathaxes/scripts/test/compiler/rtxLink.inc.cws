@@ -4,68 +4,87 @@ function rtxLink_version()
 {return "1.0";}
 
 
-function rtxLink_IsWithNodeCompatible(withNode : node, theID : value)
+function rtxLink_IsWithNodeCompatible(withNode : node, theID : value,
+                                      fromSession : value = false)
 {
     // For now, let's assume the with nodes are compatible
     return true;
 }
 
-function rtxLink_GetIDFromTpl(templateType : node, withValues : node, out_ref : reference)
+function rtxLink_GetIDFromTpl(templateType : node, withValues : node,
+                              out_ref : reference,
+                              inSession : value = false)
 {
-    foreach entry in this.cache.typemap
+    foreach entry in this.session.typemap
     {
         if (entry.tplType == templateType
-            && rtxLink_IsWithNodeCompatible(entry.withValues, key(entry)))
+            && rtxLink_IsWithNodeCompatible(entry.withValues, key(entry), inSession))
         {
-            ref out_ref = key(entry);
+            out_ref = key(entry);
             return true;
         }
     }
+    traceLine("Could not match templateType '"+templateType+"'");
+    out_ref = $-1$;
     return false;
 }
 
-function rtxLink_LoadFromCache(tplID : value)
+function rtxLink_LoadTemplate(tplID : value, fromSession : value = false)
 {
-    if (!existVariable(this.cache))
+    if (!existVariable(this.session))
         error("ERROR: Cache uninitialized ! Cannot load scripts.");
 
-    if (existVariable(this.cache.scripts[tplID]))
+    if (fromSession &&
+        existVariable(this.session.scripts[tplID]))
     {
-        extendExecutedScript(loadFile(this.cache.scripts[tplID]));
+        traceLine("LOADING Script for tplID : "+tplID+" : "+this.session.scripts[tplID]);
+        extendExecutedScript(loadFile(this.session.scripts[tplID]));
+        traceLine("LOADED Script for tplID : "+tplID);
         return true;
     }
 
+    traceLine("Could not load tplID = "+tplID);
     return false;
 }
 
-function rtxLink_RegisterToCache(templateType : node, withValues : node, scriptFile : value)
+function rtxLink_SessionRegister(templateType : node, withValues : node, scriptFile : value,
+                                 outID : reference)
 {
-    if (!existVariable(this.cache))
+    if (!existVariable(this.session))
     {
-        insert this.cache;
-        insert this.cache.nextID = $0$;
-        insert this.cache.typemap;
-        insert this.cache.scripts;
+        insert this.session;
+        insert this.session.nextID = $0$;
+        insert this.session.typemap;
+        insert this.session.scripts;
     }
 
     local refID;
     if (rtxLink_GetIDFromTpl(templateType, withValues, refID))
-        error("Template already present in cache:"+templateType);
+        error("Template already present in session:"+templateType);
 
-    insert this.cache.typemap[this.cache.nextID];
-    insert this.cache.typemap[this.cache.nextID].tplType = templateType;
-    insert this.cache.typemap[this.cache.nextID].with = withValues;
+    insert this.session.typemap[this.session.nextID];
+    insert this.session.typemap[this.session.nextID].tplType = templateType;
+    insert this.session.typemap[this.session.nextID].with = withValues;
 
-    insert this.cache.scripts[this.cache.nextID] = scriptFile;
+    insert this.session.scripts[this.session.nextID] = scriptFile;
+
+    outID = this.session.nextID;
     
-    this.cache.nextID.increment();
+    this.session.nextID.increment();
 
+    return true;
+}
+
+
+function rtxLink_RegisterToCache(templateType : node, withValues : node, scriptFile : value)
+{
     return false;
 }
 
-function rtxLink_InstallScript(templateType : node, withValues : node, script : value)
+
+function rtxLink_InstallScript(templateType : node, withValues : node, scriptFile : value)
 {
-    if (!rtxLink_RegisterToCache(templateType, withValues, script))
+    if (!rtxLink_RegisterToCache(templateType, withValues, scriptFile))
         return false;
 
     return true;
