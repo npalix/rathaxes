@@ -4,3 +4,4 @@ Session.vim$
 ~$
 build/.*
 \.rtree$
+maintainers/cnorm/.*
