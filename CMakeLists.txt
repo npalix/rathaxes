@@ -1,6 +1,6 @@
 PROJECT(RATHAXES NONE)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Setting vars #################################################################
 
@@ -9,13 +9,13 @@ SET(CPACK_PACKAGE_VERSION_MINOR "1")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 SET(RATHAXES_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 
-MESSAGE(STATUS "CMake Version : ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
-MESSAGE(STATUS "Rathaxes Version : ${RATHAXES_VERSION}")
-MESSAGE(STATUS "Build Type : ${CMAKE_BUILD_TYPE}")
-MESSAGE(STATUS "System : ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}")
-MESSAGE(STATUS "Install Prefix : ${CMAKE_INSTALL_PREFIX}")
-MESSAGE(STATUS "Source Directory : ${RATHAXES_SOURCE_DIR}")
-MESSAGE(STATUS "Binary Directory : ${RATHAXES_BINARY_DIR}")
+MESSAGE(STATUS "CMake Version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
+MESSAGE(STATUS "Rathaxes Version: ${RATHAXES_VERSION}")
+MESSAGE(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+MESSAGE(STATUS "System: ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}")
+MESSAGE(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
+MESSAGE(STATUS "Source Directory: ${RATHAXES_SOURCE_DIR}")
+MESSAGE(STATUS "Binary Directory: ${RATHAXES_BINARY_DIR}")
 
 # Platform checks/includes #####################################################
 
@@ -32,6 +32,8 @@ FIND_PACKAGE(LATEX)
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
 INCLUDE(RathaxesCopyLatexClasses)
+INCLUDE(DownloadCodeWorker) # TODO: adapt this script to be used with FIND_PACKAGE
+INCLUDE(AddRathaxesTest)
 
 # Global definitions ###########################################################
 
@@ -49,6 +51,10 @@ IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
 ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
+
+# TODO: IF(HAVE_CODEWORKER...)
+
+ADD_SUBDIRECTORY(rathaxes)
 
 # CPack stuff ##################################################################
 
