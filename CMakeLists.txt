@@ -28,11 +28,11 @@ ENDIF (${RATHAXES_SOURCE_DIR} STREQUAL ${RATHAXES_BINARY_DIR})
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts)
 
 FIND_PACKAGE(LATEX)
+FIND_PACKAGE(CodeWorker REQUIRED)
 
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
 INCLUDE(RathaxesCopyLatexClasses)
-INCLUDE(DownloadCodeWorker) # TODO: adapt this script to be used with FIND_PACKAGE
 INCLUDE(AddRathaxesTest)
 
 # Global definitions ###########################################################
@@ -47,13 +47,11 @@ IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     ADD_SUBDIRECTORY(doc)
     ADD_SUBDIRECTORY(com)
     ADD_SUBDIRECTORY(epitech)
-    ADD_SUBDIRECTORY(maintainers)
 ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
 ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 
-# TODO: IF(HAVE_CODEWORKER...)
-
+ADD_SUBDIRECTORY(maintainers)
 ADD_SUBDIRECTORY(rathaxes)
 
 # CPack stuff ##################################################################
@@ -69,9 +67,12 @@ SET(IGNORE_PATTERNS
     ".*CPack.*([^t][^x][^t])$"
     "/Test_.*/"
     "/build/"
-    # delete some legacy stuff and save some space
+    # delete some legacy stuff and save some space:
     "/management/"
     "/epitech/2009/"
+    # cnorm repo workarounds:
+    "\\\\.svn"
+    "/cnorm/testing/"
    )
 SET(PACKAGE_FILE_NAME "${PACKAGE_NAME}-${RATHAXES_VERSION}")
 SET(PACKAGE_SOURCE_FILE_NAME "${PACKAGE_NAME}-src-${RATHAXES_VERSION}")
