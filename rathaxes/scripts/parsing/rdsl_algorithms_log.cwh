@@ -1,0 +1,15 @@
+/*
+**	rdsl_algorithms_log.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**	---------------------------------------------------------------------------
+*/
+
+rdsl_algorithms_log ( nAlgorithm : node ) ::=
+	#readIdentifier:{"LOG"}
+	=> insert nAlgorithm.algorithm = "log";
+	'('
+		rdsl_algorithms_paramerter(nAlgorithm.first_parameter)
+	')'
+	';'
+;

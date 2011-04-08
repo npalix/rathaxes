@@ -1,0 +1,144 @@
+/*
+	TEST GENERAL DE TEMPLATE
+*/
+
+local dummy;
+local input;
+generateString({
+
+		with OS=pigeonMouette,maj=0,min=1
+		{
+			template open(Context ctx) decl
+			{
+				typedef int ${KK};
+	
+				typedef int ${TYPE};
+				
+				enum pop${ctx.name} {A, B, C};
+	
+				${TYPE} bla;
+	
+				int	open(int a)
+				{
+					int	bal${KKK} = 13;
+					printf("COUCOU\n");
+					// alors ATTENTION ceci est vue comme une decl :(...
+                    // effet de bord de l'aspect "int par defaut"
+					${ctx.name} = 42;
+					${TOTO} += 3;
+					return 0;
+				}
+
+                ${link ctx to test(Context ctx) decl};
+
+			}
+
+            template test(Context ctx) decl
+            {
+                int test_${ctx.name}(void)
+                {
+                    int ret = strcmp("open", param);
+                    return ret;
+                }
+            }
+		}
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+
+traceLine("input:\n" + input);
+
+
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtxBack.cwp", source, input);
+// enleve dialect
+removeVariable(source.dialect);
+
+traceLine("result of parsing:" + toString(source, true));
+saveProject("__01_rtx_parse__.tree", source);
+
+
+
+
+#include "rtxTpl/rtxCompile.inc.cws"
+foreach item in source.block
+{
+    traceLine("compiling item : "+toString(item));
+	rtxTpl_walk<item.type>(item);
+}
+
+saveProject("__02_rtx_compil__.tree", source);
+
+
+
+#include "rtxTpl/rtxMeta.inc.cws"
+// Now, we must parse each template_expr of the compile node
+// In order to build AST parts
+foreach item in source.block["0"].body.block["0"].body.compile
+{
+    traceLine("Building Node in first template for item for key "+item.key());
+    build_compile_tree(item);
+}
+foreach item in source.block["0"].body.block["1"].body.compile
+{
+    traceLine("Building Node in second template for item for key "+item.key());
+    build_compile_tree(item);
+}
+
+saveProject("__03_rtx_compil_tplnode__.tree", source);
+
+
+
+#include "rtxLink.inc.cws"
+#include "rtxTpl/rtxGen.inc.cws"
+#include "rtxTpl/rtxResolve.inc.cws"
+/// le code generer aura besoin de ca
+// foreach brutal, a terme on devrait walk le tree pour gerer correctement
+// les __rtx_tpl__, __rtx_with__ etc...
+foreach item in source.block
+{
+	local uid = 0;
+	rtxGen<item.type>(item, uid);
+	uid = $uid + 1$;
+
+}
+
+
+// Load the two templates :
+local theProto = "open(Context ctx) decl";
+local theID;
+local theWith;
+rtxLink_GetIDFromTpl(theProto, theWith, theID,
+                     true); // true for fromSession
+traceLine("Loading TPL ID == "+theID+" : open(Context ctx) decl");
+rtxLink_LoadTemplate(theID, true); // true for fromSession
+
+// Now, try the C code generation out : simulate an input (the resVal node)
+// And start the resolution of the placeHolders.
+local resVals;
+rtxNodeResVal(resVals);
+insert resVals["KK"];
+rtxNodeResValLeaf(resVals["KK"], "caca");
+insert resVals["KKK"];
+rtxNodeResValLeaf(resVals["KKK"], "_tri_k");
+insert resVals["TOTO"];
+rtxNodeResValLeaf(resVals["TOTO"], "(*grumf)->nia");
+insert resVals["TYPE"];
+rtxNodeResValLeaf(resVals["TYPE"], "t_theType");
+insert resVals["ctx"];
+rtxNodeResVal(resVals["ctx"]);
+insert resVals["ctx"]["name"];
+rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
+
+local c_tree1;
+instanceTpl<"open(Context ctx) decl">(resVals, c_tree1);
+traceLine("INSTANCIATION DU TEMPLATE : open(Context ctx) decl");
+traceLine(cnorm2c(c_tree1));
+

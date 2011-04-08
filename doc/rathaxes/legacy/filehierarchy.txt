@@ -1,0 +1,97 @@
+/ +---
+     |
+     o--- usr/ +---
+                  |
+                  o--- bin/ +---
+                  |            |
+                  |            o--- codeworker (binaire, package a part)
+                  |            |
+                  |            o--- rathaxes (script shell de lancement du compilateur)
+                  |
+                  o--- local/ +---
+                                 |
+                                 o--- rathaxes/ +---
+                                                   |
+                                                   o--- scripts/ +---
+                                                   |                |
+                                                   |                o--- rathaxes.cws (script cw principal)
+                                                   |                |
+                                                   |                o--- misc/ +---
+                                                   |                |             |
+                                                   |                |             o--- color.cws
+                                                   |                |             |
+                                                   |                |             o--- generics.cws
+                                                   |                |             |
+                                                   |                |             o--- notifications.cws
+                                                   |                |
+                                                   |                o--- parsing/ +---
+                                                   |                |                |
+                                                   |                |                o--- device.cwh
+                                                   |                |                |
+                                                   |                |                o--- instanciate.cwh
+                                                   |                |                |
+                                                   |                |                o--- grammar_root.cwp
+                                                   |                |
+                                                   |                o--- semantics/ +---
+                                                   |                |                  |
+                                                   |                |                  o--- driverSemantics.cws
+                                                   |                |
+                                                   |                o--- generation/ +---
+                                                   |                                    |
+                                                   |                                    o--- driver.cws
+                                                   |
+                                                   o--- black_library/ +---
+                                                   |                     |
+                                                   |                     o--- linux/ +---
+                                                   |                     |              |
+                                                   |                     |              o--- RKM/ +---
+                                                   |                     |                           |
+                                                   |                     |                           o--- kernel_registration.blt
+                                                   |                     |                           |
+                                                   |                     |                           o--- entry_point/ +---
+                                                   |                     |                                                |
+                                                   |                     |                                                o--- load.blt
+                                                   |                     |                                                |
+                                                   |                     |                                                o--- unload.blt
+                                                   |                     |
+                                                   |                     o--- macOS/ +---
+                                                   |                     |              |
+                                                   |                     |              o--- RKM/ +---
+                                                   |                     |                           |
+                                                   |                     |                           o--- kernel_registration.blt
+                                                   |                     |                           |
+                                                   |                     |                           o--- entry_point/ +---
+                                                   |                     |                                                |
+                                                   |                     |                                                o--- load.blt
+                                                   |                     |                                                |
+                                                   |                     |                                                o--- unload.blt
+                                                   |                     |
+                                                   |                     o--- openBSD/ +---
+                                                   |                     |                |
+                                                   |                     |                o--- RKM/ +---
+                                                   |                     |                             |
+                                                   |                     |                             o--- kernel_registration.blt
+                                                   |                     |                             |
+                                                   |                     |                             o--- entry_point/ +---
+                                                   |                     |                                                  |
+                                                   |                     |                                                  o--- load.blt
+                                                   |                     |                                                  |
+                                                   |                     |                                                  o--- unload.blt
+                                                   |                     |
+                                                   |                     o--- windows/ +---
+                                                   |                                     |
+                                                   |                                     o--- RKM/ +---
+                                                   |                                                  |
+                                                   |                                                  o--- kernel_registration.blt
+                                                   |                                                  |
+                                                   |                                                  o--- entry_point/ +---
+                                                   |                                                                       |
+                                                   |                                                                       o--- load.blt
+                                                   |                                                                       |
+                                                   |                                                                       o--- unload.blt
+                                                   |
+                                                   o--- black_guardian/ +---
+                                                                           |
+                                                                           o--- necronomicon
+                                                                           |
+                                                                           o--- black_guardian.cwp

@@ -1,0 +1,7 @@
+Session.vim$
+\.sw.$
+\.DS_Store$
+~$
+build/.*
+\.rtree$
+maintainers/cnorm/.*
