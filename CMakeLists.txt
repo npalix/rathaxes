@@ -54,6 +54,17 @@ ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 ADD_SUBDIRECTORY(maintainers)
 ADD_SUBDIRECTORY(rathaxes)
 
+# Uninstall rules ##############################################################
+
+CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/cmake_uninstall.cmake.in"
+               "${RATHAXES_BINARY_DIR}/cmake_uninstall.cmake"
+               IMMEDIATE @ONLY
+              )
+
+ADD_CUSTOM_TARGET(uninstall
+                  "${CMAKE_COMMAND}" -P "${RATHAXES_API_BINARY_DIR}/cmake_uninstall.cmake"
+                 )
+
 # CPack stuff ##################################################################
 
 SET(PACKAGE_NAME "rathaxes")
