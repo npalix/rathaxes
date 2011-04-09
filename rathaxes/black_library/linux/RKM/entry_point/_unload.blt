@@ -1,0 +1,21 @@
+<%
+/*
+**      unload.blt in black_library/linux/RKM/entry_point/
+**      for Rathaxes project
+**      made by Thor
+*/
+
+local   sDriverName = this.name;
+%>
+
+ADVICE unload PART_OF RKM
+{
+  /*
+  **  LKM exit point
+  */
+  static void /*__exit*/    @sDriverName@_exit(void)
+  {
+    JOINPOINT unregistration IN RKM.kernel_registration.unregistration;
+    return;
+  }
+};

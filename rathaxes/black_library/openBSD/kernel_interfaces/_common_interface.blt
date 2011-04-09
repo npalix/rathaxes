@@ -1,0 +1,21 @@
+<%
+/*
+**      _common_interface.blt in black_library/openBSD/kernel_interfaces/
+**      for Rathaxes project
+**      made by Filth
+*/
+%>
+
+ADVICE common_interface PART_OF kernel_interfaces
+{
+	<%
+		foreach interface in this.kernel_interfaces
+    	{
+            foreach fct in interface.block.functions
+            {
+			    		%>JOINPOINT @fct.key()@ IN kernel_interfaces.common_interface.@fct.key()@;@"\n"@<%
+            }
+    	}
+	%>
+};
+

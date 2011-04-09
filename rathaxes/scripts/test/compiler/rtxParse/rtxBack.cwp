@@ -1,0 +1,91 @@
+#include "cnorm.cwp"
+
+/* root of grammar */
+#overload
+translation_unit ::=
+    => traceLine("PARSE!");
+    #try
+        #ignore
+        #check(cnormNodeRoot(this))
+        [
+            //#check(cnormNodeCtx(this))
+            rtx_declaration(this)
+        ]*
+        #continue(sError, "bad token at end of file, unexpected :'"
+                  + peekChar()+"'")
+        #empty
+    #catch (sError)
+        | #check(cnormLogError(this, sError))
+;
+
+// root of rathaxes
+rtx_declaration(theBlock : node) ::=
+    #readIdentifier:sStmt rtx_stmt<sStmt>(theBlock)
+;
+
+rtx_stmt<sKeyword>(theBlock : node) ::= 
+    => error("Unknown statement :" + sKeyword);
+;
+
+rtx_stmt<"template">(theBlock : node) ::=
+    =>traceLine("TEMPLATE!");
+    // TODO: on ne parse pas correctement le proto on prend tout
+        [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // on est des boeufs
+    ////////
+        // on cree un block pour heberger le node template
+        #pushItem(theBlock.block)
+        => local lastNode;
+        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+        // on cree un rtxTPL et c_block va reference le block de C
+        => local c_block;
+        #check(rtxNodeTpl(lastNode, head, c_block))
+        => traceLine("chunk:" + head + " next:" + peekChar());
+        =>traceLine("CODE C!");
+        block_item_list(c_block) 
+    '}'
+;
+
+/////// WITH
+rtx_stmt_with_map(theMap : node) ::=
+    #readIdentifier:sKey '=' [#readIdentifier|#readInteger]:sVal
+    => insert theMap[sKey] = sVal;
+;
+rtx_stmt_with(theMap: node) ::=
+    rtx_stmt_with_map(theMap) [',' rtx_stmt_with_map(theMap)]*
+;
+rtx_stmt<"with">(theBlock : node) ::=
+    => traceLine("WITH");
+        // on cree un block pour heberger le node template
+        #pushItem(theBlock.block)
+        => local lastNode;
+        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+        // lien vers le mapping des variables
+        => local var_map;
+        => local body;
+        #check(rtxNodeWith(lastNode, var_map, body))
+        // les var du with
+        rtx_stmt_with(var_map)
+        // le block du with
+        '{'
+            [
+                //#check(cnormNodeCtx(body))
+                rtx_declaration(body)
+            ]*
+            
+        '}'
+;
+
+// on s'emmerde pas...pour l'instant :P
+rtx_template_code ::= #!ignore "${" -> '}' 
+;
+
+/*
+ * This rule overload allows the template identifier concatenation
+ * for Rathaxes.
+ */
+#overload
+rootidentifier ::= #!ignore
+    [ 'a'..'z' | 'A'..'Z' | '_' | rtx_template_code:code ]
+    [ 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | rtx_template_code ]*
+;
+

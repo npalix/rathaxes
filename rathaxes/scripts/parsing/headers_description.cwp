@@ -1,0 +1,101 @@
+/*
+**      headers_description.cwp in script/parsing/
+**      for Rathaxes project
+**      made by Thor
+*/
+
+function    generateHeader(headers : node)
+{
+  /*  traceObject(headers, 9);*/
+  foreach header in headers
+    {
+      if (header == 1)
+	{
+	  generateHeader(header);
+	  @#include <@@@header.key()@@@>@"\n"@@
+	}
+    }
+  return;
+}
+
+function    sortDependenciesTree(currentNode : node)
+{
+  local itCurrentNode;
+  local itSubCurrentNode;
+  local itCheckingNode;
+  local remove = "";
+  
+  if !createIterator(itCurrentNode, currentNode) return;
+  do
+    {
+      if (itCurrentNode.key() != remove)
+	{
+	  /*  print(itCurrentNode.key());*/
+	  if !createIterator(itSubCurrentNode, itCurrentNode) return;
+	  do
+	    {
+	      /*	      print("\t" + itSubCurrentNode.key());*/
+	      if !createIterator(itCheckingNode, currentNode) return;
+
+	      do
+		{
+		  /*		  print("\t\t" + itCheckingNode.key() + "\t" + itSubCurrentNode.key());*/
+		  if (itCheckingNode.key() == itSubCurrentNode.key())
+		    {
+		      setall itSubCurrentNode = itCheckingNode;
+		      remove = itCheckingNode.key();
+		    }
+		} while next(itCheckingNode);
+
+	    } while next(itSubCurrentNode);
+	}
+      else
+	{
+	  itCurrentNode = 0;
+	}
+    } while next(itCurrentNode);
+  return;
+}
+
+#ignore ::=
+	[
+		['#' ->[['\r']? '\n']]
+		| ["//" ->[['\r']? '\n']]
+		| ["/*" ->"*/"]
+		| ' '
+		| '\t'
+		| '\n'
+		| '\r'
+	 ]+
+;
+
+root ::=
+        #implicitCopy
+	#ignore
+	[
+	    [#explicitCopy require]
+	    |
+	    [
+	     [#explicitCopy #readChar]:other
+	     =>{@@other@@}
+	    ]
+	]*
+        #continue #empty
+	=> sortDependenciesTree(this);
+        => generateHeader(this);
+;
+
+require ::=
+	#readIdentifier:{"REQUIRE"}
+	[#readIdentifier['/' #readIdentifier]? ".h"]:ident
+	=> insert this[ident] = 1;
+	[
+		'{'
+			[
+				'.' [#readIdentifier ".h"]:depend
+				=> insert this#back[depend] = 1;
+			]+
+		'}'
+	]?';'
+;
+

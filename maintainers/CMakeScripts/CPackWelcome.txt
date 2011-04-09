@@ -1,0 +1,2 @@
+Welcome, this wizard will help you to set up your Rathaxes copy. Once installed
+you will be able to use Rathaxes from your shell.

@@ -1,0 +1,12 @@
+/*
+**	rdsl_local_declaration.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**
+**	---------------------------------------------------------------------------
+*/
+
+rdsl_local_declaration(nScope : node) ::=
+	rdsl_declaration_variables(nScope)
+    //| semantic_block<"MISC">(nScope)
+;
