@@ -1,0 +1,154 @@
+\documentclass[francais]{rtxarticle}
+
+\usepackage{listings}
+
+\lstset{%
+basicstyle=\ttfamily\footnotesize\color{lightgray},
+backgroundcolor=\color{black}
+}
+
+\title{Premier Pas}
+\author{Louis Opter}
+
+\rtxdoctype{Documentation Utilisateur}
+\rtxdocstatus{Brouillon}
+\rtxdocversion{0.1}
+
+\rtxdochistory
+{
+0.1 & 09/04/2011 & Louis Opter & Traduction de la version Anglaise \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\rtx est un Langage de programmation Spécifique à un Domaine (DSL) qui permet de
+décrire des pilotes de périphériques. \rtx\ compile vers des modules noyaux
+écrits en C pour Linux, Windows et OpenBSD.
+
+Ce document explique comment installer \rtx\ sous Windows et les systèmes
+d'exploitations de type Unix et comment générer votre premier pilote de
+périphérique.
+
+Vous trouverez aussi dans ce document des liens vers la documentation complète
+et comment compiler la dernière la version de \rtx.
+\end{abstract}
+
+\tableofcontents
+
+\section{Installation}
+
+Un installateur existe pour Windows, sur les autres systèmes d'exploitation
+seulement une installation depuis les sources est supportée pour le moment.
+Bien sûr, si vous souhaitez développer sur \rtx\ en lui même vous pouvez
+choisir d'installer \rtx\ depuis les sources (càd sans l'installateur).
+
+Bien que \rtx\ génère des pilotes uniquement pour Windows, Linux et OpenBSD il
+est possible de l'installer et de l'utiliser depuis d'autre systèmes (comme
+d'autre BSD et MacOS X).
+
+\subsection{Using the Windows installer}
+
+L'installateur fournis pour Windows inclue tout ce dont vous avez besoin pour
+écrire des pilotes en utilisant \rtx\ : le compilateur et sa documentation.
+
+Téléchargez l'\href{http://rathaxes.googlecode.com/files/rathaxes-latest.exe}{installeur},
+puis exécuter le et suivez les instructions sur l'écran.
+
+Pour compiler et utiliser les pilotes générés par \rtx\ vous aurez besoin
+d'installer le kit de développement de pilotes de périphériques de Microsoft
+Windows.
+
+\subsection{From the sources on Unix}
+
+If you are not on Windows you will have to install \rtx\ from a ``source
+release''.
+
+You will need to have CMake >= 2.6 installed and to download a
+\href{http://rathaxes.googlecode.com/files/rathaxes-src-latest.tar.gz}{\rtx\ source tarball}.
+
+Then extract the source tarball and ``cd'' into it, finally you can install
+\rtx\ using:
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_BUILD_TYPE=RELEASE ..
+$ sudo make install
+\end{lstlisting}
+
+\emph{You will need to be root to issue ``make install'', this example uses
+``sudo'' but accord this to your local setup.}
+
+\section{Generate your first driver}
+
+TBD.
+
+\section{Diving in}
+
+TBD.
+
+% Give links to the documentation here.
+
+\section{Install the development version of \rtx}
+
+You can install the latest version of \rtx\ if you need to have the latest bugs
+and features or if you want to contribute to the project. This involves checking
+out the current version of the project using Mercurial and to build it manually.
+
+\subsection{Pre-requisites}
+
+To checkout and build the project you need to install the following softwares:
+\begin{itemize}
+\item Mercurial >= 1.5 (you can check the version with ``hg {-}{-}version'' and
+      use \href{http://tortoisehg.bitbucket.org/download/index.html}{TortoiseHg}
+      on Windows);
+\item Subversion (you need to install \href{http://www.sliksvn.com/en/download}{Slik
+      SVN} on Windows which ships the command line executables);
+\item \href{http://www.cmake.org/cmake/resources/software.html}{CMake} >= 2.6
+      (you can check the version with ``cmake {-}{-}version'');
+\item A compiler tool-chain (for example by installing the ``build-essential'' package on a
+      Debian-like GNU/Linux distribution or by installing
+      \href{http://www.microsoft.com/express/Downloads/#2010-Visual-CPP}{Visual Studio Express for C++}
+      on Windows).
+\end{itemize}
+
+\subsection{Checkout the sources}
+
+Open a shell (you can do this from the Visual Studio menu on Windows), and
+checkout the project using:
+
+\begin{lstlisting}
+$ hg clone https://rathaxes.googlecode.com/hg/ rathaxes
+$ cd rathaxes
+\end{lstlisting}
+
+Keep the shell open, the next section explains how to build \rtx\ on Windows or
+Unix.
+
+\subsection{Build \rtx}
+
+If you are using an Unix like operating system use the following commands:
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+\end{lstlisting}
+
+If you are on Windows use:
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake -G "NMake Makefiles" ..
+$ nmake
+\end{lstlisting}
+
+\rtxmaketitleblock
+
+\end{document}
+
