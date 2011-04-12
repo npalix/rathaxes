@@ -5,7 +5,7 @@
 
 \author{Thomas Sanchez}
 
-\title{Documentation utilisateur du langage Rathaxes}
+\title{Documentation utilisateur du langage}
 \usepackage[utf8]{inputenc}
 \rtxdoctype{Documentation utilisateur}
 \rtxdocref{fr\_user\_doc}
@@ -13,6 +13,7 @@
 \rtxdocstatus{Brouillon}
 
 \rtxdochistory{
+0.2 & 27/01/2011 & Thomas Sanchez & Correction des typos \\
 0.1 & 27/01/2011 & Thomas Sanchez & Premier jet de la documentation utilisateur \\
 }
 
@@ -75,8 +76,13 @@
 
 \tableofcontents
 
-\abstract{Cette documentation s'adresse aux developpeurs voulant savoir comment ecrire un fichier de description
-de pilote de peripherique utilisant le langage Rathaxes.}
+\abstract{\rtx\ est un ensemble d'outils permettant de simplifier l'écriture de pilote de
+périphérique. Le projet permet de générer un code source écrit en C pour Linux,
+Windows 7 et OpenBSD à partir d'un fichier de description de pilote.
+
+
+Cette documentation s’adresse aux développeurs voulant savoir comment
+écrire un fichier de description de pilote de périphérique.}
 
 \lstset{language=rathaxes}
 
@@ -88,39 +94,41 @@ de pilote de peripherique utilisant le langage Rathaxes.}
 
 %% A corriger si besoin, David c'est pour toi :)
 
-Le but de ce document n'est pas de decrire le compilateur mais une comprehension basic de ce qu'il est
-facilitera l'utilisation de Rathaxes.
+Le but de ce document n'est pas de d\'ecrire le compilateur, mais une compréhension basique de ce qu'il est
+facilitera l'utilisation de \rtx.
+
 
 \section{Le "front end"}
 
-Le "front end" est le langage a proprement parler. C'est ce qui va lire votre fichier afin d'en extraire
+Le "front end" est le langage \`a proprement parler. C'est ce qui va lire votre fichier afin d'en extraire
 les informations.
 
 \section{Le "middle end"}
 
-Le "middle end" va lier les informations extraites par le "front end" et celle du "back end". Il va aussi verifier
-la validite semantique de ce qui a ete ecris. Par exemple, c'est lui qui va verifier que toutes les sequences
-d'une interface ont bien ete implemente.
+Le "middle end" va lier les informations extraites par le "front end" et celles du "back end". Il va aussi vérifier
+la validité sémantique de ce qui a été écrit. Par exemple, c'est lui qui va vérifier que toutes les séquences
+d'une interface ont bien été implémentées.
+
 
 \section{Le "back end"}
 
-Le "back end" est toute la partie qui s'occupe de recuperer les primitives utilisees implicitement par
-le pilote etant en train d'etre genere et de l'injecter dans le fichier C genere au final.
+Le "back end" est toute la partie qui s'occupe de récupérer les primitives utilisées implicitement par
+le pilote étant en train d'être générée et de l'injecter dans le fichier C génère au final.
 
 \chapter{Le langage}
 
-Cette section va expliquer comment ecrire en langage Rathaxes.
+Cette section va expliquer comment écrire en langage \rtx\ .
 
-Le langage Rathaxes a pour but de permettre de decrire un pilote de peripherique.
-C'est quelque chose de sensible et ou les erreurs peuvent signer la mort de votre materiel.
-Pour eviter ceci nous avons voulu propose un langage redondant dans la definition de ses types
-et ou les validations syntaxiques et semantiques statiques sont nombreuses.
+Le langage \rtx\  a pour but de permettre de décrire un pilote de périphérique.
+C'est quelque chose de sensible et, où les erreurs peuvent signer la mort de votre matériel.
+Pour éviter ceci, nous avons voulu proposer un langage redondant dans la définition de ses types
+et/ou les validations syntaxiques et sémantiques statiques sont nombreuses.
 
-Nous avons voulu aussi propose un langage sans ambiguite et qui n'offre, dans la mesure du possible,
-qu'une seule facon d'ecrire une operation.
+Nous avons voulu aussi propose un langage sans ambiguïté et qui n'offre, dans la mesure du possible,
+qu'une seule façon d'écrire une opération.
 
-L'exemple le plus parfait de ce que nous voulions eviter est le cas de l'incrementation d'une variable dans certain
-langage:
+L'exemple le plus parfait de ce que nous voulions éviter est le cas de l'incrémentation d'une variable dans certains
+langages:
 
 \lstset{language=C++}
 \begin{lstlisting}
@@ -134,18 +142,21 @@ i += 1;
 
 \lstset{language=rathaxes}
 
-Nous avons aussi voulu eviter les effets de bords:
-Dans la mesure du possible, une sequence appele avec les memes arguments aura toujours le meme effet.
+Nous avons aussi voulu éviter les effets de bords:
+Dans la mesure du possible, une séquence appelée avec les mêmes arguments aura toujours le même effet.
 
 \section{Les types}
-Rathaxes a pour but de proposer un langage de description de pilote de peripherique complet et sur.
-Afin de pouvoir proposer une verification la plus exhaustive possible du code ecrit, le langage doit
-forcement proposer des types explicites et donc par extension etre fortement type.
+\rtx\  a pour but de proposer un langage de description de pilote de
+périphérique complet et sûr.  Afin de pouvoir proposer une vérification la plus
+exhaustive possible du code écrit, le langage doit forcement proposer des types
+explicites et donc par extension être fortement type.
 
-Rathaxes propose un certain nombre de types predefinis. L'utilisation de ces types est
-un peu particuliere: il ne sont pas utilisable directement. Afin d'utiliser un registre il faudra
-redefinir le type registre en ajoutant les informations propose au registre auquel vous voulez acceder
-et instancier ce type la.
+\rtx\  propose un certain nombre de types prédéfinis. L'utilisation de ces
+types est un peu particulière: ils ne sont pas utilisables directement. Afin
+d'utiliser un registre, il faudra redéfinir le type registre en ajoutant les
+informations proposées au registre auquel vous voulez accéder et instancier ce
+type-là.
+
 
 \subsection{Les registres}
 Les registres représentent des cases mémoires particulières, souvent associées
@@ -155,16 +166,16 @@ Par exemple pour activer une fonction d’un périphérique particulier, un
 changement de bit dans un registre donne peut-être requis.
 Ce type la propose donc une gestion fine des bits composant le registre.
 
-Voici la syntaxe pour declarer un type de registre:
+Voici la syntaxe pour d\'eclarer un type de registre:
 \begin{lstlisting}[caption=Declaration d'un type de registre sur un octet]
 DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
 \end{lstlisting}
 
-Le registre sera donc sur 8 bit, accessible en lecture/ecriture.
+Le registre sera donc sur 8 bits, accessible en lecture/écriture.
 
-Le \emph{LIKE} represente le role de chacun des bit du registre. Il s'agit
-d'un masque afin de determiner ce qui doit etre pris en compte ou pas.
-Le masque doit contenir autant de character que le registre contient de bit.
+Le \emph{LIKE} représente le rôle de chacun des bits du registre. Il s'agit
+d'un masque afin de déterminer ce qui doit être pris en compte ou pas.  Le
+masque doit contenir autant de caractère que le registre contient de bit.
 
 Le masque peut contenir ces valeurs:
 \begin{itemize}
@@ -180,13 +191,13 @@ DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(.***0000); # le dernier quarte se
 \end{lstlisting}
 
 
-Un bit ou un groupe de bit composant un registre peut avoir une signification particuliere.
-Par exemple, les deux premiers bit pourraient donner des informations sur le status du
-peripherique.
+Un bit ou un groupe de bit composant un registre peut avoir une signification particulière.
+Par exemple, les deux premiers bits pourraient donner des informations sur le statut du
+périphérique.
 
-Pour gerer ca, Rathaxes donne la possibilite de nomme des groupes de bit d'un registre
-afin d'y acceder par leur nom. Il est aussi possible de specifier toutes les valeurs
-que peut prendre le groupe de bit et de les nommer aussi.
+Pour gérer ça, \rtx\  donne la possibilité de nommer des groupes de bits d'un registre
+afin d'y accéder par leur nom. Il est aussi possible de spécifier toutes les valeurs
+que peut prendre le groupe de bits et de les nommer aussi.
 
 Exemple:
 \begin{lstlisting}[caption=Exemple de description interne du registre]
@@ -236,18 +247,19 @@ L'instanciation d'un registre se fait comme ceci:
 DECLARE REGISTER Register_type Register_name Bus_type MAPPED_AT address;
 \end{lstlisting}
 
-Le type du bus sert a determiner comment le registre va etre acceder.
+Le type du bus sert à déterminer comment le registre va être accédé.
 
-\texttt{Bus\_type} peut etre egal a:
+\texttt{Bus\_type} peut être égal à:
 \begin{itemize}
 	\item PCI;
 	\item IOPORT;
 	\item MEMORY.
 \end{itemize}
 
-Le \texttt{MAPPED\_AT} sert a specifier l'adresse a laquelle le registre va etre mappe.
-Cela peut etre une expression dont la valeur a laquelle elle sera evalue representera l'adresse (i.e.\ une expression
-arithmetique).
+Le \texttt{MAPPED\_AT} sert à spécifier l'adresse à laquelle le registre va être mappé.
+Cela peut être une expression dont la valeur a laquelle elle sera évaluée représentera l'adresse (c.-à-d.\ une expression
+arithmétique).
+
 
 Exemple:
 \begin{lstlisting}[caption=Exemple d'instanciation de registre]
@@ -255,7 +267,7 @@ DECLARE REGISTER EepromReadRegister eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
 \end{lstlisting}
 
 \subsection{Les types primitifs}
-Rathaxes propose certain types primitif:
+\rtx\  propose certains types primitifs:
 \begin{lstlisting}[caption=Les types primitifs]
 DECLARE INTEGER i_name = 123;
 DECLARE DOUBLE d_name = 123.123;
@@ -266,11 +278,11 @@ DECLARE STRING str = "hello, world !";
 \subsection{Les adresses}
 %% Ce type etait controverse mais je prefere le remettre afin qu'on en rediscute
 
-Il arrive de devoir jouer un petit peu avec les adresses lorsqu'on fait du driver.
-Par exemple on peut devoir mettre une adresse dans un registre pointant sur une zone memoire
-et que cette zone memoire soit remplie par des structures par la suite.
+Il arrive de devoir jouer un petit peu avec les adresses lorsqu'on fait de la programmation de pilote.
+Par exemple, on peut devoir mettre une adresse dans un registre pointant sur une zone mémoire
+et que cette zone soit remplie par des structures par la suite.
 
-Pour faciliter ce cas la, il existe le type \texttt{ADDRESS}.
+Pour faciliter ce cas-là, il existe le type \texttt{ADDRESS}.
 
 \begin{lstlisting}[caption=Instanciation d'une adresse]
 DECLARE ADDRESS Address_name ALIGNED_ON nbrbits OFFSET off;
@@ -278,9 +290,9 @@ DECLARE ADDRESS Address_name ALIGNED_ON nbrbits OFFSET off;
 
 \begin{description}
 \item[\texttt{nbrbits}] \hfill \\
-	represente le nombre de bit sur lequel l'adresse va etre aligne.
+	Represente le nombre de bits sur lequel l'adresse va être alignée.
 \item[\texttt{off}] \hfill \\
-	represente le nombre d'octet necessaire pour passer d'un objet a une autre.
+	Représente le nombre d'octets nécessaire pour passer d'un objet à un autre.
 \end{description}
 
 
@@ -288,20 +300,20 @@ DECLARE ADDRESS Address_name ALIGNED_ON nbrbits OFFSET off;
 Beaucoup de périphériques aujourd’hui nous permettent d’acquérir des données,
 ou d’en envoyer : webcam, scanneur, carte son, carte vidéo, carte réseau\ldots
 Cela passe par la manipulation de ces données, que ce soit pour les décoder,
-les encoder, ou seulement les données a l’utilisateur.
+les encoder, ou seulement les donner à l’utilisateur.
 
-Le type \texttt{BUFFER} repond a ce besoin.
+Le type \texttt{BUFFER} repond à ce besoin.
 
 On peut:
 \begin{enumerate}
 	\item Accéder aux données grâce à un index ; 
 	\item Le copier/vider ; 
-	\item Diviser son espace en champ nomme ; 
+	\item Diviser son espace en champ nommé ; 
 	\item Spécifier sa taille (en octet) et un alignement particulier (en bit).
 \end{enumerate}
 
 
-\begin{lstlisting}[caption=Declaration\, instanciation\, utilisation d'une memoire tampon]
+\begin{lstlisting}[caption=Déclaration\, instanciation\, utilisation d'une mémoire tampon]
 DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
 DECLARE MyBufferType mybuffer;
 
@@ -309,7 +321,7 @@ SET(my_buffer[3], unoctet);
 \end{lstlisting}
 
 
-\begin{lstlisting}[caption=Description du contenu d'une memoire tampon]
+\begin{lstlisting}[caption=Déscription du contenu d'une mémoire tampon]
 DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
 
 	[0..4] AS low_address;
@@ -324,20 +336,21 @@ DECLARE MyBufferType mybuffer;
 SET(my_buffer.status, MyBufferType.status.OK);
 \end{lstlisting}
 
-La representation reel d'une memoire tampon est equivalent a une structure en C.
-Dans ce type de donne la taille demande sera la taille donnee.
+La représentation réelle d'une mémoire tampon est équivalente à une structure en C.
+Dans ce type de donné la taille demande sera la taille donnée.
 
 %% Ajouter un moyen de specifier la structure comme etant "packed"
 
 \subsection{Les collections}
 
-Deux types sont disponibles afin de gerer des collections d'objets:
+Deux types sont disponibles afin de gérer des collections d'objets:
 le type \texttt{VECTOR} et le type \texttt{LIST}.
 
-Un vecteur d'objet sera contigue en memoire. Il est assure que lorsqu'on prend
-l'adresse d'une instance, tous les objets se suivent.
-Cependant la taille totale du vecteur ne sera pas forcement le nombre d'element multiplie par leur
-taille. A la fin de la zone memoire occupe par le vecteur se trouvera des meta-donnees.
+Un vecteur d'objet sera contigu en mémoire.  Lorsque le vecteur sera référencé,
+l’adresse obtenue sera celle du premier objet.  Cependant, la taille totale du
+vecteur ne sera pas forcément le nombre d'éléments multiplié par leur taille. À
+la fin de la zone mémoire occupe par le vecteur se trouvera des meta-données.
+
 
 \begin{lstlisting}
 DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
@@ -354,10 +367,10 @@ REALLOC_VECTOR(my_vector, new_size);
 %% DECLARE REFERENCE_ON MyBufferType element_name = my_vector[x];
 %% dans le REFERENCE_ON ca pourrait etre une copie qui est effectue
 
-Creer une list d'objet est le moyen le plus dynamique de garder la trace
-de plusieurs element qui ne doivent pas se suivre en memoire.
-La seule contrepartie est le fait que le temps d'acces est proportionnel
-a l'index de l'element voulu.
+Créer une liste d'objet est le moyen le plus dynamique de garder la trace de
+plusieurs éléments qui ne doivent pas se suivre en mémoire.  La seule
+contrepartie est le fait que le temps d'accès est proportionnel a l'index de
+l'élément voulu.
 
 \begin{lstlisting}
 DECLARE LIST ListType ELEMENT_TYPE MyBufferType;
@@ -391,7 +404,7 @@ Si, si, c'est vrai !
 %% Je pense que j'ai donne quand meme pas mal d'exemple different sur ce pourquoi on en aurait besoin.
 %% ne serait ce que le fait de faire uen condition sur la valeur d'un bit dans un registre
 
-Faire une condition en rathaxes est tres simple:
+Faire une condition en \rtx\  est très simple:
 \begin{lstlisting}[caption=Syntaxe des conditions]
 ON expression LET expression_then;
 ELSE expression_else;
@@ -404,7 +417,7 @@ ELSE a_and_b_different();
 
 
 \section{Expression}
-Les expressions en rathaxes s'ecrivent comme ceci:
+Les expressions en \rtx\  s'écrivent comme ceci:
 \begin{lstlisting}[caption=Ecriture des expressions]
 
 DECLARE INTEGER i = 124;
@@ -423,19 +436,20 @@ ELSE SET(i, 0);
 
 \section{Les interfaces}
 
-Un pilote a besoin de s'interfacer avec le sous systeme auquel le materiel qu'il pilote appartient.
-Pour cela il a besoin d'implementer les sequences requises pour etre fonctionnel.
+Un pilote a besoin de s'interfacer avec le sous-système auquel le matériel qu'il pilote appartient.
+Pour cela, il a besoin d'implémenter les séquences requises pour être fonctionnel.
 
-Lorsqu'un pilote decide d'implementer une interface, il beneficie automatiquement de toutes
-les sequences qu'elle propose.
+Lorsqu'un pilote décide d'implémenter une interface, il bénéficie automatiquement de toutes
+les séquences qu'elle propose.
 
-De ce fait l'apprehension d'une interface se fait en deux temps: le premier etant les sequences
-qu'elle exporte et en second temps les sequences qu'elle attend.
+De ce fait, l'appréhension d'une interface se fait en deux temps: le premier étant les séquences
+qu'elle exporte et en deuxième temps les séquences qu'elle attend.
 
-Prenons le cas du sous systeme reseau, raisonnablement on s'attend a trouver une sequence exporte:
-\texttt{deliver\_packet}, alors qu'une sequence \texttt{send\_packet} sera a implementer.
 
-Certaine sequence seront aussi facultative a implementer.
+Prenons le cas du sous-système réseau, raisonnablement on s'attend à trouver une séquence exporté:
+\texttt{deliver\_packet}, alors qu'une séquence \texttt{send\_packet} sera a implementer.
+
+Certaine séquences seront aussi facultatives à implementer.
 
 \begin{lstlisting}[caption=Exemple de declaration d'une interface]
 DECLARE INTERFACE interface_name {
@@ -450,7 +464,7 @@ DECLARE INTERFACE interface_name {
 };
 \end{lstlisting}
 
-L'implementation d'une interface s'exprime de cette maniere:
+L'implémentation d'une interface s'exprime de cette manière:
 
 \begin{lstlisting}[caption=Utilisation d'une interface]
 DECLARE DRIVER e1000 USE interface_name interface_name2{
@@ -468,18 +482,18 @@ DECLARE DRIVER e1000 USE interface_name interface_name2{
 \section{Les algorithmes}
 \emph{Cette section sera a completer}
 
-L'affectation se fera toujours par l'algorithme \texttt{SET}.
+L'affectation se fait toujours par l'algorithme \texttt{SET}.
 
 \section{Mot clefs}
 
 Les mots clefs sont:
 \begin{itemize}
-	\item SIZEOF: Recupere la taille d'un objet. Exemple:
+	\item SIZEOF: Récupère la taille d'un objet. Exemple:
 	\begin{lstlisting}[caption=Exemple du sizeof]
 		DECLARE INTEGER size = SIZEOF object;
 	\end{lstlisting}
 
-	\item ADDRESS\_OF: Recupere l'adresse d'un object. Exemple:
+	\item ADDRESS\_OF: Récupère l'adresse d'un objet. Exemple:
 	\begin{lstlisting}[caption=Exemple du sizeof]
 		SET(my_register.buffer_address, ADDRESS_OF my_buffer);
 	\end{lstlisting}
@@ -487,8 +501,8 @@ Les mots clefs sont:
 
 \section{La configuration}
 
-N'importe ou dans le programme on peut se retrouver a avoir besoin des variables utilisees pour
-la configuration.
+À n’importe quel endroit dans le programme on peut se retrouver à avoir besoin
+des variables utilisées pour la configuration. 
 
 \begin{lstlisting} [caption=Exemple de comment lire les variables de configuration]
 READ OPTIONAL CONFIGURATION_VARIABLE minor AS minor;
@@ -500,21 +514,23 @@ ON IS_SET(minor) LET Z();
 
 \section{La gestion d'erreur}
 
-Par nature, il est penible de gerer les erreurs. C'est quelque chose de repetitif, indispensable,
-frustrant\ldots
-Le fait de faire un pilote de peripherique est encore plus sujet aux erreurs:
-Defaillance du materiel, debranchement\ldots En plus des erreurs normales.
-Elles sont par leur nature impredictible.
 
-Rathaxes essait de donner un moyen simple et efficace de remonter les erreurs.
-Toutes les erreurs lie au systeme (probleme d'allocation, appel systeme qui echoue) est
-automatiquement gere. La seule chose qui vous reste sont les erreurs qui peuvent etre lie
-au materiel.
+Par nature, il est pénible de gérer les erreurs. C'est quelque chose de
+répétitifs, indispensables, frustrants\ldots Le fait de faire un pilote de
+périphérique est encore plus sujet aux erreurs: Défaillance du matériel,
+débranchement\ldots en plus des erreurs normales.  Elles sont par leur nature
+imprédictibles.
 
-La gestion d'erreur se fait par la remonte d'un \emph{symbol}, c'est a dire une entite
-a laquelle aucune valeur n'est attache si ce n'est son nom.
+\rtx\  essaie de donner un moyen simple et efficace de remonter les erreurs.
+Toutes les erreurs lie au système (problème d'allocation, appel système qui
+échoue) est automatiquement gérée. Les seules choses qui vous restent sont les
+erreurs qui peuvent être liées au matériel.
 
-Par exemple voici le code d'une fonction susceptible de lever une exception:
+La gestion d'erreur se fait par la remonté d'un symbole, c'est a dire une
+entité a laquelle aucune valeur n'est attache si ce n'est son nom.
+
+Par exemple, voici le code d'une fonction susceptible de lever une exception:
+
 \begin{lstlisting}[caption=Exemple d'une fonction levant une exception]
 DECLARE SEQUENCE func_name(...) THROWS	ERROR_TYPE_1
 					ERROR_TYPE_2
@@ -526,11 +542,12 @@ DECLARE SEQUENCE func_name(...) THROWS	ERROR_TYPE_1
 \end{lstlisting}
 
 Les termes \texttt{ERROR\_TYPE\_$\star$} sont les symboles d'erreur.
-Il est aussi specifier dans la signature de la sequence qu'elle peut lever
-des exceptions.
+Il est aussi spécifié dans la signature de la séquence qu'elle peut lever des
+exceptions.
 
-Si une sequence est marque comme susceptible de lever une erreur,
-le programmeur DEVRA les gerer.
+Si une séquence est marque comme susceptible de lever une erreur, le
+programmeur DEVRA les gérer.
+
 
 Exemple:
 
