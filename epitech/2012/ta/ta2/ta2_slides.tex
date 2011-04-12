@@ -1,0 +1,112 @@
+\documentclass{beamer}
+
+\usepackage[francais]{babel}
+\usepackage{rtxslides}
+\usepackage{tikz}
+
+\title{\rtx\ -- Technical Assessment 2}
+\author{Louis Opter \\ \texttt{<louis@lse.epitech.eu>}}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\rmfamily{\itshape{«~\rtx\ est un \textcolor{rathaxesred}{langage dédié} qui
+permet de \textcolor{rathaxesred}{décrire des pilotes} de périphériques. \rtx\
+compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux},
+\textcolor{rathaxesred}{Windows} et \textcolor{rathaxesred}{OpenBSD}.~»}}
+\end{frame}
+
+\begin{frame}{Développement de pilotes}
+\begin{itemize}
+\item code critique ;
+\item double compétence ;
+\item code spécifique ;
+\item auto formation.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Objectifs de Rathaxes}
+\begin{itemize}
+\item imposer plus de vérifications ;
+\item séparer les compétences ;
+\item unifier le développement.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Cas d'utilisations}
+
+\begin{center}
+\only<1>{\LARGE\itshape{{Trois cas d'utilisations :}}}
+
+\only<2>{\begin{tikzpicture}
+\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
+\draw (-4, -1) node[below]{\includegraphics[width=2cm]{logos/nvidia_white}} ;
+\draw (-4, 0) node[below]{\includegraphics[width=2cm]{logos/intel}} ;
+\draw (-4, 0.5) node[below]{\includegraphics[width=2cm]{logos/broadcom_white}} ;
+\draw (-4, -3) node{\ldots} ;
+
+\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Mainteneur Rathaxes}}} ;
+
+\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur systèmes}}} ;
+\fill[black] (4, 0) circle(1.13) ; % hidden placeholder to make the right overflow
+\end{tikzpicture}}
+
+\only<3>{\begin{tikzpicture}
+\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
+\draw (-4, -1) node[below]{\includegraphics[width=2cm]{logos/nvidia_white}} ;
+\draw (-4, 0) node[below]{\includegraphics[width=2cm]{logos/intel}} ;
+\draw (-4, 0.5) node[below]{\includegraphics[width=2cm]{logos/broadcom_white}} ;
+\draw (-4, -3) node{\ldots} ;
+
+\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Mainteneur Rathaxes}}} ;
+
+\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur systèmes}} ;
+\draw (4, 0.5) node[below]{\includegraphics[width=2cm]{logos/tux}} ;
+\draw (4, 0) node[above]{\includegraphics[width=2cm]{logos/windows_7_white}} ;
+\draw (4, -3) node{\ldots} ;
+\end{tikzpicture}}
+
+\only<4>{\begin{tikzpicture}
+\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
+\draw (-4, -1) node[below]{\includegraphics[width=2cm]{logos/nvidia_white}} ;
+\draw (-4, 0) node[below]{\includegraphics[width=2cm]{logos/intel}} ;
+\draw (-4, 0.5) node[below]{\includegraphics[width=2cm]{logos/broadcom_white}} ;
+\draw (-4, -3) node{\ldots} ;
+
+\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Mainteneur Rathaxes}} ;
+\draw (-0.5, 0.5) node[below]{\includegraphics[width=2cm]{logo_latex}} ;
+
+\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur systèmes}} ;
+\draw (4, 0.5) node[below]{\includegraphics[width=2cm]{logos/tux}} ;
+\draw (4, 0) node[above]{\includegraphics[width=2cm]{logos/windows_7_white}} ;
+\draw (4, -3) node{\ldots} ;
+\end{tikzpicture}}
+\end{center}
+
+% Note: I just discovered that beamer support columns inside frame, I'll give a
+% try next time…
+
+\transdissolve<2>
+\transdissolve<3>
+\transdissolve<4>
+\end{frame}
+
+\begin{frame}{Architecture}
+\begin{center}
+\only<1>{\LARGE{\itshape{Séparée en plusieurs composants :}}}
+
+\only<2>{\LARGE{\itshape{\textasciitilde~Pause Valise~\textasciitilde}}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Merci}
+\begin{center}
+\Large{\itshape{Questions ?}}
+\end{center}
+\end{frame}
+
+\end{document}
