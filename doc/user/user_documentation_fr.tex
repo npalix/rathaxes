@@ -9,12 +9,12 @@
 \usepackage[utf8]{inputenc}
 \rtxdoctype{Documentation utilisateur}
 \rtxdocref{fr\_user\_doc}
-\rtxdocversion{0.1}
+\rtxdocversion{0.2}
 \rtxdocstatus{Brouillon}
 
 \rtxdochistory{
-0.2 & 27/01/2011 & Thomas Sanchez & Correction des typos \\
-0.1 & 27/01/2011 & Thomas Sanchez & Premier jet de la documentation utilisateur \\
+0.2 & 11/04/2011 & Thomas Sanchez & Correction des typos \\
+0.1 & 07/04/2011 & Thomas Sanchez & Premier jet de la documentation utilisateur \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -122,7 +122,7 @@ Cette section va expliquer comment écrire en langage \rtx\ .
 Le langage \rtx\  a pour but de permettre de décrire un pilote de périphérique.
 C'est quelque chose de sensible et, où les erreurs peuvent signer la mort de votre matériel.
 Pour éviter ceci, nous avons voulu proposer un langage redondant dans la définition de ses types
-et/ou les validations syntaxiques et sémantiques statiques sont nombreuses.
+et où les validations syntaxiques et sémantiques statiques sont nombreuses.
 
 Nous avons voulu aussi propose un langage sans ambiguïté et qui n'offre, dans la mesure du possible,
 qu'une seule façon d'écrire une opération.
@@ -160,7 +160,7 @@ type-là.
 
 \subsection{Les registres}
 Les registres représentent des cases mémoires particulières, souvent associées
-à une adresse particulière, et/ou chaque bit a une fonction particulière.
+à une adresse particulière, et où chaque bit a une fonction particulière.
 
 Par exemple pour activer une fonction d’un périphérique particulier, un
 changement de bit dans un registre donne peut-être requis.
