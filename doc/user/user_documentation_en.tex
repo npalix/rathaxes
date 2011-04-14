@@ -1,0 +1,558 @@
+\documentclass[american]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{Thomas Sanchez}
+
+\title{User documentation of the language}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{User documentation}
+\rtxdocref{en\_user\_doc}
+\rtxdocversion{0.3}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.3 & 04/13/2011 & Thomas Sanchez & English version \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={DECLARE, SEQUENCE, INTERFACE, IMPLEMENTATION, FROM, READ,
+        OPTIONAL, CONFIGURATION_VARIABLE, USE, AS, WITH, SEQUENCES, ON, ELSE,
+        LET, PROVIDES, REQUIRE, THROWS, FINALLY, FOREACH, IN, AND, OR, THROW,
+        HANDLE_ERROR, NOT, REGISTER, LIKE, BIT, INTEGER, DOUBLE, BOOLEAN,
+        STRING, MAPPED_AT, PCI, SET, ADDRESS\_OF, SIZEOF},%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{\rtx\  is a set of tools which allow to facilitate the peripherals driver writing.
+The project can generate a C source code for Linux, Windows 7 and OpenBSD from a device driver description file.
+
+This documentation is addressed to the developers who want to know how to
+write a device driver description file.}
+
+\lstset{language=rathaxes}
+
+\chapter{File structure}
+
+%% formaliser la section configuration
+
+\chapter{Compiler structure}
+
+%% A corriger si besoin, David c'est pour toi :)
+
+The goal of this document isn't to describe the compiler, but a basic understanding of how it works would
+make easier the \rtx\ using.
+
+
+\section{The front end}
+
+The front end is actually the language. It is the part of the compiler which will take your description file and
+extract all the informations.
+
+
+\section{The "middle end"}
+
+The middle end will link the informations extracted by the frond end and the ones from the back end. It will
+also check the semantic accuracy of what have been written. For example, it will check that every sequences from
+a interface has been actually implemented.
+
+
+\section{The "back end"}
+
+The back end represents everything that get the primitives implicitly used by the driver in order to
+inject them into the C code.
+
+\chapter{The language}
+
+This section will explain how to write in \rtx\ language.
+
+The \rtx\ language is designed to describe a peripherals driver.
+It is something delicate and where an error can sign your hardware destruction.
+To avoid that, we wanted to design a language with redundancy in its type definitions and
+where the static syntax and semantic checks are many.
+
+We also wanted to design a language without ambiguity and with only one way to formulate an operation.
+
+The most perfect example of what we want to avoid is the variable incrementation in some languages:
+\lstset{language=C++}
+\begin{lstlisting}
+int i = 0;
+
+++i;
+i++;
+i = i + 1;
+i += 1;
+\end{lstlisting}
+
+\lstset{language=rathaxes}
+
+In order to avoid side effects, as far as possible a sequence called with the same arguments will always have
+the same effect.
+
+\section{The data types}
+
+The \rtx's goal is to give a reliable device description language, so the language has to be
+strongly typed.
+
+The typing has to be explicit (no duck typing).
+
+\rtx\ provides severals predefined types. The usage of these types is
+somewhat specific: they are not usable as they are. For example,
+in order to use the register type, the register type has to be redefined 
+by adding the physical register informations and then instantiate this type.
+
+
+\subsection{The registers}
+
+The registers represent a specific memory case, ofter associated with an address
+and where each bit has a specific meaning.
+
+For example, to activate a features for a device, a bit update in a specific
+register could be required. This data type provide an accurate bits management
+for a register.
+
+Here is the syntax to declare a register type:
+\begin{lstlisting}[caption=Declaration of a register on 1 byte]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
+\end{lstlisting}
+
+Therefore, the register will be on 8 bits, accessible in read/write.
+
+The \emph{LIKE} show the role of each register's bit. It is a mask which allow
+to spcify how the bit could be handled. The mask has to contain as many directives
+as the number of bits in the register.
+
+The mask can contain these values:
+\begin{itemize}
+	\item $\star$: we do not consider this bit;
+	\item \emph{1}: This bit will always be set to 1;
+	\item \emph{0}: This bit will always be set to 0;
+	\item .: This bit will be considered.
+\end{itemize}
+\begin{lstlisting}[caption=Example of some masks]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(....0000); # the last nibble will always be set 0
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(.***0000); # the last nibble will always be set 0, we do not consider
+# the 5th and seventh bit and we only consider the first bit
+\end{lstlisting}
+
+A bit or a batch of bit can have a specific meaning. For exemple, the first two bits could
+give the information of the device status.
+
+To handle this, \rtx\ provide the possibility to named those batch in order to manipulate them
+easily by their name. Moreover, it is also possible to specify all the values that a batch can take as value
+and named them too.
+
+Example:
+\begin{lstlisting}[caption=Internal description of a register]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........)
+{
+    [7] AS divisor_lacht_access_bit
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [6] AS set_break_enable
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [3..5] AS parity_select
+    {
+        (000) -> NO_PARITY;
+        (001) -> ODD_PARITY;
+        (011) -> EVEN_PARITY;
+        (101) -> HIGH_PARITY;
+        (111) -> LOW_PARITY;
+    };
+
+    [2] AS length_of_stop_bit
+    {
+        (0) -> ONE_STOP_BIT;
+        (1) -> TWO_STOP_BITS;
+    };
+
+    [0..1] AS word_length
+    {
+        (00) -> _5_BITS;
+        (01) -> _6_BITS;
+        (10) -> _7_BITS;
+        (11) -> _8_BITS;
+    };
+
+};
+\end{lstlisting}
+
+
+The register instantiation has to be done like this:
+\begin{lstlisting}[caption=Register instanciation]
+DECLARE REGISTER Register_type Register_name Bus_type MAPPED_AT address;
+\end{lstlisting}
+
+The \emph{Bus\_type} serve to determine how the register will be accessed.
+
+It can be equal to:
+\begin{itemize}
+	\item PCI;
+	\item IOPORT;
+	\item MEMORY.
+\end{itemize}
+
+The \texttt{MAPPED\_AT} indicates where the register instance will be mapped. It can be an expression that evalutation result
+will represent the address (i.e.\ arithmetical expression).
+
+
+Example:
+\begin{lstlisting}[caption=Example of MAPPED\_AT expression]
+DECLARE REGISTER EepromReadRegister eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
+\end{lstlisting}
+
+\subsection{The primitive types}
+\rtx\  provides some simple types:
+\begin{lstlisting}[caption=Les types primitifs]
+DECLARE INTEGER i_name = 123;
+DECLARE DOUBLE d_name = 123.123;
+DECLARE BOOLEAN b = TRUE OR FALSE;
+DECLARE STRING str = "hello, world !";
+\end{lstlisting}
+
+\subsection{The addresses}
+%% Ce type etait controverse mais je prefere le remettre afin qu'on en rediscute
+
+It happens that we have to play a little with the addresses when we are doing driver programming.
+For example, we could have to set an address into a register pointing on one memory area, and thereafter be
+filled with structure.
+
+
+The type \texttt{ADDRESS} is designed for this use case.
+
+\begin{lstlisting}[caption=ADDRESS instantiation]
+DECLARE ADDRESS Address_name ALIGNED_ON nbrbits OFFSET off;
+\end{lstlisting}
+
+\begin{description}
+\item[\texttt{nbrbits}] \hfill \\
+	Represents the number of bits on which the address will be aligned.
+\item[\texttt{off}] \hfill \\
+	Represents the number of bytes required to from one object to an another one.
+\end{description}
+
+
+\subsection{The buffers}
+
+Today, a lot of device allow us to get or send some data: webcams, scanners,
+sound cards\ldots
+
+These data can be decoded, encoded, or just given to the user.
+
+The \texttt{BUFFER} has been created for this purpose.
+
+We can:
+\begin{enumerate}
+	\item Access to the data with an index;
+	\item Copy/clear it;
+	\item Divide its space in named fields;
+	\item Specify its size and its alignment;
+\end{enumerate}
+
+
+\begin{lstlisting}[caption=Déclaration\, instanciation\, utilisation d'une mémoire tampon]
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer[3], unoctet);
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=Déscription du contenu d'une mémoire tampon]
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
+
+	[0..4] AS low_address;
+	[5] AS status {
+		(0) -> OK;
+		(1) -> ERROR;
+	};
+};
+
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer.status, MyBufferType.status.OK);
+\end{lstlisting}
+
+The real representation of this type is equivalent to a C structure.
+The required size will be the given size.
+
+%% Ajouter un moyen de specifier la structure comme etant "packed"
+
+\subsection{The collections}
+
+Two data types are available in order to handle object collections:
+the type \texttt{VECTOR} and the type \texttt{LIST}.
+
+A vector will be contiguous in memory. When the vector will be referenced, the address gained
+will point onto the first element. However, the size of the vector would be different of
+the number of elements times their size: Some meta-data could be added at the end
+of the vector.
+
+
+\begin{lstlisting}
+DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
+
+DECLARE VectorType my_vector;
+PUSH(my_vector, element);
+POP(my_vector);
+
+REALLOC_VECTOR(my_vector, new_size);
+\end{lstlisting}
+
+%% donne un exemple de recuperation d'un element
+%% ca n'a pas ete specifie mais je verrais bien une syntaxe du genre:
+%% DECLARE REFERENCE_ON MyBufferType element_name = my_vector[x];
+%% dans le REFERENCE_ON ca pourrait etre une copie qui est effectue
+
+Create an object list is most dynamic way to keep track of severals elements
+which don't have to following each other in memory. But, the access time
+will be proportional to the index of the wanted element.
+
+\begin{lstlisting}
+DECLARE LIST ListType ELEMENT_TYPE MyBufferType;
+DECLARE ListType my_list;
+
+PUSH(my_list, element);
+PUSH(my_list, element);
+PUSH(my_list, element);
+
+POP(my_list);
+POP(my_list);
+POP(my_list);
+
+PUSH_AFTER(my_list, ref, element);
+\end{lstlisting}
+
+%% meme syntaxe que pour le vector
+%% on pourrait voir une extension du truc en s'inspirant de linq:
+%% DECLARE REFERENCE_ON MyBufferType element_name = element from my_vector WHERE element.field_from_buffer = AVALUE;
+%% Bon, ok ca complexifie un peu le truc, un foncteur suffira:
+%% DECLARE REFERENCE_ON MyBufferType element_name = FIND_IF(my_vector, FONCTEUR);
+
+
+\subsection{The deallocation}
+It is automatically.
+
+\section{Conditions}
+%% si vous me prouvez qu'il n'y en a pas besoin, ok on les vire.
+%% Je pense que j'ai donne quand meme pas mal d'exemple different sur ce pourquoi on en aurait besoin.
+%% ne serait ce que le fait de faire uen condition sur la valeur d'un bit dans un registre
+
+Make a condition with \rtx\ is really simple:
+\begin{lstlisting}[caption=Conditions syntaxe]
+ON expression LET expression_then;
+ELSE expression_else;
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Condition examples]
+ON a == b LET a_equal_b_sequence();
+ELSE a_and_b_different();
+\end{lstlisting}
+
+
+\section{The expressions}
+The expressions are to be written like this:
+\begin{lstlisting}[caption=Examples]
+
+DECLARE INTEGER i = 124;
+DECLARE INTEGER j = i;
+
+SET(j, j + 1);
+SET(i, i * j);
+
+DECLARE REGISTER EepromReadRegister eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
+
+ON eer[0] == 1 LET SET(j, 0)
+ELSE SET(i, 0);
+
+\end{lstlisting}
+
+
+\section{The interfaces}
+
+A driver need to be interfaced with the sub-systems to which it belongs.
+To do this, it needs to implement the required sequences to be functional.
+
+When a driver implements an interface, it benefits automatically from all the sequences that it exports.
+
+Thus, the understanding of an interface needs two stages: the first is that an interface exports
+severals sequences and the second is the interfaces required to be implemented.
+
+Let see with the network subsystem, reasonably we could expect to find an exported sequence called
+\texttt{deliver\_packet}, whereas a sequence named \texttt{send\_packet} would be needed to be implemented.
+
+Some sequence could be optional to implement:
+
+\begin{lstlisting}[caption=Exemple de declaration d'une interface]
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE deliver_packet(ARGS, ARGS2);
+		SEQUENCE register_eth(NAME);
+	};
+
+	REQUIRE SEQUENCE send_packet(sk_buff);
+	OPTIONAL SEQUENCE change_mtu(A1);
+	OPTIONAL SEQUENCE get_statistics();
+};
+\end{lstlisting}
+
+The implementation is expressed in this way:
+
+\begin{lstlisting}[caption=Utilisation d'une interface]
+DECLARE DRIVER e1000 USE interface_name interface_name2{
+	DECLARE SEQUENCE init() {
+		register_eth("my awesome driver");
+	};
+
+	DECLARE SEQUENCE send_packet(ARG a) {
+		send_pigeon(a);
+	};
+};
+\end{lstlisting}
+
+
+\section{The algorithms}
+\emph{This section need to be completed}
+
+The affectation will always be performed by the \texttt{SET} algorithm.
+
+\section{Keywords}
+
+Keyword are:
+\begin{itemize}
+	\item SIZEOF: Get the object size in byte. Example:
+	\begin{lstlisting}[caption=Sizeof example]
+		DECLARE INTEGER size = SIZEOF object;
+	\end{lstlisting}
+
+	\item ADDRESS\_OF: Get the object address:
+	\begin{lstlisting}[caption=Sizeof example]
+		SET(my_register.buffer_address, ADDRESS_OF my_buffer);
+	\end{lstlisting}
+\end{itemize}
+
+\section{The configuration}
+
+At any point in the program, configuration variables can be needed:
+
+\begin{lstlisting} [caption=How to read a configuration variable]
+READ OPTIONAL CONFIGURATION_VARIABLE minor AS minor;
+READ CONFIGURATION_VARIABLE major;
+
+ON major = X LET Y();
+ON IS_SET(minor) LET Z();
+\end{lstlisting}
+
+\section{Errors handling}
+
+
+By their nature, it is difficult to handle errors. It is something repetitive,
+indispensable, frustrating\ldots The fact to do a driver is even more prone to errors:
+hardware defect, disconnecting\ldots in addition to the "normal" errors.
+
+
+\rtx\ tries to provide an easy and efficient way to deal with them and propagates an error.
+All the errors due to the operating system (memory allocation, system call failure\ldots) are
+automatically handled.
+The only thing left up to you is to handle the device errors.
+
+The error handling is done by the propagation of a symbol, ie an entity without any attached value
+except its name.
+
+
+For example, here is the function code which is likely prone to raise an error.
+\begin{lstlisting}
+DECLARE SEQUENCE func_name(...) THROWS	ERROR_TYPE_1
+					ERROR_TYPE_2
+					ERROR_TYPE_3 {
+		THROW ERROR_TYPE_1;
+		THROW ERROR_TYPE_2;
+		THROW ERROR_TYPE_3;
+};
+\end{lstlisting}
+
+The terms \texttt{ERROR\_TYPE\_$\star$} are the error symbols.
+The signature of the function indicates if it can raise an error.
+
+If a sequence can throw an error, the caller HAS to handle it.
+
+Example:
+
+\begin{lstlisting} [caption=Example of error handling]
+HANDLE_ERROR {
+	FUNC_THAT_RAISE_ERROR_1();
+	FUNC_THAT_RAISE_ERROR_2();
+	FUNC_THAT_RAISE_ERROR_3();
+}
+ON ERROR_TYPE_1 {
+	RECOVERY_1();
+}
+ON ERROR_TYPE_2 {
+	RECOVERY_2();
+}
+ON ERROR_TYPE_3 OR ERROR_TYPE_4 {
+}
+FINALLY {
+};
+\end{lstlisting}
+
+\chapter{The standard library}
+\end{document}

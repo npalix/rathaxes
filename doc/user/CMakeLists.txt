@@ -2,6 +2,7 @@ RATHAXES_COPY_LATEX_CLASSES()
 
 SET(RATHAXES_TEX_FILE
     user_documentation_fr
+    user_documentation_en
    )
 
 FOREACH(I ${RATHAXES_TEX_FILE})
