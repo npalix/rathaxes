@@ -3,6 +3,7 @@
 \usepackage[francais]{babel}
 \usepackage{rtxslides}
 \usepackage{tikz}
+\usetikzlibrary{shapes}
 
 \title{\rtx\ -- Technical Assessment 2}
 \author{Louis Opter \\ \texttt{<louis@lse.epitech.eu>}}
@@ -87,25 +88,125 @@ compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux}
 \end{tikzpicture}}
 \end{center}
 
-% Note: I just discovered that beamer support columns inside frame, I'll give a
-% try next time…
+% Note: I just discovered that beamer support columns inside frame, I'll give
+% it a try next time…
 
 \transdissolve<2>
 \transdissolve<3>
 \transdissolve<4>
 \end{frame}
 
+% Note: I wanted to have only one frame for Architecture + Composants but then
+% this first sentence is not properlly vertically centered.
 \begin{frame}{Architecture}
 \begin{center}
-\only<1>{\LARGE{\itshape{Séparée en plusieurs composants :}}}
-
-\only<2>{\LARGE{\itshape{\textasciitilde~Pause Valise~\textasciitilde}}}
+\LARGE{\itshape{Séparée en plusieurs composants :}}
 \end{center}
+\end{frame}
+
+\begin{frame}{Composants}
+
+\tikzset{componentarrow/.style={<-, >=latex, color=rathaxesred, ultra thick}}
+\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
+\tikzset{hidden/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=black}}
+
+\begin{overprint}
+
+\onslide<1>
+\begin{center}
+\begin{tikzpicture}
+\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
+\node[component] (cnorm) at (-3, 0)  {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[hidden] (rtxparse) at (2, 2.1)     {\Large{RTX\_Parse}} ;
+\node[hidden] (rtxtree)  at (2, 0.7)     {\Large{RTX\_Tree}} ;
+\node[hidden] (rtxlink)  at (2, -0.7)    {\Large{RTX\_Link}} ;
+\node[hidden] (rtxtpl)   at (2, -2.1)    {\Large{RTX\_Tpl}} ;
+\node[hidden] (tools)    at (-5, -2.1)   {\Large{Tools}} ;
+\end{tikzpicture}
+\end{center}
+
+\onslide<2>
+\begin{center}
+\begin{tikzpicture}
+\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
+\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
+\node[hidden] (rtxtree)     at (2, 0.7)     {\Large{RTX\_Tree}} ;
+\node[hidden] (rtxlink)     at (2, -0.7)    {\Large{RTX\_Link}} ;
+\node[hidden] (rtxtpl)      at (2, -2.1)    {\Large{RTX\_Tpl}} ;
+\node[hidden] (tools)       at (-5, -2.1)   {\Large{Tools}} ;
+\draw[componentarrow] (cnorm) to (rtxparse) ;
+\end{tikzpicture}
+\end{center}
+
+\onslide<3>
+\begin{center}
+\begin{tikzpicture}
+\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
+\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
+\node[hidden] (rtxlink)     at (2, -0.7)    {\Large{RTX\_Link}} ;
+\node[hidden] (rtxtpl)      at (2, -2.1)    {\Large{RTX\_Tpl}} ;
+\node[hidden] (tools)       at (-5, -2.1)   {\Large{Tools}} ;
+\draw[componentarrow] (cnorm) to (rtxparse) ;
+\draw[componentarrow] (cnorm) to (rtxtree) ;
+\end{tikzpicture}
+\end{center}
+
+\onslide<4>
+\begin{center}
+\begin{tikzpicture}
+\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
+\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
+\node[component] (rtxlink)  at (2, -0.7)    {\textcolor{white}{\Large{RTX\_Link}}} ;
+\node[hidden] (rtxtpl)   at (2, -2.1)       {\Large{RTX\_Tpl}} ;
+\node[hidden] (tools)    at (-5, -2.1)      {\Large{Tools}} ;
+\draw[componentarrow] (cnorm) to (rtxparse) ;
+\draw[componentarrow] (cnorm) to (rtxtree) ;
+\draw[componentarrow] (cnorm) to (rtxlink) ;
+\end{tikzpicture}
+\end{center}
+
+\onslide<5>
+\begin{center}
+\begin{tikzpicture}
+\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
+\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
+\node[component] (rtxlink)  at (2, -0.7)    {\textcolor{white}{\Large{RTX\_Link}}} ;
+\node[component] (rtxtpl)   at (2, -2.1)    {\textcolor{white}{\Large{RTX\_Tpl}}} ;
+\node[hidden] (tools)       at (-5, -2.1)   {\Large{Tools}} ;
+\draw[componentarrow] (cnorm) to (rtxparse) ;
+\draw[componentarrow] (cnorm) to (rtxtree) ;
+\draw[componentarrow] (cnorm) to (rtxlink) ;
+\draw[componentarrow] (cnorm) to (rtxtpl) ;
+\end{tikzpicture}
+\end{center}
+
+\onslide<6>
+\begin{center}
+\begin{tikzpicture}
+\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
+\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
+\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
+\node[component] (rtxlink)  at (2, -0.7)    {\textcolor{white}{\Large{RTX\_Link}}} ;
+\node[component] (rtxtpl)   at (2, -2.1)    {\textcolor{white}{\Large{RTX\_Tpl}}} ;
+\node[component] (tools)    at (-5, -2.1)   {\textcolor{white}{\Large{Tools}}} ;
+\draw[componentarrow] (cnorm) to (rtxparse) ;
+\draw[componentarrow] (cnorm) to (rtxtree) ;
+\draw[componentarrow] (cnorm) to (rtxlink) ;
+\draw[componentarrow] (cnorm) to (rtxtpl) ;
+\end{tikzpicture}
+\end{center}
+
+\end{overprint}
+
 \end{frame}
 
 \begin{frame}{Merci}
 \begin{center}
-\Large{\itshape{Questions ?}}
+\LARGE{\itshape{Questions ?}}
 \end{center}
 \end{frame}
 
