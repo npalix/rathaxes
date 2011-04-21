@@ -1,0 +1,217 @@
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+
+function	cnorm2cOtype<T>(block : node)
+{
+  traceLine("Unkown node Otype:" + T);
+  traceLine("Must be implemented");
+  exit(1);
+}
+
+function	cnorm2cOtype<"">(block : node)
+{
+  traceLine("Empty node Block.otype");
+  traceObject(block);
+  exit(1);
+}
+
+// FONCTIONS POUR LES EXPRESSIONS
+
+  // block tout seul
+function	cnorm2cOtype<"block">(block : node)
+{
+  return cnorm2cCompoundStmt(block);
+}
+
+// ? :
+function	cnorm2cOtype<"ternary">(block : node)
+{
+  return cnorm2cExprStmt(block.condition) + block.operator 
+    + cnorm2cExprStmt(block.then) + ':' + cnorm2cExprStmt(block.else);
+}
+
+// tous les operateurs binaires :)
+function	cnorm2cOtype<"binary">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + " " + block.operator + " " + cnorm2cExprStmt(block.right);
+}
+
+// -> et .
+function	cnorm2cOtype<"likebinary">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + block.operator + cnorm2cExprStmt(block.right);
+}
+
+// tous les operateurs unaires
+function	cnorm2cOtype<"unary">(block : node)
+{
+  return block.operator + cnorm2cExprStmt(block.left);
+}
+
+// postfix operator
+function	cnorm2cOtype<"post">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + block.operator;
+}
+
+// (...)
+function	cnorm2cOtype<"priority">(block : node)
+{
+  return "(" + cnorm2cExprStmt(block.expr) + ")";
+}
+
+// ({...})
+function	cnorm2cOtype<"compoundstmt">(block : node)
+{
+  return "(" + cnorm2cExprStmt(block.expr) + ")";
+}
+
+// cast
+function	cnorm2cOtype<"cast">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + cnorm2cExprStmt(block.right);
+}
+
+// 'a' ... 'z'
+function	cnorm2cOtype<"ranged">(block : node)
+{
+  return cnorm2cExprStmt(block.from) + " ... " + cnorm2cExprStmt(block.to);
+}
+
+// compound literal comme expression
+function	cnorm2cOtype<"compound">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + cnorm2cInit_recurs(block);
+}
+
+// (myType)
+function	cnorm2cOtype<"typecast">(block : node)
+{
+  return "(" + cnorm2cInfoAndSign(block.ctype) + block.ctype.specifier + " " + 
+    cnorm2cListEnumUnionStruct(block.ctype) + " " 
+    + block.ctype.identifier
+    + cnorm2cPointer(block.ctype)    
+    + cnorm2cArray(block.ctype)
+    + cnorm2cName(block)
+    + cnorm2cListParameters(block)
+    + ")";
+}
+
+// builtin
+function	cnorm2cOtype<"offsetof">(block : node)
+{
+  return "__builtin_offsetof(" + cnorm2cCtype<block.left.ctype.type>(block.left.ctype)
+    + ", " + cnorm2cExprStmt(block.right) + ")";
+}
+
+// appel de fonction
+function	cnorm2cOtype<"call">(block : node)
+{
+  local sContent = cnorm2cExprStmt(block.left) + "(";
+  foreach item in block.list
+    {
+      sContent += cnorm2cExprStmt(item);
+      if (!last(item))
+	sContent += ", ";
+    }
+  sContent += ")";
+  return sContent;
+}
+
+// []
+function	cnorm2cOtype<"index">(block : node)
+{
+  return cnorm2cExprStmt(block.left) + "[" + cnorm2cExprStmt(block.right[0]) + "]";//
+}
+
+// literaux divers
+function	cnorm2cOtype<"terminal">(block : node)
+{
+  local sSubString = block.value;
+  sSubString = replaceString("\n", "\\n", sSubString);
+  sSubString = replaceString("\t", "\\t", sSubString);      
+  sSubString = replaceString("\r", "\\r", sSubString);
+  return sSubString;
+}
+
+// les expressions assembleurs GCC
+function	cnorm2cOtype<"asmexpr">(block : node)
+{
+  return block.asm;
+}
+
+// FONCTIONS POUR LES STATEMENTS
+
+// label, case, default
+function	cnorm2cOtype<"label">(block : node)
+{
+  local sContent = block.label;
+  if (existVariable(block.case))
+    {	sContent += " " + cnorm2cExprStmt(block.case);}
+  sContent += " :" + _newLine();
+  if (existVariable(block.block))
+    {	sContent += cnorm2cCompoundStmt(block);}
+  return sContent;
+}
+
+// goto, continue, return, break
+function	cnorm2cOtype<"pseudoexpression">(block : node)
+{
+  local list;
+  pushItem list = block.type;
+  if (existVariable(block.block))
+    {pushItem list = cnorm2cExprStmt(block.block);}
+  return _joinString(list, " ");
+}
+
+// if 
+function	cnorm2cOtype<"if">(block : node)
+{
+  local sContent = "if (" 
+    + cnorm2cExprStmt(block.condition) + ")" + _newLine()
+    + cnorm2cCompoundStmt(block.then);
+  if (existVariable(block.else))
+    {sContent += "else" + _newLine() + cnorm2cCompoundStmt(block.else);}
+  return sContent;
+}
+
+// switch
+function	cnorm2cOtype<"switch">(block : node)
+{
+  return "switch (" + cnorm2cExprStmt(block.condition) + ")" + _newLine()
+    + cnorm2cCompoundStmt(block);
+}
+
+// while
+function	cnorm2cOtype<"while">(block : node)
+{
+  return "while (" + cnorm2cExprStmt(block.condition) + ")" + _newLine()
+    + cnorm2cCompoundStmt(block.stmt);
+}
+
+// do {} while
+function	cnorm2cOtype<"do">(block : node)
+{
+  return "do" + _newLine() + cnorm2cCompoundStmt(block.stmt)
+    + "while (" + cnorm2cExprStmt(block.condition) + ");" + _newLine();
+}
+
+// for (;;);
+function	cnorm2cOtype<"for">(block : node)
+{
+  local sContent = "for (";
+  if (existVariable(block.init) && existVariable(block.init[0]))
+    { sContent += cnorm2cForStmt(block.init[0]);}
+  else
+    sContent += ";";
+  if (existVariable(block.condition))
+    { sContent += cnorm2cExprStmt(block.condition);}
+  sContent += "; ";
+  if (existVariable(block.increment))
+    { sContent += cnorm2cExprStmt(block.increment);}
+  sContent += ")" + _newLine() + cnorm2cCompoundStmt(block.stmt);
+  return sContent;
+}

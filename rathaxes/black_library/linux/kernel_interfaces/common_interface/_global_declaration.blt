@@ -1,0 +1,21 @@
+<%
+/*
+**      _global_declaration.blt in black_library/linux/user_interface
+**      for Rathaxes project
+**      made by StuFF
+*/
+local   sDriverName = this.name;
+%>
+
+ADVICE global_declaration PART_OF kernel_interfaces
+{
+    struct file_operations @sDriverName@_fops;
+    struct @sDriverName@_s
+    {
+        char *device_name;
+        int count;
+        struct cdev cdev;
+    };
+
+    struct @sDriverName@_s @sDriverName@_dev;
+};

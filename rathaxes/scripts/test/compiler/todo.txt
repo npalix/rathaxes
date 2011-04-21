@@ -1,0 +1,69 @@
+Tests Backend :
+ * Derouler la boucle de foreach du codeworker généré.                  <= DONE
+ * Fouiller du côté du link afin de :
+   * Designer une API pour rtxLink (registering, retrieving, etc)       <= DONE
+   * Faker un cache pour rtxLink                                        <= DONE
+ * Tester l'evaluation de templates qui s'appellent pour :
+   * Resoudre les templates imbriqués avec les fonctions inject etc...  <= DONE
+   * Commencer à tisser les bouts d'ast entre eux
+
+A rajouter :
+ * Gestion multi-placeholder (X en 1)
+ * Iteration clean pour le rtxMeta (builc_compile_tree a rename)
+ * Introspection du c_tree avant l'inject pour former le resolverValues "local".
+
+A reflechir :
+ * Comment tisser des bouts d'ast (avec l'histoire de block/root node etc...)
+ * Commencer a regarder pour le Middle-End :
+   * Parsing
+   * Type checking
+   * Validation
+   * Registering
+ * Ajouter le prototype checking
+
+
+
+
+ MANAGEMENT OF THE AST WEAVING :
+
+ Currently three main cases of placeHolders :
+
+ assimilated to __decl__::ctype::identifier -> Type declaration
+    -> Must correctly replace the identifier and fill the type reference table.
+ assimilated to __stmt__(__expr__)::left/right::id -> assignation of a value
+    -> Must simply replace the identifier by the right value.
+ assimilated to __stmt__(__expr__)::id -> simple expression
+    -> Must update the type reference table of the calling tpl with the called's one.
+    -> Must weave ASTs correctly and structurally correct.
+
+
+
+
+
+
+
+ USE CASES AND COMPILATION STEPS :
+
+1) Rathaxes maintainer (.rti <=> Interfaces)
+  * Parsing
+  * Type and dependencies checking
+  * Registration
+
+2) System developer (.blt <=> Templates)
+  * Parsing
+  * Prototype Typechecking (prototypes vs interfaces)
+  * Placeholders Extraction (every "${ ... }")
+  * Placeholders Parsing
+  * C code introspection (building the "local" template variable)
+  * Body Typechecking (validity of the template variables use)
+  * Registration
+
+3) Driver developer (.rtx <=> Drivers)
+  * Parsing
+  * Dynamic Parsing (with interfaces)
+  * Template selection (with Configuration)
+  * Template instanciation and resolution (recursive)
+     * Building "ResolverValues" (mapping for the template variables)
+     * Resolve Placeholders
+     * Weave ASTs for recursive cases ("link" and "each" keywords)
+  * Generation

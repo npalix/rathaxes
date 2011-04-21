@@ -1,0 +1,64 @@
+/*
+**	rdsl_declaration_sequences_interfaces_common.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** -----------------------------------------------------------------------------
+*/
+
+#include "rdsl_declaration_sequences_interfaces_common.cwf"
+
+sequence_interface_function ( scopeFunctionsBlock : node ) ::=
+	#pushItem(this.functions)
+	#readIdentifier:sFunctionName
+	=>
+	{
+		checkSequenceInterfaceFunction(scopeFunctionsBlock, sFunctionName);
+		insert this.functions#back.name = sFunctionName;
+	}
+	sequence_interface_function_parameters(this.functions#back.parameters)
+	sequence_interface_function_block(this.functions#back)
+	';'
+	=>
+	{
+		ref scopeFunctionsBlock[sFunctionName] = this.functions#back;
+	}
+;
+
+sequence_interface_function_parameters ( parameters : node ) ::=
+	'('
+	sequence_interface_function_parameter_definition(parameters)
+	[
+		',' sequence_interface_function_parameter_definition(parameters)
+	]*
+	')'
+;
+
+sequence_interface_function_parameter_definition ( lParameters : node ) ::=
+	#pushItem(lParameters)
+	rathaxes_all_types:sType #readIdentifier:sParameterName
+	=>
+	{
+		checkSequenceInterfaceParameter(lParameters, sParameterName, sType);
+		insert lParameters#back.rtype = sType;
+		insert lParameters#back.name = sParameterName;
+
+		if (sType == "BUFFER")
+		{
+			buildBufferFieldsNames(lParameters#back);
+		}
+		else if (sType == "CONTEXT")
+		{
+			insert lParameters#parent.rgl_pctx;
+			ref lParameters#parent.rgl_pctx = project.driver;
+			removeLastElement(lParameters);
+		}
+	}
+;
+
+sequence_interface_function_block ( sequenceInterfaceFunction : node ) ::=
+	'{'
+		[
+			rdsl_local_declaration(sequenceInterfaceFunction.locals)
+			| rdsl_single_statement(sequenceInterfaceFunction.block) ]*
+	'}'
+;

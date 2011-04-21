@@ -1,0 +1,37 @@
+<%
+/*
+**  _log.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+** -----------------------------------------------------------------------------
+** INFORMATION
+** nSelf node content :
+**
+**  rtype = "algorithms"
+**    algorithm = "log"
+**      first_parameter
+**        |--+
+**           ctype
+**              |--+
+**                identifier = "char*"
+**                sign = "signed"
+**                value = "my_rs232 [read]"
+*/
+localref nSelf = project.references.currentContext;
+%>
+
+ADVICE log PART_OF algorithms
+{
+    <%
+        if (nSelf.rtype == "algorithms")
+        {
+            if (nSelf.first_parameter.ctype.identifier == "char*")
+            {
+                %>
+                KdPrint(("%s", "@nSelf.first_parameter.ctype.value@"));
+                <%
+            }
+        }
+    %>
+};
