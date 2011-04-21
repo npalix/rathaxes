@@ -20,7 +20,7 @@ Tests Backend :
         -> insert chaque stmt in-place du placeholder original          <= DONE
        * integrer les definitions de fonctions dans le scope global     <= DONE
 
- * Fix Iteration pour le rtxMeta (build_compile_tree a rename)          <= TODO
+ * Fix Iteration pour le rtxMeta (build_compile_tree a rename)          <= DONE
  
  * Gestion multi-placeholder (X en 1)                                   <= TODO 
 
