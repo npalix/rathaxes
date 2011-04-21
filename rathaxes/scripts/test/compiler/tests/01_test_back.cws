@@ -26,11 +26,9 @@ generateString({
                     // effet de bord de l'aspect "int par defaut"
 					${ctx.name} = 42;
 					${TOTO} += 3;
+                    ${link ctx to test(Context ctx) decl};
 					return 0;
 				}
-
-                ${link ctx to test(Context ctx) decl};
-
 			}
 
             template test(Context ctx) decl
@@ -40,6 +38,7 @@ generateString({
                     int ret = strcmp("open", param);
                     return ret;
                 }
+                test_${ctx.name}();
             }
 		}
 
