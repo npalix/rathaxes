@@ -8,12 +8,16 @@ Tests Backend :
    * Commencer à tisser les bouts d'ast entre eux
 
 A rajouter :
+ * Ameliorer le tissage des AST
+   * En plus de stocker les ref_placeholders dans le tplwalk, stocker :
+     * reference du block
+     * index du block
+   * Permet de mieux weave par la suite.
  * Gestion multi-placeholder (X en 1)
  * Iteration clean pour le rtxMeta (builc_compile_tree a rename)
  * Introspection du c_tree avant l'inject pour former le resolverValues "local".
 
 A reflechir :
- * Comment tisser des bouts d'ast (avec l'histoire de block/root node etc...)
  * Commencer a regarder pour le Middle-End :
    * Parsing
    * Type checking
