@@ -8,14 +8,33 @@ Tests Backend :
    * Commencer à tisser les bouts d'ast entre eux
 
 A rajouter :
+ * Gestion multi-placeholder (X en 1)
+ * Iteration clean pour le rtxMeta (builc_compile_tree a rename)
  * Introspection du c_tree avant l'inject pour former le resolverValues "local".
 
 A reflechir :
- * Comment tisser des bouts d'ast (avec l'histoire de block node etc...)
- * Commencer a regarder pour le Middle-End
+ * Comment tisser des bouts d'ast (avec l'histoire de block/root node etc...)
+ * Commencer a regarder pour le Middle-End :
+   * Parsing
+   * Type checking
+   * Validation
+   * Registering
+ * Ajouter le prototype checking
 
 
 
+
+ MANAGEMENT OF THE AST WEAVING :
+
+ Currently three main cases of placeHolders :
+
+ assimilated to __decl__::ctype::identifier -> Type declaration
+    -> Must correctly replace the identifier and fill the type reference table.
+ assimilated to __stmt__(__expr__)::left/right::id -> assignation of a value
+    -> Must simply replace the identifier by the right value.
+ assimilated to __stmt__(__expr__)::id -> simple expression
+    -> Must update the type reference table of the calling tpl with the called's one.
+    -> Must weave ASTs correctly and structurally correct.
 
 
 
