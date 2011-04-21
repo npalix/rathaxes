@@ -77,20 +77,13 @@ saveProject("__02_rtx_compil__.tree", source);
 
 
 
+// Walk through the AST in order to parse each placeholder
+// and to save their AST into the .compile node.
 #include "rtxTpl/rtxMeta.inc.cws"
-// Now, we must parse each template_expr of the compile node
-// In order to build AST parts
-foreach item in source.block["0"].body.block["0"].body.compile
+foreach item in source.block
 {
-    traceLine("Building Node in first template for item for key "+item.key());
-    build_compile_tree(item);
+    rtxMeta_walk<item.type>(item);
 }
-foreach item in source.block["0"].body.block["1"].body.compile
-{
-    traceLine("Building Node in second template for item for key "+item.key());
-    build_compile_tree(item);
-}
-
 saveProject("__03_rtx_compil_tplnode__.tree", source);
 
 

@@ -5,7 +5,7 @@
 function rtxMeta_version()
 {return "1.0";}
 
-function    build_compile_tree(compile : node)
+function    rtxMeta_parsePlaceHolder(compile : node)
 {
     local treepart;
     parseStringAsBNF({
@@ -120,6 +120,38 @@ function    build_compile_tree(compile : node)
     traceLine("Just built node for template_expr : "+compile.template_expr);
     insert compile.node;
     setall compile.node = treepart;
+}
+
+
+/*
+ *
+ * The goal of this template function is to walk through the AST in order
+ * to find and identify each template's ".compile" node. For each one,
+ * each of their placeHolders is parsed and a placeHolder node is built.
+ *
+ */
+declare function rtxMeta_walk<T>(local_node : node);
+
+function rtxMeta_walk<T>(local_node : node)
+{
+    // Then we are on a type of node that doesnt matter to us
+    // but that does not need any error...
+}
+
+function rtxMeta_walk<"__rtx_with__">(local_node : node)
+{
+    foreach item in local_node.body.block
+    {
+        rtxMeta_walk<item.type>(item);
+    }
+}
+
+function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
+{
+    foreach placeHolder in local_node.body.compile
+    {
+        rtxMeta_parsePlaceHolder(placeHolder);
+    }
 }
 
 #end
