@@ -12,11 +12,6 @@ FOREACH(I ${RATHAXES_TEX_FILE})
                       )
 ENDFOREACH(I ${RATHAXES_TEX_FILE})
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/fr_specification.pdf
-        DESTINATION share/doc/rathaxes/
-        RENAME language_specification_fr.pdf
-)
-
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/backend_documentation_en.pdf
         DESTINATION share/doc/rathaxes/language/
 )
