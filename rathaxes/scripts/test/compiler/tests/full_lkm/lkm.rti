@@ -1,0 +1,110 @@
+interface Algorithms
+{
+    builtin  type       string;
+    builtin  type       number;
+    builtin  type       numser;
+    builtin  type       register[ register_field [ number ] ];
+    provided type       Buffer;
+
+    provided sequence   log(string)
+    {
+        provided chunk  DEFINITION;
+        provided chunk  CALL;
+    }
+}
+
+interface LKM
+{
+    builtin  type               Device;
+
+    provided pointcut           INCLUDE_DEPENDENCIES;
+    provided pointcut           GLOBAL_DATA_DECLARATION;
+    provided pointcut           GLOBAL_CODE_DEFINITION;
+    provided pointcut           BASE_LKM_CODE_DEFINITION;
+
+    provided sequence           load()
+    {
+        provided pointcut       INIT_LKM_FPTRS;
+        provided chunk          LKM_BASE_CODE_DEFINITION;
+    }
+
+    provided sequence           unload()
+    {
+    }
+
+    required variable string    OS;
+    optional variable numser    version;
+    optional variable numser    arch;
+}
+
+interface User : LKM
+{
+    provided type               Context;
+
+
+    required sequence           open(Context)
+    {
+        provided chunk          DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+    }
+
+    required sequence           close(Context)
+    {
+        provided chunk          DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+    }
+    
+    required sequence           read(Context, Buffer)
+    {
+        provided chunk          DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+    }
+    
+    required sequence           write(Context, Buffer)
+    {
+        provided chunk          DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+    }
+    
+    required sequence           on_plug(Context)
+    {
+        provided chunk          DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+    }
+}
+
+with User
+values OS=Linux
+{
+    extend interface
+    {
+        required variable string    type;
+        required variable number    MAJOR;
+        optional variable number    minor;
+    }
+}
+
+with User
+values OS=OpenBSD
+{
+    extend interface
+    {
+        required variable string    type;
+        required variable number    MAJOR;
+        optional variable number    minor;
+    }
+}
+
+with User
+values OS=Windows
+{
+    extend interface
+    {
+        required variable numser    UUID;
+        required variable string    device_name;
+        required variable string    device_guid;
+        required variable string    class_name;
+        required variable string    class_guid;
+        required variable string    dispatch_mode;
+    }
+}
