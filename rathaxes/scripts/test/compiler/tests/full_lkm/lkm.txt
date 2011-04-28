@@ -1,0 +1,44 @@
+
+
+Au sujet des pointcuts INIT_LKM_FPTR :
+
+Doit-on vraiment les inclure dans le load() ?
+En effet, si jamais le RTX n'implemente pas User::, alors on n'a aucun des fptrs ?
+Il faudrait que ce soit NULL par defaut.
+
+
+Ainsi donc, au sujet des defauts : les lier au chunk ou au pointcut ? Je commence a pencher pour le pointcut.
+ex :
+
+struct kern_module lkm_mod =
+{
+    .open = ${pointcut User::open(Context) INIT_LKM_FPTRS default NULL },
+    .close = ${pointcut User::close(Context) INIT_LKM_FPTRS default NULL },
+    .read = ${pointcut User::read(Context, Buffer) INIT_LKM_FPTRS default NULL },
+    .write = ${pointcut User::write(Context, Buffer) INIT_LKM_FPTRS default NULL },
+    .ioctl = ${pointcut User::ioctl(Context) INIT_LKM_FPTRS default NULL },
+    .truc_annexe_1 = ${pointcut User::??? INIT_LKM_FPTRS default NULL },
+    .plop = ${pointcut User::??? INIT_LKM_FPTRS default NULL }
+};
+Ainsi, on peut definir un pointcut en permettant de ne meme pas implementer un chunk associé. (genre on peut avoir un LKM sans User...)
+
+
+
+
+
+Gestion du point d'entrée de la compilation RTX :
+implicite ? (creation init/etc de maniere implicite)
+explicite ? (à coder plus ou moins partiellement dans le FRONT ?)
+Quel flux d'execution pour le compilo ?
+Je supposerais un depart depuis l'interface LKM
+
+
+
+
+Insertion de l'algo FRONT dans le code généré :
+Insertion AS-IS  dans un cutpoint par defaut avant resolution ? Ca pourrait etre une idee...
+
+
+
+Specification du Context :
+Uniquement le Context de la fonction/du code généré ? (dev_t par exemple sous unix ?)
