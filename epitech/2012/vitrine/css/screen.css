@@ -126,6 +126,11 @@ ul.posts {
     overflow: hidden;
   }
 
+    #lift {
+      font-size: 120%;
+      text-decoration: none;
+    }
+
     .site .footer .contact {
       float: left;
       margin-right: 3em;
