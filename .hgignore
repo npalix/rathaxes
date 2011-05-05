@@ -1,0 +1,9 @@
+Session.vim$
+\.sw.$
+\.DS_Store$
+~$
+build/.*
+\.rtree$
+maintainers/cnorm/.*
+epitech/2012/vitrine/_drafts/.*
+epitech/2012/vitrine/_site/.*

@@ -1,0 +1,236 @@
+#if !existFunction(rtxNode_version)
+
+function rtxNode_version()
+{return "1.0";}
+
+
+function	rtxNode(local_node : node)
+{
+    cnormNode(local_node);
+    local_node.type = "__rtx_node__";
+    return true;
+}
+
+function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl__";
+    insert local_node.tpl_type = "__decl__";
+    // pour l'instant on met le proto comme string, mais faudra le compil aussi
+    insert local_node.prototype = input;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body, true);
+    insert local_node.body.compile;
+    insert local_node.body.compile.nbplaceholder = 0;
+    ref out_ref_block = local_node.body;
+    return true;
+}
+
+function rtxNodeWith(local_node         : node,
+                     out_ref_var_map    : reference,
+                     out_ref_body       : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_with__";
+    insert local_node.var_map;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_var_map = local_node.var_map;
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+
+
+/*
+ *
+ * The following function are functions made to build rathaxes-specific
+ * nodes to be used for the template compilation and instanciation.
+ *
+ * Therefore, it does not have any need to depend on the cnormNode functions
+ *
+ */
+
+function rtxNodePlaceHolder(local_node   : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_placeHolder__";
+
+    // The potential concatenation prefix
+    insert local_node.prefix;
+
+    // The content of the placeHolder (between "${" and '}')
+    insert local_node.body;
+
+    // The potential concatenation sufix
+    insert local_node.sufix;
+
+    return true;
+}
+
+function rtxNodeIdentifier(local_node : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_id__";
+
+    insert local_node.name;
+}
+
+function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
+{
+    pushItem local_node.identifiers;
+
+    local theIdentifier;
+    ref theIdentifier = local_node.identifiers#back;
+    rtxNodeIdentifier(theIdentifier);
+        
+    theIdentifier.name = theField;
+
+    return true;
+}
+
+function rtxNodeVar(local_node   : node,
+                    theVar       : value)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_var__";
+
+    // A list of chained identifiers constituting the real field identifier
+    insert local_node.identifiers;
+    // Add the var as the first identifier
+    rtxNodeVar_AddIdentifier(local_node, theVar);
+
+    return true;
+}
+
+function rtxNodeList_AddNode(local_node : node,
+                             theVar     : node)
+{
+    pushItem local_node.list;
+    setall local_node.list#back = theVar;
+
+    return true;
+}
+
+function rtxNodeVarList(local_node : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_varlist__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+function rtxNodeLinkType(local_node : node,
+                         content    : value)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_link_type__";
+
+    insert local_node.body = content;
+
+    return true;
+}
+
+function rtxNodeLink(local_node     : node,
+                     tpl_vars       : node,
+                     linked         : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_link__";
+
+    // Add the list of link variables
+    insert local_node.vars;
+    setall local_node.vars = tpl_vars;
+
+    // For now, let's insert the prototype as-is
+    // but it will need to be compiled later...
+    insert local_node.linkedType;
+    setall local_node.linkedType = linked;
+
+    return true;
+}
+
+function rtxNodeEach(local_node     : node,
+                     tpl_vars       : node,
+                     item_name      : value,
+                     linked         : value)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_tpl_each__";
+
+    // Add the list of link variables
+    insert local_node.vars;
+    setall local_node.vars = tpl_vars;
+
+    // Add the referent item name (should be a simple identifier)
+    insert local_node.alias;
+    local_node.alias = item_name;
+
+    // For now, let's insert the prototype as-is
+    // but it will need to be compiled later...
+    insert local_node.linkedType;
+    local_node.linkedType = linked;
+
+    return true;
+}
+
+/*
+ *
+ * The following functions are used to build the variable hashtable called
+ * ResolverValues (ResVal for short) transmitted to each inject function, from
+ * the current context and the variables list
+ *
+ * The module rtxTpl () actually creates it and fills it in order to give
+ * it to the instanceTpl<T> function, that will match the template
+ * variables used in the template's code with the hashes in this hashtable.
+ *
+ */
+function rtxNodeResVal_GetField(resolver_values : node,
+                                idList          : node,
+                                out_ref         : reference)
+{
+    local listIt;
+    if (createIterator(listIt, idList) == false)
+        error("[ERROR] Could not iterate on the argument list !");
+
+    localref path = resolver_values;
+    do
+    {
+        if (!findElement(listIt.name, path))
+            error("Element ->" + listIt.name
+                  + "<- could not be found in the ResolverValues : "
+                  + toString(resolver_values,true));
+        ref path = path[listIt.name];
+    } while next(listIt);
+
+    // Here we could do some checks on whether the node is a leaf or not.
+    if (path.type == "__rtx_resval_node__")
+        error("BAD ACCESS : Mapped node is not a leaf : " + toString(path, true));
+
+    ref out_ref = path.body;
+
+    return true;
+}
+
+// Build a node identified as a ResolverValue and
+// set it as a Node (not a leaf)
+function rtxNodeResVal(local_node : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_resval_node__";
+}
+
+// Build a node identified as a ResolverValue and
+// Abstracts the fact that it is a collection or a value.
+function rtxNodeResValLeaf(local_node : node, theValue : value)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_resval_leaf__";
+
+    insert local_node.body;
+    local_node.body = theValue;
+}
+
+#end
