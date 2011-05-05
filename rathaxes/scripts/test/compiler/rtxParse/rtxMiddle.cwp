@@ -1,0 +1,44 @@
+
+// TODO: move from rtxBack the root of grammar in a dispatcher
+
+rtx_stmt<"interface">(theBlock : node) ::=
+	#readIdentifier [inherit]?
+	'{'
+		[rtx_itf_declaration]*
+	'}'
+;
+
+inherit ::= ':' #readIdentifier [',' #readIdentifier]*
+;
+
+rtx_itf_qualifier ::= "provided" | "required" | "optional"
+;
+
+rtx_itf_type ::= "sequence" | "variable" | "type" | "builtintype"
+;
+
+rtx_itf_declaration ::=
+	rtx_itf_qualifier rtx_itf_type:sStmt rtx_itf_stmt<sStmt> ';'
+;
+
+rtx_type_list ::= #readIdentifier:sType ';'
+;
+
+rtx_itf_stmt<"type"> ::= #readIdentifier:sType ['{' [rtx_type_list]* '}']?
+;
+
+rtx_itf_stmt<"builtintype"> ::= #readIdentifier:sType
+;
+
+rtx_itf_stmt<"variable"> ::= #readIdentifier:sType #readIdentifier:sName
+;
+
+rtx_seq_param ::= #readIdentifier:sType [#readIdentifier:sName]?
+;
+
+rtx_seq_parameter ::= '(' rtx_seq_param [',' rtx_seq_param]* ')'
+;
+
+rtx_itf_stmt<"sequence">::= // sequence
+	#readIdentifier:sName rtx_seq_parameter
+;
