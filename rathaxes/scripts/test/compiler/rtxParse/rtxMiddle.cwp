@@ -2,10 +2,16 @@
 // TODO: move from rtxBack the root of grammar in a dispatcher
 
 rtx_stmt<"interface">(theBlock : node) ::=
-	#readIdentifier [inherit]?
-	'{'
-		[rtx_itf_declaration]*
-	'}'
+    #pushItem(theBlock.block)
+    => local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    => local body;
+
+    #readIdentifier [inherit]?
+    #check(rtxNodeItf(lastNode, body))
+    '{'
+    	[rtx_itf_declaration]*
+    '}'
 ;
 
 inherit ::= ':' #readIdentifier [',' #readIdentifier]*
