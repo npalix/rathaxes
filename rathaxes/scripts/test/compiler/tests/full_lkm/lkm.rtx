@@ -1,0 +1,74 @@
+device rs232
+{
+//  register(r) bit[8] rcv_buff like(........) @(ioport + 0);
+//  
+//  register(w) bit[8] snd_buff like(........) @(ioport + 0);
+//  
+//  register(rw) bit[8] ier like(**......) @(resources::ioport + 1)
+//  {
+//  	[0] AS data_available;
+//  	[1] AS transmitter_empty;
+//  	[2] AS line_status_change;
+//  	[3] AS modem_status_change;
+//  	[4] AS sleep_mode;
+//  	[5] AS low_power_mode;
+//  };
+}
+
+
+driver
+{
+    devices = rs232;
+   
+    User::open(Context ctx)
+    {
+        log("open called on device rs232");
+    }
+
+    User::close(Context ctx)
+    {
+        log("close called on device rs232");
+    }
+
+    User::write(Context ctx, Buffer buf)
+    {
+        log("write called on device rs232 with buf");
+    }
+
+    User::read(Context ctx, Buffer buf)
+    {
+        log("read called on device rs232");
+    }
+}
+
+configuration
+{
+	arch = x86;
+
+    User::OS = Linux
+    {
+        User::version = 2.6.24;
+        User::MAJOR = 1;
+        User::minor = 03;
+        User::type = char;
+    }
+
+    User::OS = OpenBSD
+    {
+        User::version = 4.8;
+        User::MAJOR = -1;
+        User::minor = 03;
+        User::type = char;
+    }
+
+    User::OS = Windows
+    {
+        User::version = XP;
+        User::UUID = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
+        User::device_name = GUID_DEVINTERFACE_RATHAXES_SERIAL;
+        User::device_guid = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
+        User::class_name = GUID_DEVCLASS_RATHAXES;
+        User::class_guid = "E20808D9-5E08-4a2a-80A1-84DA0B2180AB";
+        User::dispatch_mode = WdfIoQueueDispatchParallel;
+    }
+}

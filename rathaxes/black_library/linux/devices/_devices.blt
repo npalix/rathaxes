@@ -1,0 +1,19 @@
+<%
+/*
+**      _devices.blt in black_library/linux/
+**      for Rathaxes project
+**      made by Christophe Fajardo Y Romera
+*/
+%>
+
+ADVICE device PART_OF devices
+{
+    // Declaration of global buffers and variables.
+    JOINPOINT global_declaration IN devices.global_declaration;
+
+    // Declaration of device's registers.
+    JOINPOINT register IN registers.register;
+
+    // Definition of device's properties.
+    JOINPOINT properties IN devices.properties;
+};

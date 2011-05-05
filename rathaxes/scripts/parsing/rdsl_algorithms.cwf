@@ -1,0 +1,22 @@
+/*
+**	rdsl_algorithms.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** ---------------------------------------------------------------------------
+*/
+
+declare function setAlgoritmLocalDeclaration(nAlgorithm : node);
+
+function setAlgoritmLocalDeclaration(nAlgorithm : node)
+{
+    if (nAlgorithm.first_parameter.rtype == "register")
+    {
+        pushItem nAlgorithm.locals;
+        ref nAlgorithm.locals#back = nAlgorithm.first_parameter.register;
+    }
+    if (nAlgorithm.second_parameter.rtype == "register")
+    {
+        pushItem nAlgorithm.locals;
+        ref nAlgorithm.locals#back = nAlgorithm.second_parameter.register;
+    }
+}
