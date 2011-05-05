@@ -1,0 +1,30 @@
+#include "cnorm.cwp"
+
+/* root of grammar */
+#overload
+translation_unit ::=
+    => traceLine("PARSE!");
+    #try
+        #ignore
+        #check(cnormNodeRoot(this))
+        [
+            rtx_declaration(this)
+        ]*
+        #continue(sError, "bad token at end of file, unexpected :'"
+                  + peekChar()+"'")
+        #empty
+    #catch (sError)
+        | #check(cnormLogError(this, sError))
+;
+
+// root of rathaxes
+rtx_declaration(theBlock : node) ::=
+    #readIdentifier:sStmt rtx_stmt<sStmt>(theBlock)
+;
+
+rtx_stmt<sKeyword>(theBlock : node) ::= 
+    => error("Unknown statement :" + sKeyword);
+;
+
+#include "rtxMiddle.cwp"
+#include "rtxBack.cwp"

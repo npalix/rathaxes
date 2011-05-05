@@ -29,7 +29,7 @@ generateString({
 					return 0;
 				}
 
-                ${link ctx to test(Context ctx) decl};
+		                ${link ctx to test(Context ctx) decl};
 
 			}
 
@@ -57,7 +57,7 @@ traceLine("input:\n" + input);
 
 local source;
 cnormDialect<"__std__">(source);
-parseStringAsBNF("rtxParse/rtxBack.cwp", source, input);
+parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // enleve dialect
 removeVariable(source.dialect);
 
