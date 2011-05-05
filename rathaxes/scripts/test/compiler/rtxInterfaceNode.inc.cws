@@ -1,0 +1,13 @@
+#include "rtxNode.inc.cws"
+
+function        rtxNodeItf(local_node   : node,
+                           out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    /* Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    return true;
+}
