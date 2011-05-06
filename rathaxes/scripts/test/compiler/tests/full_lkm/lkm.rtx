@@ -1,5 +1,9 @@
+
+
 device rs232
+use LKM, User, Algorithms
 {
+// TODO
 //  register(r) bit[8] rcv_buff like(........) @(ioport + 0);
 //  
 //  register(w) bit[8] snd_buff like(........) @(ioport + 0);
@@ -13,21 +17,17 @@ device rs232
 //  	[4] AS sleep_mode;
 //  	[5] AS low_power_mode;
 //  };
-}
-
-
-driver
-{
-    devices = rs232;
    
-    User::open(Context ctx)
+   // here we use short name of sequences...
+    open(Context ctx)
     {
         log("open called on device rs232");
     }
 
+    // here we use long name of sequences....
     User::close(Context ctx)
     {
-        log("close called on device rs232");
+        Algorithms::log("close called on device rs232");
     }
 
     User::write(Context ctx, Buffer buf)
@@ -43,32 +43,35 @@ driver
 
 configuration
 {
-	arch = x86;
+	arch = x86;//???
 
-    User::OS = Linux
+	// link between LKM and devices...
+	LKM::Devices = {rs232};
+
+    LKM::OS = Linux
     {
-        User::version = 2.6.24;
-        User::MAJOR = 1;
-        User::minor = 03;
-        User::type = char;
+        LKM::version = 2.6.24;
+        LKM::MAJOR = 1;
+        LKM::minor = 03;
+        LKM::type = char;
     }
 
-    User::OS = OpenBSD
+    LKM::OS = OpenBSD
     {
-        User::version = 4.8;
-        User::MAJOR = -1;
-        User::minor = 03;
-        User::type = char;
+        LKM::version = 4.8;
+        LKM::MAJOR = -1;
+        LKM::minor = 03;
+        LKM::type = char;
     }
 
-    User::OS = Windows
+    LKM::OS = Windows
     {
-        User::version = XP;
-        User::UUID = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
-        User::device_name = GUID_DEVINTERFACE_RATHAXES_SERIAL;
-        User::device_guid = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
-        User::class_name = GUID_DEVCLASS_RATHAXES;
-        User::class_guid = "E20808D9-5E08-4a2a-80A1-84DA0B2180AB";
-        User::dispatch_mode = WdfIoQueueDispatchParallel;
+        LKM::version = XP;
+        LKM::UUID = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
+        LKM::device_name = GUID_DEVINTERFACE_RATHAXES_SERIAL;
+        LKM::device_guid = "1ADB9D41-6FE5-432e-A5FF-9B6911A150A4";
+        LKM::class_name = GUID_DEVCLASS_RATHAXES;
+        LKM::class_guid = "E20808D9-5E08-4a2a-80A1-84DA0B2180AB";
+        LKM::dispatch_mode = WdfIoQueueDispatchParallel;
     }
 }
