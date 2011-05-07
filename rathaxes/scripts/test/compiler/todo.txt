@@ -21,6 +21,13 @@ Tests Backend :
        * integrer les definitions de fonctions dans le scope global     <= DONE
 
  * Fix Iteration pour le rtxMeta (build_compile_tree a rename)          <= DONE
+
+ * Ajouter le parsing des éléments de programmation aspectuelle dans    <= TODO
+   le backend.
+
+ * Build une structure commune pour tous les prototypes de templates    <= TODO
+
+ * Ajouter le Type-checking vs interfaces une fois le middle-end ok     <= TODO
  
  * Gestion multi-placeholder (X en 1)                                   <= TODO 
 
