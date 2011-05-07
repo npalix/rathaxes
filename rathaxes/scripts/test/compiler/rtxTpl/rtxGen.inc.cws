@@ -75,8 +75,8 @@ function	gencodeworker(tpl_node : node, uid : value)
 
 
 		// auto generated codeworker DO NOT EDIT
-		// ici une version specialiser de l'instanceTPL ....
-        // on met this.prototype mets a terme generer des UID c'est mieux
+		// Here, we specialise the function instanceTPL with this.prototype
+        // as the key, but in the long term, an ID would be best
 		function	instanceTpl<"@this.prototype@">(ast_context : node,
                                                     c_tree : node)
 		{
@@ -122,13 +122,12 @@ function	rtxGen<"__block__">(local_node : node, uid : node)
 		rtxGen<item.type>(item, uid);
 		uid = $uid + 1$;
 	}
-
 }
 
 function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 {
 	traceLine("GEN TPL");
-	// on sauve pour analyse a froit le node a generer
+	// on sauve pour analyse a froid le node a generer
 	saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
 	// racine de la generation des templates
 	gencodeworker(local_node, uid);

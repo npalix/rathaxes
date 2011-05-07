@@ -94,8 +94,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 
         // Here, a hard-coded test for a one-param function template
         tpl_type(theType : node) ::=
-            "test(Context ctx) decl"
-            #check(rtxNodeLinkType(theType, "test(Context ctx) decl"))
+            "test(Context ctx)"
+            #check(rtxNodeLinkType(theType, "test(Context ctx)"))
         ;
 
         tpl_link_expr(theLink : node) ::=
