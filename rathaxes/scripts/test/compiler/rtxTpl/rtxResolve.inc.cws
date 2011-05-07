@@ -137,7 +137,8 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
     // Replace the node by the whole resolved c_tree
     //traceLine("Current placeholder :"+toString(treeNode#parent.ref_placeholder, true));
     //traceLine("Current resolved tree : "+toString(c_tree, true));
-    traceLine(cnorm2c(c_tree));
+    //traceLine(cnorm2c(c_tree));
+    traceLine("Resolved one link...");
 
     // placeHolder actually is : block.[idx].expr.id, so #parent * 3
     localref theBlock = treeNode#parent.ref_placeholder#parent#parent#parent;

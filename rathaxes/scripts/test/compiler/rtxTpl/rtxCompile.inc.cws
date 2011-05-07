@@ -18,7 +18,11 @@ function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
 {
 	traceLine("template! walk on " + local_node.prototype);
     local dummyIdx = $-1$;
-	rtxTpl_compile<local_node.body.type>(local_node.body, local_node.body.compile, dummyIdx);
+    foreach chunk in local_node.body.block
+    {
+        rtxTpl_compile<chunk.body.type>(chunk.body, local_node.body.compile, dummyIdx);
+    }
+	//rtxTpl_compile<local_node.body.type>(local_node.body, local_node.body.compile, dummyIdx);
 }
 
 function	rtxTpl_walk<"__block__">(local_node : node)
@@ -32,6 +36,7 @@ function	rtxTpl_walk<"__rtx_with__">(local_node : node)
 	traceLine("with! recurs body");
 	rtxTpl_walk<local_node.body.type>(local_node.body);
 }
+
 
 ////////
 // Tool functions in order to find the placeHolders
