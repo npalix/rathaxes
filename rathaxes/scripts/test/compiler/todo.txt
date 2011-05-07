@@ -22,8 +22,11 @@ Tests Backend :
 
  * Fix Iteration pour le rtxMeta (build_compile_tree a rename)          <= DONE
 
- * Ajouter le parsing des éléments de programmation aspectuelle dans    <= TODO
-   le backend.
+ * Ajouter les éléments de programmation aspectuelle dans le backend.   <= TODO
+   * Creer la syntaxe pour le chunk                                     <= DONE
+   * Changer la syntaxe de link en pointcut                             <= TODO
+   * Creer des fonctions de résolution des chunks                       <= TODO
+   * Update le cache pour pouvoir chercher des chunks                   <= TODO
 
  * Build une structure commune pour tous les prototypes de templates    <= TODO
 
@@ -33,13 +36,8 @@ Tests Backend :
 
  * Introspection du c_tree  : resolverValues "local".                   <= TODO
 
-A reflechir :
- * Commencer a regarder pour le Middle-End :
-   * Parsing
-   * Type checking
-   * Validation
-   * Registering
- * Ajouter le prototype checking
+ * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
+
 
 
 
