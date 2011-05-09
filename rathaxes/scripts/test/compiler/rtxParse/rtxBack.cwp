@@ -1,13 +1,14 @@
 rtx_stmt<"template">(theBlock : node) ::=
     =>traceLine("TEMPLATE!");
-    // TODO: on ne parse pas correctement le proto on prend tout
-        [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // on est des boeufs
+    // TODO: The proto is not parsed properly yet (we take everything)
+        [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // horrible barbarian way
     ////////
-        // on cree un block pour heberger le node template
+        // Create a block to host the template node.
         #pushItem(theBlock.block)
         => local lastNode;
         #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-        // on cree un rtxTPL et c_block va reference le block de C
+        // Create a rtxTPL node.
+        // The c_block var will reference the block of chunks/C code
         => local c_block;
         #check(rtxNodeTpl(lastNode, head, c_block))
         => traceLine("tplproto :" + head + " next:" + peekChar());
@@ -29,17 +30,17 @@ rtx_stmt_with(theMap: node) ::=
 ;
 rtx_stmt<"with">(theBlock : node) ::=
     => traceLine("WITH");
-    // on cree un block pour heberger le node template
+    // create a block to host the with node
     #pushItem(theBlock.block)
     => local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-    // lien vers le mapping des variables
+    // link to the variable mapping
     => local var_map;
     => local body;
     #check(rtxNodeWith(lastNode, var_map, body))
-    // les var du with
+    // variables of the with node
     rtx_stmt_with(var_map)
-    // le block du with
+    // block of the with node
     '{'
         [
             //#check(cnormNodeCtx(body))
@@ -49,12 +50,12 @@ rtx_stmt<"with">(theBlock : node) ::=
 ;
 
 //////// CHUNK
-// The pointuct's identifier may be scoped with some interfaces' names.
+// The pointcut's identifier may be scoped with some interfaces' names.
 rtx_stmt_chunk_scoped_identifier(sPointCut : reference) ::=
     => local string = "";
     [
         #readIdentifier:sSubSystem
-        "::"
+        "::" parsing de
         => string += sSubSystem + "::";
     ]*
     #readIdentifier:sUnscopedPointcut
@@ -99,7 +100,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
 ;
 
 
-// on s'emmerde pas...pour l'instant :P
+// Don't care... for now...
 rtx_template_code ::= #!ignore "${" -> '}' 
 ;
 

@@ -32,8 +32,8 @@ generateString({
                     {
                         int    bal${KKK} = 13;
                         printf("COUCOU\n");
-                        // alors ATTENTION ceci est vue comme une decl :(...
-                        // effet de bord de l'aspect "int par defaut"
+                        // Be careful, this is seen as a declaration :(
+                        // It is a side effect of the default type int of C
                         ${ctx.name} = 42;
                         ${TOTO} += 3;
                         ${link ctx to test(Context ctx)};
@@ -80,7 +80,7 @@ traceLine("input:\n" + input);
 local source;
 cnormDialect<"__std__">(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
-// enleve dialect
+// remove the dialect
 removeVariable(source.dialect);
 
 traceLine("====>Result of parsing: __01_rtx_parse__.tree :");
@@ -116,9 +116,9 @@ saveProject("__03_rtx_compil_tplnode__.tree", source);
 #include "rtxLink.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 #include "rtxTpl/rtxResolve.inc.cws"
-/// le code generer aura besoin de ca
-// foreach brutal, a terme on devrait walk le tree pour gerer correctement
-// les __rtx_tpl__, __rtx_with__ etc...
+// The generated code will need this :
+// brutal foreach, we should work the tree properly in the end in order to
+// manage properly the __rtx_with__ and __rtx_tpl__ nodes.
 foreach item in source.block
 {
 	local uid = 0;
