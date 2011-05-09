@@ -16,7 +16,8 @@ function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
     rtxNode(local_node);
     local_node.type = "__rtx_tpl__";
     insert local_node.tpl_type = "__decl__";
-    // pour l'instant on met le proto comme string, mais faudra le compil aussi
+    // For now, the prototype is stored as a string,
+    // but it will be parsed as well later.
     insert local_node.prototype = input;
     insert local_node.body;
     cnormNodeBlock(local_node.body, true);
