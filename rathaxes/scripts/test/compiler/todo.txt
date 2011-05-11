@@ -28,6 +28,13 @@ Tests Backend :
    * Creer des fonctions de résolution des chunks                       <= TODO
    * Update le cache pour pouvoir chercher des chunks                   <= TODO
 
+ * Mettre a jour la syntaxe du with                                     <= TODO
+
+ * Coder la fonction de match de configuration/with dans rtxLink        <= TODO
+   * Coder les fonctions de normalisation de la config                  <= TODO
+   * Coder la fonction de comparaison config/with                       <= TODO
+   * Ajouter un test de validation                                      <= TODO
+
  * Build une structure commune pour tous les prototypes de templates    <= TODO
 
  * Ajouter le Type-checking vs interfaces une fois le middle-end ok     <= TODO
@@ -84,4 +91,9 @@ Tests Backend :
      * Building "ResolverValues" (mapping for the template variables)
      * Resolve Placeholders
      * Weave ASTs for recursive cases ("link" and "each" keywords)
-  * Generation
+  * Generation :
+    * Generation du code global aux with (voir pointcuts du with LKM)
+      * Mécanisme de generation auto pour les sequences telles que LKM::load
+      * Descente récursive dans les chunks liés pour résoudre les pointcuts
+        (ils ont acces aux types donnés en parametres au template associé)
+    * Generation des séquences provided appellées depuis le front-end
