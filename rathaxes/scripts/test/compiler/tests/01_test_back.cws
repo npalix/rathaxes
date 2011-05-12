@@ -2,8 +2,7 @@
 	TEST GENERAL DE TEMPLATE
 */
 
-if (createDirectory("01_test_back_dir") == false)
-    exit(0);
+createDirectory("01_test_back_dir");
 changeDirectory("01_test_back_dir");
 
 local dummy;
