@@ -11,6 +11,10 @@ generateString({
 
         with OS=pigeonMouette,maj=0,min=1
         {
+            ${pointcut theTestPointcut(config.plop)
+            default:
+                NULL;
+            };
             template open(Context ctx)
             {
                 chunk typedefs_declaration
@@ -82,8 +86,17 @@ parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
 
-traceLine("====>Result of parsing: __01_rtx_parse__.tree :");
 saveProject("__01_rtx_parse__.tree", source);
+traceLine("====>Result of parsing: __01_rtx_parse__.tree :");
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}
 
 
 

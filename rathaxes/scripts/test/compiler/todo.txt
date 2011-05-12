@@ -24,9 +24,11 @@ Tests Backend :
 
  * Ajouter les éléments de programmation aspectuelle dans le backend.   <= TODO
    * Creer la syntaxe pour le chunk                                     <= DONE
-   * Changer la syntaxe de link en pointcut                             <= TODO
+   * Changer la syntaxe de link en pointcut                             <= DONE
+   * Ajouter la génération du code pour les pointcuts                   <= TODO
    * Creer des fonctions de résolution des chunks                       <= TODO
    * Update le cache pour pouvoir chercher des chunks                   <= TODO
+   * Deplacer le .compile des templates vers les chunks                 <= TODO
 
  * Mettre a jour la syntaxe du with                                     <= TODO
 

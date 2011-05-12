@@ -1,3 +1,14 @@
+//////// POINTCUT
+rtx_pointcut(theBlock : node) ::=
+    =>traceLine("POINTCUT!");
+    #pushItem(theBlock.block)
+    => local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    rtx_template_code:sPlaceHolder ';'
+    #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
+;
+
+/////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
     =>traceLine("TEMPLATE!");
     // TODO: The proto is not parsed properly yet (we take everything)
@@ -8,14 +19,14 @@ rtx_stmt<"template">(theBlock : node) ::=
         => local lastNode;
         #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
         // Create a rtxTPL node.
-        // The c_block var will reference the block of chunks/C code
-        => local c_block;
-        #check(rtxNodeTpl(lastNode, head, c_block))
+        // The chunk_block var will reference the block of chunks
+        => local chunk_block;
+        #check(rtxNodeTpl(lastNode, head, chunk_block))
         => traceLine("tplproto :" + head + " next:" + peekChar());
         =>traceLine("Chunks!");
         [
             // Theoretically, the template should only contain chunks...
-            rtx_declaration(c_block)
+            "chunk" rtx_stmt<"chunk">(chunk_block)
         ]*
     '}'
 ;
@@ -37,14 +48,19 @@ rtx_stmt<"with">(theBlock : node) ::=
     // link to the variable mapping
     => local var_map;
     => local body;
-    #check(rtxNodeWith(lastNode, var_map, body))
+    => local c_block;
+    #check(rtxNodeWith(lastNode, var_map, body, c_block))
     // variables of the with node
     rtx_stmt_with(var_map)
     // block of the with node
     '{'
         [
-            //#check(cnormNodeCtx(body))
+            // With can contain any kind of rtx statement
+            // (with, template, chunk)
             rtx_declaration(body)
+            |
+            // or global pointcuts
+            rtx_pointcut(c_block)
         ]*
     '}'
 ;

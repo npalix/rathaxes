@@ -12,6 +12,7 @@ declare function	rtxTpl_compile<T>(local_node : node, compile : node,
 
 function	rtxTpl_walk<T>(local_node : node)
 {
+    traceLine("Unknown rtx_node :" + T);
 	error("Unknown rtx_node :" + T);
 }
 
@@ -26,16 +27,35 @@ function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
     }
 }
 
+function    rtxTpl_walk<"__rtx_chunk__">(local_node : node)
+{
+    insert  local_node.body.compile;
+    local   dummyIdx = $-1$;
+    traceLine("walking lone chunk...");
+    rtxTpl_compile<local_node.body.type>(local_node.body,
+                                         local_node.body.compile,
+                                         dummyIdx);
+}
+
 function	rtxTpl_walk<"__block__">(local_node : node)
 {
+    // Should only be used for the block of a with node.
+    traceLine("WALKING BLOCK");
+
+    // This variable allows retrieving 
 	foreach item in local_node.block
-	{	rtxTpl_walk<item.type>(item);}
+	{ rtxTpl_walk<item.type>(item); }
 }
 
 function	rtxTpl_walk<"__rtx_with__">(local_node : node)
 {
 	traceLine("with! recurs body");
+    // First walk the block of templates
 	rtxTpl_walk<local_node.body.type>(local_node.body);
+    // And then compile the C block containing the pointcuts.
+    rtxTpl_compile<local_node.c_block.type>(local_node.c_block,
+                                            local_node.c_block.compile,
+                                            $-1$);
 }
 
 
@@ -149,6 +169,14 @@ function	rtxTpl_compile<"__block__">(local_node : node, compile : node,
 	{
         rtxTpl_compile<item.type>(item, compile, index(item));
     }
+}
+
+function    rtxTpl_compile<"__rtx_pointcut_raw__">(local_node : node,
+                                                   compile : node,
+                                                   node_idx : value)
+{
+    traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+    rtxTpl_mapPlaceHolder(local_node.id, compile, node_idx);
 }
 
 #end
