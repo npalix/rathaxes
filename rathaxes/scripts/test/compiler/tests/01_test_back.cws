@@ -12,8 +12,8 @@ generateString({
         with OS=pigeonMouette,maj=0,min=1
         {
             ${pointcut theTestPointcut(config.plop)
-            default:
-                NULL;
+             default:
+                 NULL;
             };
             template open(Context ctx)
             {

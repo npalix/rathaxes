@@ -186,7 +186,7 @@ function rtxNodePointcut(local_node : node,
                          parameters : node,
                          default    : node)
 {
-    insert local_node.type = "__rtx_pointcut_";
+    insert local_node.type = "__rtx_pointcut__";
     insert local_node.name = sPointcut;
     insert local_node.parameters;
     setall local_node.parameters = parameters;

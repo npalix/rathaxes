@@ -1,3 +1,5 @@
+#include "cnorm.inc.cws"
+
 #include "rtxNode.inc.cws"
 
 #if !existFunction(rtxMeta_version)
@@ -8,21 +10,9 @@ function rtxMeta_version()
 function    rtxMeta_parsePlaceHolder(compile : node)
 {
     local treepart;
+    cnormDialect<"__std__">(treepart);
     parseStringAsBNF({
-
-        #ignore ::=
-        [
-            ['#' ->[['\r']? '\n']]
-            | ["//" ->[['\r']? '\n']]
-            | ["/*" ->"*/"]
-            | ' '
-            | '\t'
-            | '\n'
-            | '\r'
-            | '\f' // form feed, sometimes Windows kernel headers have this character.
-        ]+:skip
-        ;
-
+        #include "cnorm.cwp"
 
         /*
          *
@@ -30,16 +20,22 @@ function    rtxMeta_parsePlaceHolder(compile : node)
          *
          */
 
-        /* Root of the placeHolder grammar */
-		template_expr ::=
-			=> traceLine("TEMPLATE EXPRESSION PARSE!");
+        /*
+         * Root of the placeHolder grammar :
+         * We have to overload translation_unit since it is defined before
+         * by cnorm.cwp which is included in order to
+         * retrieve the rule single_statement
+         */
+        #overload
+        translation_unit ::=
+/**/		=> traceLine("TEMPLATE EXPRESSION PARSE!");
 			#try
 				#ignore
 				#check(rtxNodePlaceHolder(this))
 				[
-					rtx_place_holder(this)
-                    |
                     rtx_tpl_pointcut(this)
+                    |
+					rtx_place_holder(this)
 				]
 				#continue(sError, "bad token at end of file, unexpected "
                           + peekChar())
@@ -129,12 +125,13 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             ')'
         ;
 
+        // TODO FIXME XXX : check that the partial C code is valid.
         tpl_pointcut_default(theNode : node) ::=
-            "default" '{'
-            => local body;
+            "default" ':' // originally '{'
+/**/        => local body;
             #check(rtxNodePointcut_Default(theNode, body))
-            block_item_list(body)
-            '}'
+            single_statement(body)
+            // originally '}' identified the end of the block
         ;
 
         tpl_pointcut(thePointcut : node) ::=
@@ -152,11 +149,19 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 //      tpl_each_expr ::=
 //      ;
 
-        identifier ::=
-                #readIdentifier
-        ;
-
     }, treepart, compile.template_expr);
+    removeVariable(treepart.dialect);
+    if (!isEmpty(treepart.error))
+    {
+        traceLine("_________\nCould not build node for template_expr : "
+                  + compile.template_expr);
+        local out = "Trace:\n";
+        foreach stack_line in treepart.error[0].trace
+            out += stack_line;
+        out += "=>Error: " + treepart.error[0].msg;
+        traceLine(out);
+        return false;
+    }
     traceLine("Just built node for template_expr : "+compile.template_expr);
     insert compile.node;
     setall compile.node = treepart;
@@ -180,9 +185,15 @@ function rtxMeta_walk<T>(local_node : node)
 
 function rtxMeta_walk<"__rtx_with__">(local_node : node)
 {
+    // First, walk the templates...
     foreach item in local_node.body.block
     {
         rtxMeta_walk<item.type>(item);
+    }
+    // Second, compile each with placeHolder.
+    foreach placeHolder in local_node.c_block.compile
+    {
+        rtxMeta_parsePlaceHolder(placeHolder);
     }
 }
 
