@@ -51,16 +51,16 @@ rtx_stmt<"with">(theBlock : node) ::=
 
 //////// CHUNK
 // The pointcut's identifier may be scoped with some interfaces' names.
-rtx_stmt_chunk_scoped_identifier(sPointCut : reference) ::=
+rtx_stmt_chunk_scoped_identifier(sPointCut : node) ::=
     => local string = "";
     [
         #readIdentifier:sSubSystem
-        "::" parsing de
+        "::"
         => string += sSubSystem + "::";
     ]*
     #readIdentifier:sUnscopedPointcut
     => string += sUnscopedPointcut;
-    => ref sPointCut = string;
+    => sPointCut = string;
 ;
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=

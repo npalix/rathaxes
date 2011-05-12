@@ -87,7 +87,6 @@ saveProject("__01_rtx_parse__.tree", source);
 
 
 
-
 #include "rtxTpl/rtxCompile.inc.cws"
 foreach item in source.block
 {
