@@ -38,6 +38,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 				#check(rtxNodePlaceHolder(this))
 				[
 					rtx_place_holder(this)
+                    |
+                    rtx_tpl_pointcut(this)
 				]
 				#continue(sError, "bad token at end of file, unexpected "
                           + peekChar())
@@ -65,6 +67,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/            => theNode.sufix = sufix;
             ]?
             [ ";" ]?
+        ;
+
+        rtx_tpl_pointcut(theNode : node) ::=
+            "${" tpl_pointcut(theNode.body) '}' [ ';' ]?
         ;
 
         // This rule dissects an identifier in parts separated by dots.
@@ -107,6 +113,40 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/        => local theType;
             tpl_type(theType)
             #check(rtxNodeLink(theLink, theVars, theType))
+        ;
+
+        tpl_pointcut_parameters(theParams : node) ::=
+            '('
+/**/        => local param;
+            tpl_identifier(param)
+            #check(rtxNodeList_AddNode(theParams, param))
+            [
+                ','
+/**/            => local lastParam;
+                tpl_identifier(lastParam)
+                #check(rtxNodeList_AddNode(theParams, lastParam))
+            ]*
+            ')'
+        ;
+
+        tpl_pointcut_default(theNode : node) ::=
+            "default" '{'
+            => local body;
+            #check(rtxNodePointcut_Default(theNode, body))
+            block_item_list(body)
+            '}'
+        ;
+
+        tpl_pointcut(thePointcut : node) ::=
+            "pointcut"
+            #readIdentifier:sPointcut
+/**/        => local theParams;
+            #check(rtxNodeVarList(theParams))
+            [ tpl_pointcut_parameters(theParams) ]?
+/**/        => local theDefault;
+            [ tpl_pointcut_default(theDefault) ]?
+            #check(rtxNodePointcut(thePointcut, sPointcut,
+                                   theParams, theDefault))
         ;
 
 //      tpl_each_expr ::=
