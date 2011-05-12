@@ -15,11 +15,13 @@ createDirectory(working_directory);
 local dummy;
 local input;
 generateString({
-        // ici une interface
-        interface Userland
+        // interface with inheritance
+        interface Userland : BaseInterface, OtherInterface
         {
-            required type foo;
-            provided type bar;
+            required variable   req_var_type    dummy_name;
+            /* provided            builtintype     pro_builtin; */
+            /* optional            type            opt_type { foo; bar; }; */
+            /* required            sequence        req_sequence(opt_type); */
         }
 
 @}, dummy, input);
@@ -40,4 +42,4 @@ parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 removeVariable(source.dialect);
 
 traceLine("Result of parsing:\n" + toString(source, true));
-saveProject(working_directory + "__02_rtx_parse__.tree", source);
+saveProject(working_directory + "/__02_rtx_parse__.tree", source);
