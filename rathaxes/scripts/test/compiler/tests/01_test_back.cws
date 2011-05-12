@@ -2,45 +2,68 @@
 	TEST GENERAL DE TEMPLATE
 */
 
+if (createDirectory("01_test_back_dir") == false)
+    exit(0);
+changeDirectory("01_test_back_dir");
+
 local dummy;
 local input;
 generateString({
 
-		with OS=pigeonMouette,maj=0,min=1
-		{
-			template open(Context ctx) decl
-			{
-				typedef int ${KK};
-	
-				typedef int ${TYPE};
-				
-				enum pop${ctx.name} {A, B, C};
-	
-				${TYPE} bla;
-	
-				int	open(int a)
-				{
-					int	bal${KKK} = 13;
-					printf("COUCOU\n");
-					// alors ATTENTION ceci est vue comme une decl :(...
-                    // effet de bord de l'aspect "int par defaut"
-					${ctx.name} = 42;
-					${TOTO} += 3;
-                    ${link ctx to test(Context ctx) decl};
-					return 0;
-				}
-			}
-
-            template test(Context ctx) decl
+        with OS=pigeonMouette,maj=0,min=1
+        {
+            template open(Context ctx)
             {
-                int test_${ctx.name}(void)
+                chunk typedefs_declaration
                 {
-                    int ret = strcmp("open", param);
-                    return ret;
+                    typedef int ${KK};
+                    typedef int ${TYPE};
+                    enum pop${ctx.name} {A, B, C};
                 }
-                test_${ctx.name}();
+
+                chunk global_data_declaration
+                {
+                    ${TYPE} bla;
+                }
+    
+                chunk function_declaration
+                {
+                    int    module_open(int a)
+                    {
+                        int    bal${KKK} = 13;
+                        printf("COUCOU\n");
+                        // Be careful, this is seen as a declaration :(
+                        // It is a side effect of the default type int of C
+                        ${ctx.name} = 42;
+                        ${TOTO} += 3;
+                        ${link ctx to test(Context ctx)};
+                        return 0;
+                    }
+                }
+
+                chunk LKM::init_fptrs(symbol)
+                {
+                    ${symbol.name}.open = &module_open;
+                }
             }
-		}
+
+            template test(Context ctx)
+            {
+                chunk function_declaration
+                {
+                    int test_${ctx.name}(void)
+                    {
+                        int ret = strcmp("open", param);
+                        return ret;
+                    }
+                }
+
+                chunk CALLS
+                {
+                    test_${ctx.name}();
+                }
+            }
+        }
 
 @}, dummy, input);
 
@@ -57,10 +80,10 @@ traceLine("input:\n" + input);
 local source;
 cnormDialect<"__std__">(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
-// enleve dialect
+// remove the dialect
 removeVariable(source.dialect);
 
-traceLine("result of parsing:" + toString(source, true));
+traceLine("====>Result of parsing: __01_rtx_parse__.tree :");
 saveProject("__01_rtx_parse__.tree", source);
 
 
@@ -69,10 +92,11 @@ saveProject("__01_rtx_parse__.tree", source);
 #include "rtxTpl/rtxCompile.inc.cws"
 foreach item in source.block
 {
-    traceLine("compiling item : "+toString(item));
+    traceLine("compiling item : "+key(item));
 	rtxTpl_walk<item.type>(item);
 }
 
+traceLine("====>Result of placeHolder compilation : __02_rtx_compil__.tree");
 saveProject("__02_rtx_compil__.tree", source);
 
 
@@ -84,6 +108,7 @@ foreach item in source.block
 {
     rtxMeta_walk<item.type>(item);
 }
+traceLine("====>Result of placeHolder Analyse : __03_rtx_compil_tplnode__.tree");
 saveProject("__03_rtx_compil_tplnode__.tree", source);
 
 
@@ -91,9 +116,9 @@ saveProject("__03_rtx_compil_tplnode__.tree", source);
 #include "rtxLink.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 #include "rtxTpl/rtxResolve.inc.cws"
-/// le code generer aura besoin de ca
-// foreach brutal, a terme on devrait walk le tree pour gerer correctement
-// les __rtx_tpl__, __rtx_with__ etc...
+// The generated code will need this :
+// brutal foreach, we should work the tree properly in the end in order to
+// manage properly the __rtx_with__ and __rtx_tpl__ nodes.
 foreach item in source.block
 {
 	local uid = 0;
@@ -104,12 +129,12 @@ foreach item in source.block
 
 
 // Load the two templates :
-local theProto = "open(Context ctx) decl";
+local theProto = "open(Context ctx)";
 local theID;
 local theWith;
 rtxLink_GetIDFromTpl(theProto, theWith, theID,
                      true); // true for fromSession
-traceLine("Loading TPL ID == "+theID+" : open(Context ctx) decl");
+traceLine("Loading TPL ID == "+theID+" : open(Context ctx)");
 rtxLink_LoadTemplate(theID, true); // true for fromSession
 
 // Now, try the C code generation out : simulate an input (the resVal node)
@@ -128,9 +153,13 @@ insert resVals["ctx"];
 rtxNodeResVal(resVals["ctx"]);
 insert resVals["ctx"]["name"];
 rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
+insert resVals["symbol"];
+insert resVals["symbol"]["name"];
+rtxNodeResValLeaf(resVals["symbol"]["name"], "global_init.open");
 
 local c_tree1;
-instanceTpl<"open(Context ctx) decl">(resVals, c_tree1);
-traceLine("INSTANCIATION DU TEMPLATE : open(Context ctx) decl");
-traceLine(cnorm2c(c_tree1));
+instanceTpl<"open(Context ctx)">(resVals, c_tree1);
+traceLine("INSTANCIATION DU TEMPLATE : open(Context ctx)");
+//traceLine(cnorm2c(c_tree1));
+traceLine("Template resolved.");
 

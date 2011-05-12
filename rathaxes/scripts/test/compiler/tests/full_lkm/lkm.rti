@@ -1,79 +1,94 @@
-interface Algorithms
-{
-    builtin  type       string;
-    builtin  type       number;
-    builtin  type       numser;
-    builtin  type       register[ register_field [ number ] ];
-    provided type       Buffer;
-
-    provided sequence   log(string)
-    {
-        provided chunk  DEFINITION;
-        provided chunk  CALL;
-    }
-}
-
 interface LKM
 {
-    builtin  type               Device;
+    builtin  type               Device_list;//??
+    builtin  type		Symbol;
 
     provided pointcut           INCLUDE_DEPENDENCIES;
     provided pointcut           GLOBAL_DATA_DECLARATION;
-    provided pointcut           GLOBAL_CODE_DEFINITION;
-    provided pointcut           BASE_LKM_CODE_DEFINITION;
+    provided pointcut           GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
+    provided pointcut           BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
 
     provided sequence           load()
     {
-        provided pointcut       INIT_LKM_FPTRS;
-        provided chunk          LKM_BASE_CODE_DEFINITION;
+        provided pointcut       INIT_LKM_FPTRS(Symbol); // Symbol is the type of the joinpoint
+        use pointcut            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
     }
 
     provided sequence           unload()
     {
+        use pointcut            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
     }
 
-    required variable string    OS;
-    optional variable numser    version;
-    optional variable numser    arch;
+    required variable Device_list 	Devices;
+    required variable string    	OS;
+    optional variable numser    	version;
+    optional variable numser    	arch;
+}
+
+interface Algorithms : LKM
+{
+    builtin  type       string;
+    builtin  type       number;
+    builtin  type       numser;
+    builtin  type       register[ register_field [ number ] ]; //collection?
+    provided type       Buffer;
+
+    provided sequence   log(string)
+    {
+        use   LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
+        use  ::CALLS; // use current namespace/template from frontend
+    }
+
+    provide sequence	set(register, register_field) // should be in subsystem BUS
+    {
+    	use LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
+	use ::CALLS; // use current namespace/template from frontend
+    }
+    //...
 }
 
 interface User : LKM
 {
-    provided type               Context;
+    provided type               Context;//why not device?
 
 
     required sequence           open(Context)
     {
-        provided chunk          DEFINITION;
-        provided chunk          INIT_LKM_FPTRS;
+        use	poincut         LKM::GLOBAL_CODE_DEFINITION;
+        use	pointcut          LKM::INIT_LKM_FPTRS;
+	provided pointcut	CALLS;
     }
 
     required sequence           close(Context)
     {
-        provided chunk          DEFINITION;
-        provided chunk          INIT_LKM_FPTRS;
+        use	pointcut          LKM::GLOBAL_CODE_DEFINITION;
+        use	pointcut          LKM::INIT_LKM_FPTRS;
+	provided pointcut	CALLS;
     }
     
     required sequence           read(Context, Buffer)
     {
-        provided chunk          DEFINITION;
-        provided chunk          INIT_LKM_FPTRS;
+        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
+        use pointcut          LKM::INIT_LKM_FPTRS;
+	provided pointcut	CALLS;
     }
     
     required sequence           write(Context, Buffer)
     {
-        provided chunk          DEFINITION;
-        provided chunk          INIT_LKM_FPTRS;
+        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
+        use pointcut          INIT_LKM_FPTRS;
+	provided pointcut	CALLS;
     }
     
     required sequence           on_plug(Context)
     {
-        provided chunk          DEFINITION;
-        provided chunk          INIT_LKM_FPTRS;
+        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
+        use pointcut          INIT_LKM_FPTRS;
+	provided pointcut	CALLS;
     }
 }
 
-with User
+with LKM
 values OS=Linux
 {
     extend interface
@@ -84,7 +99,7 @@ values OS=Linux
     }
 }
 
-with User
+with LKM
 values OS=OpenBSD
 {
     extend interface
@@ -95,7 +110,7 @@ values OS=OpenBSD
     }
 }
 
-with User
+with LKM
 values OS=Windows
 {
     extend interface
