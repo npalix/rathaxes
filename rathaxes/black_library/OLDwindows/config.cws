@@ -1,0 +1,11 @@
+// Windows specific tools implementation.
+
+global CL = "C:\\WinDDK\\6000\\bin\\x86\\x86\\cl.exe";
+global INC_API = "C:\\WinDDK\\6000\\inc\\api";
+global INC_DDK = "C:\\WinDDK\\6000\\inc\\ddk";
+global INC_KMDF = "C:\\WinDDK\\6000\\inc\\wdf\\kmdf\\10";
+global INC_CRT = "C:\\WinDDK\\6000\\inc\\crt";
+
+#include "windows/tools/getWindowsSystemVersion.cws"
+#include "windows/tools/windowsTemporaryDirectory.cws"
+#include "windows/tools/getWindowsCMD.cws"

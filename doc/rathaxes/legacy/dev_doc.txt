@@ -1,0 +1,282 @@
+Arborescence des sources :
+
+/bin :
+ Ensemble des binaires a utiliser pour compiler du code rathaxes.
+    rathaxes  
+		Script unix.
+    rathaxes.bat 
+		Windows
+    rathaxes.ps1 
+		Windows Powershell
+
+
+/black_library :
+ Ensemble du code source de la black library
+    /algorithms :
+    templates specifiques a la generation des algorithmes.
+        draft.blt (Work in progress)
+
+    Il existe un dossier par systeme d'exploitation supporte par Rathaxes, l'organisation de ces dossiers est quasiment identique
+	entre les os.
+    /linux :
+    Chaque systeme d'exploitation pour lequel Rathaxes est capable de generer des drivers 
+    dispose de son propre repertoire source dans le repertoire de la black library.
+        /algorithms
+            repertoire contenant l'implementation des algorithmes de traitement des buffers et des registres sur
+            linux. Cette partie du code etant supposee etre generique sera bientot deplace dans /black_library/algorithms
+            des que l'api de dev sera terminee 
+            _algorithms.blt
+                Script de base qui appelle les autres 
+            _concat.blt
+                Concatenation de registres et de buffers
+            _copy.blt
+                Copie
+            _log.blt
+                informations de debug
+            _set.blt
+                assignation de valeur
+            _wait.blt
+                pause
+        /devices
+			repertoire contenant les templates necessaires a l'instanciation des devices
+            _devices.blt
+           Point d'entree de la declaration de devices 
+
+            _global_declaration.blt
+            "je l'ai mis au cas ou mais pour l'instant je ne m'en sers pas" Christophe Fajardo y Romera
+            
+            _properties.blt
+            point d'entree de la declaration de properties
+        /headerCache
+
+            La cache des header systemes
+            un certain nombre de fichiers generes automatiquement au nom de la version exacte du kernel.
+
+        /kernel_interfaces
+            
+            /common_interface
+            code de generation des interfaces du kernel, c'est a dire les appels systemes basiques.
+                _close.blt
+
+                _global_declaration.blt
+
+                _on_plug.blt
+                _open.blt
+                _read.blt
+                _write.blt
+
+            _common_interface.blt
+            _kernel_interfaces.blt
+			
+        /registers
+
+        defintion des registres et interfacage, c'est dans ce repertoire que devra etre remplie 
+        l'API permettant de se linker aux algorithmes generiques
+            _io_typedefs.blt
+            _register.blt
+            _registers_abstraction.blt
+            _registers_bitfields.blt
+            _registers_enums.blt
+            _registers_routines.blt
+			
+        /RKM
+        Templates pour la generation des modules kernel
+            /entry_point
+            
+				_load.blt
+				_unload.blt
+				
+            /kernel_registration
+				_registration.blt
+				_unregistration.blt
+				
+            _entry_point.blt
+            _kernel_registration.blt
+            _types.blt
+
+        /sequences
+        templates pour la generation des sequences
+            _sequences.blt
+			Generation des sequences.
+        /tools
+
+            getLinuxCMD.cws
+
+
+            getLinuxSystemVersion.cws
+
+            linuxTemporaryDirectory.cws
+
+            parseLinuxCMD.cwp
+    /openBSD :
+		
+    
+    /macOS:
+	Branche abandonnee.
+
+    /tools:
+		getSystemVersion.cws
+		getCMD.cws
+		parseHeaderFile.cwf
+
+    /windows :
+    
+
+
+/rtx :
+    repertoire inutile bientot supprime
+
+/samples :
+    un ensemble d'exemples de codes en Rathaxes
+
+
+/scripts :
+
+    tout les scripts dedies a la compilation du langage rathaxes
+    ainsi que les scripts externes necessaires au fonctionnement de rathaxes
+
+        /ast_c_extensions
+
+            Contient une copie de cnorm
+        /ast_c_optimizations
+            repertoire vide 
+        /cnorm
+            Outil externe dedie au parsing du code C contenu dans les templates rathaxes
+
+        /CodeWorkerExtension
+            divers fichiers dedies a des extensions des fonctionnalites basiques de codeworker
+            pour l'instant dispose du code de LoadProject, en attendant que le langage ne dispose
+            de la fonctionnalite en natif
+
+        /core
+            
+           aspectSelector.cws
+
+           driverMetaClass.cws
+
+           headers_handler.cws
+
+
+           rathaxes_core.cws
+				contient la fonction Rathaxes() qui sera appellee avant le lancement du parsing et qui  appelle tout le reste.
+			
+        /misc
+
+            colors.cws
+				primitives pour l'affichage des couleurs:
+            generics.cws
+				fonctions generiques de traitements des strings et des nombres.
+            notifications.cws
+				primitives de notifications de l'utilisateur lors du parsing (erreurs et debug)
+
+        /parsing
+            bdsl.cwf
+				primitives frontales du BDSL, permattant d'updater la liste des blt activees, et de tester si la liste est stabilises.
+            bdsl.cwp
+				regles frontales de parsing du bdsl aspectuel, regles d'ignore, et declaration des blocks majeurs.
+            bdsl_declaration_dependencies.cwf
+				Fonctions de controle des dependances du bdsl
+            bdsl_declaration_dependencies.cwh
+				Fonction de parsing des dependances du Bdsl
+            bdsl_declaration_kernel_interfaces.cwf
+				Fonctions de controle de coherences des kernel interfaces
+            bdsl_declaration_kernel_interfaces.cwh
+				Parsing des kernel interfaces
+            bdsl_dependencies.cwp
+				Parsing frontal des dependences du bdsl
+            bdsl_metaStatements.cwp
+				Parsing frontal des metastatements
+            headers_description.cwp
+				
+	
+            rdsl_algorithms_common.cwh
+            rdsl_algorithms_concat.cwh
+            rdsl_algorithms_copy.cwh
+            rdsl_algorithms.cwh
+            rdsl_algorithms_log.cwh
+            rdsl_algorithms_set.cwh
+            rdsl_algorithms_wait.cwh
+				Fichiers de parsing des algorithmes du RDSL 
+			
+            rdsl_constant_expresions.cwh
+				
+            rdsl.cwp
+				Noeud central du parsing du Rdsl
+			
+            rdsl_declaration_buffer.cwf
+			rdsl_declaration_buffer.cwh
+				Parsing des buffers
+
+			rdsl_declaration_configuration.cwf
+			rdsl_declaration_configuration.cwh
+				Parsing du bloc de configuration 
+				
+				
+            rdsl_declaration.cwf
+			rdsl_declaration.cwp
+				parsing des differentes declarations frontales dans le rdsl 
+				pour l'instant : Device, driver et configuration.
+				
+            rdsl_declaration_device.cwf
+            rdsl_declaration_device.cwh
+				Parsing device
+				
+            rdsl_declaration_driver.cwf
+            rdsl_declaration_driver.cwh
+				parsing driver
+			
+            rdsl_declaration_kernel_interfaces.cwf
+            rdsl_declaration_kernel_interfaces.cwh
+				parsing kernel interfaces
+			
+            rdsl_declaration_properties.cwf
+            rdsl_declaration_properties.cwh
+				parsing des properties
+			
+            rdsl_declaration_registers.cwf
+            rdsl_declaration_registers.cwh
+				parsing de la declaration des registres
+			
+            rdsl_declaration_register_variable.cwf
+            rdsl_declaration_register_variable.cwh
+				parsing de la declarations des variables dans les registres
+			
+            rdsl_declaration_sequences.cwf
+            rdsl_declaration_sequences.cwh
+				parsing de la declaration des sequences
+			
+            rdsl_declaration_sequences_interfaces_common.cwf
+            rdsl_declaration_sequences_interfaces_common.cwh
+				parsing de la declaration des interfaces de sequences
+			
+            rdsl_declaration_types.cwh
+				Declaration des types basiques toleres par Rathaxes, pour l'instant : Bit, Byte, Word, Dword
+					
+            rdsl_declaration_userland.cwh
+				fichier vide
+			
+            rdsl_declaration_variables.cwf
+            rdsl_declaration_variables.cwh
+				Fichier encore en developpement, pour la declaration de variables
+			
+            rdsl_import.cwf
+            rdsl_import.cwh
+				fichier dedie au mot cle import
+			
+            rdsl_local_declaration.cwh
+			
+            rdsl_single_statement.cwh
+				parsing des statements : appel a Algorithms pour l'instant, les sequences sont desactivees pour l'instant.
+            rdsl_variables.cwh
+				parsing des variables
+            
+            VimParsingSession.vim
+        
+        /semantics
+                registers.cws
+					Fonctions d'exploitations des informations des registres.
+        rathaxes.cws
+            Script central appele immediatement apres le lancement du programme
+
+        VimBackendSession.vim
+			Configuration et colorisation de vim pour Codeworker et Rathaxes

@@ -1,0 +1,142 @@
+/*
+**	rdsl_constant_expresions.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**
+**	---------------------------------------------------------------------------
+**	TODO: Une gestion d'erreure plus fine.
+*/
+
+rdsl_constant_expresions(expr : node) ::=
+	hexadecimal_constant(expr)
+    | octal_constant(expr)
+	| decimal_constant(expr)
+	| constant_string(expr)
+	| constant_character(expr)
+;
+
+// (Papy) This code is not perfect due to a lack of time.
+constant_string(expr : node) ::=
+	#readCString:sCString
+	=>
+	{
+		insert expr.ctype.identifier = "char*";
+		insert expr.ctype.sign = "signed";
+		insert expr.ctype.value = sCString;
+	}
+;
+
+// (Papy) This code is not perfect due to a lack of time.
+constant_character(expr : node) ::=
+	#readCChar:cCharacter
+	=>
+	{
+		insert expr.ctype.identifier = "char";
+		insert expr.ctype.sign = "signed";
+		insert expr.ctype.value = cCharacter;
+	}
+;
+
+hexadecimal_prefix ::=  #!ignore '0' ['x'|'X'|'h'|'H']
+;
+decimal_prefix ::=  #!ignore '0' ['d'|'D']
+;
+hexadecimal_digit ::= #!ignore ['0'..'9'|'a'..'f'|'A'..'F']
+;
+hexadecimal_constant(expr : node) ::=
+	[
+	 hexadecimal_prefix
+	 [hexadecimal_digit]+
+	 ]:xValue
+	[ // hex floating representation
+	 [
+	  #!ignore '.' #continue [hexadecimal_digit]+
+	  [ ['p'|'P'] #continue #readInteger ]?
+	 ]
+	 => insert expr.ctype.identifier = "double";
+	| // normal hex number
+	 => insert expr.ctype.identifier = "int";
+	 => insert expr.ctype.sign = "signed";
+	 [
+	  unsigned_suffix
+	  => insert expr.ctype.sign = "unsigned";
+	  |long_suffix
+	  => insert expr.ctype.specifier = "long";
+	  ]0..3
+	]:xValueFl
+	=> xValue = xValue + xValueFl;
+	=> insert expr.value = xValue;
+;
+
+unsigned_suffix ::= ['u' | 'U']
+;
+long_suffix ::= ['l' | 'L']
+;
+decimal_constant(expr : node) ::=
+	 // decimal
+	 [ decimal_prefix ]?
+	 #readInteger:expr.value !'.'
+	 [
+	  unsigned_suffix
+	  => insert expr.ctype.sign = "unsigned";
+	  => expr.value = expr.value + 'u';
+	 ]? 
+	 [
+	  long_suffix
+	  => {
+	    if (expr.ctype.specifier == "long")
+	    {	
+	      expr.ctype.specifier += " long";
+	      expr.value = expr.value + 'l';
+	    }
+	    else
+	    {	insert expr.ctype.specifier = "long"; expr.value = expr.value + 'l'; }
+	  }
+	 ]0..2
+	 => insert expr.ctype.identifier = "int";
+;
+
+octal_prefix ::= '0'
+;
+octal_digit ::= ['0'..'7']
+;
+octal_constant(expr : node) ::=
+	[
+	 octal_prefix
+	 [octal_digit]+
+	]
+	[ // oct floating representation
+	 [
+	  #!ignore '.' #continue [octal_digit]+
+	  [ ['p'|'P'] #continue #readInteger ]?
+	 ]
+	| // normal oct number
+	 => insert expr.ctype.sign = "unsigned";
+	 => insert expr.ctype.identifier = "int";
+	]
+;
+
+float_suffix ::= ['f'|'F'|'l'|'L']
+;
+complex_constant(expr : node) ::=
+	#readNumeric:expr.value
+	[#!ignore float_suffix:sSuf]? 
+	// c99 complex
+	[
+	 #!ignore ['i'|'I']
+	 => insert expr.ctype.specifier = "__complex__";
+	 => expr.value = expr.value + 'i';
+	]?
+	=> {
+	     if (!sSuf)
+	     {	insert expr.ctype.identifier = "double"; }
+	     else if (sSuf == 'f' || sSuf == 'F')
+	     {	insert expr.ctype.identifier = "float" = 1; expr.value = expr.value + 'f'; }
+	     else if (sSuf == 'l' || sSuf == 'L')
+	     {
+	       insert expr.ctype.specifier = "long"; 
+	       insert expr.ctype.identifier = "double";
+	       expr.value = expr.value + 'l';
+	     }
+	}
+;

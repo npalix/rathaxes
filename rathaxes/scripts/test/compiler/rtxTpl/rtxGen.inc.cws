@@ -1,0 +1,141 @@
+#if !existFunction(rtxGen_version)
+
+function rtxGen_version()
+{return "1.0";}
+
+
+declare function instanceTpl<T>(ast_context : node, c_tree : node);
+function	instanceTpl<T>(ast_context : node, c_tree : node)
+{
+	// If this cocde is called, there was a linking problem.
+	error("BAD LINK - Unkown registry value:" + T);
+}
+
+////////////////// Generate codeworker and believe !
+///////////////// FUNCTIONS FOR GENERATING PLACE HOLDER SPECIFIC CODEWORKER
+// That will allow specialization of generated code depending on the type of
+// place holders being treated.
+function    rtxGenPlaceHolder<T>(item : node, theKey : value)
+{
+    error("Unknown place holder type:"+T);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+            // Resolving VALUE (place Holder @this.key@)
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_context, c_tree.compile["@this.key@"].node,
+                                                           c_tree.compile["@this.key@"].node);
+        @}, item, item.cws_expr);
+    removeVariable(item.key);
+    //traceLine("Generated code : "+item.cws_expr);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+            // Resolving LINK (place Holder @this.key@)
+		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_context, c_tree.compile["@this.key@"].node,
+                                                           c_tree.compile["@this.key@"].node);
+        @}, item, item.cws_expr);
+    removeVariable(item.key);
+    //traceLine("Generated code : "+item.cws_expr);
+}
+
+
+function	gencodeworker(tpl_node : node, uid : value)
+{
+	// Put the PIC string containing the code into the template node
+    // in order to be accessible durint the codeworker code generation
+	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
+	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
+	//saveToFile(sAstFile, workaround.code_pic);
+	saveProject(sAstFile, tpl_node.body);
+	insert tpl_node.save_ast = sAstFile;
+	insert tpl_node.save_cws = sCwsFile;
+
+
+    // Here, we must iterate on each tpl_node's .compile to generate the bits
+    // of codeworker matching each of these placeHolders.
+    foreach item in tpl_node.body.compile
+    {
+        traceLine("GENERATING CWS For placeHolder "+key(item));
+        rtxGenPlaceHolder<item.node.body.type>(item, key(item));
+    }
+
+
+	local	source_codeworker;
+	generateString({
+
+
+		// auto generated codeworker DO NOT EDIT
+		// Here, we specialise the function instanceTPL with this.prototype
+        // as the key, but in the long term, an ID would be best
+		function	instanceTpl<"@this.prototype@">(ast_context : node,
+                                                    c_tree : node)
+		{
+			cwLoadProject("@this.save_ast@", c_tree);
+
+			// save again for comparison out of the process
+			saveProject("@this.save_ast@2", c_tree);
+	
+			// mapping data into placeholders :
+            <%
+            foreach item in this.body.compile
+            { %>@item.cws_expr@<% }
+            %>
+
+			// save again for comparison out of the process
+			saveProject("@this.save_ast@3", c_tree);
+		}
+
+	@}, tpl_node, source_codeworker);
+
+	// We only call this function for one template
+	saveToFile(tpl_node.save_cws, source_codeworker);
+}
+
+
+/////////////////  WALKING FUNCTIONS FOR THE CODEWORKER CODE GENERATION
+function	rtxGen<T>(local_node : node, uid : node)
+{
+	error("unknown type for generation:" + T);
+}
+
+function	rtxGen<"__rtx_with__">(local_node : node, uid : node)
+{
+	traceLine("GEN WITH");
+	rtxGen<local_node.body.type>(local_node.body, uid);
+}
+
+function	rtxGen<"__block__">(local_node : node, uid : node)
+{
+	traceLine("GEN BLOCK");
+	foreach item in local_node.block
+	{	
+		rtxGen<item.type>(item, uid);
+		uid = $uid + 1$;
+	}
+}
+
+function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
+{
+	traceLine("GEN TPL");
+	// save the node to generate for cold analysis
+	saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
+	// root of the template generation
+	gencodeworker(local_node, uid);
+
+    // Now we register the blt to be able to use it.
+    local theWith;
+    local theID;
+    rtxLink_SessionRegister(local_node.prototype, theWith, local_node.save_cws, theID);
+}
+
+#end
