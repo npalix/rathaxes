@@ -11,6 +11,15 @@ function	rtxNode(local_node : node)
     return true;
 }
 
+
+function rtxNodeIdentifier(local_node : node, id : value)
+{
+    insert local_node.type = "__rtx_id__";
+
+    insert local_node.name = id;
+    return true;
+}
+
 function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
 {
     rtxNode(local_node);
@@ -85,23 +94,13 @@ function rtxNodePlaceHolder(local_node   : node)
     return true;
 }
 
-function rtxNodeIdentifier(local_node : node)
-{
-    insert local_node.type;
-    local_node.type = "__rtx_tpl_id__";
-
-    insert local_node.name;
-}
-
 function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
 {
     pushItem local_node.identifiers;
 
     local theIdentifier;
     ref theIdentifier = local_node.identifiers#back;
-    rtxNodeIdentifier(theIdentifier);
-        
-    theIdentifier.name = theField;
+    rtxNodeIdentifier(theIdentifier, theField);
 
     return true;
 }
