@@ -40,11 +40,12 @@ rtx_itf_declaration(theBlock : node) ::=
 
     => local qualifier;
     => local sStmt;
-    => local block;
-    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, block))
+    => local body;
+
     rtx_itf_qualifier:qualifier
     rtx_itf_type:sStmt
-    rtx_itf_stmt<sStmt>(block, sStmt) ';'
+    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, body))
+    rtx_itf_stmt<sStmt>(body) ';'
 ;
 
 rtx_type_list(theNode : node) ::=
@@ -53,27 +54,38 @@ rtx_type_list(theNode : node) ::=
 ;
 
 rtx_itf_stmt<"type">(theNode : node) ::=
-    #readIdentifier:theNode.name ['{' [rtx_type_list(theNode.rtype)]* '}']?
+    #readIdentifier:sName
+    #check(rtxNodeRType(theNode.rtype, sName))
+    ['{' [rtx_type_list(theNode.identifiers)]* '}']?
 ;
 
-/* rtx_itf_stmt<"builtintype">(theNode : node) ::= */
-/*     #readIdentifier:theNode.name */
-/* ; */
+rtx_itf_stmt<"builtintype">(theNode : node) ::=
+    #readIdentifier:name
+    #check(rtxNodeRType(theNode.rtype, name))
+;
 
-rtx_itf_stmt<"variable">(theNode : node, sStmt : value) ::=
+rtx_itf_stmt<"variable">(theNode : node) ::=
     #readIdentifier:sType #readIdentifier:sName
-    #check(rtxNodeItfStmt(theNode, sStmt))
-    #check(rtxNodeItfRType(theNode.rtype, sType, sName))
+    #check(rtxNodeRType(theNode.rtype, sType))
+    #pushItem(theNode.identifiers)
+    => theNode.identifiers#back = sName;
 ;
 
-/* rtx_seq_param ::= */
-/*     #readIdentifier:sType [#readIdentifier:sName]? */
-/* ; */
+rtx_seq_param(theNode : node, theIdentifiers : node) ::=
+    #pushItem(theIdentifiers)
+    #pushItem(theNode)
+    #readIdentifier:sType [#readIdentifier:sName]?
+#check(rtxNodeIdentifier(theNode#back, sType))
+    => theIdentifiers#back = sName;
+;
 
-/* rtx_seq_parameter(theNode : node) ::= */
-/*     '(' rtx_seq_param [',' rtx_seq_param]* ')' */
-/* ; */
+rtx_seq_parameter(theNode : node, theIdentifiers : node) ::=
+    '(' rtx_seq_param(theNode.params, theIdentifiers)
+    [',' rtx_seq_param(theNode.params, theIdentifiers)]* ')'
+;
 
-/* rtx_itf_stmt<"sequence">(theNode : node) ::= */
-/*     #readIdentifier:theNode.name rtx_seq_parameter(theNode.rtype) */
-/* ; */
+rtx_itf_stmt<"sequence">(theNode : node) ::=
+    #readIdentifier:sName
+    #check(rtxNodeRType(theNode.rtype, sName))
+    rtx_seq_parameter(theNode.rtype, theNode.identifiers)
+;

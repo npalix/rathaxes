@@ -1,8 +1,5 @@
 #include "rtxNode.inc.cws"
 
-declare function        rtxNodeItfStmt(local_node    : node,
-                                       out_ref_dtype : reference);
-
 function        rtxNodeItf(local_node      : node,
                            itf_name        : value,
                            out_ref_inherit : reference,
@@ -22,40 +19,29 @@ function        rtxNodeItf(local_node      : node,
 }
 
 function        rtxNodeItfDeclaration(local_node        : node,
-                                      out_ref_qualifier : reference,
-                                      out_ref_dtype     : reference,
-                                      out_ref_block     : reference)
+                                      qualifier         : value,
+                                      dtype             : value,
+                                      out_ref_body      : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_itf_decl__";
-    insert local_node.qualifier;
-    insert local_node.block;
-    // rtxNodeItfStmt(local_node.block, out_ref_dtype);
 
-    ref out_ref_qualifier = local_node.qualifier;
-    ref out_ref_block = local_node.block;
+    insert local_node.qualifier = qualifier;
+    insert local_node.body;
+    insert local_node.body.type = dtype;
+    insert local_node.body.rtype;
+    insert local_node.body.identifiers;
+
+    ref out_ref_body = local_node.body;
     return true;
 }
 
-function        rtxNodeItfStmt(local_node    : node,
-                               dtype         : value)
+function        rtxNodeRType(local_node : node,
+                             name       : value)
 {
     rtxNode(local_node);
-    local_node.type = "__rtx_itf_stmt__";
-    insert local_node.dtype = value;
-    insert local_node.rtype;
-
-    return true;
-}
-
-function        rtxNodeItfRType(local_node : node,
-                                name       : value,
-                                dtype      : value)
-{
-    rtxNode(local_node);
-    local_node.type = "__rtype__";
+    local_node.type = "__rtx_rtype__";
     insert local_node.name = name;
-    insert local_node.dtype = dtype;
-
+    insert local_node.params;
     return true;
 }
