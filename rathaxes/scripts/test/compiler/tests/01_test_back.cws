@@ -78,7 +78,7 @@ generateString({
 
 traceLine("input:\n" + input);
 
-
+#include "rtxInterfaceNode.inc.cws"
 
 local source;
 cnormDialect<"__std__">(source);
