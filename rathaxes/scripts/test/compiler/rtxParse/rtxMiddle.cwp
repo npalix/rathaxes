@@ -2,43 +2,78 @@
 // TODO: move from rtxBack the root of grammar in a dispatcher
 
 rtx_stmt<"interface">(theBlock : node) ::=
-	#readIdentifier [inherit]?
-	'{'
-		[rtx_itf_declaration]*
-	'}'
+    #pushItem(theBlock.block)
+    => local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    => local inheritNode;
+    => local body;
+
+    #readIdentifier:name
+    #check(rtxNodeItf(lastNode, name, inheritNode, body))
+    [inheritance(inheritNode)]?
+    '{'
+        [rtx_itf_declaration(body)]*
+    '}'
 ;
 
-inherit ::= ':' #readIdentifier [',' #readIdentifier]*
+inherit(theNode : node) ::=
+    #pushItem(theNode)
+    #readIdentifier:theNode#back
 ;
 
-rtx_itf_qualifier ::= "provided" | "required" | "optional"
+inheritance(theNode : node) ::=
+    ':' inherit(theNode) [',' inherit(theNode)]*
 ;
 
-rtx_itf_type ::= "sequence" | "variable" | "type" | "builtintype"
+rtx_itf_qualifier ::=
+    "provided" | "required" | "optional"
 ;
 
-rtx_itf_declaration ::=
-	rtx_itf_qualifier rtx_itf_type:sStmt rtx_itf_stmt<sStmt> ';'
+rtx_itf_type ::=
+    "sequence" | "variable" | "type" | "builtintype"
 ;
 
-rtx_type_list ::= #readIdentifier:sType ';'
+rtx_itf_declaration(theBlock : node) ::=
+    #pushItem(theBlock.block)
+    => local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+
+    => local qualifier;
+    => local sStmt;
+    => local block;
+    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, block))
+    rtx_itf_qualifier:qualifier
+    rtx_itf_type:sStmt
+    rtx_itf_stmt<sStmt>(block, sStmt) ';'
 ;
 
-rtx_itf_stmt<"type"> ::= #readIdentifier:sType ['{' [rtx_type_list]* '}']?
+rtx_type_list(theNode : node) ::=
+    #pushItem(theNode)
+    #readIdentifier:theNode#back ';'
 ;
 
-rtx_itf_stmt<"builtintype"> ::= #readIdentifier:sType
+/* rtx_itf_stmt<"type">(theNode : node) ::= */
+/*     #readIdentifier:theNode.name ['{' [rtx_type_list(theNode.rtype)]* '}']? */
+/* ; */
+
+/* rtx_itf_stmt<"builtintype">(theNode : node) ::= */
+/*     #readIdentifier:theNode.name */
+/* ; */
+
+rtx_itf_stmt<"variable">(theNode : node, sStmt : value) ::=
+    #readIdentifier:sType #readIdentifier:sName
+    #check(rtxNodeItfStmt(theNode, sStmt))
+    #check(rtxNodeItfRType(theNode.rtype, sType, sName))
 ;
 
-rtx_itf_stmt<"variable"> ::= #readIdentifier:sType #readIdentifier:sName
-;
+/* rtx_seq_param ::= */
+/*     #readIdentifier:sType [#readIdentifier:sName]? */
+/* ; */
 
-rtx_seq_param ::= #readIdentifier:sType [#readIdentifier:sName]?
-;
+/* rtx_seq_parameter(theNode : node) ::= */
+/*     '(' rtx_seq_param [',' rtx_seq_param]* ')' */
+/* ; */
 
-rtx_seq_parameter ::= '(' rtx_seq_param [',' rtx_seq_param]* ')'
-;
-
-rtx_itf_stmt<"sequence">::= // sequence
-	#readIdentifier:sName rtx_seq_parameter
-;
+/* rtx_itf_stmt<"sequence">(theNode : node) ::= */
+/*     #readIdentifier:theNode.name rtx_seq_parameter(theNode.rtype) */
+/* ; */

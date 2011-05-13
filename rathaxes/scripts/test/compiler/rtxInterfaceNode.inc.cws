@@ -1,0 +1,61 @@
+#include "rtxNode.inc.cws"
+
+declare function        rtxNodeItfStmt(local_node    : node,
+                                       out_ref_dtype : reference);
+
+function        rtxNodeItf(local_node      : node,
+                           itf_name        : value,
+                           out_ref_inherit : reference,
+                           out_ref_body    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    insert local_node.name = itf_name;
+    insert local_node.inheritance;
+
+    /* XXX: Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    ref out_ref_inherit = local_node.inheritance;
+    return true;
+}
+
+function        rtxNodeItfDeclaration(local_node        : node,
+                                      out_ref_qualifier : reference,
+                                      out_ref_dtype     : reference,
+                                      out_ref_block     : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier;
+    insert local_node.block;
+    // rtxNodeItfStmt(local_node.block, out_ref_dtype);
+
+    ref out_ref_qualifier = local_node.qualifier;
+    ref out_ref_block = local_node.block;
+    return true;
+}
+
+function        rtxNodeItfStmt(local_node    : node,
+                               dtype         : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_stmt__";
+    insert local_node.dtype = value;
+    insert local_node.rtype;
+
+    return true;
+}
+
+function        rtxNodeItfRType(local_node : node,
+                                name       : value,
+                                dtype      : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtype__";
+    insert local_node.name = name;
+    insert local_node.dtype = dtype;
+
+    return true;
+}
