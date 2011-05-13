@@ -1,6 +1,6 @@
 #include "cnorm.inc.cws"
 
-#include "rtxNode.inc.cws"
+#include "rtxNode/rtxNode.inc.cws"
 
 #if !existFunction(rtxMeta_version)
 
