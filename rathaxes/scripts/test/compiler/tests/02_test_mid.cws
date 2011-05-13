@@ -20,8 +20,8 @@ generateString({
         {
             required variable   req_var_type    dummy_name;
             /* provided            builtintype     pro_builtin; */
-            /* optional            type            opt_type { foo; bar; }; */
-            /* required            sequence        req_sequence(opt_type); */
+            optional            type            opt_type { foo; bar; };
+            required            sequence        req_sequence(opt_type);
         }
 
 @}, dummy, input);

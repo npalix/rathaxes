@@ -52,9 +52,9 @@ rtx_type_list(theNode : node) ::=
     #readIdentifier:theNode#back ';'
 ;
 
-/* rtx_itf_stmt<"type">(theNode : node) ::= */
-/*     #readIdentifier:theNode.name ['{' [rtx_type_list(theNode.rtype)]* '}']? */
-/* ; */
+rtx_itf_stmt<"type">(theNode : node) ::=
+    #readIdentifier:theNode.name ['{' [rtx_type_list(theNode.rtype)]* '}']?
+;
 
 /* rtx_itf_stmt<"builtintype">(theNode : node) ::= */
 /*     #readIdentifier:theNode.name */
