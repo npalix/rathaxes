@@ -71,9 +71,89 @@ LSE.
 
 \section{Organisation du groupe}
 
+\rtx\ est un groupe de cinq étudiants :
+\begin{description}
+\item[Thomas Luquet] : Thomas s'occupe des relations extérieures (tickets pour
+le labEIP, organisation des voyages\ldots) et du planning (rappel des réunions,
+des dates de rendus et inscription aux soutenances) ;
+\item[Louis Opter] : Louis s'occupe de gérer le dépôt du code, du système de
+compilation et de distribution (paquets/installateurs), du site vitrine, de la
+mise en forme de tous les documents du projet et de la documentation
+utilisateur ;
+\item[David Pineau] : David s'occupe de la conception du langage, du
+compilateur écrit en CNorm et de la documentation technique du langage et du
+compilateur ;
+\item[Thomas Sanchez] : Thomas s'occupe de la conception du langage grâce aux
+concepts techniques qu'il obtient en développant des pilotes modèles ;
+\item[Zoltan Konarzewski] : Zoltan assiste David sur la réalisation du
+compilateur.
+\end{description}
+
+Enfin, il convient de citer Lionel Auroux qui ---avec son expérience et sa vision
+sur le long terme--- arbitre les décisions à prendre et les prochains points sur
+lesquels travailler.
+
 \section{Méthodologie}
 
+La méthodologie du groupe s'appuie autour du dépôt de code hébergé sur le
+service Google Code. Le dépôt de code est au format Mercurial qui a été retenu
+pour deux raisons :
+\begin{itemize}
+\item Son fonctionnement décentralisé qui facilite l'ajout de nouvelles
+fonctionnalités étant donné que chaque développeur possède son propre dépôt ;
+\item Sa facilité d'utilisation ---en particulier sous Windows--- et sa facilité
+de prise en main par les utilisateurs de Subversion.
+\end{itemize}
+
+Google Code nous évite un travail d'administration (nous n'avons pas besoin de
+gérer nos propres serveurs) et en plus d'héberger le dépôt Mercurial permet
+aussi:
+\begin{itemize}
+\item D'avoir une façade publique ou les développeurs intéressés peuvent
+facilement consulter nos documentations et télécharger le projet ;
+\item Un répertoire de bogues publique.
+\end{itemize}
+Google nous permet aussi d'héberger une liste de diffusion facilement, dont nous
+nous servons intensivement pour tous nos débats internes.
+
+Le canal IRC \texttt{\#rathaxes} dont nous nous servons pour nos discussions
+internes et qui pourra servir d'outils de supports pour nos utilisateurs, est
+enregistré sur le réseau freenode.
+
+Enfin, notre système de compilation possède plusieurs automatismes pour
+faciliter le développement et la distribution du projet :
+\begin{itemize}
+\item Exécution automatisé des tests unitaires et d'intégration aussi bien sous
+Windows et que les autres plateformes ;
+\item Téléchargement automatique des dépendances du projets ;
+\item Génération automatique d'un installateur Windows et des archives sources
+pour Windows ou les autre plateformes.
+\end{itemize}
+
 \section{Organisation des réunions}
+
+Les réunions sont organisées chaque Samedi à 19 heures CEST en visio-conférence
+sur Skype. Nos réunions suivent toutes le même planning :
+\begin{itemize}
+\item Thomas L. fait le tour sur les points administratifs à voir (tickets avec
+le labEIP, date butoirs des candidatures aux conférences\ldots) et nous
+rappel les prochains événements sur le calendrier du labEIP ;
+\item Point sur l'avancement par rapport a notre planning et celui du labEIP ;
+\item Discussions sur les décisions technique à prendre (si besoin) ;
+\item Distribution du travail.
+\end{itemize}
+
+Un résumé de la réunion est rédigé par Thomas L. et envoyé sur notre liste de
+diffusion interne.
+
+L'utilisation de moyens de communications électroniques est justifiée par :
+\begin{itemize}
+\item Le fait que deux des membres du groupes se trouvent en Californie avec
+neuf heures de décalage horaire par rapport à la France ;
+\item La volonté d'avoir un modèle de développement qui laisse la possibilité à
+des développeurs extérieurs à Epitech de pouvoir facilement suivre notre
+avancement et contribuer au projet.
+\end{itemize}
 
 \chapter{Points sur les documentations}
 
