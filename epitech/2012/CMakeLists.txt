@@ -3,3 +3,4 @@ ADD_SUBDIRECTORY(aa)    # Architecture Assessment
 ADD_SUBDIRECTORY(ud)    # User Documentation
 ADD_SUBDIRECTORY(ta)    # Technical Assessment
 ADD_SUBDIRECTORY(devis_rmll)    # Devis RMLL
+ADD_SUBDIRECTORY(copil) # Comité de pilotage (Steering Comitee)
