@@ -37,10 +37,6 @@
 \DeclareOption{francais}{\def\@rtxlanguage{francais}}
 \DeclareOption{american}{\def\@rtxlanguage{american}}
 
-% Activate chapter prefix like in the report class, you are not supposed to use
-% chapters in a report, but since we don't have book class yet...
-\PassOptionsToClass{chapterprefix=on}{scrreprt}
-
 % Apply given options to the scrreprt class
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{scrreprt}}
 
