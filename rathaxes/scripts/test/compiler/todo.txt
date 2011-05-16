@@ -33,7 +33,7 @@ Tests Backend :
      * Ajouter le parsing des chunks                                    <= DONE
      * Update le cache pour pouvoir chercher des chunks                 <= DONE
      * Creer des fonctions de résolution des chunks                     <= TODO
-     * Deplacer le .compile des templates vers les chunks               <= TODO
+     * Deplacer le .compile des templates vers les chunks               <= DONE
 
  * Mettre a jour la syntaxe du with                                     <= TODO
 

@@ -19,17 +19,14 @@ function	rtxTpl_walk<T>(local_node : node)
 function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
 {
 	traceLine("template! walk on " + local_node.prototype);
-    local dummyIdx = $-1$;
     foreach chunk in local_node.body.block
     {
-        rtxTpl_compile<chunk.body.type>(chunk.body, local_node.body.compile,
-                                        dummyIdx);
+        rtxTpl_walk<chunk.type>(chunk);
     }
 }
 
 function    rtxTpl_walk<"__rtx_chunk__">(local_node : node)
 {
-    insert  local_node.body.compile;
     local   dummyIdx = $-1$;
     traceLine("walking lone chunk...");
     rtxTpl_compile<local_node.body.type>(local_node.body,

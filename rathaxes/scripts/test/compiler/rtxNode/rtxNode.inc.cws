@@ -8,6 +8,7 @@ function	rtxNode(local_node : node)
 {
     cnormNode(local_node);
     local_node.type = "__rtx_node__";
+
     return true;
 }
 
@@ -16,6 +17,7 @@ function rtxNodeIdentifier(local_node : node, id : value)
     insert local_node.type = "__rtx_id__";
 
     insert local_node.name = id;
+
     return true;
 }
 

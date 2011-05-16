@@ -130,7 +130,6 @@ traceLine("====>Result of placeHolder Analyse : __03_rtx_compil_tplnode__.tree")
 saveProject("__03_rtx_compil_tplnode__.tree", source);
 
 
-
 #include "rtxLink.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 #include "rtxTpl/rtxResolve.inc.cws"
