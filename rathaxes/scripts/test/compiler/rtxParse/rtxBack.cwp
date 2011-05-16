@@ -80,18 +80,7 @@ rtx_stmt_chunk_scoped_identifier(sPointCut : node) ::=
 ;
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=
-    '('
-    => local parameters;
-    #readIdentifier:sSymbol
-    #pushItem(parameters)
-    => parameters#back = sSymbol;
-    [
-        ','
-        #readIdentifier:sSymbol
-        #pushItem(parameters)
-        => parameters#back = sSymbol;
-    ]*
-    ')'
+    '(' rtx_var_list(theParams) ')'
 ;
 rtx_stmt<"chunk">(theBlock : node) ::=
     =>traceLine("CHUNK");
@@ -107,6 +96,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     // Build the chunk node, and retrieve the references to it's internals
     // (body and parameters)
     #check(rtxNodeChunk(lastNode, sPointCut, parameters, body))
+    #check(rtxNodeVarList(parameters))
     [
         rtx_stmt_chunk_params(parameters)
     ]?

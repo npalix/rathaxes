@@ -27,12 +27,16 @@ Tests Backend :
      * Ajouter le parsing du pointcut dans le with (rtxBack)            <= DONE
      * Ajouter le parsing du pointcut (rtxMeta)                         <= DONE
      * Ajouter le parsing du pointcut default (rtxMeta)                 <= DONE
-     * Ajouter la génération du code pour les pointcut                  <= TODO
-     * Ajouter la génération du code pour les pointcut default          <= TODO
+     * Ajouter la génération du code pour les pointcut                  <= DONE
+     * Ajouter la génération du code pour les pointcut default          <= DONE
+     * Ajouter la gestion des paramètres du pointcut                    <= TODO
    * Creer la syntaxe pour le chunk                                     <= TODO
      * Ajouter le parsing des chunks                                    <= DONE
      * Update le cache pour pouvoir chercher des chunks                 <= DONE
      * Creer des fonctions de résolution des chunks                     <= TODO
+       * Creer une fonction de résolution depuis un pointcut            <= DONE
+       * Créer une fonction de résolution depuis un CALL                <= TODO
+     * Creer un test pour verifier le builder de resVals                <= TODO
      * Deplacer le .compile des templates vers les chunks               <= DONE
 
  * Mettre a jour la syntaxe du with                                     <= TODO

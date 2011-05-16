@@ -26,5 +26,6 @@ rtx_stmt<sKeyword>(theBlock : node) ::=
     => error("Unknown statement :" + sKeyword);
 ;
 
+#include "rtxCommon.cwp"
 #include "rtxMiddle.cwp"
 #include "rtxBack.cwp"

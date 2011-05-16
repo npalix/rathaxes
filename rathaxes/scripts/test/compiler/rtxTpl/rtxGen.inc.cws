@@ -145,7 +145,7 @@ function	gencodeworker(blt_node : node, blt_body : node, uid : value)
 	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
 	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
 	//saveToFile(sAstFile, workaround.code_pic);
-	saveProject(sAstFile, blt_body);
+	saveProject(sAstFile, blt_node);
 	insert blt_node.tree_file = sAstFile;
 	insert blt_node.script_file = sCwsFile;
 
