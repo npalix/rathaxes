@@ -273,9 +273,8 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
         localref theNode = this.session.global_code#back;
         insert theNode.with;
         setall theNode.with = local_node.var_map;
-        insert theNode.block;
-        setall theNode.block = local_node.c_block;
-        insert theNode.script = local_node.script_path;
+        insert theNode.script_file = local_node.script_file;
+        insert theNode.tree_file = local_node.tree_file;
     }
 
     // Then recurse to register every template.

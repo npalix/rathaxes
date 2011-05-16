@@ -13,13 +13,12 @@ function rtxResolve_version()
  * It is only used by a link resolution.
  *
  */
-function    rtxResolve_InsertCode(destBlock : node, startIdx : value, phName : value, sourceNode : node)
+function    rtxResolve_InsertCode(destBlock : node, startIdx : value,
+                                  phName : value, phIdx : node,
+                                  sourceNode : node)
 {
     local sKey;
-    local phIdx = 0;
 
-    // First, remove the current placeHolder, in case there was no statement
-    removeElement(destBlock, startIdx);
     // Here, we are at the root of the resolved template AST.
     foreach item in sourceNode.block
     {
@@ -62,11 +61,12 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
     foreach dst_param in dst_params.list
     {
         localref theValue = src_resVals;
-        foreach src_param_field in src_params.list[$idx$].identifiers
+        foreach src_param_field in src_params.list[idx].identifiers
         {
             ref theValue = theValue[src_param_field.name];
         }
-        insert dst_resVals[dst_param.identifiers[0].name] = theValue;
+        insert dst_resVals[dst_param.identifiers[0].name];
+        setall dst_resVals[dst_param.identifiers[0].name] = theValue;
         increment(idx); 
     }
 }
@@ -144,42 +144,46 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
         // instead of the resolved chunks
         if (existVariable(local_node.default))
         {
+            local phIdx = 0;
             // The placeholrder's parent is the raw pointcut node.
             // Then it's parent is the array of statements (or block).
             rtxResolve_InsertCode(theBlock, thePointcut.block_idx,
                                   thePointcut.ref_placeholder,
+                                  phIdx,
                                   local_node.default.body);
         }
         // FIXME XXX TODO : Check whether the pointcut is inside another
         // expression of not, though it should never be.
         else // Nothing by default : delete the node !
         {
-            removeElement(thePointcut.block_idx, theBlock);
+            removeElement(theBlock, thePointcut.block_idx);
         }
     }
     // There are some chunks left, so it's up to us to resolve them
     // before inserting them in-place of the pointcut.
     else
     {
+
         local startIdx = thePointcut.block_idx;
+        local phName = thePointcut.ref_placeholder#parent.id;
+        local phIdx = 0;
+        // First, remove the current placeHolder, in case there was no statement
+        removeElement(theBlock, thePointcut.block_idx);
         foreach chunk in chunks
         {
-            local tree_file;
             local c_tree;
-            if (rtxLink_LoadScript(chunk, tree_file) == true)
+            if (rtxLink_LoadScript(chunk, c_tree) == true)
             {
                 local resVals;
-                cwLoadProject(tree_file, c_tree);
-                // FIXME TODO XXX Build the resVals node
                 rtxResolve_BuildParameterResVals(resolverValues,
                                                  local_node.parameters,
                                                  resVals, c_tree.parameters);
 
-                instanceTpl<chunk.tpl_id+"_"+local_node.name>(resVals,
-                                                                c_tree.body);
-                rtxResolve_InsertCode(theBlock, startIdx,
-                                      thePointcut.ref_placeholder, c_tree.body);
-                startIdx = $startIdx + getArraySize(c_tree.block)$;
+                instanceTpl<c_tree.instanceKey>(resVals, c_tree.body);
+                rtxResolve_InsertCode(theBlock,
+                                      startIdx, phName, phIdx,
+                                      c_tree.body);
+                increment(startIdx);
             }
             else
                 traceLine("inject<\"__rtx_pointcut__\">:<ERROR> Could not "
@@ -234,8 +238,11 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
     // placeHolder actually is : block.[idx].expr.id, so #parent * 3
     localref theBlock = treeNode#parent.ref_placeholder#parent#parent#parent;
     localref theLink = treeNode#parent;
+    local phIdx = 0;
+    // First, remove the current placeHolder, in case there was no statement
+    removeElement(theBlock, theLink.block_idx);
     rtxResolve_InsertCode(theBlock, theLink.block_idx,
-                          theLink.ref_placeholder, tpl_c_tree.body);
+                          theLink.ref_placeholder, phIdx, tpl_c_tree.body);
 
     return true;
 }

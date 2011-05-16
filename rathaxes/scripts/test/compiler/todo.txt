@@ -31,7 +31,8 @@ Tests Backend :
      * Ajouter la génération du code pour les pointcut default          <= DONE
      * Ajouter la gestion des paramètres du pointcut                    <= DONE
      * Creer une fonction de résolution depuis un pointcut              <= DONE
-     * Créer un test pour la résolution d'un pointcut                   <= TODO
+     * Créer un test pour la résolution d'un pointcut par defaut        <= TODO
+     * Créer un test pour la résolution d'un pointcut avec chunks       <= DONE
    * Creer la syntaxe pour le chunk                                     <= TODO
      * Ajouter le parsing des chunks                                    <= DONE
      * Update le cache pour pouvoir chercher des chunks                 <= DONE

@@ -27,8 +27,8 @@ function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@"+
-                      " (@this.node.body.type@)");
+		    traceLine("inject for key @this.key@ : @this.template_expr@"
+                      +" (@this.node.body.type@)");
             inject<c_tree.compile["@this.key@"].node.type>(ast_ctx,
                                             c_tree.compile["@this.key@"].node,
                                             c_tree.compile["@this.key@"].node);
@@ -42,8 +42,7 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@"
-                      +" (@this.node.body.type@)");
+		    traceLine("inject for key @this.key@ : (@this.node.body.type@)");
             inject<c_tree.compile["@this.key@"].node.type>(ast_ctx,
                                             c_tree.compile["@this.key@"].node,
                                             c_tree.compile["@this.key@"].node);
