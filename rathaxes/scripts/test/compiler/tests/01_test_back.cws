@@ -147,13 +147,19 @@ foreach item in source.block
 
 
 // Load the two templates :
+// First, hash the prototype, then find every template matching it,
+// And finally reduce the selection to only one template before loading.
 local theProto = "open(Context ctx)";
-local theID;
 local theWith;
-rtxLink_GetIDFromTpl(theProto, theWith, theID,
-                     true); // true for fromSession
-traceLine("Loading TPL ID == "+theID+" : open(Context ctx)");
-rtxLink_LoadTemplate(theID, true); // true for fromSession
+local theHash;
+hashTemplatePrototype(theProto, theHash);
+local theTemplates;
+if (rtxLink_findTemplates(theHash, theTemplates) == false)
+    error("01_test_back.cws: The template could not be found by rtxLink.");
+if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
+    error("01_test_back.cws: rtxLink could not select an unique template.");
+traceLine("Loading template : open(Context ctx)...");
+rtxLink_LoadScript(theTemplates);
 
 // Now, try the C code generation out : simulate an input (the resVal node)
 // And start the resolution of the placeHolders.
