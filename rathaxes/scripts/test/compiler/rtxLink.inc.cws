@@ -13,9 +13,9 @@ function rtxLink_version()
 /******************************************************************************/
 
 // wrapper/faker for the template prototype hashing function (future)
-function hashTemplatePrototype(tpl_node : node, out_ref_hash : reference)
+function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
 {
-    out_ref_hash = tpl_node.prototype;
+    out_ref_hash = prototype_node;
 }
 
 /*
@@ -94,6 +94,30 @@ function rtxLink_LoadScript(cache_node : node, out_ref_file : reference)
 
 
 /*
+ * This function searches the chunk associated to the CALL pointcut
+ * and loads it script for the user.
+ */
+function rtxLink_LoadTemplateCall(tpl_node : node, out_ref_file : reference)
+{
+    foreach chunk in tpl_node.chunks
+    {
+        if (key(chunk) == "CALL")
+        {
+            if (!findElement("CALL", this.session.chunks)
+                || !findElement(chunk, this.session.chunks["CALL"]))
+                error("rtxLink:<ERROR> The CALL chunk associated to the"
+                      +" template could not be found within the cache.");
+
+            localref cache_node = this.session.chunks["CALL"][chunk];
+            rtxLink_LoadScript(cache_node, out_ref_file);
+            return true;
+        }
+    }
+    error("rtxLink:<ERROR> The template does not contain a CALL chunk.");
+}
+
+
+/*
  * This function returns the first global_code cache node found matching the
  * configuration block.
  */
@@ -140,7 +164,13 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
     if (getArraySize(templates) != 1)
         error("rtxLink:<ERROR> No unique template matching the configuration.");
 
-    setall templates = templates[0];
+    // We have to use a temp here because otherwise, codeworker deletes
+    // everything frmo the source before the attribution
+    // (making the result empty)
+    local temp;
+    setall temp = templates[0];
+    setall templates = temp;
+
     return true;
 }
 
@@ -148,13 +178,15 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
  * This functino returns a collection of template cache nodes for a given
  * template prototype (hashed).
  */
-function rtxLink_findTemplates(hash : value, out_tpls : node)
+function rtxLink_findTemplates(prototype : value, out_tpls : node)
 {
     if (!existVariable(this.session))
         error("rtxLink:<ERROR> The cache was not loaded before use !");
 
+    local hash;
+    hashTemplatePrototype(prototype, hash);
     if (!findElement(hash, this.session.templates))
-        error("rtxLink:<ERROR> No template registered for hash '"+hash+"'");
+        return false;
 
     setall out_tpls = this.session.templates[hash];
     return true;
@@ -220,6 +252,11 @@ declare function rtxLink_SessionRegister<T>(local_node : node,
                                             with_values : node,
                                             script_file : value,
                                             out_ref_id : reference);
+function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
+                                    script_file : value, out_ref_id : reference)
+{
+    error("rtxLink:<ERROR> Registration not implemented for node type "+T);
+}
 
 function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  with_values : node,
@@ -229,6 +266,8 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
     // Register the c_block as global_code if it contains anything
     if (!isEmpty(local_node.c_block.block))
     {
+        traceLine("rtxLink_SessionRegister<\"__rtx_with__\">:<LOG>"
+                  +"Registering global code !");
         // First, check that the with global block is not already registered
         // But... is it even necessary ?
         
@@ -284,6 +323,8 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
     if (rtxLink_CheckSingleTpl(hash, with_values))
         error("Template already present in session:" + local_node.prototype);
 
+    traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
+              +" registering template '"+local_node.prototype+"'");
     if (!findElement(hash, this.session.templates))
         insert this.session.templates[hash];
     
@@ -331,6 +372,8 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
     if (!findElement(local_node.name, this.session.chunks))
         insert this.session.chunks[local_node.name];
 
+    traceLine("rtxLink_SessionRegister<\"__rtx_chunk__\">:<LOG>"
+              +" Registering chunk for pointcut '"+local_node.name+"'");
     prevSize = getArraySize(this.session.chunks);
 
     pushItem this.session.chunks;
@@ -344,10 +387,10 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
 }
 
 // This function should be called with a root_block as local_node.
-function rtxLink_SessionRegister<"">(local_node : node,
-                                     with_values : node,
-                                     script_file : value,
-                                     out_ref_id : reference)
+function rtxLink_SessionRegister<"__root_block__">(local_node : node,
+                                                   with_values : node,
+                                                   script_file : value,
+                                                   out_ref_id : reference)
 {
     if (!existVariable(this.session))
     {
@@ -367,7 +410,7 @@ function rtxLink_SessionRegister<"">(local_node : node,
     {
         foreach item in local_node.block
         {
-            rtxLink_SessionRegister<item.type>(local_node, with_values,
+            rtxLink_SessionRegister<item.type>(item, with_values,
                                                script_file, out_ref_id);
         }
     }
@@ -381,17 +424,21 @@ function rtxLink_SessionRegister<"">(local_node : node,
 }
 
 
-function rtxLink_RegisterToCache(templateType : node, with_values :
-                                 node, scriptFile : value)
+function rtxLink_RegisterToCache(local_node : node)
 {
-    return false;
+    local dummy;
+    // The three last arguments are only used when registering
+    // specific elements.
+    if (rtxLink_SessionRegister<local_node.type>(local_node, dummy,
+                                                 dummy, dummy) == false)
+        return false;
+    return true;
 }
 
 
-function rtxLink_InstallScript(templateType : node, with_values : node,
-                               scriptFile : value)
+function rtxLink_InstallScripts(local_node : node)
 {
-    if (!rtxLink_RegisterToCache(templateType, with_values, scriptFile))
+    if (!rtxLink_RegisterToCache(local_node))
         return false;
 
     return true;

@@ -98,7 +98,6 @@ function    inject<"__rtx_tpl_var__">(resolverValues : node, treeNode : node,
 
     // Finally, concat suffix
     finalString = finalString + treeNode.sufix;
-
     treeNode#parent.ref_placeholder = finalString;
 }
 
@@ -111,7 +110,11 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
     local tpl_c_tree;
 
     // Each of these functions can throw an error to notify failure.
-    rtxLink_findTemplates(tplNode.linkedType.body, template);
+    if (rtxLink_findTemplates(tplNode.linkedType.body, template) == false)
+    {
+        error("inject<\"__rtx_tpl_link__\">: No template matching"+
+              " prototype '"+tplNode.linkedType.body+"' in cache.");
+    }
     rtxLink_selectUniqueTemplate(template, config);
     rtxLink_LoadScript(template, tree_file);
 
