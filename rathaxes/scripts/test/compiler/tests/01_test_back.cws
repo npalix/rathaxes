@@ -141,7 +141,15 @@ foreach item in source.block
 	local uid = 0;
 	rtxGen<item.type>(item, uid);
 	uid = $uid + 1$;
+}
 
+// Now that we have compiled and generated the code for each one of
+// our placeHolders, let's register them all into the cache :
+traceLine("====>Registering template code to CACHE");
+if (rtxLink_RegisterToCache(source) == false)
+{
+    traceLine("01_test_back.cws: Could not register blt into the cache !");
+    exit 1;
 }
 
 
@@ -150,16 +158,14 @@ foreach item in source.block
 // And finally reduce the selection to only one template before loading.
 local theProto = "open(Context ctx)";
 local theWith;
-local theHash;
-hashTemplatePrototype(theProto, theHash);
 local theTemplates;
-if (rtxLink_findTemplates(theHash, theTemplates) == false)
+if (rtxLink_findTemplates(theProto, theTemplates) == false)
     error("01_test_back.cws: The template could not be found by rtxLink.");
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
     error("01_test_back.cws: rtxLink could not select an unique template.");
 traceLine("Loading template : open(Context ctx)...");
 local theFile;
-rtxLink_LoadScript(theTemplates, theFile);
+rtxLink_LoadTemplateCall(theTemplates, theFile);
 
 // Now, try the C code generation out : simulate an input (the resVal node)
 // And start the resolution of the placeHolders.
