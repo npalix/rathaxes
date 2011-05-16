@@ -23,6 +23,10 @@ generateString({
          default:
              NULL;
         };
+        ${pointcut defaulted_pointcut
+         default:
+             test = 3;
+        };
         template open(Context ctx)
         {
             chunk typedefs_declaration
@@ -34,6 +38,7 @@ generateString({
 
             chunk global_data_declaration(theSymbol)
             {
+                theSymbol = 42;
                 ${TYPE} bla;
             }
 
@@ -57,6 +62,11 @@ generateString({
                 ${symbol.name}.open = &module_open;
             }
 
+            chunk theTestPointcut(OneRandomSymbol)
+            {
+                ${OneRandomSymbol.name} |= 1;
+            }
+
             chunk CALL
             {
                 void fake_func()
@@ -75,6 +85,11 @@ generateString({
                     int ret = strcmp("open", param);
                     return ret;
                 }
+            }
+
+            chunk theTestPointcut(OneRandomSymbol)
+            {
+                ${OneRandomSymbol.name} |= 2;
             }
 
             chunk CALL
