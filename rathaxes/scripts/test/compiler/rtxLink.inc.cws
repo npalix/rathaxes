@@ -76,11 +76,11 @@ function rtxLink_LoadScript(cache_node : node, out_ref_file : reference)
 {
     if (!existVariable(cache_node.script_file)
         || !existVariable(cache_node.tree_file))
-        error("rtxLink:<ERROR> The node does not contain any script to load !");
+        error("rtxLink:<ERROR> The node does not contain any script to load!");
 
-    traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script + "'");
+    traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script_file + "'");
     try {
-        extendExecutedScript(loadFile(cache_node.script));
+        extendExecutedScript(loadFile(cache_node.script_file));
     }
     catch (sError) {
         traceLine("rtxLink:<ERROR> Could not load resolution script : "+sError);
@@ -343,7 +343,7 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
         local chunk_id = hash;
         rtxLink_SessionRegister<chunk.type>(chunk, with_values,
                                             key(chunk), chunk_id);
-        insert cachedTpl.chunks[chunk.name] = chunk.id;
+        insert cachedTpl.chunks[chunk.name] = chunk_id;
     }
 }
 
@@ -374,14 +374,15 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
 
     traceLine("rtxLink_SessionRegister<\"__rtx_chunk__\">:<LOG>"
               +" Registering chunk for pointcut '"+local_node.name+"'");
-    prevSize = getArraySize(this.session.chunks);
+    prevSize = getArraySize(this.session.chunks[local_node.name]);
 
-    pushItem this.session.chunks;
-    localref theChunk = this.session.chunks#back;
+    pushItem this.session.chunks[local_node.name];
+    localref theChunk = this.session.chunks[local_node.name]#back;
     insert theChunk.name = local_node.name;
     insert theChunk.with = with_values;
     insert theChunk.tpl_id = out_ref_id;
-    insert theChunk.script = script_file;
+    insert theChunk.script_file = local_node.script_file;
+    insert theChunk.tree_file = local_node.tree_file;
 
     out_ref_id = prevSize;
 }

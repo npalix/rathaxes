@@ -68,7 +68,7 @@ generateString({
                     }
                 }
 
-                chunk CALLS
+                chunk CALL
                 {
                     test_${ctx.name}();
                 }
