@@ -62,11 +62,11 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
     foreach dst_param in dst_params.list
     {
         localref theValue = src_resVals;
-        foreach src_param_field in src_param.list[$idx$].identifiers
+        foreach src_param_field in src_params.list[$idx$].identifiers
         {
-            ref theValue = toInsert[src_param_field.name];
+            ref theValue = theValue[src_param_field.name];
         }
-        insert dst_resVals[item.identifiers[0].name] = theValue;
+        insert dst_resVals[dst_param.identifiers[0].name] = theValue;
         increment(idx); 
     }
 }
@@ -175,7 +175,7 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
                                                  local_node.parameters,
                                                  resVals, c_tree.parameters);
 
-                instanceChunk<chunk.tpl_id+"_"+local_node.name>(resVals,
+                instanceTpl<chunk.tpl_id+"_"+local_node.name>(resVals,
                                                                 c_tree.body);
                 rtxResolve_InsertCode(theBlock, startIdx,
                                       thePointcut.ref_placeholder, c_tree.body);

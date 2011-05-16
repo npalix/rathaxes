@@ -71,8 +71,9 @@ function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
 
 /*
  * This function loads the tree and the script for a given cache node.
+ * and next loads the tree file into a tree ref.
  */
-function rtxLink_LoadScript(cache_node : node, out_ref_file : reference)
+function rtxLink_LoadScript(cache_node : node, out_ref_tree : reference)
 {
     if (!existVariable(cache_node.script_file)
         || !existVariable(cache_node.tree_file))
@@ -87,33 +88,10 @@ function rtxLink_LoadScript(cache_node : node, out_ref_file : reference)
         return false;
     }
 
-    out_ref_file = cache_node.tree_file;
-    traceLine("rtxLink:<LOG> Resolution script loaded.");
+    cwLoadProject(cache_node.tree_file, out_ref_tree);
+
+    traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;
-}
-
-
-/*
- * This function searches the chunk associated to the CALL pointcut
- * and loads it script for the user.
- */
-function rtxLink_LoadTemplateCall(tpl_node : node, out_ref_file : reference)
-{
-    foreach chunk in tpl_node.chunks
-    {
-        if (key(chunk) == "CALL")
-        {
-            if (!findElement("CALL", this.session.chunks)
-                || !findElement(chunk, this.session.chunks["CALL"]))
-                error("rtxLink:<ERROR> The CALL chunk associated to the"
-                      +" template could not be found within the cache.");
-
-            localref cache_node = this.session.chunks["CALL"][chunk];
-            rtxLink_LoadScript(cache_node, out_ref_file);
-            return true;
-        }
-    }
-    error("rtxLink:<ERROR> The template does not contain a CALL chunk.");
 }
 
 
@@ -164,14 +142,29 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
     if (getArraySize(templates) != 1)
         error("rtxLink:<ERROR> No unique template matching the configuration.");
 
-    // We have to use a temp here because otherwise, codeworker deletes
-    // everything frmo the source before the attribution
-    // (making the result empty)
+    // Here, we find the associated chunk in order to set the script_file
+    // And the tree_file, and set them into the tpl node in order to allow
+    // A generic script function loading.
     local temp;
     setall temp = templates[0];
-    setall templates = temp;
+    foreach chunk in temp.chunks
+    {
+        if (key(chunk) == "CALL")
+        {
+            if (!findElement("CALL", this.session.chunks)
+                || !findElement(chunk, this.session.chunks["CALL"]))
+                error("rtxLink:<ERROR> The CALL chunk associated to the"
+                      +" template could not be found within the cache.");
 
-    return true;
+            insert temp.script_file =
+                this.session.chunks["CALL"][chunk].script_file;
+            insert temp.tree_file =
+                this.session.chunks["CALL"][chunk].tree_file;
+            setall templates = temp;
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
