@@ -22,7 +22,7 @@ Tests Backend :
 
  * Fix Iteration pour le rtxMeta (build_compile_tree a rename)          <= DONE
 
- * Ajouter les éléments de programmation aspectuelle dans le backend.   <= TODO
+ * Ajouter les éléments de programmation aspectuelle dans le backend.   <= DONE
    * Ajouter le pointcut                                                <= DONE
      * Ajouter le parsing du pointcut dans le with (rtxBack)            <= DONE
      * Ajouter le parsing du pointcut (rtxMeta)                         <= DONE
@@ -31,15 +31,14 @@ Tests Backend :
      * Ajouter la génération du code pour les pointcut default          <= DONE
      * Ajouter la gestion des paramètres du pointcut                    <= DONE
      * Creer une fonction de résolution depuis un pointcut              <= DONE
-     * Créer un test pour la résolution d'un pointcut par defaut        <= TODO
+     * Créer un test pour la résolution d'un pointcut par defaut        <= DONE
      * Créer un test pour la résolution d'un pointcut avec chunks       <= DONE
-   * Creer la syntaxe pour le chunk                                     <= TODO
+   * Creer la syntaxe pour le chunk                                     <= DONE
      * Ajouter le parsing des chunks                                    <= DONE
      * Update le cache pour pouvoir chercher des chunks                 <= DONE
      * Creer des fonctions de résolution des chunks                     <= DONE
      * Créer une fonction de résolution depuis un CALL                  <= DONE
      * Créer un test pour la resolution d'un CALL                       <= DONE
-     * Creer un test pour verifier le builder de resVals                <= TODO
      * Deplacer le .compile des templates vers les chunks               <= DONE
 
  * Mettre a jour la syntaxe du with                                     <= TODO

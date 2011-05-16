@@ -52,7 +52,7 @@ rtxNodeResVal(resVals["config"]["plop"]);
 insert resVals["config"]["plop"]["name"];
 rtxNodeResValLeaf(resVals["config"]["plop"]["name"], "theConfigName");
 
-// We have a pointcut node that should be resolver, try to resolve it !
+// We have a pointcut node that should be resolved, try to resolve it !
 inject<"__rtx_pointcut__">(resVals,
                            c_tree.c_block.compile["_1"].node,
                            c_tree.c_block.compile["_1"].node.body);
