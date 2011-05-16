@@ -31,8 +31,8 @@ Tests Backend :
      * Ajouter la génération du code pour les pointcut default          <= TODO
    * Creer la syntaxe pour le chunk                                     <= TODO
      * Ajouter le parsing des chunks                                    <= DONE
+     * Update le cache pour pouvoir chercher des chunks                 <= DONE
      * Creer des fonctions de résolution des chunks                     <= TODO
-     * Update le cache pour pouvoir chercher des chunks                 <= TODO
      * Deplacer le .compile des templates vers les chunks               <= TODO
 
  * Mettre a jour la syntaxe du with                                     <= TODO
