@@ -7,15 +7,16 @@ function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_tpl__";
+
     insert local_node.tpl_type = "__decl__";
     // For now, the prototype is stored as a string,
     // but it will be parsed as well later.
     insert local_node.prototype = input;
     insert local_node.body;
     cnormNodeBlock(local_node.body, true);
-    insert local_node.body.compile;
-    insert local_node.body.compile.nbplaceholder = 0;
+
     ref out_ref_block = local_node.body;
+
     return true;
 }
 
@@ -23,7 +24,9 @@ function rtxNodePointcut_Raw(local_node     : node,
                               sPlaceHolder   : value)
 {
     insert local_node.type = "__rtx_pointcut_raw__";
+
     insert local_node.id = sPlaceHolder;
+    
     return true;
 }
 
@@ -34,12 +37,17 @@ function rtxNodeChunk(local_node        : node,
 {
     rtxNode(local_node);
     local_node.type = "__rtx_chunk__";
+
     insert local_node.name = sPointcut;
     insert local_node.parameters;
     insert local_node.body;
     cnormNodeBlock(local_node.body);
+    insert local_node.body.compile;
+    insert local_node.body.compile.nbplaceholder = 0;
+
     ref out_ref_params = local_node.parameters;
     ref out_ref_body = local_node.body;
+
     return true;
 }
 

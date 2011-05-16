@@ -28,7 +28,6 @@ function    rtxMeta_parsePlaceHolder(compile : node)
          */
         #overload
         translation_unit ::=
-/**/		=> traceLine("TEMPLATE EXPRESSION PARSE!");
 			#try
 				#ignore
 				#check(rtxNodePlaceHolder(this))
@@ -185,11 +184,13 @@ function rtxMeta_walk<T>(local_node : node)
 
 function rtxMeta_walk<"__rtx_with__">(local_node : node)
 {
+    traceLine("rtxMeta_walk<\"__rtx_with__\">: walking through...");
     // First, walk the templates...
     foreach item in local_node.body.block
     {
         rtxMeta_walk<item.type>(item);
     }
+    traceLine("rtxMeta_walk<\"__rtx_with__\">: parsing placeHolders...");
     // Second, compile each with placeHolder.
     foreach placeHolder in local_node.c_block.compile
     {
@@ -197,11 +198,21 @@ function rtxMeta_walk<"__rtx_with__">(local_node : node)
     }
 }
 
-function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
+function rtxMeta_walk<"__rtx_chunk__">(local_node : node)
 {
+    traceLine("rtxMeta_walk<\"__rtx_chunk__\">: compiling placeHolders...");
     foreach placeHolder in local_node.body.compile
     {
         rtxMeta_parsePlaceHolder(placeHolder);
+    }
+}
+
+function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
+{
+    traceLine("rtxMeta_walk<\"__rtx_tpl__\">: walking through...");
+    foreach chunk in local_node.body.block
+    {
+        rtxMeta_walk<chunk.type>(chunk);
     }
 }
 
