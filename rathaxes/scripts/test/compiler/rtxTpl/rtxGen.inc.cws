@@ -75,8 +75,6 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 		function	instanceTpl<"@this.subsystem@">(ast_ctx : node,
                                                    c_tree : node)
 		{
-			cwLoadProject("@this.tree_file@", c_tree);
-
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@2", c_tree);
 	
