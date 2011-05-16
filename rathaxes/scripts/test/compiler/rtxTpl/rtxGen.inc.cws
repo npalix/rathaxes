@@ -35,12 +35,28 @@ function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
-            inject<c_tree.compile["@this.key@"].node.type>(ast_ctx, c_tree.compile["@this.key@"].node,
-                                                           c_tree.compile["@this.key@"].node);
-        @}, item, item.cws_expr);
+		    traceLine("inject for key @this.key@ : @this.template_expr@"+
+                      " (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_ctx,
+                                            c_tree.compile["@this.key@"].node,
+                                            c_tree.compile["@this.key@"].node);
+    @}, item, item.cws_expr);
     removeVariable(item.key);
-    //traceLine("Generated code : "+item.cws_expr);
+}
+
+function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+            // Resolving VALUE (place Holder @this.key@)
+		    traceLine("inject for key @this.key@ : @this.template_expr@"
+                      +" (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_ctx,
+                                            c_tree.compile["@this.key@"].node,
+                                            c_tree.compile["@this.key@"].node);
+    @}, item, item.cws_expr);
+    removeVariable(item.key);
 }
 
 function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
@@ -49,12 +65,13 @@ function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving LINK (place Holder @this.key@)
-		    traceLine("inject for key @this.key@ : @this.template_expr@ (@this.node.body.type@)");
-            inject<c_tree.compile["@this.key@"].node.type>(ast_ctx, c_tree.compile["@this.key@"].node,
-                                                           c_tree.compile["@this.key@"].node);
-        @}, item, item.cws_expr);
+		    traceLine("inject for key @this.key@ : @this.template_expr@"
+                      +" (@this.node.body.type@)");
+            inject<c_tree.compile["@this.key@"].node.type>(ast_ctx,
+                                            c_tree.compile["@this.key@"].node,
+                                            c_tree.compile["@this.key@"].node);
+    @}, item, item.cws_expr);
     removeVariable(item.key);
-    //traceLine("Generated code : "+item.cws_expr);
 }
 
 declare function generateCodeWorker<T>(local_node : node, uid : value);
@@ -187,7 +204,7 @@ function    rtxGen<"__rtx_chunk__">(local_node : node, uid : node)
 function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 {
 	traceLine("rtxGen<\"__rtx_tpl__\">: walking through...");
-    foreach chunk in local_node.body
+    foreach chunk in local_node.body.block
     {
         rtxGen<chunk.type>(chunk, uid);
     }
