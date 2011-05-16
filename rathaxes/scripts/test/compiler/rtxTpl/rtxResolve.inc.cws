@@ -129,44 +129,33 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
 {
     local   chunks;
     if (rtxLink_findChunks(local_node.name, chunks) == false)
-        error("inject<\"__rtx_pointcut__\">:<ERROR> No chunk associated with"
-              +" the pointcut "+local_node.name);
+        traceLine("inject<\"__rtx_pointcut__\">:<WARN> No chunk associated with"
+                  +" the pointcut "+local_node.name);
 
     // Set common practical references..
     localref theBlock = treeNode#parent.ref_placeholder#parent#parent;
     localref thePointcut = treeNode#parent;
+    // Some variables for the InsertCode function
+    local phName = thePointcut.ref_placeholder#parent.id;
+    local phIdx = 0;
+
     // If we cannot find any chunk, let's use default behaviour
-    if (rtxLink_selectCompatibleChunks(chunks, treeNode.with) == false)
+    if (isEmpty(chunks)
+        || rtxLink_selectCompatibleChunks(chunks, treeNode.with) == false)
     {
         traceLine("inject<\"__rtx_pointcut__\">:<WARN> No valid chunk,"
                   +" falling back to default behaviour.");
         // If there's a default block inside the poincut, then insert it
-        // instead of the resolved chunks
-        if (existVariable(local_node.default))
-        {
-            local phIdx = 0;
-            // The placeholrder's parent is the raw pointcut node.
-            // Then it's parent is the array of statements (or block).
-            rtxResolve_InsertCode(theBlock, thePointcut.block_idx,
-                                  thePointcut.ref_placeholder,
-                                  phIdx,
-                                  local_node.default.body);
-        }
-        // FIXME XXX TODO : Check whether the pointcut is inside another
-        // expression of not, though it should never be.
-        else // Nothing by default : delete the node !
-        {
-            removeElement(theBlock, thePointcut.block_idx);
-        }
+        // instead of the resolved chunks : one setall is enough
+        // to both remove the pointcut and insert the code.
+        setall theBlock#[thePointcut.block_idx] = local_node.default.body;
     }
     // There are some chunks left, so it's up to us to resolve them
-    // before inserting them in-place of the pointcut.
+    // and then insert them in-place of the pointcut.
     else
     {
 
         local startIdx = thePointcut.block_idx;
-        local phName = thePointcut.ref_placeholder#parent.id;
-        local phIdx = 0;
         // First, remove the current placeHolder, in case there was no statement
         removeElement(theBlock, thePointcut.block_idx);
         foreach chunk in chunks
