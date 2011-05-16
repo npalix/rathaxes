@@ -26,14 +26,13 @@ function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
 function rtxLink_IsWithNodeCompatible(with : node, config : node)
 {
     // For now, let's assume the with nodes are compatible
-    // Access by cache_node.with
     return true;
 }
 
 
 /*
  * This function checks if at least one template exists within the cache
- * for a given with/config block.
+ * for a given template prototype and with/config block.
  */
 function rtxLink_HasCompatibleTpl(proto_hash : value, with_values : node)
 {

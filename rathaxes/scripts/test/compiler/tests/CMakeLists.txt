@@ -1,1 +1,11 @@
-ADD_RATHAXES_TEST(01_test_back.cws)
+ADD_RATHAXES_TEST(01_A_test_back_parse.cws)
+ADD_RATHAXES_TEST(01_B_test_back_compile.cws)
+ADD_RATHAXES_TEST(01_C_test_back_meta.cws)
+ADD_RATHAXES_TEST(01_D_test_back_gen.cws)
+ADD_RATHAXES_TEST(01_E_test_back_registerToCache.cws)
+ADD_RATHAXES_TEST(01_F_test_back_loadFromCache.cws)
+ADD_RATHAXES_TEST(01_G_test_back_resolveCall.cws)
+#ADD_RATHAXES_TEST(01_H_test_back_resolvePointcut.cws)
+#ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
+
+ADD_RATHAXES_TEST(02_test_middle.cws)
