@@ -5,16 +5,8 @@ function rtxGen_version()
 
 
 // The tree save must already be loaded into c_tree before calling it...
-declare function instanceChunk<T>(ast_ctx : node, c_tree : node);
-function	instanceChunk<T>(ast_ctx : node, c_tree : node)
-{
-	// If this cocde is called, there was a linking problem.
-	error("BAD LINK - Unkown registry value:" + T);
-}
-
-// The tree save must already be loaded into c_tree before calling it...
 declare function instanceTpl<T>(ast_ctx : node, c_tree : node);
-function	instanceTpl<T>(ast_ctx : node, c_tree : node)
+function	     instanceTpl<T>(ast_ctx : node, c_tree : node)
 {
 	// If this cocde is called, there was a linking problem.
 	error("BAD LINK - Unkown registry value:" + T);
@@ -84,13 +76,13 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 {
 	local	source_codeworker;
     // Fake it for now...
-    insert local_node.subsystem = "LKM";
+    insert local_node.instanceKey = "LKM";
 	generateString({
 		// auto generated codeworker DO NOT EDIT
 		// Here, we specialise the function instanceTPL with this.prototype
         // as the key, but in the long term, an ID would be best
-		function	instanceTpl<"@this.subsystem@">(ast_ctx : node,
-                                                   c_tree : node)
+		function	instanceTpl<"@this.instanceKey@">(ast_ctx : node,
+                                                      c_tree : node)
 		{
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@2", c_tree);
@@ -106,18 +98,24 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 		}
 	@}, local_node, source_codeworker);
 
-	// We only call this function for one template
+	// We only call this function for one with at a time
 	saveToFile(local_node.script_file, source_codeworker);
 }
 
 function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 {
 	local	source_codeworker;
+    insert local_node.instanceKey;
+    if (local_node.name == "CALL")
+        local_node.instanceKey = local_node.tpl_hash;
+    else
+        local_node.instanceKey = local_node.tpl_hash+"_"+local_node.name;
+
 	generateString({
 		// auto generated codeworker DO NOT EDIT
 		// Here, we specialise the function instanceTPL with this.prototype
         // as the key, but in the long term, an ID would be best
-		function	instanceChunk<"@this.tpl_hash@_@this.name@">(ast_ctx : node,
+		function	instanceTpl<"@this.instanceKey@">(ast_ctx : node,
                                                                  c_tree : node)
 		{
 			// save again for comparison out of the process
@@ -134,7 +132,7 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 		}
 	@}, local_node, source_codeworker);
 
-	// We only call this function for one template
+	// We only call this function for one chunk at a time
 	saveToFile(local_node.script_file, source_codeworker);
 }
 
@@ -144,8 +142,6 @@ function	gencodeworker(blt_node : node, blt_body : node, uid : value)
     // in order to be accessible durint the codeworker code generation
 	local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
 	local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
-	//saveToFile(sAstFile, workaround.code_pic);
-	saveProject(sAstFile, blt_node);
 	insert blt_node.tree_file = sAstFile;
 	insert blt_node.script_file = sCwsFile;
 
@@ -160,6 +156,9 @@ function	gencodeworker(blt_node : node, blt_body : node, uid : value)
     }
 
     generateCodeWorker<blt_node.type>(blt_node, uid);
+    // Save the tree now, in order to keep the data inserted by the specific
+    // Codeworker generation function
+	saveProject(sAstFile, blt_node);
 }
 
 
@@ -206,6 +205,9 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
 	traceLine("rtxGen<\"__rtx_tpl__\">: walking through...");
     foreach chunk in local_node.body.block
     {
+        // Add the template hash into the chunk node in order to
+        // Set an about right specialisation for the instanceTpl function
+        hashTemplatePrototype(local_node.prototype, chunk.tpl_hash);
         rtxGen<chunk.type>(chunk, uid);
     }
 }

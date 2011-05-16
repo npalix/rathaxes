@@ -35,7 +35,9 @@ Tests Backend :
      * Update le cache pour pouvoir chercher des chunks                 <= DONE
      * Creer des fonctions de résolution des chunks                     <= TODO
        * Creer une fonction de résolution depuis un pointcut            <= DONE
-       * Créer une fonction de résolution depuis un CALL                <= TODO
+         * Créer un test pour la résolution d'un pointcut               <= TODO
+       * Créer une fonction de résolution depuis un CALL                <= DONE
+         * Créer un test pour la resolution d'un CALL                   <= TODO
      * Creer un test pour verifier le builder de resVals                <= TODO
      * Deplacer le .compile des templates vers les chunks               <= DONE
 
@@ -69,7 +71,8 @@ Tests Backend :
  assimilated to __stmt__(__expr__)::left/right::id -> assignation of a value
     -> Must simply replace the identifier by the right value.
  assimilated to __stmt__(__expr__)::id -> simple expression
-    -> Must update the type reference table of the calling tpl with the called's one.
+    -> Must update the type reference table of the calling tpl with the
+       called's one.
     -> Must weave ASTs correctly and structurally correct.
 
 
