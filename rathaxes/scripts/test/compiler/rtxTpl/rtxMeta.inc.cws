@@ -13,6 +13,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
     cnormDialect<"__std__">(treepart);
     parseStringAsBNF({
         #include "cnorm.cwp"
+        #include "rtxParse/rtxCommon.cwp"
 
         /*
          *
@@ -52,7 +53,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             [
                 tpl_link_expr(theNode.body)
             |
-                tpl_identifier(theNode.body)
+                rtx_composed_identifier(theNode.body)
 //          |
 //              tpl_each_expr(theNode.body)
             ]
@@ -64,35 +65,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             [ ";" ]?
         ;
 
-        rtx_tpl_pointcut(theNode : node) ::=
-            "${" tpl_pointcut(theNode.body) '}' [ ';' ]?
-        ;
-
-        // This rule dissects an identifier in parts separated by dots.
-        tpl_identifier(theNode : node) ::=
-            identifier:varId
-            // Create the node from 
-            #check(rtxNodeVar(theNode, varId))
-            [
-                '.' identifier:tplField
-                // add the field into the block
-                #check(rtxNodeVar_AddIdentifier(theNode, tplField))
-            ]*
-        ;
-
-        // Here we can identify a list of template variables
-        tpl_var_list(theBlock : node) ::=
-/**/        => local lastNode;
-            tpl_identifier(lastNode)
-            #check(rtxNodeList_AddNode(theBlock, lastNode))
-            [
-                ','
-/**/            => local lastVar;
-                tpl_identifier(lastVar)
-                #check(rtxNodeList_AddNode(theBlock, lastVar))
-            ]*
-        ;
-
+        /*
+         * Functions used for the parsing of the link
+         */
         // Here, a hard-coded test for a one-param function template
         tpl_type(theType : node) ::=
             "test(Context ctx)"
@@ -103,27 +78,17 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             "link"
 /**/        => local theVars;
             #check(rtxNodeVarList(theVars))
-            tpl_var_list(theVars)
+            rtx_var_list(theVars)
             "to"
 /**/        => local theType;
             tpl_type(theType)
             #check(rtxNodeLink(theLink, theVars, theType))
         ;
 
-        tpl_pointcut_parameters(theParams : node) ::=
-            '('
-/**/        => local param;
-            tpl_identifier(param)
-            #check(rtxNodeList_AddNode(theParams, param))
-            [
-                ','
-/**/            => local lastParam;
-                tpl_identifier(lastParam)
-                #check(rtxNodeList_AddNode(theParams, lastParam))
-            ]*
-            ')'
-        ;
 
+        /*
+         * Functions used for the parsing of the pointcut
+         */
         // TODO FIXME XXX : check that the partial C code is valid.
         tpl_pointcut_default(theNode : node) ::=
             "default" ':' // originally '{'
@@ -131,6 +96,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             #check(rtxNodePointcut_Default(theNode, body))
             single_statement(body)
             // originally '}' identified the end of the block
+        ;
+
+        tpl_pointcut_parameters(theParams : node) ::=
+            '(' rtx_var_list(theParams) ')'
         ;
 
         tpl_pointcut(thePointcut : node) ::=
@@ -145,8 +114,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                                    theParams, theDefault))
         ;
 
-//      tpl_each_expr ::=
-//      ;
+        rtx_tpl_pointcut(theNode : node) ::=
+            "${" tpl_pointcut(theNode.body) '}' [ ';' ]?
+        ;
 
     }, treepart, compile.template_expr);
     removeVariable(treepart.dialect);

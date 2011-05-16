@@ -31,7 +31,7 @@ generateString({
                     enum pop${ctx.name} {A, B, C};
                 }
 
-                chunk global_data_declaration
+                chunk global_data_declaration(theSymbol)
                 {
                     ${TYPE} bla;
                 }
@@ -54,6 +54,14 @@ generateString({
                 chunk LKM::init_fptrs(symbol)
                 {
                     ${symbol.name}.open = &module_open;
+                }
+
+                chunk CALL
+                {
+                    void fake_func()
+                    {
+                        ${ctx.name} = 0x2a;
+                    }
                 }
             }
 
