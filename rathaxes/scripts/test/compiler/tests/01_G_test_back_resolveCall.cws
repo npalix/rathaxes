@@ -1,0 +1,44 @@
+/*
+	TEST for template codeworker generation
+*/
+
+#include  "01_F_test_back_loadFromCache.cws"
+
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_G_test_back_resolveCall";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+// Now, try the C code generation out : simulate an input (the resVal node)
+// And start the resolution of the placeHolders.
+local resVals;
+rtxNodeResVal(resVals);
+insert resVals["KK"];
+rtxNodeResValLeaf(resVals["KK"], "caca");
+insert resVals["KKK"];
+rtxNodeResValLeaf(resVals["KKK"], "_tri_k");
+insert resVals["TOTO"];
+rtxNodeResValLeaf(resVals["TOTO"], "(*grumf)->nia");
+insert resVals["TYPE"];
+rtxNodeResValLeaf(resVals["TYPE"], "t_theType");
+insert resVals["ctx"];
+rtxNodeResVal(resVals["ctx"]);
+insert resVals["ctx"]["name"];
+rtxNodeResValLeaf(resVals["ctx"]["name"], "theContextValue");
+insert resVals["symbol"];
+insert resVals["symbol"]["name"];
+rtxNodeResValLeaf(resVals["symbol"]["name"], "global_init.open");
+
+instanceTpl<c_tree.instanceKey>(resVals, c_tree.body);
+traceLine("INSTANCIATING TEMPLATE[CALL]: open(Context ctx)");
+traceLine("Template resolved : The call will be replaced by :"
+          + cnorm2c(c_tree.body));
