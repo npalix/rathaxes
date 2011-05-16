@@ -57,13 +57,102 @@ LSE.
 
 \emph{Ce chapitre doit faire \textbf{deux pages}.}
 
-\section{Rappel de l'architecture}
+Rathaxes est un projet difficile qui requiert beaucoup de recherche et de
+validation de résultats intermédiaires.  Lorsque Rathaxes a été écrit pour la
+première fois, certains aspects du matériel ont été laissés de côté et donc il
+ne gère donc que certains types de carte maintenant obsolète. Aujourd'hui, nous
+avons pu réécrire les bases de Rathaxes prenant en compte les résultats dégagés
+par nos recherches et sommes capables de manipuler des arbres de syntaxes de
+manière souple, efficace et maintenable. Depuis cette réécriture nous sommes
+capables de valider point par point chaque étape de la génération du pilote
+final: cela nous permet de valider nos ajouts de fonctionnalité et éviter les
+régressions.
+
+Nous estimons à 70\% la progression de l’écriture du compilateur. Niveau
+fonctionnalité pure du compilateur, nous en sommes au niveau de l'équipe 2009.
+
+Il nous reste à écrire les interfaces systèmes (c.-à-d. les fonctions systèmes
+appelées réellement) pour chaque système d’exploitation.
+
+
+
+\section{Architecture}
+Rathaxes se divise en trois parties:
+\begin{itemize}
+	\item Le langage;
+	\item Le compilateur;
+	\item Les bibliothèques.
+\end{itemize}
+
+Le langage est ce que le développeur voit au premier abord: de la même manière
+que l’on apprend un langage de programmation, l’utilisateur devra apprendre à
+s’exprimer avec Rathaxes.
+
+Le compilateur permettra de traduire un fichier écrit dans le langage cité
+avant en pilote de périphérique. Pour accomplir cette tâche, il utilisera les
+bibliothèques fournies avec le logiciel.  Les bibliothèques contiennent le
+"savoir" du compilateur: sans elles, le compilateur pourrait lire les fichiers
+Rathaxes, mais il ne saurait absolument pas quoi générer par la suite.
+
+Le compilateur lui-même se divise en trois parties, le \emph{front}, \emph{back}, et \emph{middle}
+\emph{end}.
+
+\begin{itemize}
+	\item Le \emph{font end} est la partie construisant l’arbre de syntaxe à partir du
+	fichier.
+
+	\item Le \emph{middle end} est la partie qui traite l’arbre généré par le
+	\emph{front end}, l’instrumente (l’altère avec des informations supplémentaires)
+	avec les informations recueillies via le back-end afin de régénérer un nouvel
+	arbre qui peut être reconvertis en code C.
+
+	\item Le \emph{back end} est toute la partie
+	faisant l’interface avec le code des bibliothèques afin de le manipuler.
+\end{itemize}
+
 
 \section{Avancement}
 
+Bien que l'équipe Rathaxes soit divisée (entre les É.-U et la France), du fait
+de sa petite taille avance plutôt vite. Le retour d'expérience de l'équipe 2009
+nous a aidés à ne pas refaire les mêmes erreurs.
+
+Nous prévoyons une preuve de concept avec un pilote d’une carte PCI d’ici l'été
+2011 pour les soutenances finales. Il nous est très difficile de nous avancer à
+plus long terme, mais nous prévoyons d’être concentrés sur l’écriture des
+fichiers de la bibliothèque pendant notre 5e année.
+
 \section{Problèmes rencontrés et résolus}
+L’équipe n’a pas tant rencontré de problème que ça. Les "problèmes" sont plus
+des décisions et orientations techniques à prendre. Il est encore trop tôt pour
+dire si elles sont toutes bonnes jusqu’à maintenant.
+
+En revanche, lorsque nous avons dû nous former techniquement et écrire des
+pilotes, beaucoup de problèmes sont apparus. Nous pouvons citer: le manque de
+documentation, l’étendue des connaissances à acquérir, la complexité des
+documentations constructeurs (et leur rareté). De plus, les codes existants
+sont rarement commentés, très optimisés et complexe (car ils gèrent souvent
+plusieurs cartes à la fois).
+
+De plus, on les connait moins, mais ils existent: les bugs matériels. Ils
+rendent encore plus difficile la lecture des codes existants.
 
 \section{Synthèse des bilans techniques}
+Nos bilans techniques se sont malheureusement rarement bien passés. Il est vrai
+que nous sommes un peu "dans notre monde" et on oublie un peu le monde réel.
+Par conséquent, il nous est arrivé de passer à côté d’une soutenance en
+arrivant avec des documentations manquantes ou ne répondant pas aux exigences
+du laboratoire EIP.
+
+Nous avons aussi eu des problèmes de communication vis-à-vis du travail que
+nous fournissons.
+
+Gardant en tête tout cela, nous faisons notre possible pour que tout se passe
+mieux et que notre travail soit justement mis en valeur afin qu’il puisse être
+évalué à sa juste valeur.
+
+Nous espérons que le laboratoire EIP et ses correcteurs pourront noter les
+améliorations et nous aideront à surmonter les erreurs restantes.
 
 \chapter{Conduite de projet}
 
