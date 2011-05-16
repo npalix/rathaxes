@@ -158,7 +158,8 @@ if (rtxLink_findTemplates(theHash, theTemplates) == false)
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
     error("01_test_back.cws: rtxLink could not select an unique template.");
 traceLine("Loading template : open(Context ctx)...");
-rtxLink_LoadScript(theTemplates);
+local theFile;
+rtxLink_LoadScript(theTemplates, theFile);
 
 // Now, try the C code generation out : simulate an input (the resVal node)
 // And start the resolution of the placeHolders.
@@ -181,6 +182,7 @@ insert resVals["symbol"]["name"];
 rtxNodeResValLeaf(resVals["symbol"]["name"], "global_init.open");
 
 local c_tree1;
+cwLoadProject(theFile, c_tree1);
 instanceTpl<"open(Context ctx)">(resVals, c_tree1);
 traceLine("INSTANCIATION DU TEMPLATE : open(Context ctx)");
 //traceLine(cnorm2c(c_tree1));

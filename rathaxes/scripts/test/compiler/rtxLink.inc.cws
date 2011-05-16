@@ -72,9 +72,10 @@ function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
 /*
  * This function loads the tree and the script for a given cache node.
  */
-function rtxLink_LoadScript(cache_node : node)
+function rtxLink_LoadScript(cache_node : node, out_ref_file : reference)
 {
-    if (!existVariable(cache_node.script))
+    if (!existVariable(cache_node.script_file)
+        || !existVariable(cache_node.tree_file))
         error("rtxLink:<ERROR> The node does not contain any script to load !");
 
     traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script + "'");
@@ -86,6 +87,7 @@ function rtxLink_LoadScript(cache_node : node)
         return false;
     }
 
+    out_ref_file = cache_node.tree_file;
     traceLine("rtxLink:<LOG> Resolution script loaded.");
     return true;
 }
@@ -134,30 +136,28 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
 
     // Check the number of results. 1 mean that only one template matches
     // the search : We're good, and change the array into a template node.
-    if (getArraySize(templates) == 1)
-    {
-        setall templates = templates[0];
-        return true;
-    }
     // Otherwise, it's an error.
-    return false;
+    if (getArraySize(templates) != 1)
+        error("rtxLink:<ERROR> No unique template matching the configuration.");
+
+    setall templates = templates[0];
+    return true;
 }
 
 /*
  * This functino returns a collection of template cache nodes for a given
  * template prototype (hashed).
  */
-function rtxLink_findTemplates(prototype_hash : value, out_tpls : node)
+function rtxLink_findTemplates(hash : value, out_tpls : node)
 {
     if (!existVariable(this.session))
         error("rtxLink:<ERROR> The cache was not loaded before use !");
 
-    if (findElement(prototype_hash, this.session.templates))
-    {
-        setall out_tpls = this.session.templates[prototype_hash];
-        return true;
-    }
-    return false;
+    if (!findElement(hash, this.session.templates))
+        error("rtxLink:<ERROR> No template registered for hash '"+hash+"'");
+
+    setall out_tpls = this.session.templates[hash];
+    return true;
 }
 
 
