@@ -90,7 +90,8 @@ compilateur.
 \end{description}
 
 Enfin, il convient de citer Lionel Auroux qui ---avec son expérience et sa vision
-sur le long terme--- arbitre les décisions à prendre et les prochains points sur
+sur le long terme--- arbitre les décisions à prendre et les prochains points
+surtechnique qui couvrent les aspects \emph{front}, \
 lesquels travailler.
 
 \section{Méthodologie}
@@ -105,9 +106,17 @@ fonctionnalités étant donné que chaque développeur possède son propre dép�
 de prise en main par les utilisateurs de Subversion.
 \end{itemize}
 
+Le dépôt contient non seulement l'avancée actuelle de \rtx\ mais aussi sa
+documentation et nos document de travail. L'utilisation de Mercurial pour tous
+nos documents et toutes nos présentation est une volonté méthodologique : le
+dépôt est l'unique référence pour tous ce qui concerne le développement de \rtx.
+Afin de pouvoir versionner nos documents nous avons font le choix de les écrire
+en \LaTeX\ qui a aussi ---comme Mercurial--- l'avantage de fonctionner sur tous
+les systèmes d'exploitations.
+
 Google Code nous évite un travail d'administration (nous n'avons pas besoin de
-gérer nos propres serveurs) et en plus d'héberger le dépôt Mercurial permet
-aussi:
+gérer nos propres serveurs) et en plus d'héberger notre dépôt Mercurial de
+référence il permet aussi:
 \begin{itemize}
 \item D'avoir une façade publique ou les développeurs intéressés peuvent
 facilement consulter nos documentations et télécharger le projet ;
@@ -161,7 +170,41 @@ avancement et contribuer au projet.
 
 \section{Organisation des documentations}
 
+La documentation du projet comporte :
+\begin{itemize}
+\item Une documentation interne avec des documents de travail qui servent
+d'appuis au développement du langage et du compilateur ;
+\item Une documentation utilisateur qui détaille aussi bien l'utilisation de
+\rtx\ qu'une référence complète du langage et de l'implémentation du
+compilateur.
+\end{itemize}
+
+La documentation interne contient des documents de travail : soit des prototypes
+du langage ou du compilateur, soit des documents qui expliquent et décomposent
+des pilotes de périphériques existant qui nous servent de références lors de nos
+réflexions sur les fonctionnalités nécessaires dans le langage.
+
+La documentation utilisateur, traduite en anglais et en français, est elle même
+découpées en deux parties :
+\begin{itemize}
+\item Un «~tutoriel~» qui explique comment installer \rtx\ sous Windows ou un
+autre système d'exploitation et qui contient des liens vers les autres
+documentations ;
+\item Une partie technique qui couvre les aspects \emph{front}, \emph{middle} et
+\emph{back~-end} du langage.
+\end{itemize}
+Ce découpage de la documentation technique a été choisi car elle s'adresse à des
+personnes potentiellement différentes avec des compétences différentes :
+fabricant de matériel, développeur de système d'exploitations, développeur de
+pilotes.
+
 \section{Avancement}
+
+De nouveaux documents de travail seront sans doutes rédigés mais il ne semble
+pas nécessaire d'ajouter de nouveaux documents «~utilisateurs~» : la
+documentation rédigée jusqu'ici décrit déjà l'ensemble du projet de
+son installation à son utilisation. Seul un travail de mise à jour sur les
+parties qui sont encore en développement est prévue.
 
 \chapter{Communication}
 
