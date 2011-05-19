@@ -103,7 +103,7 @@ function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
     inject<treeNode.body.type>(resolverValues, treeNode, local_node.body);
 }
 
-function    inject<"__rtx_tpl_var__">(resolverValues : node, treeNode : node,
+function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                                       local_node : node)
 {
     //traceLine("Injecting into var : "+toString(local_node));

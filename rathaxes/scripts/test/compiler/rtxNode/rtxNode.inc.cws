@@ -21,6 +21,49 @@ function rtxNodeIdentifier(local_node : node, id : value)
     return true;
 }
 
+function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
+{
+    pushItem local_node.identifiers;
+
+    local theIdentifier;
+    ref theIdentifier = local_node.identifiers#back;
+    rtxNodeIdentifier(theIdentifier, theField);
+
+    return true;
+}
+
+function rtxNodeVar(local_node   : node,
+                    theVar       : value)
+{
+    insert local_node.type = "__rtx_var__";
+
+    // A list of chained identifiers constituting the real field identifier
+    insert local_node.identifiers;
+    // Add the var as the first identifier
+    rtxNodeVar_AddIdentifier(local_node, theVar);
+
+    return true;
+}
+
+function rtxNodeVarList_AddNode(local_node : node,
+                             theVar     : node)
+{
+    pushItem local_node.list;
+    setall local_node.list#back = theVar;
+
+    return true;
+}
+
+function rtxNodeVarList(local_node : node)
+{
+    insert local_node.type = "__rtx_varlist__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+
 function rtxNodeWith(local_node         : node,
                      out_ref_var_map    : reference,
                      out_ref_body       : reference,
