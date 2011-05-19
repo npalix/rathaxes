@@ -21,7 +21,7 @@ function    rtxGenPlaceHolder<T>(item : node, theKey : value)
     error("Unknown place holder type:"+T);
 }
 
-function    rtxGenPlaceHolder<"__rtx_tpl_var__">(item : node, theKey : value)
+function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
 {
     insert item.cws_expr;
     insert item.key = theKey;

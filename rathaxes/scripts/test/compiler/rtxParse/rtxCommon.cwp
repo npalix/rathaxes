@@ -21,11 +21,11 @@ rtx_composed_identifier(theNode : node) ::=
 rtx_var_list(theBlock : node) ::=
 /**/=> local lastNode;
     rtx_composed_identifier(lastNode)
-    #check(rtxNodeList_AddNode(theBlock, lastNode))
+    #check(rtxNodeVarList_AddNode(theBlock, lastNode))
     [
         ','
 /**/    => local lastVar;
         rtx_composed_identifier(lastVar)
-        #check(rtxNodeList_AddNode(theBlock, lastVar))
+        #check(rtxNodeVarList_AddNode(theBlock, lastVar))
     ]*
 ;
