@@ -1,0 +1,130 @@
+/*
+	TEST for template code parsing
+*/
+
+local working_directory = "__01_A_test_back_parse";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+local dummy;
+local input;
+generateString({
+
+    with OS=pigeonMouette,maj=0,min=1
+    {
+        ${pointcut theTestPointcut(config.plop)
+         default:
+             NULL;
+        };
+        ${pointcut defaulted_pointcut
+         default:
+             test = 3;
+        };
+        template open(Context ctx)
+        {
+            chunk typedefs_declaration
+            {
+                typedef int ${KK};
+                typedef int ${TYPE};
+                enum pop${ctx.name} {A, B, C};
+            }
+
+            chunk global_data_declaration(theSymbol)
+            {
+                theSymbol = 42;
+                ${TYPE} bla;
+            }
+
+            chunk function_declaration
+            {
+                int    module_open(int a)
+                {
+                    int    bal${KKK} = 13;
+                    printf("COUCOU\n");
+                    // Be careful, this is seen as a declaration :(
+                    // It is a side effect of the default type int of C
+                    ${ctx.name} = 42;
+                    ${TOTO} += 3;
+                    ${link ctx to test(Context ctx)};
+                    return 0;
+                }
+            }
+
+            chunk LKM::init_fptrs(symbol)
+            {
+                ${symbol.name}.open = &module_open;
+            }
+
+            chunk theTestPointcut(OneRandomSymbol)
+            {
+                ${OneRandomSymbol.name} |= 1;
+            }
+
+            chunk CALL
+            {
+                void fake_func()
+                {
+                    ${ctx.name} = 0x2a;
+                }
+            }
+        }
+
+        template test(Context ctx)
+        {
+            chunk function_declaration
+            {
+                int test_${ctx.name}(void)
+                {
+                    int ret = strcmp("open", param);
+                    return ret;
+                }
+            }
+
+            chunk theTestPointcut(OneRandomSymbol)
+            {
+                ${OneRandomSymbol.name} |= 2;
+            }
+
+            chunk CALL
+            {
+                test_${ctx.name}();
+            }
+        }
+    }
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "rtxNode/rtxNode.inc.cws"
+
+traceLine("input:\n" + input);
+
+
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("__01_rtx_parse__.tree", source);
+traceLine("====>Result of parsing: __01_rtx_parse__.tree");
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}

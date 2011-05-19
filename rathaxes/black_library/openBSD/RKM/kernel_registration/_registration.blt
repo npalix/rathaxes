@@ -1,0 +1,16 @@
+<%
+/*
+**  _kernel_registration.blt in black_library/openBSD/RKM/kernel_registration
+**  for Rathaxes project
+**  made by Filth
+*/
+
+local   sDeviceType = this.configuration["RKM"]["TYPE"];
+local   sDriverName = this.name;
+%>
+
+ADVICE registration PART_OF RKM
+{
+	printf("registration !");
+};
+

@@ -1,0 +1,46 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+/* Switch to a tmp dir */
+local working_directory = "__02_test";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+
+local dummy;
+local input;
+generateString({
+        // interface with inheritance
+        interface Userland : BaseInterface, OtherInterface
+        {
+            required variable   req_var_type    dummy_name;
+            provided            builtintype     pro_builtin;
+            provided            type            some_type;
+            optional            type            opt_type { foo; bar; };
+            required            sequence        req_sequence(type1 a, type2 , type3 c);
+        }
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+#include "rtxNode/rtxNode.inc.cws"
+
+traceLine("Input:\n" + input + "\nEnd of input");
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+// enleve dialect
+removeVariable(source.dialect);
+
+traceLine("Result of parsing:\n" + toString(source, true));
+saveProject(working_directory + "/__02_rtx_parse__.tree", source);

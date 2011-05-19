@@ -1,0 +1,62 @@
+#if !existFunction(rtxNode_version)
+
+function rtxNode_version()
+{return "1.0";}
+
+
+function	rtxNode(local_node : node)
+{
+    cnormNode(local_node);
+    local_node.type = "__rtx_node__";
+
+    return true;
+}
+
+function rtxNodeIdentifier(local_node : node, id : value)
+{
+    insert local_node.type = "__rtx_id__";
+
+    insert local_node.name = id;
+
+    return true;
+}
+
+function rtxNodeWith(local_node         : node,
+                     out_ref_var_map    : reference,
+                     out_ref_body       : reference,
+                     out_ref_c_block    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_with__";
+
+    insert local_node.var_map;
+    ref out_ref_var_map = local_node.var_map;
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+
+    insert local_node.c_block;
+    cnormNodeBlock(local_node.c_block);
+    insert local_node.c_block.compile;
+    insert local_node.c_block.compile.nbplaceholder = 0;
+    ref out_ref_c_block = local_node.c_block;
+
+    return true;
+}
+
+function        rtxNodeRType(local_node : node,
+                             name       : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_rtype__";
+    insert local_node.name = name;
+    insert local_node.params;
+    return true;
+}
+
+#include "rtxNodeFront.inc.cws"
+#include "rtxNodeMiddle.inc.cws"
+#include "rtxNodeBack.inc.cws"
+
+#end

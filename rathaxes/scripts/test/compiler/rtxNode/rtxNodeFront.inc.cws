@@ -1,0 +1,6 @@
+#if !existFunction(rtxNodeFront_version)
+
+function rtxNodeFront_version()
+{return "1.0";}
+
+#end

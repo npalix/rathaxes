@@ -1,0 +1,117 @@
+<%
+/*
+**  _kernel_registration.blt in black_library/linux/user_interface
+**  for Rathaxes project
+**  made by StuFF
+**  modified by Christophe Fajardo Y Romera
+** -----------------------------------------------------------------------------
+** TODO :   - 
+*/
+
+local   sDeviceType = this.configuration["RKM"]["TYPE"];
+local   sDriverName = this.name;
+local   sDeviceMajor = this.configuration["RKM"]["MAJOR"];
+
+%>
+
+
+/*
+ *  TODO
+ *      - handle the user specified major number
+ *      an language keyword is needed to do so but hould be optionnal
+ *      (default is automatic)
+ *
+ */
+
+ADVICE registration PART_OF RKM
+{
+    /*
+     *  registration of the device aginst the kernel
+     */
+    dev_t           @sDriverName@_number;
+    int    minor = 0;
+    unsigned int    device_count = 1;
+    char            *@sDriverName@_name = "@sDriverName@";
+    int            auto_major = @sDeviceMajor@;
+    int             ret;
+    int             dev_type;
+
+    @sDriverName@_fops.owner = THIS_MODULE;
+    <%
+        // XXX Do not work anymore.
+
+        foreach entry_point in this.kernel_interfaces#back.block.functions
+        {
+            if entry_point.key() == "close"
+            {
+                %>@sDriverName@_fops.release= @sDriverName@_release;@"\n"@<%
+            }
+            else if (entry_point.key() == "on_plug") // Useless under linux
+            {
+                %> <%
+            }
+            else
+            {
+                %>@sDriverName@_fops.@entry_point.key()@ = @sDriverName@_@entry_point.key()@;@"\n"@<%
+            }
+        }
+        if (sDeviceType == "chardev")
+        {
+    %>
+        // create a character device
+        if (auto_major == -1)
+        {
+            //  get the major automatically
+            ret = alloc_chrdev_region(&@sDriverName@_number,minor,
+                    device_count, @sDriverName@_name);
+            if (ret)
+            {
+                printk("[@sDriverName@] Error alloc_chrdev_region returned %d\n", ret);
+                return -1;
+            }
+        }
+        else
+        {
+            //  create the device using the user specified major
+            auto_major = 250;   // hard assign waiting for meta-if
+            @sDriverName@_number = MKDEV(auto_major, minor);
+            ret = register_chrdev_region(@sDriverName@_number, device_count,
+                    @sDriverName@_name);
+            if (ret)
+            {
+                printk("[@sDriverName@] Error register_chrdev_region returned %d\n", ret);
+                return -1;
+            }
+        }
+
+        printk("[@sDriverName@] major=%d minor=%d\n",
+        MAJOR(@sDriverName@_number), MINOR(@sDriverName@_number));
+        //  initialize and fill the cdev struct in the userdefine structure
+        //  TODO declare the sttruct @sDriverName@_dev
+        cdev_init(&(@sDriverName@_dev.cdev) , &@sDriverName@_fops);
+        @sDriverName@_dev.cdev.owner = THIS_MODULE;
+        @sDriverName@_dev.cdev.dev = @sDriverName@_number;
+        @sDriverName@_dev.device_name = @sDriverName@_name;
+        @sDriverName@_dev.count = device_count;
+
+        @sDriverName@_on_plug();
+
+        ret = cdev_add(&@sDriverName@_dev.cdev, @sDriverName@_dev.cdev.dev,
+        device_count);
+        if (ret)
+        {
+            printk("[@sDriverName@] Error cdev_add returned %d\n", ret);
+            return -1;
+        }
+        <%
+        }
+        else
+        {
+            %>
+            printk("[@sDriverName@] Error create a block device NOT IMIPLEMENTED\n");
+            return -1;
+            <%
+        }
+        %>
+};
+
