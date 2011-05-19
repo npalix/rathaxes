@@ -39,31 +39,4 @@ function        rtxNodeItfDeclaration(local_node        : node,
     return true;
 }
 
-function rtxNodePlaceHolder(local_node   : node)
-{
-    insert local_node.type = "__rtx_tpl_placeHolder__";
-
-    // The potential concatenation prefix
-    insert local_node.prefix;
-
-    // The content of the placeHolder (between "${" and '}')
-    insert local_node.body;
-
-    // The potential concatenation sufix
-    insert local_node.sufix;
-
-    return true;
-}
-
-function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
-{
-    pushItem local_node.identifiers;
-
-    local theIdentifier;
-    ref theIdentifier = local_node.identifiers#back;
-    rtxNodeIdentifier(theIdentifier, theField);
-
-    return true;
-}
-
 #end
