@@ -1,0 +1,33 @@
+
+Rathaxes Installation:
+----------------------
+
+
+Hi there, sorry for these too few lines, a better version of this file will come
+soon with an installer for each operating system Rathaxes can generate C code for.
+Today, there's only a unix shell script that can run the monster, feel free to
+edit it for fiting your needs or write or new one for windows shells.
+Here's guideline to write it:
+
+
+The CodeWorker engine takes a lot of arguments to run Rathaxes.
+first, set you installation path, it will be the prefix of all other paths.
+Some include paths must be set to the CodeWorker engine, they are the following:
+(use your os path separator instead of '/' if needed...)
+
+- install_path/scripts/generation/
+- install_path/scripts/misc/
+- install_path/scripts/parsing/
+- install_path/scripts/semantics/
+- install_path/scripts/cnorm/
+- install_path/scripts/../black_library/
+
+then run the CodeWorker engine with the following command line respecting the arguments order:
+
+codeworker -nologo -stack 1000 [-I include_path_1 -I include_path_2 ...] [-script your_installed_path/scripts/rathaxes.cws] [-args ["unix" | "windows"] "your_installed_path" any_file.rtx]
+
+
+If needed refer to the unix shell script 'rathaxes' in this folder.
+
+
+    THOR.

@@ -1,0 +1,104 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;sample .inf for Hello WDF World made by Mickael Dumont
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Version informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;copyright Rathaxes
+[Version] 
+Signature	="$Windows NT$"
+DriverVer	=12/16/2007
+Class		=HelloWorld
+ClassGUID	={CBC7BDBF-B663-42eb-8DA1-D3D20205AE02}
+CatalogFile	=wdf_hello.cat
+Provider	=%MFGNAME%
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Standard informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[SourceDisksNames]
+1=%INST_DISK_NAME%
+
+[SourceDisksFiles]                               
+wdf_hello.sys=1,,
+WdfCoinstaller01005.dll=1,,
+
+[Manufacturer]                          
+%MFGNAME%=DeviceList
+
+
+[DestinationDirs]
+DefaultDestDir=10,System32\drivers              
+ClassInstall32_CopyFiles=11
+CoInstaller_CopyFiles = 11
+
+[DeviceList]
+%DEV_DESCRIPTION%=DriverInstall,Root\WdfBasic
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Class informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[ClassInstall32]
+AddReg=ClassInstall32_AddReg
+
+[ClassInstall32_AddReg]
+HKR,,,,"WDF Hello World"
+;;;;;;;;;;;;;;;;;;;;;;;;;
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Driver Installation informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[DriverInstall.ntx86]
+DriverVer=12/16/2007,1.0.0.0
+CopyFiles=DriverCopyFiles
+
+[DriverCopyFiles]
+wdf_hello.sys,,,2
+
+[DriverInstall.ntx86.Services]
+AddService=wdf_hello,2,DriverService
+
+[DriverService]
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%10%\system32\drivers\wdf_hello.sys
+
+[DriverInstall.ntx86.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; CoInstaller informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[CoInstaller_CopyFiles]
+WdfCoinstaller01005.dll,,,2
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoinstaller01005.dll,WdfCoInstaller"
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; WDF Installation Informations
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[DriverInstall.ntx86.Wdf]
+KmdfService = wdf_hello, wdf_hello_wdfsect
+
+[wdf_hello_wdfsect]
+KmdfLibraryVersion = 1.5
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Used Strings
+;;;;;;;;;;;;;;;;;;;;;;;;;
+[Strings]
+MFGNAME="Rathaxes"
+INSTDISK="My Installation Disc"
+DEV_DESCRIPTION="My Hello WDF World device"
+INST_DISK_NAME="My Hello WDF World device driver installation disk"
+;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,0 +1,70 @@
+/*
+**	cnormToolDeclarationNode.inc.cws
+**	for LSE - cnorm
+**	made by amsall_d and giron_d
+**	review by auroux_l
+*/
+
+/*
+**	function (void)       cnormToolDeclarationNode_setDeclarationName(theDeclaration : node, theName : node)
+**	function (void)       cnormToolDeclarationNode_setDeclarationCtype(theDeclaration : node, theCtypeNode : node)
+**	function (void)       cnormToolDeclarationNode_setDeclarationList(theDeclaration : node, theListNode : node)
+**	function (void)       cnormToolDeclarationNode_setDeclarationBlock(theDeclaration : node, theBlockNode : node)
+**	function (string)     cnormToolDeclarationNode_genName()
+*/
+
+function        cnormToolDeclarationNode_setDeclarationName(theDeclaration : node, theName : node)
+/*
+  Set the declaration node's name field to theName. Warn if already set
+*/
+{
+  if (existVariable(theDeclaration.name))
+    cnormWarning("Declaration's name already set. Updating from [" + theDeclaration.name + "] to [" + theName + "]");
+  insert theDeclaration.name = theName;
+  return;
+}
+
+function        cnormToolDeclarationNode_setDeclarationCtype(theDeclaration : node, theCtypeNode : node)
+/*
+  Set the declaration node's ctype field to theCtypeNode. Warn if already set
+*/
+{
+  if (existVariable(theDeclaration.ctype))
+    cnormWarning("Declaration's ctype already set.");
+  setall theDeclaration.ctype = theCtypeNode;
+  return;
+}
+
+function        cnormToolDeclarationNode_setDeclarationList(theDeclaration : node, theListNode : node)
+/*
+  Set the declaration node's list field to theListNode. Warn if already set
+*/
+{
+  if (existVariable(theDeclaration.list))
+    cnormWarning("Declaration's list already set.");
+  setall theDeclaration.list = theListNode;
+  return;
+}
+
+function        cnormToolDeclarationNode_setDeclarationBlock(theDeclaration : node, theBlockNode : node)
+/*
+  Set the declaration node's list field to theBlockNode. Warn if already set
+*/
+{
+  if (existVariable(theDeclaration.block))
+    cnormWarning("Declaration's block already set.");
+  setall theDeclaration.block = theBlockNode;
+  return;
+}
+
+function        cnormToolDeclarationNode_genName()
+/*
+  returns a generated identifier for anonyme composed types
+  may be remplaced by a more powerfull id generator
+*/
+{
+  if (!existVariable(this.genIndex))
+    insert this.genIndex = 0;
+  local genName = "__gen_id_" + this.genIndex + "__";
+  return genName;
+}

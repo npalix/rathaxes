@@ -1,0 +1,68 @@
+/*
+**	rdsl_declaration.cwp in scripts/parsing
+**	for Rathaxes project
+**	made by Thor and Adrien
+**	modified by Christophe Fajardo Y Romera
+*/
+
+#include "rdsl_constant_expresions.cwh"
+
+#include "rdsl_declaration.cwf"
+
+// All rathaxes type specific.
+#include "rdsl_declaration_types.cwh"
+#include "rdsl_declaration_variables.cwh"
+#include "rdsl_declaration_buffer.cwh"
+#include "rdsl_variables.cwh"
+
+#include "rdsl_local_declaration.cwh"
+#include "rdsl_single_statement.cwh"
+
+#include "rdsl_declaration_device.cwh"
+#include "rdsl_declaration_driver.cwh"
+#include "rdsl_declaration_sequences_interfaces_common.cwh"
+#include "rdsl_declaration_sequences.cwh"
+#include "rdsl_declaration_kernel_interfaces.cwh"
+#include "rdsl_declaration_configuration.cwh"
+
+declaration ::=
+	=>
+	{
+		insert this.driver.semantic;
+    	createSemanticsArray(this.driver.semantic);
+	}
+    [
+		device
+		| driver
+		| kernel_interfaces
+		| sequences
+		| configuration
+	]
+;
+
+device ::=
+	deviceDefinition(this.devices)
+;
+
+driver ::=
+	driverDefinition(this.driver)
+;
+
+sequences ::=
+	sequencesDefinition(this.sequences)
+	=> ref this.driver.sequences = this.sequences;
+;
+
+kernel_interfaces ::=
+	kernel_interfaces_definition(this.kernel_interfaces)
+	=>
+	{
+		ref this.driver.kernel_interfaces = this.kernel_interfaces;
+		insert this.driver.semantic["kernel_interfaces"] = TRUE;
+		insert this.driver.semantic["callback"] = TRUE;
+	}
+;
+
+configuration ::=
+	configuration_definition(this.configuration)
+;

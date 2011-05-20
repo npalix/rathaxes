@@ -1,0 +1,10 @@
+declare function	getSystemVersion<"windows">();
+
+function	getSystemVersion<"windows">()
+{
+	if (existEnv("OS"))
+	{
+		return getEnv("OS");
+	}
+	return "";
+}
