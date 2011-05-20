@@ -1,0 +1,42 @@
+#if !existFunction(rtxNodeMiddle_version)
+
+function rtxNodeMiddle_version()
+{return "1.0";}
+
+function        rtxNodeItf(local_node      : node,
+                           itf_name        : value,
+                           out_ref_inherit : reference,
+                           out_ref_body    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    insert local_node.name = itf_name;
+    insert local_node.inheritance;
+
+    /* XXX: Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    ref out_ref_inherit = local_node.inheritance;
+    return true;
+}
+
+function        rtxNodeItfDeclaration(local_node        : node,
+                                      qualifier         : value,
+                                      dtype             : value,
+                                      out_ref_body      : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_decl__";
+
+    insert local_node.qualifier = qualifier;
+    insert local_node.body;
+    insert local_node.body.type = dtype;
+    insert local_node.body.rtype;
+    insert local_node.body.identifiers;
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+#end

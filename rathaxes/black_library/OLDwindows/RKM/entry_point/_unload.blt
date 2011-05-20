@@ -1,0 +1,13 @@
+<%
+
+/*
+**      unload.blt in black_library/windows/RKM/entry_point/
+**      for Rathaxes project
+**      made by Thor
+*/
+
+%>
+
+ADVICE unload PART_OF RKM
+{
+};

@@ -1,0 +1,129 @@
+<%
+/*
+**  _set.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+localref nSelf = project.references.currentContext;
+local iIoPort = project.configuration["RKM"]["ioport"];
+local   sDriverName = this.name;
+%>
+
+ADVICE set PART_OF algorithms
+{
+    <%
+    if (nSelf.first_parameter.rtype == "register")
+    {
+        local sDestRegisterName = nSelf.first_parameter.register.definition.name;
+        local iDestOffset = nSelf.first_parameter.register.definition.map.offset;
+        local sDestStructMember = getMemberSymbol(nSelf.first_parameter);
+        local sValue = nSelf.second_parameter.register.definition.name + "_" + getMemberSymbol(nSelf.second_parameter);
+        %>
+        @sDestRegisterName@_register_object->@sDestRegisterName@_register =
+        @sDestRegisterName@_register_object->@sDestRegisterName@_inb(@iIoPort@ + @iDestOffset@);
+        <%
+        if (nSelf.second_parameter.rtype == "register")
+        {
+        %>
+            @sDestRegisterName@_register_object->@sDestRegisterName@_register.@sDestStructMember@ = @sValue@;
+            @sDestRegisterName@_register_object->@sDestRegisterName@_outb(@iIoPort@ + @iDestOffset@, @sDestRegisterName@_register_object->@sDestRegisterName@_register);
+        <%
+        }
+        else if (nSelf.second_parameter.rtype == "constant")
+        {
+        %>
+            @sDestRegisterName@_register_object->@sDestRegisterName@_register.@sDestStructMember@ = @nSelf.second_parameter.value@;
+            @sDestRegisterName@_register_object->@sDestRegisterName@_outb(@iIoPort@ + @iDestOffset@, @sDestRegisterName@_register_object->@sDestRegisterName@_register);
+        <%
+        }
+        else if (nSelf.second_parameter.rtype == "variable")
+        {
+            if (nSelf.second_parameter.operator == "[..]")
+            {
+                if (nSelf.second_parameter.type == "WORD")
+                {
+                    local n = pow(2, $nSelf.second_parameter.length+1$);
+                    local mask = $n - 1$;
+                %>
+                    @sDestRegisterName@_register_object->@sDestRegisterName@_outb_value(@iIoPort@ + @iDestOffset@, (@nSelf.second_parameter.name@ >> @nSelf.second_parameter.left@) & (@mask@));
+                <%
+                }
+            }
+            else
+            {
+            %>
+                @sDestRegisterName@_register_object->@sDestRegisterName@_outb_value(@iIoPort@ + @iDestOffset@, @nSelf.second_parameter.name@);
+            <%
+            }
+        }
+        else if (nSelf.second_parameter.rtype == "property")
+        {
+            traceObject(nSelf.second_parameter);
+        }
+        else
+        {
+            traceObject(nSelf.second_parameter);
+        }
+    }
+    else if (nSelf.first_parameter.rtype == "buffer")
+    {
+        traceObject(nSelf.first_parameter, 2);
+    }
+    else if (nSelf.first_parameter.rtype == "variable")
+    {
+        if (nSelf.second_parameter.rtype == "constant")
+        {
+            %>
+            @nSelf.first_parameter.name@ = @nSelf.second_parameter.value@;
+            <%
+        }
+        else if (nSelf.second_parameter.rtype == "variable")
+        {
+            %>
+            @nSelf.first_parameter.name@ = @nSelf.second_parameter.name@;
+            <%
+        }
+        else if (nSelf.second_parameter.rtype == "register")
+        {
+            if (nSelf.first_parameter.operator == "[..]")
+            {
+                local n = pow(2, $nSelf.first_parameter.length+1$);
+                local mask = $n - 1$;
+                %>
+                    temp = 0x0;
+                    temp = @nSelf.second_parameter.name@_register_object->@nSelf.second_parameter.name@_inb_value(
+                            @iIoPort@ + @nSelf.second_parameter.register.definition.map.offset@);
+                    @nSelf.first_parameter.name@ = @nSelf.first_parameter.name@ & ~(@mask@ << @nSelf.first_parameter.left@);
+                    @nSelf.first_parameter.name@ = @nSelf.first_parameter.name@ | ((temp << @nSelf.first_parameter.left@) & (@mask@ << @nSelf.first_parameter.left@));
+                <%
+            }
+            else
+            {
+                %>
+                    @nSelf.first_parameter.name@ = @nSelf.second_parameter.name@_register_object->@nSelf.second_parameter.name@_inb_value(
+                            @iIoPort@ + @nSelf.second_parameter.register.definition.map.offset@);
+                <%
+            }
+        }
+        else
+        {
+            traceObject(nSelf.second_parameter);
+        }
+    }
+    else if (nSelf.first_parameter.rtype == "property")
+    {
+        if (nSelf.second_parameter.rtype == "constant")
+        {
+            %>
+                @sDriverName@_set(@nSelf.second_parameter.value@);
+            <%
+        }
+    }
+    else
+    {
+        // Je ne sais pas quoi faire mais l'arbre d'entre doit forcement etre bon.
+        traceObject(nSelf.second_parameter);
+    }
+    %>
+};

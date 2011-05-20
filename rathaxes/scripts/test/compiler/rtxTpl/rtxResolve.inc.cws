@@ -1,0 +1,240 @@
+#if !existFunction(rtxResolve_version)
+
+function rtxResolve_version()
+{ return "1.0"; }
+
+
+/*
+ *
+ * Function that allow weaving ASTs by injecting the function definitions into
+ * the global scopem and every other node in the block starting at the current
+ * index.
+ *
+ * It is only used by a link resolution.
+ *
+ */
+function    rtxResolve_InsertCode(destBlock : node, startIdx : value,
+                                  phName : value, phIdx : node,
+                                  sourceNode : node)
+{
+    local sKey;
+
+    // Here, we are at the root of the resolved template AST.
+    foreach item in sourceNode.block
+    {
+        sKey = phName + "_" + phIdx;
+        // If the node is a function definition, put it in global scope.
+        if (cnormNode_checkIsFuncDefinition(item))
+        {
+            insertElementAt(destBlock#root.block, sKey, 0);
+            setall destBlock#root.block#[0] = item;
+        }
+        // else, insert it where we are currently in the block.
+        else
+        {
+            insertElementAt(destBlock, sKey, startIdx);
+            setall destBlock#[startIdx] = item;
+            startIdx = $startIdx + 1$;
+        }
+        phIdx = $phIdx + 1$;
+    }
+}
+
+
+
+/*
+ *
+ * Functions to manipulate the "ResolverValues", a hashtree of
+ * values to be used in the resolution of a template.
+ *
+ */
+
+/*
+ * In this function, both params are rtx Var List Nodes
+ */
+function rtxResolve_BuildParameterResVals(src_resVals   : node,
+                                          src_params    : node,
+                                          dst_resVals   : node,
+                                          dst_params    : node)
+{
+    local idx = $0$;
+    foreach dst_param in dst_params.list
+    {
+        localref theValue = src_resVals;
+        foreach src_param_field in src_params.list[idx].identifiers
+        {
+            ref theValue = theValue[src_param_field.name];
+        }
+        insert dst_resVals[dst_param.identifiers[0].name];
+        setall dst_resVals[dst_param.identifiers[0].name] = theValue;
+        increment(idx); 
+    }
+}
+
+
+/*
+ *
+ * resolverValues -> the hash mapping of values used in the template
+ * treeNode -> the root of the __rtx_tpl__ node
+ * local_node -> current node
+ *
+ */
+
+function    inject<"">(resolverValues : node, treeNode : node,
+                       local_node : node)
+{
+    // we should NEVER fallback here.
+    error("BAD NODE - Empty Template Node Type !");
+    return false;
+}
+
+function    inject<sNodeType>(resolverValues : node, treeNode   : node,
+                              local_node : node)
+{
+    // we should NEVER fallback here.
+    error("BAD NODE - Unknown Template Node Type : "+sNodeType);
+}
+
+function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
+                                              treeNode          : node,
+                                              local_node        : node)
+{
+    //traceLine("Injecting into placeHolder : realType = "+treeNode.body.type);
+    inject<treeNode.body.type>(resolverValues, treeNode, local_node.body);
+}
+
+function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
+                                      local_node : node)
+{
+    //traceLine("Injecting into var : "+toString(local_node));
+    local curCtxNode;
+    local fieldValue;
+    local finalString = "";
+
+    // First concat prefix
+    finalString = finalString + treeNode.prefix;
+
+    // Next resolve the value and concat it
+    rtxNodeResVal_GetField(resolverValues, local_node.identifiers, fieldValue);
+    finalString = finalString + fieldValue;
+
+    // Finally, concat suffix
+    finalString = finalString + treeNode.sufix;
+    treeNode#parent.ref_placeholder = finalString;
+}
+
+function    inject<"__rtx_pointcut__">(resolverValues   : node,
+                                       treeNode         : node,
+                                       local_node       : node)
+{
+    local   chunks;
+    if (rtxLink_findChunks(local_node.name, chunks) == false)
+        traceLine("inject<\"__rtx_pointcut__\">:<WARN> No chunk associated with"
+                  +" the pointcut "+local_node.name);
+
+    // Set common practical references..
+    localref theBlock = treeNode#parent.ref_placeholder#parent#parent;
+    localref thePointcut = treeNode#parent;
+    // Some variables for the InsertCode function
+    local phName = thePointcut.ref_placeholder#parent.id;
+    local phIdx = 0;
+
+    // If we cannot find any chunk, let's use default behaviour
+    if (isEmpty(chunks)
+        || rtxLink_selectCompatibleChunks(chunks, treeNode.with) == false)
+    {
+        traceLine("inject<\"__rtx_pointcut__\">:<WARN> No valid chunk,"
+                  +" falling back to default behaviour.");
+        // If there's a default block inside the poincut, then insert it
+        // instead of the resolved chunks : one setall is enough
+        // to both remove the pointcut and insert the code.
+        setall theBlock#[thePointcut.block_idx] = local_node.default.body;
+    }
+    // There are some chunks left, so it's up to us to resolve them
+    // and then insert them in-place of the pointcut.
+    else
+    {
+
+        local startIdx = thePointcut.block_idx;
+        // First, remove the current placeHolder, in case there was no statement
+        removeElement(theBlock, thePointcut.block_idx);
+        foreach chunk in chunks
+        {
+            local c_tree;
+            if (rtxLink_LoadScript(chunk, c_tree) == true)
+            {
+                local resVals;
+                rtxResolve_BuildParameterResVals(resolverValues,
+                                                 local_node.parameters,
+                                                 resVals, c_tree.parameters);
+
+                instanceTpl<c_tree.instanceKey>(resVals, c_tree.body);
+                rtxResolve_InsertCode(theBlock,
+                                      startIdx, phName, phIdx,
+                                      c_tree.body);
+                increment(startIdx);
+            }
+            else
+                traceLine("inject<\"__rtx_pointcut__\">:<ERROR> Could not "
+                          +"resolve one chunk for pointcut "+local_node.name);
+        }
+    }
+    return true;
+}
+
+
+function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
+                                       local_node : node)
+{
+    local config;
+    local template;
+    local tree_file;
+    local tpl_c_tree;
+
+    // Each of these functions can throw an error to notify failure.
+    if (rtxLink_findTemplates(local_node.linkedType.body, template) == false)
+    {
+        error("inject<\"__rtx_tpl_link__\">: No template matching"+
+              " prototype '"+local_node.linkedType.body+"' in cache.");
+    }
+    rtxLink_selectUniqueTemplate(template, config);
+    rtxLink_LoadScript(template, tree_file);
+
+    local resVals;
+    // To actually resolve this, we need : 
+    //  * Current resolverValues (OK)
+    //  * The parameters in the linking template (OK)
+    //  * sub-template parameters (XXX TODO FIXME)
+    //
+    // Thus is needed :
+    //  * a more precise parsing of the template's type and parameters,
+    //    both in the template type and in the link.
+    //
+// rtxResolve_extractResVal(resolverValues, local_node.vars, linkedTpl.params);
+    insert resVals["ctx"];
+    setall resVals["ctx"] = resolverValues["ctx"];
+
+    cwLoadProject(tree_file, tpl_c_tree);
+    instanceTpl<local_node.linkedType.body>(resVals, tpl_c_tree.body);
+
+    // Replace the node by the whole resolved c_tree
+    //traceLine("Current placeholder :"
+    //          +toString(treeNode#parent.ref_placeholder));
+    //traceLine("Current resolved tree : "+toString(c_tree, true));
+    //traceLine(cnorm2c(c_tree));
+    traceLine("Resolved one link...");
+
+    // placeHolder actually is : block.[idx].expr.id, so #parent * 3
+    localref theBlock = treeNode#parent.ref_placeholder#parent#parent#parent;
+    localref theLink = treeNode#parent;
+    local phIdx = 0;
+    // First, remove the current placeHolder, in case there was no statement
+    removeElement(theBlock, theLink.block_idx);
+    rtxResolve_InsertCode(theBlock, theLink.block_idx,
+                          theLink.ref_placeholder, phIdx, tpl_c_tree.body);
+
+    return true;
+}
+
+
+#end

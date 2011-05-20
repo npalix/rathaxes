@@ -1,0 +1,26 @@
+\ProvidesPackage{rtxslides}
+
+\RequirePackage{lmodern}
+\RequirePackage{arev}
+\RequirePackage{tgbonum}
+\RequirePackage{inconsolata}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+
+\newcommand{\rtx}{Rathaxes}
+
+\definecolor{rathaxesred}{RGB}{190,36,31}
+\setbeamercolor{normal text}{fg=white,bg=black}
+\setbeamercolor{structure}{fg=rathaxesred}
+
+\setbeamerfont{abstract}{family=\rmfamily,shape=\itshape}
+
+\useoutertheme{infolines}
+
+\addtobeamertemplate{title page}{%
+\begin{center}%
+\includegraphics[height=3cm]{logo_latex}%
+\vspace{-30pt}%
+\end{center}}{}
+
+\graphicspath{{@RATHAXES_SOURCE_DIR@/com/images/}}

@@ -1,0 +1,385 @@
+\documentclass[francais]{rtxreport}
+
+\rtxdoctype{COPIL} \rtxdocstatus{Brouillon} \rtxdocversion{0.4}
+
+\rtxdochistory { 0.1 & 15/05/2011 & Louis Opter & Création du document à partir
+  du template .docx \\ \hline 0.2 & 15/05/2011 & Louis Opter & Rédaction des
+  chapitres sur la documentation et la méthodologie \\ \hline 0.3 & 16/05/2011 &
+  Thomas Sanchez & Rédaction du chapitre sur la réalisation technique \\ \hline
+  0.4 & 16/05/2011 & Louis Opter & Relecture \\ }
+
+\author{Louis Opter} \title{COPIL -- Comité de Pilotage}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\rtx\ est un générateur, multi-plateformes, de pilotes de périphériques
+matériels. Le fonctionnement du périphérique est décrit dans le langage
+spécialisé \rtx\ avant d'être compilé vers un module noyau écrit en C pour
+Linux, Windows ou OpenBSD.
+
+Ce document synthétise l'avancée du projet depuis le démarrage de l'EIP. Il
+présentera rapidement l’avancée technique et documentaire pour finir sur les
+actions de communication prévues.
+\end{abstract}
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{Présentation du projet}
+
+\emph{Ce chapitre doit faire \textbf{une page}.}
+
+\section{Cadre du projet}
+
+EIP - Epitech.
+
+\section{Contexte}
+
+LSE.
+
+\chapter{Étude de l'existant}
+
+\emph{Ce chapitre doit faire \textbf{une page}.}
+
+\section{État de l'art}
+
+\section{Positionnement par rapport à l'existant}
+
+% Aucune idée de quoi il s'agit
+
+\chapter{Réalisation technique}
+
+\emph{Ce chapitre doit faire \textbf{deux pages}.}
+
+\rtx\ est un projet difficile qui requiert beaucoup de recherche et de
+validation de résultats intermédiaires. Lorsque \rtx\ a été écrit pour la
+première fois, certains aspects du matériel ont été laissés de côté et donc il
+ne gère donc que certains types de cartes maintenant obsolètes. Aujourd'hui,
+nous avons pu réécrire les bases de \rtx\ prenant en compte les résultats
+dégagés par nos recherches et sommes capables de manipuler des arbres de
+syntaxes de manière souple, efficace et maintenable. Depuis cette réécriture
+nous sommes capables de valider point par point chaque étape de la génération du
+pilote final: cela nous permet de valider nos ajouts de fonctionnalité et éviter
+les régressions.
+
+Nous estimons à 70\% la progression de l’écriture du compilateur. Niveau
+fonctionnalités pures du compilateur, nous en sommes au niveau de l'équipe 2009.
+
+Il nous reste à écrire les interfaces systèmes (c.-à-d. les fonctions systèmes
+appelées réellement) pour chaque système d’exploitation.
+
+\section{Architecture}
+\rtx\ se divise en trois parties:
+\begin{enumerate}
+	\item Le langage ;
+	\item Le compilateur ;
+	\item Les bibliothèques.
+\end{enumerate}
+
+Le langage est ce que le développeur voit au premier abord : de la même manière
+que l’on apprend un langage de programmation, l’utilisateur devra apprendre à
+s’exprimer avec \rtx.
+
+Le compilateur permettra de traduire un fichier écrit dans ce langage en pilote
+de périphérique. Pour accomplir cette tâche, il utilisera les bibliothèques
+fournies avec le logiciel. Les bibliothèques contiennent le «~savoir~» du
+compilateur : sans elles, le compilateur pourrait lire les fichiers \rtx, mais
+il ne saurait absolument pas quoi générer par la suite.
+
+Le compilateur lui-même se divise en trois parties, le \emph{front}, \emph{back}
+et \emph{middle} \emph{-end}.
+
+\begin{itemize}
+	\item Le \emph{font-end} est la partie construisant l’arbre de syntaxe à
+          partir du fichier.
+	\item Le \emph{middle-end} est la partie qui traite l’arbre généré par
+          le \emph{front end}, et qui vérifie la cohérence sémantique.
+	\item Le \emph{back-end} est toute la partie faisant l’interface avec le
+          code des bibliothèques (compilation, chargement), afin d'instrumenter
+          l'arbre (l’altèrer avec des informations supplémentaires) avec les
+          informations recueillies afin de régénérer un nouvel arbre qui peut
+          être reconvertis en code C.
+\end{itemize}
+
+\section{Avancement}
+
+Bien que l'équipe \rtx\ soit divisée (entre les États-Unis et la France), du
+fait de sa petite taille avance plutôt vite. Le retour d'expérience de l'équipe
+2009 nous a aidé à ne pas refaire les mêmes erreurs.
+
+Nous prévoyons une preuve de concept avec un pilote d’une carte PCI d’ici l'été
+2011 pour les soutenances finales. Il nous est très difficile de nous avancer à
+plus long terme, mais nous prévoyons d’être concentrés sur l’écriture des
+fichiers de la bibliothèque pendant notre 5\textsuperscript{ème} année.
+
+\section{Problèmes rencontrés et résolus}
+
+L’équipe n’a pas tant rencontré de problèmes que ça. Les «~problèmes~» sont plus
+des décisions et orientations techniques à prendre. Il est encore trop tôt pour
+dire si elles sont toutes bonnes jusqu’à maintenant.
+
+En revanche, lorsque nous avons dû nous former techniquement et écrire des
+pilotes, beaucoup de problèmes sont apparus. Nous pouvons citer : le manque de
+documentation, l’étendue des connaissances à acquérir, la complexité des
+documentations constructeurs (et leur rareté). De plus, les codes existants sont
+rarement commentés, très optimisés et complexes (car ils gèrent souvent
+plusieurs cartes à la fois).
+
+De plus, on les connait moins, mais ils existent: les bugs matériels. Ils
+rendent encore plus difficile la lecture des codes existants.
+
+\section{Synthèse des bilans techniques}
+
+Nos bilans techniques se sont malheureusement rarement bien passés. Il est vrai
+que nous sommes un peu «~dans notre monde~» et on oublie un peu le monde réel.
+Par conséquent, il nous est arrivé de passer à côté d’une soutenance en arrivant
+avec des documentations manquantes ou ne répondant pas aux exigences du
+laboratoire EIP.
+
+Nous avons aussi eu des problèmes de communication vis-à-vis du travail que nous
+fournissons.
+
+Gardant en tête tout cela, nous faisons notre possible pour que tout se passe
+mieux et que notre travail soit justement mis en valeur afin qu’il puisse être
+évalué à sa juste valeur.
+
+Nous espérons que le laboratoire EIP et ses correcteurs pourront noter les
+améliorations et nous aideront à surmonter les erreurs restantes.
+
+\chapter{Conduite de projet}
+
+\emph{Ce chapitre doit faire \textbf{deux pages}.}
+
+\section{Organisation du groupe}
+
+\rtx\ est un groupe de cinq étudiants :
+\begin{description}
+\item[Thomas Luquet] : Thomas s'occupe des relations extérieures (tickets pour
+  le labEIP, organisation des voyages\ldots) et du planning (rappel des
+  réunions, des dates de rendus et inscription aux soutenances) ;
+\item[Louis Opter] : Louis s'occupe de gérer le dépôt du code, du système de
+  compilation et de distribution (paquets/installateurs), du site vitrine, de la
+  mise en forme de tous les documents du projet et de la documentation
+  utilisateur ;
+\item[David Pineau] : David s'occupe de la conception du langage, du compilateur
+  écrit en CodeWorker et de la documentation technique du langage et du
+  compilateur ;
+\item[Thomas Sanchez] : Thomas s'occupe de la conception du langage grâce aux
+  concepts techniques qu'il obtient en développant des pilotes modèles ;
+\item[Zoltan Konarzewski] : Zoltan assiste David sur la réalisation du
+  compilateur.
+\end{description}
+
+%Enfin, il convient de citer Lionel Auroux qui ---avec son expérience et sa
+%vision sur le long terme--- arbitre les décisions à prendre et les prochains
+%points techniques sur lesquels travailler.
+
+\section{Méthodologie}
+
+La méthodologie du groupe s'appuie autour du dépôt de code hébergé sur le
+service Google Code. Le dépôt de code est au format Mercurial qui a été retenu
+pour deux raisons :
+\begin{itemize}
+\item Son fonctionnement décentralisé qui facilite l'ajout de nouvelles
+  fonctionnalités étant donné que chaque développeur possède son propre dépôt ;
+\item Sa facilité d'utilisation ---en particulier sous Windows--- et sa facilité
+  de prise en main par les utilisateurs de Subversion.
+\end{itemize}
+
+Le dépôt contient non seulement l'avancée actuelle de \rtx\ mais aussi sa
+documentation et nos document de travail. L'utilisation de Mercurial pour tous
+nos documents et toutes nos présentation est une volonté méthodologique : le
+dépôt est l'unique référence pour tous ce qui concerne le développement de \rtx.
+Afin de pouvoir versionner nos documents nous avons font le choix de les écrire
+en \LaTeX\ qui a aussi ---comme Mercurial--- l'avantage de fonctionner sur tous
+les systèmes d'exploitations.
+
+Google Code nous évite un travail d'administration (nous n'avons pas besoin de
+gérer nos propres serveurs) et en plus d'héberger notre dépôt Mercurial de
+référence il permet aussi:
+\begin{itemize}
+\item D'avoir une façade publique ou les développeurs intéressés peuvent
+  facilement consulter nos documentations et télécharger le projet ;
+\item Un répertoire de bogues publique.
+\end{itemize}
+Google nous permet aussi d'héberger une liste de diffusion facilement, dont nous
+nous servons intensivement pour tous nos débats internes.
+
+Le canal IRC \texttt{\#rathaxes} dont nous nous servons pour nos discussions
+internes et qui pourra servir d'outils de supports pour nos utilisateurs, est
+enregistré sur le réseau freenode.
+
+Enfin, notre système de compilation possède plusieurs automatismes pour
+faciliter le développement et la distribution du projet :
+\begin{itemize}
+\item Exécution automatisé des tests unitaires et d'intégration aussi bien sous
+  Windows et que les autres plateformes ;
+\item Téléchargement automatique des dépendances du projets ;
+\item Génération automatique d'un installateur Windows et des archives sources
+  pour Windows ou les autre plateformes.
+\end{itemize}
+
+\section{Organisation des réunions}
+
+Les réunions sont organisées chaque Samedi à 19 heures CEST en visio-conférence
+sur Skype. Nos réunions suivent toutes le même planning :
+\begin{itemize}
+\item Thomas L. fait le tour sur les points administratifs à voir (tickets avec
+  le labEIP, date butoirs des candidatures aux conférences\ldots) et nous rappel
+  les prochains événements sur le calendrier du labEIP ;
+\item Point sur l'avancement par rapport a notre planning et celui du labEIP ;
+\item Discussions sur les décisions technique à prendre (si besoin) ;
+\item Distribution du travail.
+\end{itemize}
+
+Un résumé de la réunion est rédigé par Thomas L. et envoyé sur notre liste de
+diffusion interne.
+
+L'utilisation de moyens de communications électroniques est justifiée par :
+\begin{itemize}
+\item Le fait que deux des membres du groupes se trouvent en Californie avec
+  neuf heures de décalage horaire par rapport à la France ;
+\item La volonté d'avoir un modèle de développement qui laisse la possibilité à
+  des développeurs extérieurs à Epitech de pouvoir facilement suivre notre
+  avancement et contribuer au projet.
+\end{itemize}
+
+\chapter{Points sur les documentations}
+
+\emph{Ce chapitre doit faire \textbf{une page}.}
+
+\section{Organisation des documentations}
+
+La documentation du projet comporte :
+\begin{itemize}
+\item Une documentation interne avec des documents de travail qui servent
+  d'appuis au développement du langage et du compilateur ;
+\item Une documentation utilisateur qui détaille aussi bien l'utilisation de
+  \rtx\ qu'une référence complète du langage et de l'implémentation du
+  compilateur.
+\end{itemize}
+
+La documentation interne contient des documents de travail : soit des prototypes
+du langage ou du compilateur, soit des documents qui expliquent et décomposent
+des pilotes de périphériques existant qui nous servent de références lors de nos
+réflexions sur les fonctionnalités nécessaires dans le langage.
+
+La documentation utilisateur, traduite en anglais et en français, est elle même
+découpées en deux parties :
+\begin{itemize}
+\item Un «~tutoriel~» qui explique comment installer \rtx\ sous Windows ou un
+  autre système d'exploitation et qui contient des liens vers les autres
+  documentations ;
+\item Une partie technique qui couvre les aspects \emph{front}, \emph{middle} et
+  \emph{back~-end} du langage.
+\end{itemize}
+Ce découpage de la documentation technique a été choisi car elle s'adresse à des
+personnes potentiellement différentes avec des compétences différentes :
+fabricant de matériel, développeur de système d'exploitations, développeur de
+pilotes.
+
+\section{Avancement}
+
+De nouveaux documents de travail seront sans doutes rédigés mais il ne semble
+pas nécessaire d'ajouter de nouveaux documents «~utilisateurs~» : la
+documentation rédigée jusqu'ici décrit déjà l'ensemble du projet de son
+installation à son utilisation. Seul un travail de mise à jour sur les parties
+qui sont encore en développement est prévue.
+
+\chapter{Communication}
+
+%\emph{Ce chapitre doit faire \textbf{une page}.}
+
+% - Quels cours suivez-vous
+
+% - Ce que cela vous apporte pour adapter votre discours en fonction des
+% interlocuteurs
+
+\section {Cible}
+La cible de notre projet se sépare en deux groupes disctintct.  Les devloppeurs
+kernel et les constructeurs de pilotes de périphérique.  Cependant des points
+commun peuvent définir cette cible d'utilisateurs :
+
+\begin {itemize}
+\item Hautes Etudes d'ingégieurie (Bac + 3 minimum)
+\item Bonne connaissance en programmation informatique
+\item Connaissance de approndie des fondamenteaux des systèmes d'exploitation
+  (Noyaux, Entrée/Sorties ...)
+\item Maitrise des systèmes d'exploitation \textit{alternatif} (linux au
+  minimum)
+\end{itemize}
+
+Notre communication a donc été pensé pour répondre à cette cible.
+
+\section {Discour}
+
+Notre discours de communication à été pensé pour 2 public. Un public avertie et connaisseur et un public plus générale. 
+
+Pour la conférence que nous organiserons lors Rencontre Mondiale du Logiciel Libre, nous parlerons plus du projet en terme de resultat qu'en terme technique car le public est moins ''spécialisé''. A l'inverse pour les conférences que nous produirons pour le laboratoire LSE et pour les T-Dose, nous axerons sur les aspects technique du projet car le publique est déjà spécialisé.
+Il en sera de même pour les supports visuels.
+
+
+%Pour construire notre discoure l'équipe à préférer organiser des conférence
+%interne à EPITECH.
+
+
+\chapter{Promotion extérieure}
+
+%\emph{Ce chapitre doit faire \textbf{une page}.}
+
+
+\section {Conférence}
+
+L'équipe prépare actuelement plusieurs conférences de présentation du projet.
+Une première conférence se fera à {EPITECH} en juin. Elle sera organisé dans le
+cadre des conférences du LSE (Laboratoire Système Epita/Epitech)
+
+La seconde conférence aura lieu dans le cadre des Rencontres Mondiales du
+Logiciel Libre. Cette conférence aura lieux à Strasbourg entre le 9 au 14
+juillet. Nous avons demandé par aillieur un stande pour enrichire nos
+rencontres.
+
+Enfin, nous projetons de participer àd'autres rencontre internationale tel que
+le T-Dose et le Fosdem.
+
+Faire des conférences en interne puis en externe et avec de plus en plus
+d'ampleur, permet de perfectionner nos présentation au fure et à mesure des
+mois.
+
+
+\section {Communauté}
+
+le projet étant open source nous souhaitons mettre en place dans le long terme
+une communoté autour du projet. 
+Pour cela nous avons mis en place plusieurs moyens de communications :
+\begin {itemize}
+
+\item Une mailing liste publique 
+\item Une mailing developpeur
+\item Un wiki 
+\item Un site vitrine
+\end {itemize} 
+
+% - Où en êtes-vous
+% - Quels suivis faites-vous
+% - Apports
+
+\section {Flyers et Goodies}
+Pour le moment des T-Shirt pour l'équipe de Rathaxes ont été acheté. On prévoit aussi de faire faire des flyers que nous distribuerons lors des conférences que nous organiserons.
+
+
+
+\chapter{Conclusion}
+
+\emph{Ce chapitre doit faire \textbf{une page}.}
+
+% - Où en êtes-vous
+% - Avez-vous des modifications à faire dans votre CDC ?
+% - Quel avenir dans les 6 mois (fin d’année)
+
+
+\end{document}
