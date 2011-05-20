@@ -1,0 +1,302 @@
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage{listings}
+\usepackage{color}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\title{Linux 2.6 Loadable Kernel Modules}
+\author{Mickael Dumont\\Tomas Suarez}
+\date{October 2007}
+
+\begin{document}
+\pagestyle{plain}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+  showspaces=false, showstringspaces=false}
+
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{License}
+This documentation is provided by the authors ``as is'' and any
+express or implied warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular purpose are
+disclaimed. in no event shall the authors be liable for any
+direct, indirect, incidental, special, exemplary, or consequential damages
+(including, but not limited to, procurement of substitute goods or services;
+loss of use, data, or profits; or business interruption) however caused and
+on any theory of liability, whether in contract, strict liability, or tort
+(including negligence or otherwise) arising in any way out of the use of this
+software, even if advised of the possibility of such damage.
+
+\section{Introduction}
+This short article will introduce the way of handling
+loadable kernel modules (LKM) on Linux 2.6.
+
+\section{Includes}
+Some includes are mandatory when developping kernel modules :
+\begin{lstlisting}
+#include <linux/modules.h>
+#include <init.h>
+\end{lstlisting}
+The first one defines everything useful for a module;
+the second one defines the macro used when loading the module.
+
+\section{Modules informations}
+Kernel modules come with a lot of useful informations which are
+avaibles with the {\it'modinfo module\_name'} command.
+modinfo provides informations about the module author, the license for
+the module distribution, the version of the kernel it is written for,
+the other modules it depends if any, and a short description of the
+parameters it accepts.
+All these informations are provided by the developer using the following macros :
+\begin{description}
+\item[MODULE\_LICENSE]
+Here you can specify the license for the module. Note that a warning is printed
+when the module is loaded if you use a non-free licensing.
+The free licenses are listed in\\
+{\it/source\_dir/include/linux/module.h.}:
+\begin{lstlisting}
+"GPL"
+"GPL v2"
+"GPL and additional rights"
+"Dual BSD/GPL"
+"Dual MIT/GPL"
+"Dual MPL/GPL"
+\end{lstlisting}
+Non free licenses are labeled
+\begin{lstlisting}
+"Proprietary"
+\end{lstlisting}
+
+\begin{lstlisting}
+MODULE_LICENSE("GPL");
+\end{lstlisting}
+
+\item[MODULE\_AUTHOR]
+The author name of course, to add a mail address for bug report is also
+a good idea.
+\begin{lstlisting}
+MODULE_AUTHOR("foo Bar fb@isp.com");
+\end{lstlisting}
+
+\item[MODULE\_DESCRIPTION]
+What this module do.
+\begin{lstlisting}
+MODULE_DESCRIPTION("a very simple module");
+\end{lstlisting}
+
+\item[MODULE\_ALIAS]
+Alternative name for the module
+\begin{lstlisting}
+MODULE_ALIAS("alias_name");
+\end{lstlisting}
+
+\item[MODULE\_SUPPORTED\_DEVICE]
+This information is only for documentation at this time
+but might be used for automatic configuration in the future.
+\begin{lstlisting}
+MODULE_SUPPORTED_DEVICE("device1, device2");
+\end{lstlisting}
+
+\item[MODULE\_VERSION]
+The version number of the module
+\begin{lstlisting}
+MODULE_VERSION("2:3.1"):
+\end{lstlisting}
+
+\item[MODULE\_PARAM\_DESC]
+This macro is used for every parameter and takes 2 arguments:
+the first is the parameter name, the second a description
+of the parameters type. There should be one instance of this
+macro for each of the module parameters.
+\begin{lstlisting}
+MODULE_PARAM_DESC(param1_name, "type sting");
+MODULE_PARAM_DESC(param2_name, "type sting");
+...
+\end{lstlisting}
+\end{description}
+
+\section{Load/unload function}
+At loadtime the {\it module\_init} macro is called. This macro
+is used to define the function that should be called to initiallise
+the module. The pending macro {\it module\_exit} is called when the
+module is unloaded.
+The parameter of the macro is the name of the function to be called.
+\begin{lstlisting}
+static int __init mymodule_init(void)
+{
+  printk(KERN_INFO "initialising mymodule\n");
+  return 0;
+}
+
+static void __exit mymodule_exit(void)
+{
+  printk(KERN_INFO "exiting mymodule\n");
+}
+
+module_init(mymodule_init);
+module_exit(mymodule_exit);
+\end{lstlisting}
+\_\_init macro allow the system to delete the function init and free
+its memory once the init function ends.
+This mecanism permit to limit the amount of memory used by the kernel.
+\\
+You could also use pre 2.3.13 kernel way, using those two start and
+stop functions:
+\begin{lstlisting}
+int init_module(void);
+void cleanup_module(void);
+\end{lstlisting}
+
+\section{Compile a module}
+The easiest way to compile your module is to use the standard kernel build
+mecanism (kbuild). Since the kernel 2.6 there is a '.ko' extention for kernel 
+modules insted of the old '.o'.
+This simple Makefile compiles a module called 'module'
+from a 'module.c' file.
+\begin{lstlisting}
+obj-m += module.o
+
+all:
+make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+\end{lstlisting}
+If you need to build a module out of multiple file you have first to
+create an unique combined object, then to tell make what file are part
+of that combined object. Thee following makefile compile a module 
+named 'combined\_module' from module\_file1.c and module\_file2.c.
+\begin{lstlisting}
+obj-m += combined_module.o
+combined_module-objs := module_file1.o module_file2.o
+
+all:
+    make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+\end{lstlisting}
+
+\section{Hello, World !}
+This is an example of a basic "hello, world !" module.
+\subsection{Module source}
+\begin{lstlisting}
+/*
+ * hello.c
+ * Basic Hello World.
+ */
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("C. Norris");
+MODULE_ALIAS("goodbye");
+MODULE_VERSION("0.1");
+
+static int __init hello(void)
+{
+  printk(KERN_INFO "Hello, kernel World !\n");
+  return (0);
+}
+
+static void __exit goodbye(void)
+{
+  printk(KERN_INFO "Goodbye, kernel World !\n");
+}
+
+module_init(hello);
+module_exit(goodbye);
+\end{lstlisting}
+
+\subsection{The printk function}
+The printk function provides a way for the kernel
+to log and display informations.
+The KERN\_INFO macro indicates the priority level of
+the messages. It currently exists 8 levels of priority, listed
+in source\_dir/include/linux/kernel.h:
+\begin{lstlisting}
+/* system is unusable			*/
+#define	KERN_EMERG	"<0>"
+/* action must be taken immediately	*/
+#define	KERN_ALERT	"<1>"
+/* critical conditions			*/
+#define	KERN_CRIT	"<2>"
+/* error conditions			*/
+#define	KERN_ERR	"<3>"
+/* warning conditions			*/
+#define	KERN_WARNING	"<4>"
+/* normal but significant condition	*/
+#define	KERN_NOTICE	"<5>"
+/* informational			*/
+#define	KERN_INFO	"<6>"
+/* debug-level messages			*/
+#define	KERN_DEBUG	"<7>"
+\end{lstlisting}
+
+\subsection{Module usage}
+Let's compile the module using the simple Makefile seen in
+'Compile a Module' section.
+\begin{lstlisting}
+# Simple Makefile for Hello, World ! module
+obj-m += hello.o
+
+all:
+        make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+\end{lstlisting}
+
+\lstset{language=sh, numbers=none}
+\begin{lstlisting}
+# make
+make -C /lib/modules/.../build M=.../hello modules
+make[1]: Entering directory `/usr/src/linux'
+Building modules, stage 2.
+  MODPOST 1 modules
+  make[1]: Leaving directory `/usr/src/linux'
+# 
+\end{lstlisting}
+Now, just use insmod to load the module.
+\begin{lstlisting}
+# insmod hello.ko
+# 
+\end{lstlisting}
+If you check your '/var/log/messages' file you should see something like:
+\begin{lstlisting}
+# tail -f /var/log/messages
+[...]
+Oct 12 23:42:42 rathaxes Hello, kernel World !
+\end{lstlisting}
+So, your module is loaded.
+If you use lsmod, you should now see it in the list.
+\begin{lstlisting}
+# lsmod
+Module                  Size  Used by
+[...]
+hello                   1856  0
+[...]
+#
+\end{lstlisting}
+Remember that you can also get some informations from the module
+by using modinfo on your .ko file.
+\begin{lstlisting}
+# modinfo hello.ko
+filename:       hello.ko
+version:        0.1
+alias:          goodbye
+author:         C. Norris
+license:        GPL
+srcversion:     [...]
+depends:        
+vermagic:       2.6.xx[...]
+# 
+\end{lstlisting}
+Finally, unload your module with rmmod.
+\begin{lstlisting}
+# rmmod hello
+# tail -f /var/log/messages
+[...]
+Oct 12 23:43:42 rathaxes Goodbye, kernel World !
+\end{lstlisting}
+You're done with this simple Hello World module.
+\end{document}

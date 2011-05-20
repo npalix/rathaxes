@@ -1,0 +1,10 @@
+// This is OpenBSD black library configuration file.
+
+global OPENBSD_MAKEFILE_PATH = "/usr/src/sys/arch/i386/compile/GENERIC"; // Parsed Makefile.
+global OPENBSD_SOURCE_PATH = "/usr/src/sys/";
+global OPENBSD_SOURCE_INCLUDE_PATH = "/usr/include/";
+
+// Includes of OpenBSD tools.
+#include "openBSD/tools/getOpenBSDSystemVersion.cws"
+#include "openBSD/tools/openBSDTemporaryDirectory.cws"
+#include "openBSD/tools/getOpenBSDCMD.cws"

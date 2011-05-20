@@ -1,0 +1,49 @@
+<%
+
+/*
+**      _kernel_registration.blt in black_library/windows/user_interface
+**      for Rathaxes project
+**      made by Micka
+*/
+
+local	sDeviceName = this["RKM"]["NAME"];
+local   sDispatchMode = this["RKM"]["DISPATCH_MODE"];
+%>
+
+ADVICE device_add PART_OF user_interface
+{
+    NTSTATUS
+    EvtDeviceAdd(WDFDRIVER Driver, PWDFDEVICE_INIT DeviceInit)
+    {
+        NTSTATUS                status;
+        WDFDEVICE               device;
+        WDFQUEUE                defaultqueue;
+        WDF_IO_QUEUE_CONFIG     defaultconfig;
+        
+        // Registering plug and play callbacks
+        WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
+        WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
+        pnpPowerCallbacks.EvtDevicePrepareHardware = EvtPrepareHardware;
+        //pnpPowerCallbacks.EvtDeviceReleaseHardware = @sDeviceName@EvtReleaseHardware;
+        WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
+
+        status = WdfDeviceCreate(&DeviceInit, WDF_NO_OBJECT_ATTRIBUTES, &device);
+        if (!NT_SUCCESS(status))
+        {
+            KdPrint(("@sDeviceName@" "WdfDeviceCreate failed\n"));
+            return (status);
+        }
+        
+        WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&defaultconfig, @sDispatchMode@);
+        defaultconfig.EvtIoRead       = @sDeviceName@IoRead;
+        defaultconfig.EvtIoWrite      = @sDeviceName@IoWrite;
+        //defaultconfig.EvtDefault      = EvtIoDefault;
+
+        status = WdfIoQueueCreate(device, &defaultconfig, WDF_NO_OBJECT_ATTRIBUTES, &defaultqueue);
+        if (!NT_SUCCESS(status))
+        {
+            KdPrint(("@sDeviceName@" "WdfIoQueueCreate failed\n"));
+        }   
+        return (status);
+    }
+};

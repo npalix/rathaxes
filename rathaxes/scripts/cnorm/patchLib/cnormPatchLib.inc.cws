@@ -1,0 +1,658 @@
+/**
+ **	cnormPatchLib.inc.cws
+ **	for LSE - cnorm
+ **	made by auroux_l
+ **
+ **	the aim of this lib is to provide usefull functions to build C norm's chunks of AST.
+ **/
+/*
+**	global			cnormPatchLibConf : node 
+**				.cnormPath : value (set to the CNORM_PATH by DEFAULT)
+**
+** function (void) cnormPatchInit(local_node : node)
+**
+** function (void) cnormPatchDeclaration(local_node : node, code_chunk : value, glob_node : node = null)
+** function (void) cnormPatchStatement(local_node : node, code_chunk : value, glob_node : node = null)
+**
+** function (void) cnormPatchGetFunctionNode(local_node : node, function_name : value, out_ref : reference)
+** function (void) cnormPatchGetFunctionParamList(local_node : node, func_name : value, out_ref : reference)
+** function (void) cnormPatchGetProtoParamList(local_node : node, proto_name : value, out_ref : reference)
+** function (void) cnormPatchFunctionParamFront(local_node : node, code_chunk : value, glob_node : node = null)
+** function (void) cnormPatchFunctionParamBack(local_node : node, code_chunk : value, glob_node : node = null)
+**
+** function (void) cnormPatchGetStructList(local_node : node, struct_name : value, out_ref : reference)
+** function (void) cnormPatchGetUnionList(local_node : node, union_name : value, out_ref : reference)
+** function (void) cnormPatchStructOrUnionFieldFront(local_node : node, code_chunk : value, glob_node : node = null)
+** function (void) cnormPatchStructOrUnionFieldBack(local_node : node, code_chunk : value, glob_node : node = null)
+**
+** function (void) cnormPatchGetEnumList(local_node : node, enum_name : value, out_ref : reference)
+** function (void) cnormPatchEnumFieldFront(local_node : node, code_chunk : value, glob_node : node = null)
+** function (void) cnormPatchEnumFieldBack(local_node : reference, code_chunk : value, glob_node : node = null)
+**
+** function (void) cnormPatchGetWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+** function (void) cnormPatchGetDoWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+** function (void) cnormPatchGetIfThenNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+** function (void) cnormPatchGetIfElseNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+** function (void) cnormPatchGetForNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+** function (void) cnormPatchGetSwitchNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+**
+** function (void) cnormAddToGlobalTypes(glob_node : node, local_node : node)
+** function (void) cnormAddRefToGlobalTypes(local_node : node, glob_node : node)
+*/
+
+/* private functions */
+declare function _copyHash(dst : node, src : node);
+declare function _copyArray(dst : node, src : node);
+declare function _dispatchRule(type_disp : value, local_node : node, code_chunk : value, glob_node : node);
+declare function _dispatchRuleAddFront(type_disp : value, local_node : node, code_chunk : value, glob_node : node);
+declare function _dispatchRuleAddBack(type_disp : value, local_node : node, code_chunk : value, glob_node : node);
+
+/* public functions */
+declare function  cnormPatchInit(local_node : node);
+declare function  cnormPatchDeclaration(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchStatement(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchGetFunctionNode(local_node : node, function_name : value, out_ref : reference);
+declare function  cnormPatchGetFunctionParamList(local_node : node, func_name : value, out_ref : reference);
+declare function  cnormPatchGetProtoParamList(local_node : node, proto_name : value, out_ref : reference);
+declare function  cnormPatchFunctionParamFront(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchFunctionParamBack(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchGetStructList(local_node : node, struct_name : value, out_ref : reference);
+declare function  cnormPatchGetUnionList(local_node : node, union_name : value, out_ref : reference);
+declare function  cnormPatchStructOrUnionFieldFront(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchStructOrUnionFieldBack(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchGetEnumList(local_node : node, enum_name : value, out_ref : reference);
+declare function  cnormPatchEnumFieldFront(local_node : node, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchEnumFieldBack(local_node : reference, code_chunk : value, glob_node : node = null);
+declare function  cnormPatchGetWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormPatchGetDoWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormPatchGetIfThenNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormPatchGetIfElseNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormPatchGetForNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormPatchGetSwitchNodeByLabel(local_node : node, label_name : value, out_ref : reference);
+declare function  cnormAddToGlobalTypes(glob_node : node, local_node : node);
+declare function  cnormAddRefToGlobalTypes(local_node : node, glob_node : node);
+
+/* need to be set in the user program */
+global cnormPatchLibConf;
+insert cnormPatchLibConf.cnormPath = getEnv("CNORM_PATH");
+
+// cnormPatchInit
+// set a node as a Cnorm AST tree
+// local_node : OUT the node to be set
+function cnormPatchInit(local_node : node)
+/*
+  Prepare a local variable to store a AST subtree.
+  So the smallest AST node was :
+  //node.gl_pctx -> node.block
+  node.block
+  node.block.pctx -> null
+*/
+{
+  if (!existVariable(local_node.block))
+    {insert local_node.block;}
+  if (!existVariable(local_node.block.pctx))
+    {insert local_node.block.pctx;}
+}
+
+// cnormPatchDeclaration
+// add a C declaration in a AST tree
+// local_node : INOUT	the node to be set
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchDeclaration(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a chunk of C declaration in the local_node
+*/
+{
+  _dispatchRule("declaration", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchStatement
+// add a C statement in a AST tree
+// local_node : INOUT	the node to be set
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchStatement(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a chunk of C statement in the local_node
+*/
+{
+  _dispatchRule("statement", local_node, code_chunk, glob_node);
+}
+
+///// FUNCTIONS AND PROTOTYPES
+
+// cnormPatchGetFunctionNode
+// get a reference on the function AST node
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the function
+// out_ref	: OUT	a reference on the AST node
+function cnormPatchGetFunctionNode(local_node : node, function_name : value, out_ref : reference)
+{
+  ref	out_ref = local_node.block.functions[function_name];
+}
+
+// cnormPatchGetFunctionParamList
+// get a reference on the function parameters
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the function
+// out_ref	: OUT	a reference on the array of parameters
+function cnormPatchGetFunctionParamList(local_node : node, func_name : value, out_ref : reference)
+{
+  local totree;
+  if (existVariable(local_node.block.functions[func_name]))
+    {
+      ref totree = local_node.block.functions[func_name];
+      if (!existVariable(totree.list))
+	{insert totree.list;}
+      ref	out_ref = totree.list;
+    }
+}
+
+// cnormPatchGetProtoParamList
+// get a reference on the prototype parameters
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the function
+// out_ref	: OUT	a reference on the array of parameters
+function cnormPatchGetProtoParamList(local_node : node, proto_name : value, out_ref : reference)
+{
+  local totree;
+  if (existVariable(local_node.block.prototypes[proto_name]))
+    {
+      ref totree = local_node.block.prototypes[proto_name];
+      if (!existVariable(totree.list))
+	{insert totree.list;}
+      ref	out_ref = totree.list;
+    }
+}
+
+// cnormPatchFunctionParamFront
+// add the chunk code as first parameter of a function
+// local_node	: IN	the AST list of the function (get by cnormPatchGetFunctionParamList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchFunctionParamFront(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the front
+*/
+{
+  _dispatchRuleAddFront("function_param", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchFunctionParamBack
+// add the chunk code as last parameter of a function
+// local_node	: IN	the AST list of the function (get by cnormPatchGetFunctionParamList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchFunctionParamBack(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the back
+*/
+{
+  _dispatchRuleAddBack("function_param", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchGetStructList
+// get a reference on the struct fields
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the struct
+// out_ref	: OUT	a reference on the array of the struct fields
+function cnormPatchGetStructList(local_node : node, struct_name : value, out_ref : reference)
+{
+  local totree;
+  if (existVariable(local_node.block.structs[struct_name]))
+    {
+      ref totree = local_node.block.structs[struct_name];
+      if (!existVariable(totree.ctype.list))
+	{insert totree.ctype.list;}
+      ref	out_ref = totree.ctype.list;
+    }
+}
+
+// cnormPatchGetUnionList
+// get a reference on the union fields
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the struct
+// out_ref	: OUT	a reference on the array of the union fields
+function cnormPatchGetUnionList(local_node : node, union_name : value, out_ref : reference)
+{
+  local totree;
+  if (existVariable(local_node.block.unions[union_name]))
+    {
+      ref totree = local_node.block.unions[union_name];
+      if (!existVariable(totree.ctype.list))
+	{insert totree.ctype.list;}
+      ref	out_ref = totree.ctype.list;
+    }
+}
+
+// cnormPatchStructOrUnionFieldFront
+// add the chunk code as first field of a struct or union
+// local_node	: IN	the AST list of the function (get by cnormPatchGetStructList or cnormPatchGetUnionList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchStructOrUnionFieldFront(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the front
+*/
+{
+  _dispatchRuleAddFront("structunion_field", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchStructOrUnionFieldBack
+// add the chunk code as last field of a struct or union
+// local_node	: IN	the AST list of the function (get by cnormPatchGetStructList or cnormPatchGetUnionList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchStructOrUnionFieldBack(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the back
+*/
+{
+  _dispatchRuleAddBack("structunion_field", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchGetEnumList
+// get a reference on the enum field list
+// local_node	: IN	the AST tree
+// function_name: IN	the name of the enum
+// out_ref	: OUT	a reference on the array of enums fields
+function cnormPatchGetEnumList(local_node : node, enum_name : value, out_ref : reference)
+{
+  local totree;
+  if (existVariable(local_node.block.enums[enum_name]))
+    {
+      ref totree = local_node.block.enums[enum_name];
+      if (!existVariable(totree.ctype.list))
+	{insert totree.ctype.list;}
+      ref	out_ref = totree.ctype.list;
+    }
+}
+
+// cnormPatchEnumFieldFront
+// add the chunk code as first field of a enum
+// local_node	: IN	the AST list of the function (get by cnormPatchGetEnumList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchEnumFieldFront(local_node : node, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the front
+*/
+{
+  _dispatchRuleAddFront("enum_field", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchEnumFieldBack
+// add the chunk code as last field of a enum
+// local_node	: IN	the AST list of the function (get by cnormPatchGetEnumList)
+// code_chunk : IN	the C code
+// glob_node  : INOUT	(optional), the global node where local_node could be add, or if local_node is just a ref into
+//			glob_node
+function cnormPatchEnumFieldBack(local_node : reference, code_chunk : value, glob_node : node = null)
+/*
+  Add a field in the struct local_node at the back
+*/
+{
+  _dispatchRuleAddBack("enum_field", local_node, code_chunk, glob_node);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the while
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    while (42)
+    {}
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "printf(200);");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "while")
+	    {
+	      ref out_ref = expr.stmt;
+	    }
+	}
+    } while next(expr);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the do {} while
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetDoWhileNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    do
+    {}
+    while (42);
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "printf(200);");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "do")
+	    {
+	      ref out_ref = expr.stmt;
+	    }
+	}
+    } while next(expr);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the if
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetIfThenNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    if (42)
+    {}
+    else
+    {}
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "printf(\"42\n\");");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "if")
+	    {
+	      ref out_ref = expr.then;
+	    }
+	}
+    } while next(expr);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the else
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetIfElseNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    if (42)
+    {}
+    else
+    {}
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "printf(\"not 42\n\");");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "if")
+	    {
+	      ref out_ref = expr.else;
+	    }
+	}
+    } while next(expr);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the for
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetForNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    for (int i = 0; i < 42; ++i)
+    {}
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "printf(100);");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "for")
+	    {
+	      ref out_ref = expr.stmt;
+	    }
+	}
+    } while next(expr);
+}
+
+// cnormPatchGetWhileNodeByLabel
+// get a reference on the node for add statement/declaration in the {} of the switch
+// local_node	: IN	the AST tree
+// label_name	: IN	the name of the label
+// out_ref	: OUT	a reference on the node
+function cnormPatchGetSwitchNodeByLabel(local_node : node, label_name : value, out_ref : reference)
+{
+/*
+  example:
+  {
+    label:
+    switch (42)
+    {}
+  }
+  <%
+  local out;
+  cnormPatchGetSwitchNodeByLabel(local_node, "label", out);
+  cnormPatchInit(out);//// TODO:Arghhh
+  cnormPatchStatement(out, "case 4: printf(100);");
+  %>
+*/
+  local expr;
+  createIterator(expr, local_node.block);
+  do
+    {
+      if (expr.type == "label" && expr.label == label_name)	
+	{
+	  next(expr);
+	  if (expr.type == "switch")
+	    {
+	      ref out_ref = expr;
+	    }
+	}
+    } while next(expr);
+}
+
+///////////////////////////
+
+function cnormAddToGlobalTypes(glob_node : node, local_node : node)
+/*
+  If you create some custom type in a chunk of C code and you want to add the correspondant subtree in a global tree
+  you need to copy local custom type info in the global tree. So this function do the stuff for you.
+*/
+{
+  if (!existVariable(glob_node.block.types))
+    {insert glob_node.block.types;}
+  // merge only if the chunk of C code has create custom type.
+  if (existVariable(local_node.block.types))
+    {merge glob_node.block.types = local_node.block.types;}
+}
+
+function cnormAddRefToGlobalTypes(local_node : node, glob_node : node)
+/*
+  Before parse a chunk of C code, you need to prepare correctly the root node of your chunk. If in your chunk you use some
+  global types, cnorm should find it. So this function do the stuff for you.
+*/
+{
+  if (!existVariable(local_node.gl_pctx))
+    {insert local_node.gl_pctx;}
+  ref local_node.gl_pctx = glob_node.block;
+}
+
+////////// PRIVATE FUNCTIONS
+
+function _copyHash(dst : node, src : node)
+{
+  foreach n in src
+    {
+      insert dst[key(n)];
+      setall dst[key(n)] = n;
+    }
+}
+
+function _copyArray(dst : node, src : node)
+{
+  foreach n in src
+    {
+      pushItem dst;
+      setall dst#back = n;
+    }
+}
+
+function _dispatchRule(type_disp : value, local_node : node, code_chunk : value, glob_node : node)
+/*
+  Dispatch the correct rule for cnormRulesDispatcher for Declaration and Statement
+*/
+{
+  // on cree un gl_pctx artefact juste pour le cnormRulesDispatcher
+  if (!existVariable(local_node.gl_pctx))
+    {
+      insert local_node.gl_pctx;
+      ref local_node.gl_pctx = local_node.block;
+    }
+  // au cas ou on prevois de rattacher le noeud a glob_node, on link les contextes
+  if (existVariable(glob_node.block))
+    {ref local_node.gl_pctx = glob_node.block;}
+  local_node = type_disp;
+  parseStringAsBNF(cnormPatchLibConf.cnormPath + "/src/patchLib/cnormRulesDispatcher.cwp", local_node, code_chunk);
+  if (existVariable(glob_node.block))
+    {cnormAddToGlobalTypes(glob_node, local_node);}
+  // on supprime l'artefact
+  insert local_node.empty;
+  ref local_node.gl_pctx = local_node.empty;
+  removeVariable(local_node.gl_pctx);
+  localref del_theTreeNode = local_node.gl_pctx;
+  removeVariable(del_theTreeNode);
+}
+
+function _dispatchRuleAddFront(type_disp : value, local_node : node, code_chunk : value, glob_node : node)
+{
+  // on cree un gl_pctx artefact juste pour le cnormRulesDispatcher
+  if (!existVariable(local_node.gl_pctx))
+    {
+      insert local_node.gl_pctx;
+      if (existVariable(local_node.block))
+	{ref local_node.gl_pctx = local_node.block;}
+      else
+	{ref local_node.gl_pctx = local_node;}
+    }
+  // on cree un node temporaire pour la copy
+  local tmp;
+  merge tmp = local_node;
+  removeAllElements(local_node);
+  if (existVariable(tmp.gl_pctx))
+    {ref local_node.gl_pctx = tmp.gl_pctx;}
+  // normal case of glob_node is a block
+  if (existVariable(glob_node.block))
+    {ref local_node.gl_pctx = glob_node.block;}
+  // other case
+  else 
+    {ref local_node.gl_pctx = glob_node;}
+  local_node = type_disp;
+  parseStringAsBNF(cnormPatchLibConf.cnormPath + "/src/patchLib/cnormRulesDispatcher.cwp", local_node, code_chunk);
+  _copyArray(local_node, tmp);
+  // on supprime l'artefact
+  insert local_node.empty;
+  ref local_node.gl_pctx = local_node.empty;
+  removeVariable(local_node.gl_pctx);
+  localref del_theTreeNode = local_node.gl_pctx;
+  removeVariable(del_theTreeNode);
+}
+
+function _dispatchRuleAddBack(type_disp : value, local_node : node, code_chunk : value, glob_node : node)
+{
+  // on cree un gl_pctx artefact juste pour le cnormRulesDispatcher
+  if (!existVariable(local_node.gl_pctx))
+    {
+      insert local_node.gl_pctx;
+      if (existVariable(local_node.block))
+	{ref local_node.gl_pctx = local_node.block;}
+      else
+	{ref local_node.gl_pctx = local_node;}
+    }
+  // normal case of glob_node is a block
+  if (existVariable(glob_node.block))
+    {ref local_node.gl_pctx = glob_node.block;}
+  // other case
+  else 
+    {ref local_node.gl_pctx = glob_node;}
+  local_node = type_disp;
+  parseStringAsBNF(cnormPatchLibConf.cnormPath + "/src/patchLib/cnormRulesDispatcher.cwp", local_node, code_chunk);
+  // on supprime l'artefact
+  insert local_node.empty;
+  ref local_node.gl_pctx = local_node.empty;
+  removeVariable(local_node.gl_pctx);
+  localref del_theTreeNode = local_node.gl_pctx;
+  removeVariable(del_theTreeNode);
+}

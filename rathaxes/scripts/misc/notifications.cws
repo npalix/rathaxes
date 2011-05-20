@@ -1,0 +1,45 @@
+/*
+**	notifications.cws in scripts/misc
+**	for Rathaxes project
+**	made by Thor
+*/
+
+
+
+declare function rtxError(sError : value);
+declare function rtxCraftError(sError : value);
+declare function rtxWarn(sWarn : value);
+declare function rtxInfo(sInfo : value);
+
+
+function	rtxError(sError : value)
+{
+  print(GREY + "[" + LRED + " error " + GREY + "] " + DEFAULT_COLOR + sError);
+  if (DEBUG == TRUE)
+    {
+      saveProject(project.references.treeFile);
+    }
+  exit(EXIT_FAILURE);
+}
+
+function	rtxCraftError(sError : value)
+{
+  local mesg;
+
+  mesg = GREY + "[" + LRED + " error " + GREY + "] " + DEFAULT_COLOR + sError;
+  if (DEBUG == TRUE)
+    {
+      saveProject(project.references.treeFile);
+    }
+  return mesg;
+}
+
+function	rtxWarn(sWarn : value)
+{
+  print(GREY + "[" + LYELLOW + " warning " + GREY + "] " + DEFAULT_COLOR + sWarn);
+}
+
+function	rtxInfo(sInfo : value)
+{
+  print(GREY + "[" + LGREEN + " info " + GREY + "] " + DEFAULT_COLOR + sInfo);
+}

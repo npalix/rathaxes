@@ -1,0 +1,61 @@
+\section{Requirements}
+
+\subsection{The DSL}
+
+The Rathaxes DSL must:
+\begin{itemize}
+\item be able to simply and robustly describes a peripheral driver;
+\item be able to embed C code snippets;
+\item be as natural as possible for a programmer and an electronics engineer;
+\item have a robust syntax and a strong semantic.
+\end{itemize}
+
+The generated C code must be robust since the whole operating system can depend on
+it.
+
+\subsection{The Compiler}
+
+With multi-platform, code reuse-ability and development time are at stake. The
+Rathaxes driver generator must for each supported operating system:
+\begin{itemize}
+\item be installable on each supported operating system;
+\item be able to run from the command line;
+\item check for the syntax of its input against the DSL syntax;
+\item check for the semantic of its input;
+\item use CodeWorker\cite{CodeWorker};
+\item use native tools (compiler and libraries for example);
+\item generate working C code from its input and the \BL.
+\end{itemize}
+
+\subsection{The \BL}
+
+The \BL\ must:
+\begin{itemize}
+\item contain code templates used by the compiler;
+\item be supplemented with support for new buses;
+\item be able to be upgraded with new version of the compiler.
+\end{itemize}
+
+\subsection{Asynchronous support}
+
+Currently, Rathaxes only support synchronous communication with peripherals.
+However, most peripherals use asynchronous communications (like USB) and its
+support in the driver generator and the DSL is mandatory.
+
+\subsection{New peripheral drivers}
+
+At the end of the project new peripheral drivers should be available:
+\begin{itemize}
+\item USB mouse;
+\item USB storage key;
+\item Ethernet network card;
+\item Sensors support over i2c.
+\end{itemize}
+
+\subsection{Licensing}
+
+As a scientific project Rathaxes is distributed under two open source license:
+\begin{description}
+\item[GPLv3:] for the compiler in order to keep full intellectual property;
+\item[BSD:] for the \BL\ in order to ease future adoption by the industry.
+\end{description}

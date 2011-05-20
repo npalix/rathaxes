@@ -1,0 +1,28 @@
+/*
+**	rdsl_declaration_properties.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+*/
+
+declare function checkPropertyId(propertyTable : node, id : value);
+declare function checkDefaultValue(values : node, id : value);
+
+/*
+** Checks if a property id already exists
+*/
+function checkPropertyId(propertyTable : node, id : value)
+{
+	if (findElement(id, propertyTable))
+		rtxError("Property '" + id + "' already defined.");
+	return;
+}
+
+/*
+** Checks if a property default value id already exists
+*/
+function checkDefaultValue(values : node, id : value)
+{
+	if (findElement(id, values))
+		rtxError("Property default value '" + id + "' already defined.");
+	return;
+}

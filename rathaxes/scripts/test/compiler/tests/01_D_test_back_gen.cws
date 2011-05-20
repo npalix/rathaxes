@@ -1,0 +1,35 @@
+/*
+	TEST for template codeworker generation
+*/
+
+#include  "01_C_test_back_meta.cws"
+
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_test_back_cache";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+#include "rtxLink.inc.cws"
+#include "rtxTpl/rtxGen.inc.cws"
+
+// The generated code will need this :
+// brutal foreach, we should walk the tree properly in the end in order to
+// manage properly every template node.
+
+foreach item in source.block
+{
+	local uid = 0;
+	rtxGen<item.type>(item, uid);
+	uid = $uid + 1$;
+}
+
+traceLine("====>Result of codeworker generation : __05*.tree and __06*.cws");
