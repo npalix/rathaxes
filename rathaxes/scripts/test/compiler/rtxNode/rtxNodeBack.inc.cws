@@ -31,14 +31,15 @@ function rtxNodePointcut_Raw(local_node     : node,
 }
 
 function rtxNodeChunk(local_node        : node,
-                      sPointcut         : value,
+                      thePointcut       : node,
                       out_ref_params    : reference,
                       out_ref_body      : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_chunk__";
 
-    insert local_node.name = sPointcut;
+    insert local_node.pointcut;
+    setall local_node.pointcut = thePointcut;
     insert local_node.parameters;
     insert local_node.body;
     cnormNodeBlock(local_node.body);

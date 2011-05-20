@@ -12,6 +12,16 @@ function	rtxNode(local_node : node)
     return true;
 }
 
+function        rtxNodeRType(local_node : node,
+                             name       : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_rtype__";
+    insert local_node.name = name;
+    insert local_node.params;
+    return true;
+}
+
 function rtxNodeNumber(local_node : node, nb : value)
 {
     rtxNode(local_node);
@@ -63,11 +73,12 @@ function rtxNodeSerial(local_node : node)
     return true;
 }
 
-function rtxNodeIdentifier(local_node : node, id : value)
+function rtxNodeIdentifier(local_node : node, id : value, scope : value = "")
 {
     rtxNode(local_node);
     insert local_node.type = "__rtx_id__";
 
+    insert local_node.scope = scope;
     insert local_node.name = id;
 
     return true;
@@ -118,17 +129,18 @@ function rtxNodeVarList(local_node : node)
 }
 
 function rtxNodeWithConstraint(local_node   : node,
-                               theId        : value,
+                               theId        : node,
                                theOperator  : value,
                                out_ref_val  : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_with_constraint__";
 
-    insert local_node.var = theId;
+    insert local_node.var;
+    setall local_node.var = theId;
     insert local_node.op = theOperator;
     insert local_node.val;
-    out_ref_val = local_node.val;
+    ref out_ref_val = local_node.val;
 
     return true;
 }
