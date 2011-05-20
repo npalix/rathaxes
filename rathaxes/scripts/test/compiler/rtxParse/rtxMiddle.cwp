@@ -1,6 +1,3 @@
-
-// TODO: move from rtxBack the root of grammar in a dispatcher
-
 rtx_stmt<"interface">(theBlock : node) ::=
     #pushItem(theBlock.block)
     => local lastNode;
@@ -14,6 +11,9 @@ rtx_stmt<"interface">(theBlock : node) ::=
     '{'
         [rtx_itf_declaration(body)]*
     '}'
+    #pushItem(lastNode#root.interfaces)
+    => lastNode#root.interfaces#back = name;
+
 ;
 
 inherit(theNode : node) ::=
