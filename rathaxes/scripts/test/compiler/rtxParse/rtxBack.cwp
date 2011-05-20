@@ -50,8 +50,7 @@ rtx_stmt_with_value(theValue : node) ::=
 rtx_stmt_with_constraint(theList : node) ::=
     #pushItem(theList)
 /**/=> local identifier;
-    #readIdentifier:sKey
-    #check(rtxNodeIdentifier(identifier, sKey))
+    rtx_scoped_identifier(identifier)
     rtx_stmt_with_operator:sOperator
 /**/=> local theVal;
     #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
@@ -113,19 +112,6 @@ rtx_stmt<"with">(theBlock : node) ::=
 
 
 //////// CHUNK
-// The pointcut's identifier may be scoped with some interfaces' names.
-rtx_stmt_chunk_scoped_identifier(sPointCut : node) ::=
-/**/=> local string = "";
-    [
-        #readIdentifier:sSubSystem
-        "::"
-/**/    => string += sSubSystem + "::";
-    ]*
-    #readIdentifier:sUnscopedPointcut
-/**/=> string += sUnscopedPointcut;
-/**/=> sPointCut = string;
-;
-
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=
     '(' rtx_var_list(theParams) ')'
@@ -137,14 +123,14 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/=> local sPointCut;
-    rtx_stmt_chunk_scoped_identifier(sPointCut)
+/**/=> local pointcut;
+    rtx_scoped_identifier(pointcut)
     // Optional Joinpoint (argument of the pointcut)
 /**/=> local parameters;
 /**/=> local body;
     // Build the chunk node, and retrieve the references to it's internals
     // (body and parameters)
-    #check(rtxNodeChunk(lastNode, sPointCut, parameters, body))
+    #check(rtxNodeChunk(lastNode, pointcut, parameters, body))
     #check(rtxNodeVarList(parameters))
     [
         rtx_stmt_chunk_params(parameters)

@@ -41,10 +41,11 @@ Tests Backend :
      * Créer un test pour la resolution d'un CALL                       <= DONE
      * Deplacer le .compile des templates vers les chunks               <= DONE
 
- * Mettre a jour la syntaxe du with                                     <= TODO
+ * Mettre a jour la syntaxe du with                                     <= DONE
 
  * Coder la fonction de match de configuration/with dans rtxLink        <= TODO
    * Coder les fonctions de normalisation de la config                  <= TODO
+   * Le with doit être formaté lors du type-checking avec middle-end    <= TODO
    * Coder la fonction de comparaison config/with                       <= TODO
    * Ajouter un test de validation                                      <= TODO
 
@@ -57,6 +58,11 @@ Tests Backend :
  * Introspection du c_tree  : resolverValues "local".                   <= TODO
 
  * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
+
+ * Ajouter la gestion des pointcuts avec noms pleinement qualifiés      <= TODO
+   * Preparer rtxGen, rtxLink et rtxResolve pour cette gestion          <= DONE
+   * Inserer les full qualified names lors du type-checking             <= TODO
+   * Gerer le cache uniquement avec du fully qualified                  <= TODO
 
 
 

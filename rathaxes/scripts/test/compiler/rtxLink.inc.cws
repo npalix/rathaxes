@@ -336,10 +336,12 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
     // information on it inside the template's cached data.
     foreach chunk in local_node.body.block
     {
+        //local pointcut_name = chunk.pointcut.scope+"::"+chunk.pointcut.name;
+        local pointcut_name = chunk.pointcut.name;
         local chunk_id = hash;
         rtxLink_SessionRegister<chunk.type>(chunk, with_values,
                                             key(chunk), chunk_id);
-        insert cachedTpl.chunks[chunk.name] = chunk_id;
+        insert cachedTpl.chunks[pointcut_name] = chunk_id;
     }
 }
 
@@ -364,17 +366,20 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
                                                   out_ref_id : reference)
 {
     local   prevSize;
+    local   full_pointcut_name = local_node.pointcut.name;
+//full_name = local_node.pointcut.scope + "::" + local_node.pointcut.name;
 
-    if (!findElement(local_node.name, this.session.chunks))
-        insert this.session.chunks[local_node.name];
+    if (!findElement(full_pointcut_name, this.session.chunks))
+        insert this.session.chunks[full_pointcut_name];
 
     traceLine("rtxLink_SessionRegister<\"__rtx_chunk__\">:<LOG>"
-              +" Registering chunk for pointcut '"+local_node.name+"'");
-    prevSize = getArraySize(this.session.chunks[local_node.name]);
+              + " Registering chunk for pointcut '"
+              + full_pointcut_name + "'");
+    prevSize = getArraySize(this.session.chunks[full_pointcut_name]);
 
-    pushItem this.session.chunks[local_node.name];
-    localref theChunk = this.session.chunks[local_node.name]#back;
-    insert theChunk.name = local_node.name;
+    pushItem this.session.chunks[full_pointcut_name];
+    localref theChunk = this.session.chunks[full_pointcut_name]#back;
+    insert theChunk.name = full_pointcut_name;
     insert theChunk.with = with_values;
     insert theChunk.tpl_id = out_ref_id;
     insert theChunk.script_file = local_node.script_file;
