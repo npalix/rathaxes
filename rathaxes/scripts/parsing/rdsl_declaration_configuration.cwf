@@ -1,0 +1,16 @@
+/*
+**	rdsl_declaration_configuration.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Papy
+**	modified Papy
+** -----------------------------------------------------------------------------
+** This is a work in progress version of the configuration block
+** -----------------------------------------------------------------------------
+** TODO: ??
+*/
+
+function checkConfigurationExists()
+{
+	if (this.configuration)
+		rtxError("CONFIGURATION: configuration block already exists.");
+}

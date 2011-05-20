@@ -1,0 +1,14 @@
+/*
+**	rdsl_declaration_sequence.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** -----------------------------------------------------------------------------
+*/
+
+declare function checkInterfaceId(aInterfaceHash : node, sInterfaceName : value);
+
+function checkInterfaceId(aInterfaceHash : node, sInterfaceName : value)
+{
+	if (findElement(sInterfaceName, aInterfaceHash))
+		rtxError("KERNEL_INTERFACES: " + sInterfaceName + " already exists.");
+}
