@@ -61,7 +61,7 @@ traceLine("Checking inheritance");
 
 foreach itf_node in source.block
 {
-    if (rtxItfCheckInheritance(itf_node, source.interfaces) == false)
+    if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
     {
         traceLine("Error while checking inheritance");
         exit 1;
