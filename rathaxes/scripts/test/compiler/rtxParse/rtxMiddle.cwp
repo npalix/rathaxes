@@ -11,9 +11,7 @@ rtx_stmt<"interface">(theBlock : node) ::=
     '{'
         [rtx_itf_declaration(body)]*
     '}'
-    #pushItem(lastNode#root.interfaces)
-    => lastNode#root.interfaces#back = name;
-
+    => insert lastNode#root.interfaces[name] = $getArraySize(lastNode#root.interfaces) - 1$;
 ;
 
 inherit(theNode : node) ::=
