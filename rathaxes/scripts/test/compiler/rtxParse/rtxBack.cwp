@@ -1,8 +1,8 @@
 //////// POINTCUT
 rtx_pointcut(theBlock : node) ::=
-    =>traceLine("POINTCUT!");
+/**/=>traceLine("POINTCUT!");
     #pushItem(theBlock.block)
-    => local lastNode;
+/**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
     rtx_template_code:sPlaceHolder ';'
     #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
@@ -10,20 +10,20 @@ rtx_pointcut(theBlock : node) ::=
 
 /////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
-    =>traceLine("TEMPLATE!");
+/**/=>traceLine("TEMPLATE!");
     // TODO: The proto is not parsed properly yet (we take everything)
-        [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // horrible barbarian way
-    ////////
+    [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // horrible barbarian way
+        ////////
         // Create a block to host the template node.
         #pushItem(theBlock.block)
-        => local lastNode;
+/**/    => local lastNode;
         #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
         // Create a rtxTPL node.
         // The chunk_block var will reference the block of chunks
-        => local chunk_block;
+/**/    => local chunk_block;
         #check(rtxNodeTpl(lastNode, head, chunk_block))
-        => traceLine("tplproto :" + head + " next:" + peekChar());
-        =>traceLine("Chunks!");
+/**/    => traceLine("tplproto :" + head + " next:" + peekChar());
+/**/    =>traceLine("Chunks!");
         [
             // Theoretically, the template should only contain chunks...
             "chunk" rtx_stmt<"chunk">(chunk_block)
@@ -31,32 +31,78 @@ rtx_stmt<"template">(theBlock : node) ::=
     '}'
 ;
 
+
 /////// WITH
-rtx_stmt_with_map(theMap : node) ::=
-    #readIdentifier:sKey '=' [#readIdentifier|#readInteger]:sVal
-    => insert theMap[sKey] = sVal;
+rtx_stmt_with_operator ::=
+    "<" | "<=" | "=" | "=>" | ">"
 ;
-rtx_stmt_with(theMap: node) ::=
-    rtx_stmt_with_map(theMap) [',' rtx_stmt_with_map(theMap)]*
+
+rtx_stmt_with_value(theValue : node) ::=
+        #readIdentifier:sId
+        #check(rtxNodeIdentifier(theValue, sId))
+    |
+        #readInteger:sInt
+        #check(rtxNodeNumber(theValue, sInt))
+    |
+        rtx_serial(theValue)
 ;
+
+rtx_stmt_with_constraint(theList : node) ::=
+    #pushItem(theList)
+/**/=> local identifier;
+    #readIdentifier:sKey
+    #check(rtxNodeIdentifier(identifier, sKey))
+    rtx_stmt_with_operator:sOperator
+/**/=> local theVal;
+    #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
+    rtx_stmt_with_value(theVal)
+;
+
+rtx_stmt_with_contraints(theList: node) ::=
+    rtx_stmt_with_constraint(theList)
+    [
+        ','
+        rtx_stmt_with_constraint(theList)
+    ]*
+;
+
+rtx_stmt_with_itf(theItfs : node) ::=
+    #readIdentifier:sInterface
+    #pushItem(theItfs)
+/**/=> theItfs#back = sInterface;
+    [
+        ','
+        #readIdentifier:sItf
+        #pushItem(theItfs)
+/**/    => theItfs#back = sItf;
+    ]*
+;
+
+rtx_stmt_with_descript(theItfs : node, theConstraints : node) ::=
+    // First read the dependencies...
+    rtx_stmt_with_itf(theItfs)
+    "values"
+    // variables of the with node
+    rtx_stmt_with_contraints(theConstraints)
+;
+
 rtx_stmt<"with">(theBlock : node) ::=
     => traceLine("WITH");
     // create a block to host the with node
     #pushItem(theBlock.block)
-    => local lastNode;
+/**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
     // link to the variable mapping
-    => local var_map;
-    => local body;
-    => local c_block;
-    #check(rtxNodeWith(lastNode, var_map, body, c_block))
-    // variables of the with node
-    rtx_stmt_with(var_map)
+/**/=> local interfaces;
+/**/=> local constraints;
+/**/=> local body;
+/**/=> local c_block;
+    #check(rtxNodeWith(lastNode, interfaces, constraints, body, c_block))
+    rtx_stmt_with_descript(interfaces, constraints)
     // block of the with node
     '{'
         [
-            // With can contain any kind of rtx statement
-            // (with, template, chunk)
+            // contains any kind of rtx stmt (with, template, chunk)
             rtx_declaration(body)
             |
             // or global pointcuts
@@ -65,34 +111,37 @@ rtx_stmt<"with">(theBlock : node) ::=
     '}'
 ;
 
+
 //////// CHUNK
 // The pointcut's identifier may be scoped with some interfaces' names.
 rtx_stmt_chunk_scoped_identifier(sPointCut : node) ::=
-    => local string = "";
+/**/=> local string = "";
     [
         #readIdentifier:sSubSystem
         "::"
-        => string += sSubSystem + "::";
+/**/    => string += sSubSystem + "::";
     ]*
     #readIdentifier:sUnscopedPointcut
-    => string += sUnscopedPointcut;
-    => sPointCut = string;
+/**/=> string += sUnscopedPointcut;
+/**/=> sPointCut = string;
 ;
+
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=
     '(' rtx_var_list(theParams) ')'
 ;
+
 rtx_stmt<"chunk">(theBlock : node) ::=
-    =>traceLine("CHUNK");
+/**/=>traceLine("CHUNK");
     // Create an item in the Block list to host the chunk
     #pushItem(theBlock.block)
-    => local lastNode;
+/**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-    => local sPointCut;
+/**/=> local sPointCut;
     rtx_stmt_chunk_scoped_identifier(sPointCut)
     // Optional Joinpoint (argument of the pointcut)
-    => local parameters;
-    => local body;
+/**/=> local parameters;
+/**/=> local body;
     // Build the chunk node, and retrieve the references to it's internals
     // (body and parameters)
     #check(rtxNodeChunk(lastNode, sPointCut, parameters, body))

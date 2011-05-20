@@ -1,0 +1,21 @@
+#if !existFunction(rtxInterfaces_version)
+
+function        rtxCompile_version()
+{ return "1.0"; }
+
+function        rtxItfCheckInheritance(interface_node : node,
+                                       interfaces_list : node)
+{
+    foreach inherited_interface in interface_node.inheritance
+    {
+        if (interfaces_list.findElement(inherited_interface) != true)
+        {
+            traceLine("Unable to find interface ``" + inherited_interface
+                      + "'' required by ``" + interface_node.name + "''");
+            return false;
+        }
+    }
+    return true;
+}
+
+#end    /* !existFunction(rtxInterfaces_version) */
