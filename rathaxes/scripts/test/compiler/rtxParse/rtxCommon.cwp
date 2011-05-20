@@ -29,3 +29,30 @@ rtx_var_list(theBlock : node) ::=
         #check(rtxNodeVarList_AddNode(theBlock, lastVar))
     ]*
 ;
+
+rtx_serial_sep ::=
+    '.' | '_' | '-'
+;
+rtx_serial_unit ::=
+    ['a'..'z' | 'A'..'Z' | '0'..'1']+
+;
+
+rtx_serial(theSerial : node) ::=
+    #!ignore
+    #pushItem(theSerial)
+    rtx_serial_unit:sElement
+/**/=> local unit;
+    #check(rtxNodeSerialUnit(unit, sElement))
+    #check(rtxNodeSerial_AddUnit(theSerial, unit))
+    [
+        rtx_serial_sep:sSep
+/**/    => local theSeparator;
+        #check(rtxNodeSerialSep(theSeparator, sSep))
+        rtx_serial_unit:sElem
+/**/    => local theUnit;
+        #check(rtxNodeSerialUnit(theUnit, sElem))
+        #check(rtxNodeSerial_AddUnit(theSerial, theSeparator))
+        #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
+    ]*
+    #ignore
+;
