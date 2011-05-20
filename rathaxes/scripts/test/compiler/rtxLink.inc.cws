@@ -255,6 +255,11 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  script_file : value,
                                                  out_ref_id : reference)
 {
+    local theWith;
+    insert theWith.interfaces;
+    insert theWith.constraints;
+    setall theWith.interfaces = local_node.interfaces;
+    setall theWith.constraints = local_node.constraints;
     // Register the c_block as global_code if it contains anything
     if (!isEmpty(local_node.c_block.block))
     {
@@ -272,7 +277,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
         pushItem this.session.global_code;
         localref theNode = this.session.global_code#back;
         insert theNode.with;
-        setall theNode.with = local_node.var_map;
+        setall theNode.with = theWith;
         insert theNode.script_file = local_node.script_file;
         insert theNode.tree_file = local_node.tree_file;
     }
@@ -280,7 +285,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
     // Then recurse to register every template.
     foreach item in local_node.body.block
     {
-        rtxLink_SessionRegister<item.type>(item, local_node.var_map,
+        rtxLink_SessionRegister<item.type>(item, theWith,
                                            script_file, out_ref_id);
     }
 }

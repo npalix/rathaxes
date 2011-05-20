@@ -15,6 +15,12 @@ createDirectory(working_directory);
 local dummy;
 local input;
 generateString({
+        // Simple interface
+        interface BaseInterface
+        {
+            provided    type    a_type;
+        }
+
         // interface with inheritance
         interface Userland : BaseInterface, OtherInterface
         {
@@ -23,6 +29,11 @@ generateString({
             provided            type            some_type;
             optional            type            opt_type { foo; bar; };
             required            sequence        req_sequence(type1 a, type2 , type3 c);
+        }
+
+        interface OtherInterface
+        {
+            required    builtintype     btype;
         }
 
 @}, dummy, input);
@@ -44,3 +55,15 @@ removeVariable(source.dialect);
 
 traceLine("Result of parsing:\n" + toString(source, true));
 saveProject(working_directory + "/__02_rtx_parse__.tree", source);
+
+traceLine("Checking inheritance");
+#include "rtxInterfaces/rtxInterfaces.inc.cws"
+
+foreach itf_node in source.block
+{
+    if (rtxItfCheckInheritance(itf_node, source.interfaces) == false)
+    {
+        traceLine("Error while checking inheritance");
+        exit 1;
+    }
+}
