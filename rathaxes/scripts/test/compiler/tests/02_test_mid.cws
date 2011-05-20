@@ -55,3 +55,15 @@ removeVariable(source.dialect);
 
 traceLine("Result of parsing:\n" + toString(source, true));
 saveProject(working_directory + "/__02_rtx_parse__.tree", source);
+
+traceLine("Checking inheritance");
+#include "rtxInterfaces/rtxInterfaces.inc.cws"
+
+foreach itf_node in source.block
+{
+    if (rtxItfCheckInheritance(itf_node, source.interfaces) == false)
+    {
+        traceLine("Error while checking inheritance");
+        exit 1;
+    }
+}
