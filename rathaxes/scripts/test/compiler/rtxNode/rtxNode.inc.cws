@@ -173,16 +173,6 @@ function rtxNodeWith(local_node             : node,
     return true;
 }
 
-function        rtxNodeRType(local_node : node,
-                             name       : value)
-{
-    rtxNode(local_node);
-    local_node.type = "__rtx_rtype__";
-    insert local_node.name = name;
-    insert local_node.params;
-    return true;
-}
-
 #include "rtxNodeFront.inc.cws"
 #include "rtxNodeMiddle.inc.cws"
 #include "rtxNodeBack.inc.cws"
