@@ -5,6 +5,18 @@
  *
  */
 
+rtx_scoped_identifier(theNode : node) ::=
+    #!ignore
+/**/=> local sScope = "";
+    [
+        #readIdentifier:sTmp
+        "::"
+/**/    => sScope = sTmp;
+    ]?
+    #readIdentifier:sIdentifier
+    #check(rtxNodeIdentifier(theNode, sIdentifier, sScope))
+;
+
 // This rule dissects an identifier in parts separated by dots.
 rtx_composed_identifier(theNode : node) ::=
     identifier:varId
@@ -34,7 +46,7 @@ rtx_serial_sep ::=
     '.' | '_' | '-'
 ;
 rtx_serial_unit ::=
-    ['a'..'z' | 'A'..'Z' | '0'..'1']+
+    [ #noCase 'A'..'Z' | '0'..'1' ]+
 ;
 
 rtx_serial(theSerial : node) ::=
@@ -54,5 +66,5 @@ rtx_serial(theSerial : node) ::=
         #check(rtxNodeSerial_AddUnit(theSerial, theSeparator))
         #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
     ]*
-    #ignore
+    #ignore(blanks)
 ;

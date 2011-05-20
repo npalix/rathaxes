@@ -105,10 +105,11 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 {
 	local	source_codeworker;
     insert local_node.instanceKey;
-    if (local_node.name == "CALL")
+    if (local_node.pointcut.name == "CALL")
         local_node.instanceKey = local_node.tpl_hash;
     else
-        local_node.instanceKey = local_node.tpl_hash+"_"+local_node.name;
+        local_node.instanceKey = local_node.tpl_hash
+                                 + "_" + local_node.pointcut.name;
 
 	generateString({
 		// auto generated codeworker DO NOT EDIT
