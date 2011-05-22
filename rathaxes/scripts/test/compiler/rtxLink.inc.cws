@@ -72,9 +72,9 @@ function rtxLink_CompareValues<"<">(ref : node, val : node)
         // Loop as long as items are equal.
         foreach ref_unit in ref.list
         {
-            // Check we arent out of bounds in val.list. If we are, ref>val.
+            // Check we arent out of bounds in val.list. If we are, val<ref.
             if (idx >= getArraySize(val.list))
-                return false;
+                return true;
 
             localref val_unit = val.list#[idx];
             // Check both units are of the same type
@@ -98,10 +98,10 @@ function rtxLink_CompareValues<"<">(ref : node, val : node)
                 return false; // Serial unit type unknown
             increment(idx);
         }
-        // Either val is longer than ref and were equal up until ref's length
-        if(getArraySize(val.list) > getArraySize(ref.list))
-            return true;
-        // Either both were equal (not <) => default case
+        // Either val is longer than ref (equal up till now) -> !(val < ref)
+        if (getArraySize(val.list) > getArraySize(ref.list))
+            return false;
+        // Either both were equal (not <) => default case = false
     }
     else
         error ("rtxLink_CompareValues<\"<\">:<ERROR> type "
