@@ -1,0 +1,151 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[english]{babel}
+\usepackage{listings}
+\usepackage{color}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+\usepackage{geometry}
+\geometry{hmargin=2.5cm}
+
+\title{Windows Loadable Kernel Modules}
+\author{Mickael Dumont\\Tomas Suarez\\David Verriere}
+\date{november 2007}
+
+\begin{document}
+\pagestyle{plain}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+numberstyle=\tiny\ttfamily, framexleftmargin=6mm, backgroundcolor=\color{grey},
+xleftmargin=6mm, language=C, showspaces=false, showstringspaces=false}
+
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{License}
+This documentation is provided by the authors ``as is'' and any
+express or implied warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular purpose are
+disclaimed. in no event shall the authors be liable for any
+direct, indirect, incidental, special, exemplary, or consequential damages
+(including, but not limited to, procurement of substitute goods or services;
+loss of use, data, or profits; or business interruption) however caused and
+on any theory of liability, whether in contract, strict liability, or tort
+(including negligence or otherwise) arising in any way out of the use of this
+software, even if advised of the possibility of such damage.
+
+\section{Introduction}
+This short article will introduce the way of handling
+loadable kernel modules (LKM) on windows XP.
+
+\section{Includes}
+The windows ddk (driver develempement kit) provide the usefull include:
+\begin{lstlisting}
+#include <ntddk.h>
+\end{lstlisting}
+
+\section{Entry point/out point}
+when the driver is loaded in the kernel the first function called is
+{\textit driver\_entry}. this function is in charge of creating everything needed
+by the driver to function.\\
+\begin{lstlisting}
+NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
+\end{lstlisting}
+The DriverObject is a data structure representing the driver. the accessible
+members of this function
+\begin{lstlisting}
+PDEVICE_OBJECT DeviceObject
+PDRIVER_EXTENSION DriverExtension
+PUNICODE_STRING HardwareDatabase
+PFAST_IO_DISPATCH FastIoDispatch
+PDRIVER_INITIALIZE DriverInit
+PDRIVER_STARTIO DriverStartIo
+PDRIVER_UNLOAD DriverUnload
+PDRIVER_DISPATCH MajorFunction[IRP_MJ_MAXIMUM_FUNCTION+1]
+\end{lstlisting}
+{\textbf DeviceObject} is updated automatically by the {\textit IoCreateDevice}\\
+{\textbf DriverExtension} a pointer to the extention structure DriverExtension>AddDevice is the only accessible member.\\
+{\textbf HardwareDatabase} is the path to the hardware configuration in the registry.\\
+{\textbf FastIoDispatch} is a pointer to the fastI/O structure whitch define the fastI/O entry point.\\
+{\textbf DriverInit} is the entry point for the DriverEntry.\\
+{\textbf DriverStartIo} is the entry point for the startI/O routine.\\
+{\textbf DriverUnload} the function called at unload time.\\
+{\textbf MajorFunction} is an arrray containing the function pointer to the dispatch ROUTINES (READ, WRITE,...).\\
+In odrer to be able to unload the driver it is important to set the unload
+field of the DriverObject.
+\begin{lstlisting}
+DriverObject-> DriverUnload = rathaxesUnload;
+\end{lstlisting}
+
+\section{Compile a module}
+to compile a module under windows you need the ddk. You can find it on the
+Microsoft website.
+In order to build your driver two more files are needed: the sources file and
+the makefile.\\
+makefile:\\
+\begin{lstlisting}
+!INCLUDE $(NTMAKEENV)\makefile.def
+\end{lstlisting}
+sources:\\
+\begin{lstlisting}
+TARGETNAME=driverName
+TAGETPATH=.
+TARGETTYPE=DRIVER
+INCLUDES= $(BASEDIR)\inc;.
+SOURCES=driver.c
+\end{lstlisting}
+If you need multiple file as sources just write them whitesapce separated.
+
+\section{Hello World}
+\begin{lstlisting}
+#include <ntddk.h>
+
+void DriverUnload(PDRIVER_OBJECT pDriverObject)
+{
+        DbgPrint("Bye World\n");
+}
+
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
+{
+        DbgPrint("Hello world\n");
+	DriverObject->DriverUnload = DriverUnload;
+
+        return(STATUS_SUCCESS);
+}
+\end{lstlisting}
+
+To output message from the kernel we use the {\textit DbgPrint()} function, hoever
+this doesn't prouce any output on the command line. To view the output use a
+debugger or the Dbgview program from www.sysinternals.com.
+
+\subsection{Driver Registration}
+Under Windows drivers are handled like normal services and have to be
+registrated at the Service Control Manager. A driver need to be (and can)
+registred only once in the Service Control Manager.\\
+There are two way for registering a driver. You can write a loader using the
+CreateService API or add the necessary registrykey by hand.
+\subsubsection{CreateService API}
+\subsubsection{Using regedit}
+to register your driver you need to create a new key in your systeme and fill
+4 registry key.\\
+Firts create the new subkey: {\textit
+HKEY\_LOCAL\_MACHINE\textbackslash System\textbackslash CurrentControlSet\textbackslash Services\textbackslash driverName}
+then create the following key with the coresponding value:
+{\textbf DisplayName} driverName\\
+{\textbf ImagePath} c:\textbackslash path\textbackslash to\textbackslash driver\textbackslash driverName.sys\\
+{\textbf Start} 3 (possible values are boot (0),  System (1), Auto (2), Demand
+(3), Disabled (4))
+{\textbf Type} 1 (ie Kernel Driver)
+\subsection{Load a driver}
+The simplest way to load a driver is using a prompt to type the following
+command:
+\begin{lstlisting}
+net start driverName
+\end{lstlisting}
+To unload the driver simply type:
+\begin{lstlisting}
+net stop driverName
+\end{lstlisting}
+
+\end{document}
+

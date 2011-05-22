@@ -1,0 +1,14 @@
+declare function	getSystemVersion<"linux">();
+
+function	getSystemVersion<"linux">()
+{
+	local name;
+
+	if (system("uname -r > name") != "")
+	{
+		return "";
+	}
+	name = loadFile("name");
+	deleteFile("name");
+	return replaceString("\n", "", name);
+}

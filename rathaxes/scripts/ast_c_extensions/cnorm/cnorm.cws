@@ -1,0 +1,23 @@
+/*
+**	Script d'enchainement C Normalise
+*/
+
+traceLine("\033[0m");
+
+local sOutput;
+local sExtension = rightString(_ARGS[0], 2);
+
+sOutput = replaceString(sExtension, ".kout", _ARGS[0]);
+traceLine("[CNORM -dev 2.0]\tProcessing: [" + _ARGS[0] + "] to [" + sOutput + "].");
+
+translate("./cnorm.cwp", project, _ARGS[0], sOutput);
+
+local treeFile = getWorkingPath() + replaceString(sExtension, ".ktree", _ARGS[0]);
+saveProject(treeFile);
+
+
+traceLine("[CTYPE NODE] Iterating node...");
+generate("./cnormIterBase.cwt", project, sOutput);
+
+
+traceLine("[CNORM] Done.");
