@@ -12,4 +12,5 @@ ADD_RATHAXES_TEST(02_test_middle.cws)
 
 ADD_RATHAXES_TEST(03_A_match_less_configs.cws)
 ADD_RATHAXES_TEST(03_B_match_less_or_equal_configs.cws)
+ADD_RATHAXES_TEST(03_C_match_equal_configs.cws)
 #ADD_RATHAXES_TEST(03_match_configs.cws)
