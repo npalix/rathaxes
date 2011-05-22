@@ -35,19 +35,21 @@ function rtxLink_IsWithNodeCompatible(with : node, config : node)
 {
     foreach interface in with
     {
+        local itf_key = key(interface);
         // Is the interface defined in the config ?
-        if (!findElement(config, key(interface)))
+        if (findElement(config, itf_key) == false)
             return false;
         foreach constraint in interface
         {
+            local cst_key = key(constraint);
             // Is the variable defined in the config ?
-            if (!findElement(config[key(interface)], key(constraint)))
+            if (!findElement(config[itf_key], cst_key))
                 return false;
             // Then let's match the values :
             // Only the identifier type does not support other comparisons
             // than equality
             if (rtxLink_CompareValues<constraint.op>(constraint.val,
-                        config[key(interface)][key(constraint)].val) == false)
+                        config[itf_key][cst_key].val) == false)
             {
                 return false;
             }
@@ -134,7 +136,7 @@ function rtxLink_CompareValues<"=>">(ref : node, val : node)
 {
     if (ref.type == "__rtx_nb__")
     {
-        if (val.val => ref.val)
+        if (val.val >= ref.val)
             return true;
     }
     else if (ref.type == "__rtx_serial__")
@@ -390,10 +392,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  out_ref_id : reference)
 {
     local theWith;
-    insert theWith.interfaces;
-    insert theWith.constraints;
-    setall theWith.interfaces = local_node.interfaces;
-    setall theWith.constraints = local_node.constraints;
+    setall theWith = local_node.config;
     // Register the c_block as global_code if it contains anything
     if (!isEmpty(local_node.c_block.block))
     {
