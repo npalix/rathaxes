@@ -6,7 +6,7 @@ ADD_RATHAXES_TEST(01_E_test_back_registerToCache.cws)
 ADD_RATHAXES_TEST(01_F_test_back_loadFromCache.cws)
 ADD_RATHAXES_TEST(01_G_test_back_resolveCall.cws)
 ADD_RATHAXES_TEST(01_H_test_back_resolvePointcut.cws)
-#ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
+ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
 
 ADD_RATHAXES_TEST(02_test_middle.cws)
 
