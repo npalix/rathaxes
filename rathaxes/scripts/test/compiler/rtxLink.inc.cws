@@ -18,19 +18,151 @@ function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
     out_ref_hash = prototype_node;
 }
 
+declare function rtxLink_CompareValues<T>(ref : node, val : node);
 /*
  * This function checks the conditions of the with block against a configuration
  * block. It returns true if the with block is in the definition domain of the
  * configuration
  *
- * The parameters should never be swapped.
+ *
+ * The matching is done by trying to match the constraints (with) over the
+ * configuration block. This way, if any value is undefined, that would
+ * prevent any match validation.
+ * Otherwise, there's only a need to check whether the constraints are valid or
+ * not.
  */
 function rtxLink_IsWithNodeCompatible(with : node, config : node)
 {
+    foreach interface in with
+    {
+        // Is the interface defined in the config ?
+        if (!findElement(config, key(interface)))
+            return false;
+        foreach constraint in interface
+        {
+            // Is the variable defined in the config ?
+            if (!findElement(config[key(interface)], key(constraint)))
+                return false;
+            // Then let's match the values :
+            // Only the identifier type does not support other comparisons
+            // than equality
+            if (rtxLink_CompareValues<constraint.op>(constraint.val,
+                        config[key(interface)][key(constraint)].val) == false)
+            {
+                return false;
+            }
+        }
+    }
     // For now, let's assume the with nodes are compatible
     return true;
 }
 
+function rtxLink_CompareValues<"<">(ref : node, val : node)
+{
+    if (ref.type == "__rtx_nb__")
+    {
+        if (val.val < ref.val)
+            return true;
+    }
+    else if (ref.type == "__rtx_serial__")
+    {
+        local idx = 0;
+        // Loop as long as items are equal.
+        foreach ref_unit in ref.list
+        {
+            // Check we arent out of bounds in val.list. If we are, ref>val.
+            if (idx >= getArraySize(val.list))
+                return false;
+
+            localref val_unit = val.list#[idx];
+            // Check both units are of the same type
+            if (val_unit.type != ref_unit.type)
+                return false;
+            // Simple comparison on unit value types.
+            if (ref_unit.type == "__rtx_serial_unit__")
+            {
+                if (val_unit.val < ref_unit.val)
+                    return true;
+                else if (val_unit.val > ref_unit.val)
+                    return false;
+            }
+            // The separators must be identical.
+            else if (ref_unit.type == "__rtx_serial_sep__")
+            {
+                if (val_unit.val != ref_unit.val)
+                    return false;
+            }
+            else
+                return false; // Serial unit type unknown
+            increment(idx);
+        }
+        // Either val is longer than ref and were equal up until ref's length
+        if(getArraySize(val.list) > getArraySize(ref.list))
+            return true;
+        // Either both were equal (not <) => default case
+    }
+    else
+        error ("rtxLink_CompareValues<\"<\">:<ERROR> type "
+               + ref.type + " not supported.");
+    return false;
+}
+
+function rtxLink_CompareValues<"<=">(ref : node, val : node)
+{
+    if (ref.type == "__rtx_nb__")
+    {
+        if (val.val <= ref.val)
+            return true;
+    }
+    else if (ref.type == "__rtx_serial__")
+    {
+    }
+    else
+        error ("rtxLink_CompareValues<\"<=\">:<ERROR> type "
+               + ref.type + " not supported.");
+    return false;
+}
+
+function rtxLink_CompareValues<"=">(ref : node, val : node)
+{
+    if (equalTrees(ref, val))
+        return true;
+    return false;
+}
+
+function rtxLink_CompareValues<"=>">(ref : node, val : node)
+{
+    if (ref.type == "__rtx_nb__")
+    {
+        if (val.val => ref.val)
+            return true;
+    }
+    else if (ref.type == "__rtx_serial__")
+    {
+    }
+    else
+        error ("rtxLink_CompareValues<\"=>\">:<ERROR> type "
+               + ref.type + " not supported.");
+    return false;
+}
+
+function rtxLink_CompareValues<">">(ref : node, val : node)
+{
+    if (ref.type == "__rtx_nb__")
+    {
+        if (val.val > ref.val)
+            return true;
+    }
+    else if (ref.type == "__rtx_serial__")
+    {
+    }
+    else
+        error ("rtxLink_CompareValues<\">\">:<ERROR> type "
+               + ref.type + " not supported.");
+    return false;
+}
+
+ 
 
 /*
  * This function checks if at least one template exists within the cache
