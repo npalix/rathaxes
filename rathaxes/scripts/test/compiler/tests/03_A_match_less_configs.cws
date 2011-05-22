@@ -105,7 +105,7 @@ rtxNodeIdentifier(config, "Windows7");
 rtxNodeIdentifier(with, "WindowsXP");
 try
 {
-    traceLine("rtxLink_CompareValues<"<">(with, config) = "
+    traceLine("rtxLink_CompareValues<\"<\">(with, config) = "
               + rtxLink_CompareValues<"<">(with, config));
     traceLine("Type " + config.type
               + ": With and config should have thrown an error: type = "+with.type);
