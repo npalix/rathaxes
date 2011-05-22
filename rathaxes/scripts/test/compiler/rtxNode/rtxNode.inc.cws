@@ -154,6 +154,9 @@ function rtxNodeWith(local_node             : node,
     rtxNode(local_node);
     local_node.type = "__rtx_with__";
 
+    // To be used by typechecking, to reorganize data.
+    insert local_node.config;
+
     insert local_node.interfaces;
     ref out_ref_interfaces = local_node.interfaces;
 
@@ -173,14 +176,17 @@ function rtxNodeWith(local_node             : node,
     return true;
 }
 
-function        rtxNodeRType(local_node : node,
-                             name       : value)
+function rtxNodeWith_AssocInterfaceConstraint(local_node      : node,
+                                              interface       : value,
+                                              constraint_key  : value)
 {
-    rtxNode(local_node);
-    local_node.type = "__rtx_rtype__";
-    insert local_node.name = name;
-    insert local_node.params;
-    return true;
+    if (!findElement(interface, local_node.config))
+        insert local_node.config[interface];
+    localref constraint = local_node.constraints[constraint_key];
+    insert local_node.config[interface][constraint.var.name];
+    setall local_node.config[interface][constraint.var.name] = constraint;
+
+    removeElement(local_node.constraints, constraint_key);
 }
 
 #include "rtxNodeFront.inc.cws"

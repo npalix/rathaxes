@@ -22,6 +22,8 @@ function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
  * This function checks the conditions of the with block against a configuration
  * block. It returns true if the with block is in the definition domain of the
  * configuration
+ *
+ * The parameters should never be swapped.
  */
 function rtxLink_IsWithNodeCompatible(with : node, config : node)
 {
