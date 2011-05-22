@@ -3,6 +3,7 @@
 #include "rtxLink.inc.cws"
 
 // Used to build things bit by bit
+local tmp;
 local config;
 local with;
 
@@ -49,6 +50,19 @@ if (rtxLink_CompareValues<"<">(with, config) == true)
 {
     traceLine("Type " + config.type
               + ": With and config should not match : config == with");
+    exit 1;
+}
+
+// Now make with a bit longer... (config < with)
+rtxNodeSerialSep(tmp, ".");
+rtxNodeSerial_AddUnit(with, tmp);
+tmp = "";
+rtxNodeSerialUnit(tmp, "1");
+rtxNodeSerial_AddUnit(with, tmp);
+if (rtxLink_CompareValues<"<">(with, config) == false)
+{
+    traceLine("Type " + config.type
+              + ": With and config should match : config < with(=,longer)");
     exit 1;
 }
 
