@@ -9,3 +9,6 @@ ADD_RATHAXES_TEST(01_H_test_back_resolvePointcut.cws)
 #ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
 
 ADD_RATHAXES_TEST(02_test_middle.cws)
+
+ADD_RATHAXES_TEST(03_a_match_less_configs.cws)
+#ADD_RATHAXES_TEST(03_match_configs.cws)
