@@ -227,6 +227,41 @@ function rtxLink_CompareValues<">">(ref : node, val : node)
     }
     else if (ref.type == "__rtx_serial__")
     {
+        local idx = 0;
+        // Loop as long as items are equal.
+        foreach ref_unit in ref.list
+        {
+            // Check we arent out of bounds in val.list. If we are, val<ref
+            if (idx >= getArraySize(val.list))
+                return false;
+
+            localref val_unit = val.list#[idx];
+            // Check both units are of the same type
+            if (val_unit.type != ref_unit.type)
+                return false;
+            // Simple comparison on unit value types.
+            if (ref_unit.type == "__rtx_serial_unit__")
+            {
+                // if > then >= true too. Then return true.
+                if (val_unit.val > ref_unit.val)
+                    return true;
+                else if (val_unit.val < ref_unit.val)
+                    return false;
+            }
+            // The separators must be identical.
+            else if (ref_unit.type == "__rtx_serial_sep__")
+            {
+                if (val_unit.val != ref_unit.val)
+                    return false;
+            }
+            else
+                return false; // Serial unit type unknown
+            increment(idx);
+        }
+        // Either val is longer than ref : equal up to ref's length : val > ref
+        if (getArraySize(val.list) > getArraySize(ref.list))
+            return true;
+        // Either both were wholly equal : = : default case = false
     }
     else
         error ("rtxLink_CompareValues<\">\">:<ERROR> type "
