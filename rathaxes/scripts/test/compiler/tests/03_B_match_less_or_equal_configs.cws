@@ -53,13 +53,13 @@ if (rtxLink_CompareValues<"<=">(with, config) == false)
     exit 1;
 }
 
-// Now make with a bit longer... (config < with)
+// Now make config a bit longer... (config > with)
 rtxNodeSerialSep(tmp, ".");
 rtxNodeSerial_AddUnit(config, tmp);
 tmp = "";
 rtxNodeSerialUnit(tmp, "1");
 rtxNodeSerial_AddUnit(config, tmp);
-if (rtxLink_CompareValues<"<">(with, config) == true)
+if (rtxLink_CompareValues<"<=">(with, config) == true)
 {
     traceLine("Type " + config.type
               + ": With and config should not match : config(=,longer) > with");
