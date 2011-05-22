@@ -1,3 +1,4 @@
+# Pure backend compilation and resolution tests
 ADD_RATHAXES_TEST(01_A_test_back_parse.cws)
 ADD_RATHAXES_TEST(01_B_test_back_compile.cws)
 ADD_RATHAXES_TEST(01_C_test_back_meta.cws)
@@ -8,9 +9,12 @@ ADD_RATHAXES_TEST(01_G_test_back_resolveCall.cws)
 ADD_RATHAXES_TEST(01_H_test_back_resolvePointcut.cws)
 ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
 
+# Pure middle-end validation tests
 ADD_RATHAXES_TEST(02_test_middle.cws)
 
+# Tests for configuration matching (against with blocks)
 ADD_RATHAXES_TEST(03_A_match_less_configs.cws)
 ADD_RATHAXES_TEST(03_B_match_less_or_equal_configs.cws)
 ADD_RATHAXES_TEST(03_C_match_equal_configs.cws)
+ADD_RATHAXES_TEST(03_D_match_greater_or_equal_configs.cws)
 #ADD_RATHAXES_TEST(03_match_configs.cws)
