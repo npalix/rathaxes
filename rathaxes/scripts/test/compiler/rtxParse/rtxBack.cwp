@@ -34,7 +34,7 @@ rtx_stmt<"template">(theBlock : node) ::=
 
 /////// WITH
 rtx_stmt_with_operator ::=
-    "<" | "<=" | "=" | "=>" | ">"
+    "<" | "<=" | "=" | ">=" | ">"
 ;
 
 rtx_stmt_with_value(theValue : node) ::=
