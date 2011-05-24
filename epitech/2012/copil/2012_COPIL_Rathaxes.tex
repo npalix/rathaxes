@@ -2,7 +2,7 @@
 
 \rtxdoctype{COPIL}
 \rtxdocstatus{Brouillon}
-\rtxdocversion{0.6}
+\rtxdocversion{0.7}
 
 \rtxdochistory{
 0.1 & 15/05/2011 & Louis Opter & Création du document à partir du template .docx \\
@@ -16,6 +16,9 @@
 0.5 & 20/05/2011 & Thomas Luquet & Rédaction du chapitre sur la communication \\
 \hline
 0.6 & 20/05/2011 & Louis Opter & Relecture \\
+\hline
+0.7 & 24/05/2011 & Zolt\={a}n Konarzewski & Rédaction du chapitre sur la
+présentation du projet \\
 }
 
 \author{Louis Opter} \title{COPIL -- Comité de Pilotage}
@@ -41,15 +44,46 @@ actions de communication prévues.
 
 \chapter{Présentation du projet}
 
-\emph{Ce chapitre doit faire \textbf{une page}.}
+Le projet \rtx\ repose sur la thèse du docteur Laurent Réveillère. Celui-ci met
+en avant le fait que le développement de pilotes de périphériques est un travail
+long et nécessitant de nombreuses compétences tant en informatique qu'en
+électronique. Par ailleurs, des études ont montré que le code de ces pilotes
+peut contenir jusqu'à sept fois plus de bogues qu'un code ``normal''. De plus,
+ce travail est à refaire pour chaque système d'exploitation.
+
+\rtx\ se veut une réponse à la thèse du docteur Laurent Réveillère en proposant
+un langage spécialisé ainsi qu'un compilateur permetant de générer le code C
+d'un pilote de périphérique pour plusieurs systèmes d'exploitation à partir de
+sa description en langage \rtx.
 
 \section{Cadre du projet}
+\rtx\ est réalisé à Epitech dans le cadre des EIP. Les EIP sont des projets
+réalisés par groupe de cinq ou plus pendant une durée de deux ans visant à
+mettre les étudiants face toutes les étapes de la réalisation d'un projet.
 
-EIP - Epitech.
+Le projet \rtx\ a été commencé par la promotion 2009. Notre groupe se propose de
+le reprendre et d'en étendre les fonctionnalités en se basant sur le travail déjà
+réalisé par l'équipe précédente.
 
 \section{Contexte}
+\rtx\ est réalisé en partenariat avec le \emph{LSE} où nous sont accessibles
+tant des ressources matérielles que l'expérience des membres du laboratoire.
+% Je vois pas quoi ajouter d'autre sur le LSE et le contexte du proj
 
-LSE.
+\section{But}
+\rtx\ a pour but de simplifier l'écriture de pilotes de périphériques en
+proposant un langage qui permet de séparer les compétences informatiques et
+électroniques nécessaires à l'écriture de tels pilotes.
+
+D'autre part, en séparant les données propres à un système d'exploitation de
+celles propres à un périphérique, \rtx\ permet de porter très facilement un
+pilote d'un système à l'autre.
+
+\section{Utilisateurs}
+Les utilisateurs de \rtx\ sont à la fois les développeurs de systèmes
+d'exploitation et les fabriquants de périphériques. En effet, chaqu'un peut
+travailler de manière séparée afin d'intégrer son système ou son périphérique
+dans \rtx.
 
 \chapter{Étude de l'existant}
 
@@ -180,7 +214,7 @@ améliorations et nous aideront à surmonter les erreurs restantes.
   compilateur ;
 \item[Thomas Sanchez] : Thomas s'occupe de la conception du langage grâce aux
   concepts techniques qu'il obtient en développant des pilotes modèles ;
-\item[Zoltan Konarzewski] : Zoltan assiste David sur la réalisation du
+\item[Zolt\={a}n Konarzewski] : Zolt\={a}n assiste David sur la réalisation du
   compilateur.
 \end{description}
 
