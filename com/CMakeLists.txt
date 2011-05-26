@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(papers)
+ADD_SUBDIRECTORY(slides)
