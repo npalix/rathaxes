@@ -1,8 +1,8 @@
 \documentclass[francais]{rtxreport}
 
 \rtxdoctype{COPIL}
-\rtxdocstatus{Brouillon}
-\rtxdocversion{0.8}
+\rtxdocstatus{Rendu}
+\rtxdocversion{0.9}
 
 \rtxdochistory{
 0.1 & 15/05/2011 & Louis Opter & Création du document à partir du template .docx \\
@@ -22,6 +22,8 @@ présentation du projet \\
 \hline
 0.8 & 26/05/2011 & Zolt\={a}n Konarzewski & Rédaction du chapitre sur l'étude de
 l'existant \\
+\hline
+0.9 & 26/05/2011 & Louis Opter & Relecture et harmonisation du document \\
 }
 
 \author{Louis Opter} \title{COPIL -- Comité de Pilotage}
@@ -51,11 +53,11 @@ Le projet \rtx\ repose sur la thèse du docteur Laurent Réveillère. Celui-ci m
 en avant le fait que le développement de pilotes de périphériques est un travail
 long et nécessitant de nombreuses compétences tant en informatique qu'en
 électronique. Par ailleurs, des études ont montré que le code de ces pilotes
-peut contenir jusqu'à sept fois plus de bogues qu'un code ``normal''. De plus,
+peut contenir jusqu'à sept fois plus de bogues qu'un code «~normal~». De plus,
 ce travail est à refaire pour chaque système d'exploitation.
 
 \rtx\ se veut une réponse à la thèse du docteur Laurent Réveillère en proposant
-un langage spécialisé ainsi qu'un compilateur permetant de générer le code C
+un langage spécialisé ainsi qu'un compilateur permettant de générer le code C
 d'un pilote de périphérique pour plusieurs systèmes d'exploitation à partir de
 sa description en langage \rtx.
 
@@ -69,9 +71,9 @@ le reprendre et d'en étendre les fonctionnalités en se basant sur le travail d
 réalisé par l'équipe précédente.
 
 \section{Contexte}
-\rtx\ est réalisé en partenariat avec le \emph{LSE}\footnote{Laboratoire Sytème
-EPITECH} où nous sont accessibles tant des ressources matérielles que
-l'expérience des membres du laboratoire.
+\rtx\ est réalisé en partenariat avec le \emph{LSE}\footnote{Laboratoire
+Système et Sécurité Epita/Epitech.} où nous sont accessibles tant des
+ressources matérielles que l'expérience des membres du laboratoire.
 % Je vois pas quoi ajouter d'autre sur le LSE et le contexte du proj
 
 \section{But}
@@ -85,7 +87,7 @@ pilote d'un système à l'autre.
 
 \section{Utilisateurs}
 Les utilisateurs de \rtx\ sont à la fois les développeurs de systèmes
-d'exploitation et les fabriquants de périphériques. En effet, chaqu'un peut
+d'exploitation et les fabricants de périphériques. En effet, chacun peut
 travailler de manière séparée afin d'intégrer son système ou son périphérique
 dans \rtx.
 
@@ -104,15 +106,15 @@ de données sur la phase de compilation et non sur l'exécution comme se propose
 de le faire des projets comme \emph{Devil}.
 
 Enfin, le projet \emph{NDL} (\emph{NDL Device Driver}), créé en 2004 à
-l'université Colombia de New York, est un autre langage basé sur le C, conçu
-pour générer des pilotes de périphériques. Il inclut notament des opérations
+l'université Columbia de New York, est un autre langage basé sur le C, conçu
+pour générer des pilotes de périphériques. Il inclut notamment des opérations
 d'entrée/sortie et une machine à états pour gérer le statut du
 périphérique. Cependant, ce projet n'est ni open-source, ni commercialisé. Il
 est donc difficile de trouver de la documentation dessus.
 
 \section{Positionnement par rapport à l'existant}
-\rtx\ se distingue de tous les projets cités précedement sur plusieurs
-points. Sa principale particularité réside dans l'aspet multi plate-forme du
+\rtx\ se distingue de tous les projets cités précédemment sur plusieurs
+points. Sa principale particularité réside dans l'aspect multi-plateformes du
 projet. En effet, en séparant les parties propres à chaque système
 d'exploitation des parties propres aux périphériques, \rtx\ permet de d'obtenir
 un pilote pour différents systèmes sans se soucier de leurs spécificités.
@@ -120,12 +122,10 @@ un pilote pour différents systèmes sans se soucier de leurs spécificités.
 Une autre particularité du projet \rtx\ est qu'au travers des trois parties du
 langage dédié, il permet la séparation complète des compétences requises dans le
 développement de pilotes de périphériques. De plus, ces trois parties
-permettent, par le découpage en sous-systèmes de la semantique d'un pilote,
+permettent, par le découpage en sous-systèmes de la sémantique d'un pilote,
 d'abstraire l'ensemble des concepts nécessaires à la réalisation d'un pilote.
 
 \chapter{Réalisation technique}
-
-\emph{Ce chapitre doit faire \textbf{deux pages}.}
 
 \rtx\ est un projet difficile qui requiert beaucoup de recherche et de
 validation de résultats intermédiaires. Lorsque \rtx\ a été écrit pour la
@@ -209,8 +209,7 @@ rendent encore plus difficile la lecture des codes existants.
 Nos bilans techniques se sont malheureusement rarement bien passés. Il est vrai
 que nous sommes un peu «~dans notre monde~» et on oublie un peu le monde réel.
 Par conséquent, il nous est arrivé de passer à côté d’une soutenance en arrivant
-avec des documentations manquantes ou ne répondant pas aux exigences du
-laboratoire EIP.
+avec des documentations manquantes ou ne répondant pas aux exigences du LabEIP.
 
 Nous avons aussi eu des problèmes de communication vis-à-vis du travail que nous
 fournissons.
@@ -219,19 +218,17 @@ Gardant en tête tout cela, nous faisons notre possible pour que tout se passe
 mieux et que notre travail soit justement mis en valeur afin qu’il puisse être
 évalué à sa juste valeur.
 
-Nous espérons que le laboratoire EIP et ses correcteurs pourront noter les
-améliorations et nous aideront à surmonter les erreurs restantes.
+Nous espérons que LabEIP et ses correcteurs pourront noter les améliorations et
+nous aideront à surmonter les erreurs restantes.
 
 \chapter{Conduite de projet}
-
-\emph{Ce chapitre doit faire \textbf{deux pages}.}
 
 \section{Organisation du groupe}
 
 \rtx\ est un groupe de cinq étudiants :
 \begin{description}
 \item[Thomas Luquet] : Thomas s'occupe des relations extérieures (tickets pour
-  le labEIP, organisation des voyages\ldots) et du planning (rappel des
+  le LabEIP, organisation des voyages\ldots) et du planning (rappel des
   réunions, des dates de rendus et inscription aux soutenances) ;
 \item[Louis Opter] : Louis s'occupe de gérer le dépôt du code, du système de
   compilation et de distribution (paquets/installateurs), du site vitrine, de la
@@ -283,7 +280,7 @@ nous servons intensivement pour tous nos débats internes.
 
 Le canal IRC \texttt{\#rathaxes} dont nous nous servons pour nos discussions
 internes et qui pourra servir d'outils de supports pour nos utilisateurs, est
-enregistré sur le réseau freenode.
+enregistré sur le réseau Freenode.
 
 Enfin, notre système de compilation possède plusieurs automatismes pour
 faciliter le développement et la distribution du projet :
@@ -305,9 +302,9 @@ Les réunions sont organisées chaque Samedi à 19 heures CEST en visio-confére
 sur Skype. Nos réunions suivent toutes le même planning :
 \begin{itemize}
 \item Thomas L. fait le tour sur les points administratifs à voir (tickets avec
-  le labEIP, date butoirs des candidatures aux conférences\ldots) et nous rappel
-  les prochains événements sur le calendrier du labEIP ;
-\item Point sur l'avancement par rapport a notre planning et celui du labEIP ;
+  le LabEIP, date butoirs des candidatures aux conférences\ldots) et nous rappel
+  les prochains événements sur le calendrier du LabEIP ;
+\item Point sur l'avancement par rapport a notre planning et celui du LabEIP ;
 \item Discussions sur les décisions technique à prendre (si besoin) ;
 \item Distribution du travail.
 \end{itemize}
@@ -325,8 +322,6 @@ L'utilisation de moyens de communications électroniques est justifiée par :
 \end{itemize}
 
 \chapter{Points sur les documentations}
-
-\emph{Ce chapitre doit faire \textbf{une page}.}
 
 \section{Organisation des documentations}
 
@@ -368,8 +363,6 @@ qui sont encore en développement est prévue.
 
 \chapter{Communication}
 
-%\emph{Ce chapitre doit faire \textbf{une page}.}
-
 % - Quels cours suivez-vous
 
 % - Ce que cela vous apporte pour adapter votre discours en fonction des
@@ -379,28 +372,24 @@ qui sont encore en développement est prévue.
 
 % @TS : j'ai recommencé et simplifié ce chapitre
 
-Notre projet à pour but de faciliter le travail des constructeurs de périphérique 
-et des développeurs de système d'exploitation.
-Notre communication vise donc en priorité ces groupes de personnes. 
-Dans cette optique nous avons construit un discoure qui met en avant les gains 
-de productivités qu'ils obtiendrons grâce à \rtx\
+Notre projet à pour but de faciliter le travail des constructeurs de
+périphérique et des développeurs de système d'exploitation. Notre
+communication vise donc en priorité ces groupes de personnes. Dans cette
+optique nous avons construit un discoure qui met en avant les gains de
+productivités qu'ils obtiendrons grâce à \rtx\
 
-Pour élargir notre base d'utilisateurs / contributeurs, l'équipe de 
-\rtx\ à souhaité s'adresser, aussi, à un publique moins technique. C'est pourquoi 
-nous avons mis en place un 2em discoure plus adapté.
-
+Pour élargir notre base d'utilisateurs / contributeurs, l'équipe de \rtx\ à
+souhaité s'adresser, aussi, à un publique moins technique. C'est pourquoi nous
+avons mis en place un 2\textsuperscript{ème} discoure plus adapté.
 
 Pour la conférence que nous donnerons aux Rencontres Mondiales du Logiciel
 Libre (RMLL), nous parlerons plus du projet en termes de résultats qu'en termes
 techniques car le public est moins «~spécialisé~». A l'inverse pour les
 conférences que nous donnerons au laboratoire LSE et pour les T-Dose, nous
-axerons sur les aspects techniques du projet car le publique est plus au fait 
-des problématiques technique.
-Il en sera de même pour les supports visuels.
+axerons sur les aspects techniques du projet car le publique est plus au fait
+des problématiques technique. Il en sera de même pour les supports visuels.
 
 \chapter{Promotion extérieure}
-
-%\emph{Ce chapitre doit faire \textbf{une page}.}
 
 \section{Conférence}
 
@@ -416,9 +405,8 @@ développeurs et d'agrandir notre communauté.
 Enfin, nous projetons de participer à d'autres rencontres internationales tel
 que le T-Dose\footnote{\url{http://www.t-dose.org/}} et le FOSDEM\footnote{\url{http://fosdem.org/}}.
 
-
-Faire des conférences dans les laboratoirs de puis en dehors de l'école 
-avec plus de monde permetera à l'équipe de perfectionner ses présentations.
+Faire des conférences dans les laboratoires de puis en dehors de l'école avec
+plus de monde permettra à l'équipe de perfectionner ses présentations.
 
 \section{Communauté}
 
@@ -427,11 +415,11 @@ une communauté autour du projet. Pour cela, nous avons plusieurs
 moyens de communications :
 
 \begin{itemize}
-\item Une liste de diffusion publique\footnote{\url{http://groups.google.fr/group/rathaxespublic}} ; 
-\item Une liste de diffusion pour les développeurs \footnote{\url{http://groups.google.fr/group/rathaxes}} ; 
+\item Une liste de diffusion publique\footnote{\url{http://groups.google.fr/group/rathaxespublic}} ;
+\item Une liste de diffusion pour les développeurs \footnote{\url{http://groups.google.fr/group/rathaxes}} ;
 \item Un wiki \footnote{\url{http://code.google.com/p/rathaxes/w/list}} ;
 \item Un gestionnaire de version de projet \footnote{\url{http://code.google.com/p/rathaxes/}} ;
-\item Un site vitrine\footnote{\url{http://eip.epitech.eu/2012/rathaxes/}} . 
+\item Un site vitrine\footnote{\url{http://eip.epitech.eu/2012/rathaxes/}}.
 \end{itemize}
 
 % - Où en êtes-vous
@@ -444,22 +432,19 @@ Pour le moment des T-Shirt pour l'équipe de \rtx\ ont été acheté. Nous prév
 aussi de faire faire des flyers que nous distribuerons lors de nos différentes
 interventions .
 
-
 \chapter{Conclusion}
-
-\emph{Ce chapitre doit faire \textbf{une page}.}
 
 % - Où en êtes-vous
 % - Avez-vous des modifications à faire dans votre CDC ?
 % - Quel avenir dans les 6 mois (fin d’année)
 
-Lorsque le LSE nous a proposé de reprendre Rathaxes nous savions tous que ce
+Lorsque le LSE nous a proposé de reprendre \rtx\ nous savions tous que ce
 serait un défi. Le début fut compliqué, nous n’avions pas de connaissances
 approfondies dans le domaine, mais nous savions tous la passerelle que cela
 pouvait devenir pour notre avenir professionnel. Malgré des difficultés de
 communication et d’organisation, nous pensons enfin avoir acquis un rythme de
 croisière qui va nous permettre de mener à bien ce projet. Nous arrivons enfin
-à communiquer avec le labeip et à expliquer notre travail.
+à communiquer avec le LabEIP et à expliquer notre travail.
 
 Même si nous sommes moins nombreux que l’équipe initiale (5 contre 11), nous
 sommes plus versatiles et donc plus prompts à prendre des décisions sur les
@@ -471,7 +456,7 @@ génération de pilote.  Bien entendu, les algorithmes, et la génération de co
 devront certainement être corrigés et retouchés, mais nous avons une base
 solide sur laquelle travailler.
 
-L’avenir de Rathaxes sur les 6 mois/1 ans à venir est assez difficile à prévoir
+L’avenir de \rtx\ sur les 6 mois à 1 ans à venir est assez difficile à prévoir
 dans le détail, mais nous savons d’ores et déjà que nous serons capables de
 générer des pilotes pouvant interagir un minimum avec les systèmes
 d’exploitation. Nous aurons aussi à implémenter toutes les interfaces de
