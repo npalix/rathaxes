@@ -88,8 +88,6 @@ dans \rtx.
 
 \chapter{Étude de l'existant}
 
-% Ce chapitre doit faire une page.
-
 \section{État de l'art}
 Plusieurs projets visant à générer des pilotes de périphériques existent. On
 peut ainsi citer le projet \emph{Devil/Taz} réalisé par le docteur Laurent
@@ -110,8 +108,17 @@ périphérique. Cependant, ce projet n'est ni open-source, ni commercialisé. Il
 est donc difficile de trouver de la documentation dessus.
 
 \section{Positionnement par rapport à l'existant}
+\rtx\ se distingue de tous les projets cités précedement sur plusieurs
+points. Sa principale particularité réside dans l'aspet multi plate-forme du
+projet. En effet, en séparant les parties propres à chaque système
+d'exploitation des parties propres aux périphériques, \rtx\ permet de d'obtenir
+un pilote pour différents systèmes sans se soucier de leurs spécificités.
 
-% Aucune idée de quoi il s'agit
+Une autre particularité du projet \rtx\ est qu'au travers des trois parties du
+langage dédié, il permet la séparation complète des compétences requises dans le
+développement de pilotes de périphériques. De plus, ces trois parties
+permettent, par le découpage en sous-systèmes de la semantique d'un pilote,
+d'abstraire l'ensemble des concepts nécessaires à la réalisation d'un pilote.
 
 \chapter{Réalisation technique}
 
