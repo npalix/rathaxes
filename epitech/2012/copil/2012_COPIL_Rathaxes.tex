@@ -88,9 +88,26 @@ dans \rtx.
 
 \chapter{Étude de l'existant}
 
-\emph{Ce chapitre doit faire \textbf{une page}.}
+% Ce chapitre doit faire une page.
 
 \section{État de l'art}
+Plusieurs projets visant à générer des pilotes de périphériques existent. On
+peut ainsi citer le projet \emph{Devil/Taz} réalisé par le docteur Laurent
+Réveillère. Ce projet consiste en un langage et un compilateur et sert de
+validation technique de sa thèse. Il permet de générer le code d'un pilote
+\emph{NE 2000} pour une seule plate-forme : Linux.
+
+Un autre projet similaire à \rtx\ est \emph{Laddie}. Il s'agit d'un langage dont
+la particularité est de déporter la majeure partie des vérifications d'intégrité
+de données sur la phase de compilation et non sur l'exécution comme se proposent
+de le faire des projets comme \emph{Devil}.
+
+Enfin, le projet \emph{NDL} (\emph{NDL Device Driver}), créé en 2004 à
+l'université Colombia de New York, est un autre langage basé sur le C, conçu
+pour générer des pilotes de périphériques. Il inclut notament des opérations
+d'entrée/sortie et une machine à états pour gérer le statut du
+périphérique. Cependant, ce projet n'est ni open-source, ni commercialisé. Il
+est donc difficile de trouver de la documentation dessus.
 
 \section{Positionnement par rapport à l'existant}
 
