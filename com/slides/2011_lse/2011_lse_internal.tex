@@ -78,7 +78,7 @@
 
 
 
-\section{Présentation du projet}
+\section{Présentation du projet - Introduction}
 
 \subsection{Le projet}
 \begin{frame}
@@ -120,7 +120,7 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 
 
 
-\section{Définir un langage dédié}
+\section{Le DSL de \rtx}
 
 \subsection{Les besoins du langage}
 \begin{frame}
@@ -152,7 +152,7 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 % Maximum 3 columns : l for left, c for center, r for right
     % Left column for Front-end (Electronician)
     \begin{column}[l,T]{115pt}
-        \uncover<2-> {
+        \uncover<1-> {
             \begin{center} \large{\itshape{Développeur Driver}} \end{center}
             \begin{center}
                 \setlength\fboxsep{0.5pt}
@@ -172,7 +172,7 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 
     % Center column for Middle-end (\rtx\ Maintainer)
     \begin{column}[c,T]{115pt}
-        \uncover<3-> {
+        \uncover<2-> {
             \begin{center} \large{\itshape{Développeur \rtx}} \end{center}
             \scriptsize{
                 Identification des sémantiques communes à tous les systèmes
@@ -183,7 +183,7 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
     
     % Right column for Back-end (OS developer)
     \begin{column}[r,T]{115pt}
-        \uncover<4-> {
+        \uncover<3-> {
             \begin{center} \large{\itshape{Développeur Système}} \end{center}
             \scriptsize{
                 Code spécifique aux systèmes d'exploitation. Requiert des
@@ -192,9 +192,9 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
         }
     \end{column}
 
+    \transdissolve<1>
     \transdissolve<2>
     \transdissolve<3>
-    \transdissolve<4>
 \end{columns}
 \end{frame}
 
@@ -241,7 +241,7 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
                 \item Des templates de type ;
                 \item Des templates de séquence.
             \end{itemize}
-            Chaque morceau de code instrumenté qui s'y trouve est appelé
+            Chaque morceau de code C instrumenté qui s'y trouve est appelé
             ``placeHolder''.
         }
     \end{column}
@@ -253,6 +253,24 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 \subsection{Illustration de la syntaxe}
 \begin{frame}
 \frametitle{Introduction à la programmation aspectuelle}
+\only<1> {
+    % Les concepts
+    Les intérêts de la Programmation Orientée Aspect :
+    \begin{itemize}
+        \item Séparer des éléments de métiers différents au sein d'un code ;
+        \item Centré sur l'idée d'injection de code statique ou dynamique.
+    \end{itemize}
+}
+\only<2> {
+    % Le lexique
+    Les mots clefs du paradigme :
+    \begin{itemize}
+        \item Aspect ;
+        \item Greffon (ou advice) ;
+        \item Point de coupe (ou pointcut) ;
+        \item Point de jonction (ou joinpoint).
+    \end{itemize}
+}
 \end{frame}
 
 
@@ -351,22 +369,78 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 \end{lstlisting}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[containsverbatim]
 \frametitle{Exemple de template}
-%begin{lstlisting}
-%*
-%* This is a comment test
-%*/
-%end{lstlisting}
+\lstset{
+    basicstyle=\color{black}\tiny\ttfamily,
+    numberstyle=\tiny\ttfamily
+}
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+    ${pointcut global_data_declaration};
+    ${pointcut code_declaration};
+    ${pointcut lkm_base_code_definition};
+}
+with LKM
+values OS=Linux, version>=2.6.24
+{
+    template sequence load()
+    {
+        chunk lkm_base_code_definition
+        {
+            int modentry()
+            { /* Init some stuff here */ }
+            module_init(modentry);
+        }
+        chunk global_data_declaration
+        {
+            struct module myModule = {
+                ${pointcut lkm_init_fptrs
+                  default:
+                      .module_open = NULL;
+                },
+            };
+        }
+    }
+}
+\end{lstlisting}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[containsverbatim]
 \frametitle{Exemple d'implémentation de pilote}
-%begin{lstlisting}
-%*
-%* This is a comment test
-%*/
-%end{lstlisting}
+\lstset{
+    basicstyle=\color{black}\tiny\ttfamily,
+    numberstyle=\tiny\ttfamily
+}
+\begin{lstlisting}
+device myDriver
+{
+    // Here the driver's registers description
+}
+
+driver myDriver
+{
+    Userland::open(Context ctx) {
+        log("Opening device...\n");
+    }
+    Userland::close(Context ctx) {
+        log("Closing device...\n");
+    }
+}
+
+configuration
+{
+    LKM::devices = myDriver;
+    LKM::arch = x86;
+    LKM::OS=Linux {
+        LKM::version = 2.6.34;
+    }
+    LKM::OS=Windows7 {
+    }
+};
+\end{lstlisting}
 \end{frame}
 
 
@@ -374,52 +448,75 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 
 \section{Un compilateur hors normes}
 
-\subsection{Compilateur classique}
+\subsection{Langage classique}
 \begin{frame}
-\frametitle{Méthode de traduction classique}
+\frametitle{Langage structuré}
+\begin{itemize}[<+->]
+    \item Le code généré dépend directement du code source
+        (flux d'execution identifiable) ;
+    \item On peut faire correspondre une expression du langage source avec
+        une expression du langage cible.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Méthode de traduction}
 \begin{enumerate}[<+->]
     \item Analyse du langage source (construction d'un AST) ;
     \item Manipulation de l'AST pour extraire des schémas d'execution connus ;
     \item Altération optionnelles de l'AST (optimisations, etc...) ;
     \item Traduction du langage source en langage destination selon des
-            modèles fixés.
+            modèles fixés par correspondance d'instructions.
 \end{enumerate}
 \end{frame}
 
-\subsection{Compilateur \rtx}
+\subsection{Le langage \rtx}
 \begin{frame}
-\frametitle{Méthode de traduction de \rtx}
-\begin{enumerate}[<+->]
-    \item Analyse du langage source (construction d'un AST) ;
-    \item Vérification des types à l'aide des interfaces du Middle-End ;
-    \item Sélection des templates utilisés par le Front-End (appels,
-            redéfinitions, etc...) ;
-    \item Début de la génération par le code global de l'interface le
-            plus haut-niveau (LKM) ;
-    \item Résolution des templates/chunks/pointcuts chargés à l'aide des
-            données décrites dans le Front-End de manière récursive ;
-    \item Assemblage des ASTs en remontant la résolution ;
-\end{enumerate}
+\frametitle{La différence avec un langage structuré}
+\begin{itemize}[<+->]
+    \item Le code écrit n'a aucun rapport avec le code généré en termes
+        de flux d'exécution ;
+    \item Pas ou peu de correspondance entre declaration rathaxes
+        et expression C.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Du langage au compilateur}
+\uncover<1> {
+    Trois parties dans le DSL :
+    \begin{itemize}
+        \item Indépendantes pour la compilation ;
+        \item Liées pour la génération.
+    \end{itemize}
+}
+\uncover<2> {
+    Le DSL est aussi un sur-ensemble du C :
+    \begin{itemize}
+        \item Gestion du langage C ;
+        \item Instrumentalisation du C ;
+        \item Interfacage pour la génération entre
+            l'AST \rtx\ et l'AST du C.
+    \end{itemize}
+}
 \end{frame}
 
 
-
-\subsection{Les implications du DSL}
+\subsection{Un compilo pour les traduire tous}
 \begin{frame}
 \frametitle{Les composants}
 \begin{itemize}[<+->]
     \item CNorm ;
-    \item rtxParse : ensemble des règles définissant la syntaxe du DSL ;
-    \item RtxNode : normalisation des éléments constituant l'AST ;
-    \item rtxLink : gestion d'un cache des interfaces et templates enregistrés ;
-    \item rtxTpl : résolution récursive du code instrumenté des templates ;
-    \item Tool : outil de génération de fichiers annexes (\texttt{.inf},
+    \item rtxParse : syntaxe du DSL ;
+    \item RtxNode : normalisation des nodes de l'AST ;
+    \item rtxLink : cache des interfaces et templates enregistrés ;
+    \item rtxTpl : résolution des templates ;
+    \item Tool : génération de fichiers annexes (\texttt{.inf},
                  \texttt{Makefiles}, etc...).
 \end{itemize}
 \end{frame}
 
 
-\subsection{Les différents processus de compilation}
 \begin{frame}
 \frametitle{Compilation du Middle-End}
 \begin{itemize}[<+->]
@@ -440,16 +537,221 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 \end{itemize}
 \end{frame}
 
+\subsection{Et dans les ténèbres les lier.}
 \begin{frame}
 \frametitle{Compilation du Front-End}
 \begin{itemize}[<+->]
     \item Analyse syntaxique du code ;
-    \item Validation des dépendances ;
-    \item Validation de l'interface elle-même.
+    \item Vérification des types utilisés à l'aide des interfaces ;
+    \item Sélection des templates utilisés (appels, redéfinitions, etc...) ;
+    \item Début de la génération par le code global de l'interface le
+            plus haut niveau (LKM) ;
+    \item Résolution des templates/chunks/pointcuts chargés à l'aide des
+            données décrites dans le Front-End de manière récursive ;
+    \item Assemblage des ASTs en remontant la résolution ;
 \end{itemize}
 \end{frame}
 
 
+\section{Problématiques de développement et solutions}
 
+\subsection{Définition du langage de templates}
+\begin{frame}
+\frametitle{Comment faire un langage souple ?}
+Il existe plusieurs besoins en plus de celui d'avoir un compilateur et un
+langage évolutifs :
+\begin{enumerate}[<+->]
+    \item Implémenter facilement de nouvelles sémantiques ;
+    \item Spécifier le système pour lequel on implémente le code ;
+    \item Générer facilement du C à partir de ces implémentations ;
+    \item Avoir un langage compréhensible.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Du langage souple aux templates}
+\only<1-3> {
+    Ceci impliquait donc un langage instrumentant le C contenant :
+    \begin{enumerate}[<+->]
+        \item Un moyen de sélectionner ou non le code selon
+            une configuration ;
+        \item Une association un élément = une sémantique ;
+        \item Un moyen de manipuler cette surcouche au C dans le C.
+    \end{enumerate}
+}
+\only<4> {
+    Se traduisant en un langage de templates contenant :
+    \begin{enumerate}
+        \item Un bloc ``with'' décrivant les conditions de sélection
+            du code (configuration);
+        \item Un bloc ``template'' implémentant une sémantique décrite dans
+            une interface ;
+        \item Une syntaxe ``placeHolder'' permettant de manipuler
+            des données du C instrumenté dans le C.
+    \end{enumerate}
+}
+\transdissolve<4>[duration=0.5]
+\end{frame}
+
+
+\subsection{Génération du code : technique de tissage d'ASTs}
+\begin{frame}
+\frametitle{Comment résoudre un template ?}
+\only<1-6> {
+    Un template ne peut pas :
+    \begin{enumerate}[<+->]
+        \item Être indépendant de son contexte ;
+        \item Générer du code brut ;
+        \item Générer quelque chose d'incompatible avec le C.
+    \end{enumerate}
+    \uncover<4-> {
+        Il doit donc :
+        \begin{enumerate}[<+->]
+            \item Se résoudre à l'aide de paramètres facilement manipulables ;
+            \item Générer quelque chose de compatible avec le C ;
+            \item Utiliser une forme facilement manipulable.
+        \end{enumerate}
+    }
+    \transdissolve<4>[duration=0.3]
+}
+\only<7> {
+    Les solutions adoptées :
+    \begin{enumerate}
+        \item Mise en place d'un système de mapping de valeurs pour
+            la résolution basé sur les paramètres du template ;
+        \item Génération d'un AST C compatible.
+    \end{enumerate}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Méthode de tissage d'ASTs}
+%
+% Insert explaination here with schemas
+%
+\end{frame}
+
+
+
+\subsection{Gestion de la bibliothèque de templates}
+\begin{frame}
+\frametitle{Accélérer le processus de génération}
+\only<1-3> {
+    Qu'est-ce qui rend le processus de génération lent ?
+    \begin{enumerate}[<+->]
+        \item Analyser/compiler un template a un coût ;
+        \item Rechercher un template précis dans une collection est donc
+            très lent ;
+        \item Le but de rathaxes est d'être une bibliothèque de templates
+            et de drivers prêts à être générés.
+    \end{enumerate}
+}
+\only<4-6> {
+    Quelques idées pour améliorer les choses :
+    \begin{enumerate}
+        \item<4-> La compilation d'un template génère un AST et un script
+            CodeWorker ;
+        \item<5-> Il faut maintenir un cache des templates compilés ;
+        \item<6-> Ce cache doit se limiter à des fichiers à charger avec
+            le moins d'opérations possibles.
+    \end{enumerate}
+}
+\only<7-> {
+    Le cache permet donc :
+    \begin{enumerate}
+        \item<7-> Accès rapide à un template en fonction de son prototype ;
+        \item<8-> Chargement automatique du script et de l'arbre associés ;
+        \item<9-> Au travers de la fonction template générée, une résolution
+            facile du template utilisé.
+    \end{enumerate}
+}
+\transdissolve<4>
+\end{frame}
+
+
+\subsection{Insertion de code spécifique : ajout de l'aspectuel}
+%
+% First, define a command for the verbatim code...
+%
+\begin{frame}[containsverbatim]
+\frametitle{Cas d'utilisation précis d'un template}
+\lstset{
+    basicstyle=\color{black}\tiny\ttfamily,
+    numberstyle=\tiny\ttfamily
+}
+Dans le premier jet, certains éléments n'étaient pas prévus :
+\begin{lstlisting}
+with LKM
+values OS=Linux, version>2.6.30
+{
+    template init(Context)
+    {
+        struct module mod =
+        {
+            .open = ????,
+        };
+        int templated_init()
+        {
+            // Do something here
+        }
+        module_init(templated_init);
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+\frametitle{Les manques des templates}
+Plusieurs problématiques apparaissent :
+\begin{enumerate}
+    \item Multiples insertions à un endroit précis par des sources
+        différentes ;
+    \item Rendre une insertion optionnelle ;
+    \item Imaginer un modèle extensible résolvant ces problématiques.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Retour de l'aspectuel dans le DSL}
+Grâce à la Programmation Orientée Aspect, nous allons pouvoir :
+\begin{enumerate}[<+->]
+    \item Définir des points de coupe pour chaque élément nécéssitant de
+        multiples insertions ;
+    \item Ajouter un comportement par défaut pour chacun des points de coupe ;
+    \item Permettre de définir des greffons (advices) dans les templates,
+        pour spécialiser selon les situations:
+        \begin{enumerate}
+            \item Définition de fonction ;
+            \item Définition de variables globales ;
+            \item Appel de fonction ;
+            \item Attribution de pointeur sur fonction ;
+            \item etc...
+        \end{enumerate}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Implémentation dans le langage}
+\begin{enumerate}[<+->]
+    \item Ajout de placeHolders point de coupe : les ``pointcuts'' ;
+    \item Ajout d'un bloc ``default'' dans le point de coupe ;
+    \item Changements du template :
+        \begin{enumerate}
+            \item Déplacement du code dans des greffons : les ``chunks'' ;
+            \item Ajout de greffons spécifiques pour cas particulier.
+        \end{enumerate}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Implémentation dans le cache}
+\begin{enumerate}[<+->]
+    \item Laisser la recherche par template (pour trouver les greffons d'un
+                                             template spécifique) ;
+    \item Permettre la recherche par greffon ;
+    \item Changements de la génération :
+        géneration de script et AST par bloc with et par greffon
+\end{enumerate}
+\end{frame}
 
 \end{document}
