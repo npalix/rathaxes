@@ -37,22 +37,20 @@ function rtxLink_IsWithNodeCompatible(with : node, config : node)
     {
         local itf_key = key(interface);
         // Is the interface defined in the config ?
-        if (findElement(config, itf_key) == false)
+        if (findElement(itf_key, config) == false)
             return false;
         foreach constraint in interface
         {
             local cst_key = key(constraint);
             // Is the variable defined in the config ?
-            if (!findElement(config[itf_key], cst_key))
+            if (!findElement(cst_key, config[itf_key]))
                 return false;
             // Then let's match the values :
             // Only the identifier type does not support other comparisons
             // than equality
             if (rtxLink_CompareValues<constraint.op>(constraint.val,
                         config[itf_key][cst_key].val) == false)
-            {
                 return false;
-            }
         }
     }
     // For now, let's assume the with nodes are compatible
