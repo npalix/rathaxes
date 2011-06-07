@@ -46,12 +46,11 @@ rtx_serial_sep ::=
     '.' | '_' | '-'
 ;
 rtx_serial_unit ::=
-    [ #noCase 'A'..'Z' | '0'..'1' ]+
+ #!ignore [ #noCase 'A'..'Z' | '0'..'9' ]+
 ;
 
 rtx_serial(theSerial : node) ::=
     #!ignore
-    #pushItem(theSerial)
     rtx_serial_unit:sElement
 /**/=> local unit;
     #check(rtxNodeSerialUnit(unit, sElement))
@@ -66,5 +65,4 @@ rtx_serial(theSerial : node) ::=
         #check(rtxNodeSerial_AddUnit(theSerial, theSeparator))
         #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
     ]*
-    #ignore(blanks)
 ;
