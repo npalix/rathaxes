@@ -187,6 +187,18 @@ function rtxNodeWith_AssocInterfaceConstraint(local_node      : node,
     setall local_node.config[interface][constraint.var.name] = constraint;
 
     removeElement(local_node.constraints, constraint_key);
+    return true;
+}
+
+function rtxNodeWith_BuildFromConstraints(local_node : node)
+{
+    if (!existVariable(local_node.config))
+        insert local_node.config;
+    foreach constraint in constraints
+        rtxNodeWith_AssocInterfaceConstraint(local_node,
+                                             constraint.var.scope, // itf name
+                                             key(constraint));
+    return true;
 }
 
 #include "rtxNodeFront.inc.cws"
