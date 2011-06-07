@@ -104,13 +104,14 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 
         tpl_pointcut(thePointcut : node) ::=
             "pointcut"
-            #readIdentifier:sPointcut
+            =>local pointcutId;
+            rtx_scoped_identifier(pointcutId)
 /**/        => local theParams;
             #check(rtxNodeVarList(theParams))
             [ tpl_pointcut_parameters(theParams) ]?
 /**/        => local theDefault;
             [ tpl_pointcut_default(theDefault) ]?
-            #check(rtxNodePointcut(thePointcut, sPointcut,
+            #check(rtxNodePointcut(thePointcut, pointcutId,
                                    theParams, theDefault))
         ;
 

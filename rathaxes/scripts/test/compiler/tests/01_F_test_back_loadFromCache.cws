@@ -23,7 +23,7 @@
 // First, hash the prototype, then find every template matching it,
 // And finally reduce the selection to only one template before loading.
 
-local theProto = "open(Context ctx)";
+local theProto = "Userland::open(Context ctx)";
 local theWith;
 local theTemplates;
 
@@ -39,7 +39,7 @@ if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
           +" rtxLink could not select an unique template :"+toString(theTemplates, true));
 traceLine("An Unique template could be identified for resolution.");
 
-traceLine("Loading template : open(Context ctx)...");
+traceLine("Loading template : Userland::open(Context ctx)...");
 local c_tree;
 if (rtxLink_LoadScript(theTemplates, c_tree) == false)
     error("01_F_test_back_loadFromCache.cws: ");

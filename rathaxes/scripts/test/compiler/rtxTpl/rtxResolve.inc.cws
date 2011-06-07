@@ -131,7 +131,8 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
 
     if (rtxLink_findChunks(local_node.name, chunks) == false)
         traceLine("inject<\"__rtx_pointcut__\">:<WARN> No chunk associated with"
-                  +" the pointcut "+local_node.name);
+                  +" the pointcut "
+                  + local_node.name.scope + "::" + local_node.name.name);
 
     // Set common practical references..
     localref theBlock = treeNode#parent.ref_placeholder#parent#parent;
