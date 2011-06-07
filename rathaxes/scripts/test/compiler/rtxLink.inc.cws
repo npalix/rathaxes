@@ -298,6 +298,7 @@ function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
     {
         foreach tpl in this.session.templates[proto_hash]
         {
+            // XXX FIXME Improve this comparison when flatten will be ready.
             if (equalTrees(tpl.with, with_values))
                 return true;
         }

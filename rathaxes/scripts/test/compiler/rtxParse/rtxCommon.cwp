@@ -43,7 +43,7 @@ rtx_var_list(theBlock : node) ::=
 ;
 
 rtx_serial_sep ::=
-    '.' | '_' | '-'
+    #!ignore  ['.' | '_' | '-']
 ;
 rtx_serial_unit ::=
  #!ignore [ #noCase 'A'..'Z' | '0'..'9' ]+

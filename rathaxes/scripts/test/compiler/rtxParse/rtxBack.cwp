@@ -4,7 +4,9 @@ rtx_pointcut(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-    rtx_template_code:sPlaceHolder ';'
+    rtx_template_code:sPlaceHolder
+    #continue(sError, "Expected ';' after pointcut in with block.")
+    ';'
     #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
 ;
 
@@ -34,7 +36,7 @@ rtx_stmt<"template">(theBlock : node) ::=
 
 /////// WITH
 rtx_stmt_with_operator ::=
-    "<" | "<=" | "=" | ">=" | ">"
+	"=" | ["<=" | ">=" | '<' [#!ignore !'<'] | '>' [#!ignore !'>'] ]
 ;
 
 rtx_stmt_with_value(theValue : node) ::=
@@ -64,6 +66,7 @@ rtx_stmt_with_constraints(theList: node) ::=
     rtx_stmt_with_constraint(theList)
     [
         ','
+        #continue
         rtx_stmt_with_constraint(theList)
     ]*
 ;
@@ -83,9 +86,12 @@ rtx_stmt_with_itf(theItfs : node) ::=
 rtx_stmt_with_descript(theItfs : node, theConstraints : node) ::=
     // First read the dependencies...
     rtx_stmt_with_itf(theItfs)
-    "values"
-    // variables of the with node
-    rtx_stmt_with_contraints(theConstraints)
+    [
+        "values"
+        #continue(sError, "Constraints expected after values keyword.")
+        // variables of the with node
+        rtx_stmt_with_constraints(theConstraints)
+    ]?
 ;
 
 rtx_stmt<"with">(theBlock : node) ::=
@@ -102,6 +108,7 @@ rtx_stmt<"with">(theBlock : node) ::=
     #check(rtxNodeWith(lastNode, interfaces, constraints, body, c_block))
     rtx_stmt_with_descript(interfaces, constraints)
     // block of the with node
+    #continue(sError, "Expected block after constraints.")
     '{'
         [
             // contains any kind of rtx stmt (with, template, chunk)
@@ -138,14 +145,17 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     [
         rtx_stmt_chunk_params(parameters)
     ]?
+    #continue(sError, "Expected '{' after pointcut name.")
     '{'
+        #continue(sError, "Expected instrumentalized C inside chunk block.")
         block_item_list(body)
+        #continue(sError, "Expected '}' at end of block.")
     '}'
 ;
 
 
 // Don't care... for now...
-rtx_template_code ::= #!ignore "${" -> '}' 
+rtx_template_code ::= #!ignore "${" #continue(sError, "Expected '}' after \"'${\"") -> '}' 
 ;
 
 /*
