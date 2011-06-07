@@ -20,30 +20,30 @@ generateString({
     with LKM, Userland
     values LKM::OS=pigeonMouette, maj=0, min=1
     {
-        ${pointcut theTestPointcut(config.plop)
+        ${pointcut Userland::theTestPointcut(config.plop)
          default:
              NULL;
         };
-        ${pointcut defaulted_pointcut
+        ${pointcut Userland::defaulted_pointcut
          default:
              test = 3;
         };
-        template open(Context ctx)
+        template Userland::open(Context ctx)
         {
-            chunk typedefs_declaration
+            chunk LKM::typedefs_declaration
             {
                 typedef int ${KK};
                 typedef int ${TYPE};
                 enum pop${ctx.name} {A, B, C};
             }
 
-            chunk global_data_declaration(theSymbol)
+            chunk LKM::global_data_declaration(theSymbol)
             {
                 theSymbol = 42;
                 ${TYPE} bla;
             }
 
-            chunk function_declaration
+            chunk LKM::function_declaration
             {
                 int    module_open(int a)
                 {
@@ -63,7 +63,7 @@ generateString({
                 ${symbol.name}.open = &module_open;
             }
 
-            chunk theTestPointcut(OneRandomSymbol)
+            chunk Userland::theTestPointcut(OneRandomSymbol)
             {
                 ${OneRandomSymbol.name} |= 1;
             }
@@ -77,9 +77,9 @@ generateString({
             }
         }
 
-        template test(Context ctx)
+        template LKM::test(Context ctx)
         {
-            chunk function_declaration
+            chunk LKM::function_declaration
             {
                 int test_${ctx.name}(void)
                 {
@@ -88,7 +88,7 @@ generateString({
                 }
             }
 
-            chunk theTestPointcut(OneRandomSymbol)
+            chunk Userland::theTestPointcut(OneRandomSymbol)
             {
                 ${OneRandomSymbol.name} |= 2;
             }

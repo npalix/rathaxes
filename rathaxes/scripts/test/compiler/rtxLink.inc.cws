@@ -387,17 +387,17 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
     setall temp = templates[0];
     foreach chunk in temp.chunks
     {
-        if (key(chunk) == "CALL")
+        if (key(chunk) == "::CALL")
         {
-            if (!findElement("CALL", this.session.chunks)
-                || !findElement(chunk, this.session.chunks["CALL"]))
+            if (!findElement("::CALL", this.session.chunks)
+                || !findElement(chunk, this.session.chunks["::CALL"]))
                 error("rtxLink:<ERROR> The CALL chunk associated to the"
                       +" template could not be found within the cache.");
 
             insert temp.script_file =
-                this.session.chunks["CALL"][chunk].script_file;
+                this.session.chunks["::CALL"][chunk].script_file;
             insert temp.tree_file =
-                this.session.chunks["CALL"][chunk].tree_file;
+                this.session.chunks["::CALL"][chunk].tree_file;
             setall templates = temp;
             return true;
         }
@@ -455,20 +455,29 @@ function rtxLink_selectCompatibleChunks(chunks : node, config : node)
  * This function returns an array of chunk cache nodes that are associated to
  * a given pointcut.
  */
-function rtxLink_findChunks(pointcut_name : value, out_chunks : node)
+function rtxLink_findChunks(pointcut_name : node, out_chunks : node)
 {
     if (!existVariable(this.session))
         error("rtxLink:<ERROR> The cache was not loaded before use !");
 
-    if (findElement(pointcut_name, this.session.chunks))
+    if (findElement(pointcut_name.scope + "::" + pointcut_name.name,
+                    this.session.chunks))
     {
-        setall out_chunks = this.session.chunks[pointcut_name];
+        setall out_chunks = this.session.chunks[pointcut_name.scope
+                                                + "::" + pointcut_name.name];
         return true;
     }
     return false;
 }
 
 
+function rtxLink_InstallFiles(backend_path : value,
+                              theKey : value, theWith : node,
+                              tree_file : node, script_file : node)
+{
+    local tmpWith;
+    setall tmpWith = theWith;
+    local filename = computeMD5(theKey + "_" + toString(tmpWith));
 
 
 
@@ -489,6 +498,18 @@ function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
     error("rtxLink:<ERROR> Registration not implemented for node type "+T);
 }
 
+/*
+ *
+ * This function caches the with as follows :
+ * session = [
+ *      "0" = [
+ *              .with = constraint_node;
+ *              .script_file = script_path;
+ *              .tree_file = tree_path;
+ *      ]
+ * ]
+ *
+ */
 function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  with_values : node,
                                                  script_file : value,
@@ -575,6 +596,9 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
                                             key(chunk), chunk_id);
         insert cachedTpl.chunks[pointcut_name] = chunk_id;
     }
+    else
+        traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<WARN>"
+                  +"This template ("+local_node.prototype+") was already registered within the cache!");
 }
 
 /*
@@ -598,26 +622,33 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
                                                   out_ref_id : reference)
 {
     local   prevSize;
-    local   full_pointcut_name = local_node.pointcut.name;
+    local   full_pointcut_name = local_node.pointcut.scope
+                                    + "::"
+                                    + local_node.pointcut.name;
 //full_name = local_node.pointcut.scope + "::" + local_node.pointcut.name;
 
     if (!findElement(full_pointcut_name, this.session.chunks))
+    {
         insert this.session.chunks[full_pointcut_name];
+        insert this.session.temp.chunks[full_pointcut_name];
+    }
 
     traceLine("rtxLink_SessionRegister<\"__rtx_chunk__\">:<LOG>"
               + " Registering chunk for pointcut '"
               + full_pointcut_name + "'");
-    prevSize = getArraySize(this.session.chunks[full_pointcut_name]);
+    out_ref_id.session = getArraySize(this.session.chunks[full_pointcut_name]);
+    //out_ref_id.tmp = getArraySize(this.session.temp.chunks[full_pointcut_name]);
 
     pushItem this.session.chunks[full_pointcut_name];
     localref theChunk = this.session.chunks[full_pointcut_name]#back;
     insert theChunk.name = full_pointcut_name;
     insert theChunk.with = with_values;
-    insert theChunk.tpl_id = out_ref_id;
+    insert theChunk.tpl_id = out_ref_id.hash;
     insert theChunk.script_file = local_node.script_file;
     insert theChunk.tree_file = local_node.tree_file;
-
-    out_ref_id = prevSize;
+    // Update the cache session differencial too...
+    pushItem this.session.temp.chunks[full_pointcut_name];
+    ref this.session.temp.chunks[full_pointcut_name]#back = theChunk;
 }
 
 // This function should be called with a root_block as local_node.

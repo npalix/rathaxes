@@ -103,13 +103,14 @@ function rtxNodeLink(local_node     : node,
     return true;
 }
 
-function rtxNodePointcut(local_node : node,
-                         sPointcut  : value,
-                         parameters : node,
-                         default    : node)
+function rtxNodePointcut(local_node         : node,
+                         pointcutIdentifier : node,
+                         parameters         : node,
+                         default            : node)
 {
     insert local_node.type = "__rtx_pointcut__";
-    insert local_node.name = sPointcut;
+    insert local_node.name;
+    setall local_node.name = pointcutIdentifier;
     insert local_node.parameters;
     setall local_node.parameters = parameters;
     insert local_node.default;
