@@ -480,6 +480,19 @@ function rtxLink_InstallFiles(backend_path : value,
     setall tmpWith = theWith;
     local filename = computeMD5(theKey + "_" + toString(tmpWith));
 
+    try {
+        copyFile(tree_file,   backend_path + filename + ".tree");
+        copyFile(script_file, backend_path + filename + ".cws");
+    } catch(sError) {
+        traceLine("rtxLink_InstallFiles: Could not copy files"
+                  + " to backend directory : " + sError);
+        return false;
+    }
+    tree_file =   filename + ".tree";
+    script_file = filename + ".cws";
+
+    return true;
+}
 
 
 
@@ -523,17 +536,35 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
     // Register the c_block as global_code if it contains anything
     if (!isEmpty(local_node.c_block.block))
     {
-        traceLine("rtxLink_SessionRegister<\"__rtx_with__\">:<LOG>"
-                  +"Registering global code !");
-        // First, check that the with global block is not already registered
-        // But... is it even necessary ?
-        
-        pushItem this.session.global_code;
-        localref theNode = this.session.global_code#back;
-        insert theNode.with;
-        setall theNode.with = theWith;
-        insert theNode.script_file = local_node.script_file;
-        insert theNode.tree_file = local_node.tree_file;
+        // Check that THIS very block wasnt already registered...
+        local registered = false;
+        foreach glob in this.session.global_code
+        {
+            // XXX FIXME Improve this comparison when flatten will be ready.
+            if (equalTrees(glob.with, theWith))
+            {
+                registered = true;
+                break ;
+            }
+        }
+        if (!registered)
+        {
+            traceLine("rtxLink_SessionRegister<\"__rtx_with__\">:<LOG>"
+                      +"Registering global code !");
+            
+            pushItem this.session.global_code;
+            localref theNode = this.session.global_code#back;
+            insert theNode.with;
+            setall theNode.with = theWith;
+            insert theNode.script_file = local_node.script_file;
+            insert theNode.tree_file = local_node.tree_file;
+            // Update the cache session differencial too...
+            pushItem this.session.temp.global_code;
+            ref this.session.temp.global_code#back = theNode;
+        }
+        else
+            traceLine("rtxLink_SessionRegister<\"__rtx_with__\">:<WARN>"
+                      +"This with block was already registered within the cache!");
     }
 
     // Then recurse to register every template.
@@ -570,32 +601,40 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
 
     // First, check that the exact template/with_values does not already exist
     // within the cache
-    if (rtxLink_CheckSingleTpl(hash, with_values))
-        error("Template already present in session:" + local_node.prototype);
-
-    traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
-              +" registering template '"+local_node.prototype+"'");
-    if (!findElement(hash, this.session.templates))
-        insert this.session.templates[hash];
-    
-    localref cachedTpl = this.session.templates[hash];
-    pushItem cachedTpl;
-    ref cachedTpl = cachedTpl#back;
-
-    insert cachedTpl.with;
-    setall cachedTpl.with = with_values;
-
-    insert cachedTpl.chunks;
-    // Second, register each of its chunks into the cache, and keep
-    // information on it inside the template's cached data.
-    foreach chunk in local_node.body.block
+    if (rtxLink_CheckSingleTpl(hash, with_values) == false)
     {
-        //local pointcut_name = chunk.pointcut.scope+"::"+chunk.pointcut.name;
-        local pointcut_name = chunk.pointcut.name;
-        local chunk_id = hash;
-        rtxLink_SessionRegister<chunk.type>(chunk, with_values,
-                                            key(chunk), chunk_id);
-        insert cachedTpl.chunks[pointcut_name] = chunk_id;
+        traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
+                  +" registering template '"+local_node.prototype+"'");
+        if (!findElement(hash, this.session.templates))
+        {
+            insert this.session.templates[hash];
+            insert this.session.temp.templates[hash];
+        }
+        
+        localref cachedTpl = this.session.templates[hash];
+        pushItem cachedTpl;
+        ref cachedTpl = cachedTpl#back;
+        insert cachedTpl.with;
+        setall cachedTpl.with = with_values;
+        // Update the cache session differencial too...
+        pushItem this.session.temp.templates[hash];
+        ref this.session.temp.templates[hash]#back = cachedTpl;
+
+
+        insert cachedTpl.chunks;
+        // Second, register each of its chunks into the cache, and keep
+        // information on it inside the template's cached data.
+        foreach chunk in local_node.body.block
+        {
+            //local pointcut_name = chunk.pointcut.name;
+            local pointcut_name = chunk.pointcut.scope+"::"+chunk.pointcut.name;
+            local chunk_ids;
+            insert chunk_ids.hash = hash;
+            insert chunk_ids.session = 0;
+            rtxLink_SessionRegister<chunk.type>(chunk, with_values,
+                                                key(chunk), chunk_ids);
+            insert cachedTpl.chunks[pointcut_name] = chunk_ids.session;
+        }
     }
     else
         traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<WARN>"
@@ -670,6 +709,11 @@ function rtxLink_SessionRegister<"__root_block__">(local_node : node,
         // the chunks field contains information about chunks themselves :
         // template's ID, index in the template, associated with node.
         insert this.session.chunks;
+        // Add temporary for differencial session/cache.
+        insert this.session.temp;
+        insert this.session.temp.global_code;
+        insert this.session.temp.templates;
+        insert this.session.temp.chunks;
     }
 
     try
@@ -702,16 +746,57 @@ function rtxLink_RegisterToCache(local_node : node)
 }
 
 
-function rtxLink_LoadCache(path : value)
+function rtxLink_LoadCache()
 {
-    if (cwLoadProject(path+"rtxLink_Cache.tree", this.session))
-        return true;
-    return false;
+    try {
+        cwLoadProject(this.cache_path+"rtxLink_Cache.tree", this.session);
+    } catch (sError) {
+        return false;
+    }
+    return true;
 }
 
-function rtxLink_SaveCache(path : value)
+function rtxLink_ValidateDiff()
 {
-    saveProject(path+"rtxLink_Cache.tree", this.session);
+    // Each one of these differencial elements are references on the real
+    // elements of the session.
+    // That way, this is enough to use the references in order to change the
+    // paths of the files in the session.
+    foreach glob in this.session.temp.global_code
+    {
+        if (rtxLink_InstallFiles(this.backlib_path,
+                                 "", glob.with,
+                                 glob.tree_file,
+                                 glob.script_file) == false)
+            return false;
+    }
+    // We dont need to do anything for the templates since they only are
+    // a bunch of references to their chunks.
+    foreach pointcut in this.session.temp.chunks
+    {
+        foreach chunk in pointcut
+        {
+            if (rtxLink_InstallFiles(this.backlib_path,
+                                     key(chunk), chunk.with,
+                                     chunk.tree_file,
+                                     chunk.script_file) == false)
+                return false;
+        }
+    }
+    return true;
+}
+
+function rtxLink_SaveCache()
+{
+    if (rtxLink_ValidateDiff() == false)
+    {
+        traceLine("Could not move compiled templates to the templates library.");
+        return false;
+    }
+    if (existVariable(this.session.temp))
+        removeVariable(this.session.temp);
+    
+    saveProject(this.cache_path+"rtxLink_Cache.tree", this.session);
     return true;
 }
 
