@@ -194,7 +194,7 @@ function rtxNodeWith_BuildFromConstraints(local_node : node)
 {
     if (!existVariable(local_node.config))
         insert local_node.config;
-    foreach constraint in constraints
+    foreach constraint in local_node.constraints
         rtxNodeWith_AssocInterfaceConstraint(local_node,
                                              constraint.var.scope, // itf name
                                              key(constraint));
