@@ -617,10 +617,10 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
  * ]
  *
  */
-function rtxLink_SessionRegister<"__rtx_chunk__">(local_node : node,
-                                                  with_values : node,
-                                                  script_file : value,
-                                                  out_ref_id : reference)
+function rtxLink_SessionRegister<"__rtx_chunk__">(local_node    : node,
+                                                  with_values   : node,
+                                                  script_file   : value,
+                                                  out_ref_id    : reference)
 {
     local   prevSize;
     local   full_pointcut_name = local_node.pointcut.scope

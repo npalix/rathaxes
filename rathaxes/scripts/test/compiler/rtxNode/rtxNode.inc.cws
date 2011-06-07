@@ -186,18 +186,25 @@ function rtxNodeWith_AssocInterfaceConstraint(local_node      : node,
     insert local_node.config[interface][constraint.var.name];
     setall local_node.config[interface][constraint.var.name] = constraint;
 
-    removeElement(local_node.constraints, constraint_key);
     return true;
 }
 
 function rtxNodeWith_BuildFromConstraints(local_node : node)
 {
+    local   to_remove;
+    
     if (!existVariable(local_node.config))
         insert local_node.config;
+
     foreach constraint in local_node.constraints
+    {
         rtxNodeWith_AssocInterfaceConstraint(local_node,
                                              constraint.var.scope, // itf name
                                              key(constraint));
+        pushItem to_remove = key(constraint);
+    }
+    foreach theKey in to_remove
+        removeElement(local_node.constraints, theKey);
     return true;
 }
 
