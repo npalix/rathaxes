@@ -1,0 +1,36 @@
+with LKM
+values OS=Windows, version = 7
+{
+    chunk LKM::INCLUDE_DEPENDENCIES
+    {
+        #include "ntddk.h"
+        #include "wdf.h"
+        #include "initguid.h"
+    }
+
+    template sequence LKM::load()
+    {
+        chunk   LKM::GLOBAL_CODE_DEFINITION
+        {
+            int KernModuleInit()
+            {
+                struct winKernModule mod =
+                {
+                    ${pointcut LKM::init_fptrs() default: .open = NULL }
+                };
+            }
+        }
+
+        chunk LKM::BASE_LKM_CODE_DEFINITION
+        {
+            int Kern_Load()
+            {
+                KernModuleInit();
+            }
+        }
+    }
+
+    template sequence LKM::unload()
+    {
+    }
+}
