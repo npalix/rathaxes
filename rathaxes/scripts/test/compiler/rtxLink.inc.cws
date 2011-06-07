@@ -679,9 +679,8 @@ function rtxLink_LoadCache(path : value)
 
 function rtxLink_SaveCache(path : value)
 {
-    if (saveProject(path+"rtxLink_Cache.tree", this.session))
-        return true
-    return false;
+    saveProject(path+"rtxLink_Cache.tree", this.session);
+    return true;
 }
 
 #end

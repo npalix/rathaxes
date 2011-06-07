@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+INSTALL_PATH="$RTX_PATH"
+CNORM_PATH="$INSTALL_PATH/maintainers/cnorm/src"
+RATHAXES_PATH="$INSTALL_PATH/rathaxes/scripts/test/"
+
+INCLUDE_PATHS="-I $CNORM_PATH -I $RATHAXES_PATH/compiler"
+
+
+codeworker --quiet $INCLUDE_PATHS -script $RATHAXES_PATH/compiler/rathaxes.cws -args $RATHAXES_PATH $*
