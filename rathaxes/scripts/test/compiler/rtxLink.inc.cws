@@ -494,7 +494,9 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  script_file : value,
                                                  out_ref_id : reference)
 {
+    // First, build a fine comparable with node from the constraints
     local theWith;
+    rtxNodeWith_BuildFromConstraints(local_node);
     setall theWith = local_node.config;
     // Register the c_block as global_code if it contains anything
     if (!isEmpty(local_node.c_block.block))
@@ -504,12 +506,6 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
         // First, check that the with global block is not already registered
         // But... is it even necessary ?
         
-
-        // TODO FIXME XXX
-        // For the time being, we insert as-is the var_map of the with
-        // and its c_block.
-        // We'll have to find the right way to associate some generated
-        // code with it
         pushItem this.session.global_code;
         localref theNode = this.session.global_code#back;
         insert theNode.with;
@@ -674,12 +670,18 @@ function rtxLink_RegisterToCache(local_node : node)
 }
 
 
-function rtxLink_InstallScripts(local_node : node)
+function rtxLink_LoadCache(path : value)
 {
-    if (!rtxLink_RegisterToCache(local_node))
-        return false;
+    if (cwLoadProject(path+"rtxLink_Cache.tree", this.session))
+        return true;
+    return false;
+}
 
-    return true;
+function rtxLink_SaveCache(path : value)
+{
+    if (saveProject(path+"rtxLink_Cache.tree", this.session))
+        return true
+    return false;
 }
 
 #end
