@@ -22,26 +22,27 @@
 #include "rtxTpl/rtxMeta.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 
-global RATHAXES_PATH = _ARGS[0];
-global BACKLIB_PATH  = RATHAXES_PATH + "/" + "backend_library" + "/";
-global SCRIPTS_PATH  = RATHAXES_PATH + "/" + "compiler"        + "/";
-global CACHE_PATH    = RATHAXES_PATH + "/" + "cache"           + "/";
+insert this.rathaxes_path = _ARGS[0];
+insert this.backlib_path  = this.rathaxes_path + "/" + "backend_library" + "/";
+insert this.scripts_path  = this.rathaxes_path + "/" + "compiler"        + "/";
+insert this.cache_path    = this.rathaxes_path + "/" + "cache"           + "/";
 
-global OPERATION = _ARGS[1];
-if (toLowerString(OPERATION) == "generate")
+insert this.operation = _ARGS[1];
+
+if (toLowerString(this.operation) == "generate")
 {
     local target_os = toLowerString(_ARGS[2]);
     traceLine("The driver generation is not implemented yet.");
 }
-else if (   toLowerString(OPERATION) == "blt-check"
-         || toLowerString(OPERATION) == "blt-register")
+else if (   toLowerString(this.operation) == "blt-check"
+         || toLowerString(this.operation) == "blt-register")
 {
     local inputFile = _ARGS[2];
     local source;
 
     // Load cache first
-    if (rtxLink_LoadCache(CACHE_PATH) == false)
-        error("Could not load cache !");
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
 
     // Parse the file
     cnormDialect<"__std__">(source);
@@ -90,9 +91,9 @@ else if (   toLowerString(OPERATION) == "blt-check"
         error("01_test_back.cws: Could not register blt into the cache !");
     }
 
-    if (toLowerString(OPERATION) == "blt-register")
+    if (toLowerString(this.operation) == "blt-register")
     {
-        if (rtxLink_SaveCache(CACHE_PATH) == false)
+        if (rtxLink_SaveCache() == false)
             error("Could not save cache !");
     }
 }
