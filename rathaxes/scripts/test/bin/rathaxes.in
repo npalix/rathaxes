@@ -1,0 +1,9 @@
+#!/bin/sh
+
+CNORM_PATH="@CNORM_PATH@"
+COMPILER_PATH="@COMPILER_PATH@"
+
+INCLUDE_PATHS="-I $CNORM_PATH -I $COMPILER_PATH"
+
+exec @CODEWORKER_PATH@ --quiet $INCLUDE_PATHS \
+         -script $COMPILER_PATH/rathaxes.cws -args $COMPILER_PATH $*

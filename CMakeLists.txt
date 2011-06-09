@@ -54,6 +54,14 @@ ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 ADD_SUBDIRECTORY(maintainers)
 ADD_SUBDIRECTORY(rathaxes)
 
+# Install rules ################################################################
+
+# We install codeworker in lib to not conflict with an already installed
+# codeworker.
+INSTALL(PROGRAMS ${CODEWORKER_BINARY_PATH} DESTINATION lib/rathaxes
+        # make sure it's named like expected:
+        RENAME "codeworker${CMAKE_EXECUTABLE_SUFFIX}")
+
 # Uninstall rules ##############################################################
 
 CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/cmake_uninstall.cmake.in"

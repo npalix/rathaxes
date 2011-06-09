@@ -1,0 +1,8 @@
+@echo off
+
+set CNORM_PATH="@CNORM_PATH@"
+set COMPILER_PATH="@COMPILER_PATH@"
+
+set INCLUDE_PATHS="-I %CNORM_PATH% -I %COMPILER_PATH%"
+
+@CODEWORKER_PATH@ --quiet %INCLUDE_PATHS% -script %COMPILER_PATH%/rathaxes.cws -args %*
