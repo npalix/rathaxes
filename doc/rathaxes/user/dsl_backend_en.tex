@@ -110,28 +110,180 @@ can transparently generate the final driver's C code for any operating system
 supported.
 }
 
-\chapter{The “with” block}
+\chapter{Aspectual oriented programming}
 
-The “with” statement describes the conditions to be matched in order to select
+First of all, the backend part of the DSL of \rtx\ implements a programming
+paradigm called ``Aspect-Oriented programming''.
+
+\section{General concept}
+
+Aspect-oriented programming entails breaking down program logic into distinct
+parts (so-called concerns, cohesive areas of functionality). Nearly all
+programming paradigms support some level of grouping and encapsulation of
+concerns into separate, independent entities by providing abstractions (e.g.,
+procedures, modules, classes, methods) that can be used for implementing,
+abstracting and composing these concerns.
+
+But some concerns defy these forms of implementation and are called
+crosscutting concerns because they "cut across" multiple abstractions in a
+program.
+
+Logging exemplifies a crosscutting concern because a logging strategy
+necessarily affects every logged part of the system. Logging thereby crosscuts
+all logged classes and methods.
+
+AOP (Aspect Oriented Programming) addresses these kinds of problems by allowing
+the programmer to express cross-cutting concerns in stand-alone modules called
+\emph{aspects}. Aspects can contain \emph{advice} (code joined to specified
+points in the program) and \emph{inter-type} declarations(structural member
+added to other classes or structures). For example, an aspect could define
+several advices to perform logging anywhere within the program. The pointcut
+(place of injection of the advice) defines the times (join point) where one
+wants to log something, and the code in the associated advice defines how is
+the logging implemented. This way, both the logging and the main code can be
+maintained separately.
+
+\section{Terminology}
+In the context of the project, the terminology used for Aspect-oriented
+programming includes:
+
+\begin{itemize}
+    \item \textbf{Cross-cutting concerns}: Even though most classes in an
+        Object-Oriented model will perform a single, specific function, they
+        often share common, secondary requirements with other classes. For
+        example, we may want to add logging to functions within the data-access
+        layer and also to functions in the system API layer whenever a thread
+        enters or exits a function. Even though each class has a very different
+        primary functionality, the code needed to perform the secondary
+        functionality is often identical.
+    \item \textbf{Advice}: This is the additional code that you want to apply
+        to your existing model. In our example, this is the logging code that
+        we want to apply whenever the thread enters or exits a function. Inside
+        of \rtx\ we may call it a ``chunk''.
+    \item \textbf{Pointcut}: This is the term given to the point of execution
+        in the application at which cross-cutting concern needs to be applied.
+        In our example, a pointcut is reached when the thread enters a
+        function, and another pointcut is reached when the thread exits the
+        function.
+    \item \textbf{Aspect}: The combination of the pointcut and the advice is
+        termed an aspect. In the example above, we add a logging aspect to our
+        application by defining a pointcut and giving the correct advice.
+\end{itemize}
+
+\section{Join-Point Model}
+
+\subsection{Defining a pointcut}
+
+\rtx\ offers a simple way to define a pointcut. It actually defines a place in
+the code where the associated advices'code can be injected. Several advices can
+be injected into a same pointcut. It can be written either inside of a ``with''
+block of inside of a chunk (the \rtx\ advice).  Those will be described later.
+
+
+Since this is used for the C code generation, it also offers a way to define a
+default code to be inserted if no joinpoint could be created. The default part
+is optionnal, meaning that if no joinpoint could be created, and if there is no
+default statement, the pointcut will simply disappear while generating the C
+code.
+
+The pointcut must be written between ``\${'' and ``}''.  Inside of the braces,
+the first thing to write is the keyword ``pointcut'' followed by an identifier
+which will be used as the pointcut's name. One may give an argument to the
+pointcut between parenthesis, though the argument must be a C symbol (This will
+be explained in a later section of the document).
+
+Next is the optional default statement, with the "default" keyword followed by
+a colon, and a single C statement.
+
+Here are some examples to highlight the possibilities offered :
+\begin{lstlisting}
+${pointcut thePointcut(aSymbol, anotherSymbol)};
+struct blob item =
+{
+    ${pointcut theInit default: .first = NULL; },
+};
+${pointcut anotherPointcut};
+\end{lstlisting}
+
+\subsubsection{Builtin pointcuts}
+
+There are some pointcuts that cannot be defined by the user, because they are
+used in specific and implicit mecanisms of the language. Here is the list of
+pointcuts that cannot be defined :
+\begin{itemize}
+    \item call: no parameter, replaces a call of the template it is contained
+        by when it is called from the frontend called from the frontend;
+    \item type\_decl: no parameter, replaces a declaration where the template
+        (type) is used;
+    \item type\_def: no parameter, included in the part of the generated code
+        where the types are defined.
+\end{itemize}
+
+
+\subsection{Defining a chunk}
+
+A chunk is a \rtx\ equivalent of an advice. It contains the code that will be
+injected in place of the associated pointcut. It can be written either inside
+of a ``with'' block or inside of a ``template'' block. Those will be described
+later.
+
+
+A chunk is introduced by the keyword ``chunk'' followed by the associated
+pointcut's name, with optional parenthesis and received parameters. The
+received parameter are simple identifiers separated by comas. They must be used
+in the same way as the template variables (See the chapter about Using template
+variables).
+
+Next is the instrumented C code between two braces. This is actually some C
+code with pointcuts and template variables. This will be explained in a more
+detailed manner in the chapter about using template variables.
+
+Here is a short example with only C code and pointcuts without parameters :
+\begin{lstlisting}
+chunk global
+{
+    int main()
+    {
+        int a;
+        printf("a = %i\n", a);
+        ${pointcut thePointcut default: printf("Hello World\n");};
+    }
+}
+
+chunk thePointcut
+{
+    printf("I am part of the chosen ones !\n");
+}
+\end{lstlisting}
+
+In the event the chunk was selected and created a joinpoint, it's code would
+replace the pointcut of the global chunk.
+
+
+\chapter{The ``with'' block}
+
+The ``with'' statement describes the conditions to be matched in order to select
 the specific implementation written inside its block.
 
 These conditions will for example allow one to tell the compiler that the code
-that the “with” block contains is to be used only for a specific operating
+that the ``with'' block contains is to be used only for a specific operating
 system (e.g. Linux), with conditions over the version (e.g. version > 2.6.24).
 
 The code contained in the block of this statement will be described in a later
-chapter.
+chapter, though it is useful to know that it can contain code that we will
+qualify as ``global code'' and template statements.
 
 \section{The configuration variables}
 
 The middle-end part of the language, constituted of interfaces, declares
 different variables. We will call those variables the \emph{configuration
 variables}. Those variables are the elements that define which system-specific
-implementation can be used or not. Indeed, since the “with” block content's aim
-is to implement OS-specific code, they can't be used for every operating system.
-Thus, the selection process is built around those configuration variables.
+implementation can be used or not. Indeed, since the ``with'' block content's
+aim is to implement OS-specific code, they can't be used for every operating
+system.  Thus, the selection process is built around those configuration
+variables.
 
-The “with” block tells for which values of which configuration variables the
+The ``with'' block tells for which values of which configuration variables the
 templates are to be activated and possibly used.  
 
 While writing a system-specific code for \rtx, you \emph{have to consider}
@@ -153,7 +305,7 @@ then followed by a coma-separated list of \emph{configuration variables} and
 their matching conditions. Three main rules are to be respected:
 \begin{itemize}
     \item The configuration variable's name must match \emph{exactly} the one
-          written in the interface the “with” block wishes to implement
+          written in the interface the ``with'' block wishes to implement
           (fully or partially).
     \item The condition (or comparison) can be one of the 5 following: 
         \begin{itemize}
@@ -172,10 +324,75 @@ their matching conditions. Three main rules are to be respected:
         \end{itemize}
 \end{itemize}
 
-With this, you should be able to write a proper “with” statement that will
+With this, you should be able to write a proper ``with'' statement that will
 allow the compiler to select your system-specific for the right C code
-generation. Now, you must write the the content of this “with” block:
-the templates.
+generation.
+
+\section{Content}
+
+The ``with'' block can contain three kind of statements. It can contain some
+pointcuts (each one must be followed by a semicolon), some chunks, and/or
+finally some templates. The templates are detailed in the next section, but
+we'll describe the effect of the pointcuts and the chunks inside this block.
+
+\subsection{Global Pointcut}
+
+The pointcuts written inside a ``with'' block are called ``global pointcuts''
+in reference to the way they are managed during the C code generation step.
+
+Actually, a pointcut contained in such a block will be automatically inserted
+into the generated code at a global scope level (after the previous selected
+global pointcuts). The reason of this mecanism being that this is the best way
+that could be found to define how is the generated code globally organized.
+Since the generation goes from the top-level subsystem (the Loadable kernel
+module one) to the lowest subsystem (any really specific subsystem used in the
+driver's code), the first to be selected would be something like this:
+\begin{lstlisting}
+with LKM // Select as soon as the LKM system is to be used (always the case)
+{
+    // Includes first
+    ${pointcut include_dependencies};
+
+    // Next, the globals and prototypes...
+    ${pointcut global_data_declaration};
+    ${pointcut global_code_declaration};
+    // Followed by the functions...
+    ${pointcut global_code_definition};
+    // And finally the base for the lkm.
+    ${pointcut lkm_base_code_definition};
+};
+\end{lstlisting}
+
+This way, it is possible to define the global structure of the generated code.
+This mecanism, interfering with the code generation, should be used with much
+care and precautions.
+
+
+\subsection{Global Chunk}
+
+The chunks written inside a ``with'' block are called ``global chunks'' for the
+same reason the pointcuts are called ``global pointcuts''.
+
+The global chunk will be inserted in the associated pointcut (if it was
+selected and inserted in the generated code) whenever the block is selected for
+the generation. For example, this can be used to solve the include dependencies
+of a template. Here is a code example:
+
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+}
+
+with LKM
+values OS=windows, version=7
+{
+    chunk include_dependencies
+    {
+        #include "windows.h"
+    }
+}
+\end{lstlisting}
 
 
 \chapter{Defining a template}
@@ -195,8 +412,8 @@ later section.
 In order to write a template, one must first write the "template" keyword.
 Then, this keyword is followed by a type keyword, describing the kind of
 template that is being written. Next comes what we'll call the \emph{template
-prototype}. This prototype includes the name of the “sequence” or “type” and its
-parameters' types and names.
+prototype}. This prototype includes the name of the ``sequence'' or ``type''
+and its parameters' types and names.
 
 The template's prototype is the part that identifies a specific templates.
 Be careful, though, not to confuse a template and its implementation: a
@@ -243,6 +460,15 @@ with os=Linux, version >= 2.6.24
     }
 }
 \end{lstlisting}
+
+\section{Content}
+
+A template block can contain only one kind of statement : the chunk statement.
+Inside the chunks of a template, one can use the template parameters'type.
+
+The template's block can contain any number of chunk, included the chunks
+associated to the builtin pointcuts (note the ``call'' pointcut used when
+calling a template from the frontend).
 
 
 \chapter{Using template variables}
@@ -339,7 +565,7 @@ with os=Linux, version >= 2.6.24
 %% The rest of the "EACH" syntax is to be defined and then
 %% the documentation written....
 EACH SYNTAX TBD
-%%The “each” syntax is based on the same model as the “link” syntax, but allows to
+%%The ``each'' syntax is based on the same model as the ``link'' syntax, but allows to
 %%link each element of a collection to the same template. This prevents writing
 %%loops that would be error-prone. It would be written like this:
 
@@ -426,7 +652,8 @@ in a relatively complete fashion:
 \begin{lstlisting}
 // This is the root entry point of the BNF
 
-with_block ::= "with" config_value_list '{' [ template_block ]* '}'
+with_block ::= "with" config_value_list
+                '{' [ "${" tpl_pointcut '}' ';' | chunk | template_block ]* '}'
 
 config_value_list ::= [ config_value ]*
 
@@ -434,12 +661,15 @@ config_value ::= config_variable config_condition config_value
 
 config_variable ::= identifier
 
-config_condition ::= '<' | "<=" | '=' | "=>" | '>'
+config_condition ::= "<=" | '=' | ">=" | '<' | '>'
 
 config_value ::= identifier | version
 
 template_block ::= "template" type_key template_prototype
-                    '{' [ C | template_placeholder ]* '}'
+                    '{' [ chunk ]* '}'
+
+chunk ::= "chunk" identifier [ '(' tpl_var_id ')']?
+            '{' [ C | template_placeholder ]* '}'
 
 C ::= // this is the whole C syntax that we wont define here...
 
@@ -451,7 +681,9 @@ tpl_var_list ::= tpl_var_type tpl_var_id [ ',' tpl_var_type tpl_var_id ]*
 
 template_placeholder ::= [ prefix ]? [ template_braced_code ]+ [ postfix ]?
 
-template_braced_code ::= "${" tpl_each | tpl_link | tpl_var '}'
+template_braced_code ::= "${" tpl_each | tpl_link | tpl_var | tpl_pointcut '}'
+
+tpl_pointcut ::= "pointcut" identifier['(' tpl_var ')'] [ "default" ':' C ]?
 
 tpl_each ::= "each" tpl_var "as" alias "in" tpl_proto
 

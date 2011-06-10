@@ -111,6 +111,180 @@ générer de manière uniforme le code C du pilote pour chacun des systèmes
 d'exploitation supportés par le backend.
 }
 
+
+\chapter{Programmation orientée aspect}
+
+Tout d'abord, la partie backend du langage dédié de \rtx\ implémente un
+paradigme de programmation appelé ``Programmation Orientée Aspect''.
+
+\section{Concept général}
+
+La programmation orientée aspect implique de découper la logique d'un programme
+en plusieurs parties distinctes (appelées fonctionnalités). Presque tous les
+paradigmes de programmation supportent un certain niveau de regroupement et
+d'encapsulation de fonctionnalités en différentes entités indépendantes. Ceci
+est permis grâce à des abstractions (telles que les procédures, les modules,
+les classes, et les méthodes) qui peuvent être utilisées pour implémenter,
+abstraire et assembler ces fonctionnalités.
+
+Cependant, certaines de ces fonctionnalités résistent à ces formes
+d'implantation, et sont ce que l'on appelle des fonctionnalités transverses,
+puisqu'elles ``traversent'' de multiples couches d'abstraction d'un programme.
+
+La notion de traçage des actions (ou ``logging'' en anglais) est un très bon
+exemple de fonctionnalité transverse car une stratégie de traçage affect
+nécessairement toutes les parties du systèmes qui doivent fournir une trace. Le
+traçage traverse donc toutes les abstractions possibles, en s'immisçant un peu
+partout dans le programme.
+
+La POA (Programmation Orientée Aspect) répond donc à ce type de problèmes en
+permettant au programmeur d'exprimer les fonctionnalités transverses dans des
+modules indépendants appelés \emph{aspects}. Les aspects peuvent contenir des
+\emph{advice} (code inséré à des emplacements spécifiés dans le programme) et
+des déclaration \emph{inter-types} (ajout de membres structurels dans des types
+composés). Par exemple, un aspect pourrait définir plusieurs \emph{advices} pour
+effectuer le traçage n'importe où dans le programme. Le \emph{point de coupe}
+(emplacement d'injection des \emph{advices} associés) définit les endroits
+(point de jonction) où quelqu'un veut effectuer une trace et le code contenu
+dans les \emph{advices} associés implémente le traçage en lui-même. Ainsi, les
+fonctionnalités de traçage comme le code du programme peuvent être maintenus de
+manière indépendante.
+
+\section{Terminologie}
+Dans le contexte du projet, la terminologie utilisée pour la programmation
+orientée aspect inclue :
+
+\begin{itemize}
+    \item \textbf{Fonctionnalités transverses}: Bien que la plupart des classes
+        d'un modèle orienté objet va proposer une fonction unique et
+        spécifique, elles partagent souvent des éléments communs et secondaires
+        (en termes de code ``métier''). Par exemple, nous pourrions ajouter du
+        traçage dans des fonctions accédant à des données tout comme à des
+        fonctions abstrayant les appels systèmes quand un \emph{thread} entre
+        ou sort d'une fonction. Bien que chaque classe ait un rôle primaire
+        différent, le code nécessaire pour effectuer les actions secondaires
+        est souvent identique.
+    \item \textbf{Advice}: C'est l'habituel code additionel que l'on veut
+        ajouter au modèle existant. Dans notre exemple, ce serait le code qui
+        implante l'action de tracer des informations, lors de l'entrée dans une
+        fonction par un thread. Au sein de \rtx\ nous appelons cela un
+        ``chunk''.
+    \item \textbf{Point de coupe}: C'est le terme donné au point d'exécution
+        dans l'application où une fonctionnalité transverse doit être
+        appliquée.  Dans notre exemple, un point de coupe est atteint lorsqu'un
+        \emph{thread} entre ou sort d'une fonction.
+    \item \textbf{Aspect}: La combinaison du point de coupe et d'un advice est
+        appelé un aspect. Dans notre exemple, nous ajoutons un aspect à notre
+        application en définissant un point de coupe et en fournissant l'advice
+        approprié.
+\end{itemize}
+
+\section{Modèle de jonction}
+
+\subsection{Définir un point de coupe}
+
+\rtx\ propose un moyen simple de définir un point de coupe. Il définit en
+réalité un endroit dans le code où le contenu des \emph{advices} associés
+pourra être injecté. Plusieurs \emph{advices} peuvent être injectés dans un
+même point de coupe. Il peut être écrit soit dans un bloc ``with'' soit dans un
+chunk (l'\emph{advice} de \rtx).  Ceux-ci seront décrits plus tard dans ce
+document.
+
+Étant donné que ce mécanisme est utilisé pour la génération de code C, il est
+aussi possible de définir un comportement par défaut dans le cas où aucun point
+de jonction n'est créé par association d'un ou plusieurs chunks avec le point
+de coupe. Cette partie (expression ``default'') est optionnelle, et si aucun
+point de jonction n'a été crée, alors le point de coupe ne fournissant pas de
+comportement par défaut sera tout simplement supprimé. Dans le cas où elle est
+présente, alors le code de l'expression de défaut deviendra le contenu du point
+de jonction.
+
+Le point de coupe doit être écrit entre ``\${'' et ``}''. À l'intérieur des
+accolades, la première chose à écrire est le mot clef ``pointcut'' suivi d'un
+identifiant : le nom donné au point de coupe. Il est possible de donner des
+arguments aux points de coupe, selon le modèle du langage C : après le nom du
+point de coupe, on écrit alors les arguments à donner entre parenthèses,
+séparés par des virgules si il y a plusieurs paramètres à transmettre. Ces
+arguments doivent être des symboles tirés du C instrumenté du langage, qui sera
+décrit plus tard dans ce document.
+
+Ensuite vient l'expression ``default'' décrivant le comportement par défaut du
+point de coupe, si aucun point de jonction n'a pu être créé. Pour ce faire, il
+faut écrire le mot clef ``default'' suivi du caractère ``:'', et enfin d'une
+expression C.
+
+Voici quelques exemples pour illustrer les possibilités proposées :
+\begin{lstlisting}
+${pointcut thePointcut(aSymbol, anotherSymbol)};
+struct blob item =
+{
+    ${pointcut theInit default: .first = NULL; },
+};
+${pointcut anotherPointcut};
+\end{lstlisting}
+
+\subsubsection{Points de coupe builtins}
+
+Il existe quelques noms de points de coupe qui sont inutilisables car ils sont
+liés à des mécanismes implicites et internes au compilateur et au langage.
+Voici une liste de ces points de coupe builtins avec leur description ou effet
+:
+\begin{itemize}
+    \item call: pas de paramètre, le chunk remplace un appel du template qui le
+        contient par le frontend;
+    \item type\_decl: pas de paramètre, le chunk remplace le type dans la
+        déclaration d'une variable dont le type correspond au template le
+        contenant;
+    \item type\_def: pas de paramètres, le chunk est inclus dans la partie du
+        code généré où les types sont définis.
+\end{itemize}
+
+
+\subsection{Définir un chunk}
+
+Un chunk est l'équivalent \rtx\ d'un \emph{advice}. C'est ce qui va contenir le
+code à injecter à l'endroit du point de coupe. Il peut être écrit soit dans un
+bloc ``with'' soit dans un bloc ``template''. Ces deux types de blocs seront
+décrits dans les chapitres suivants.
+
+
+Un chunk est introduit par le mot clef ``chunk'', lui-même suivi par le nom du
+point de coupe quauel il est associé. Des parenthèses optionnelles permettent
+de nommer les paramètres reçus au travers du point de jonction. Ce sont de
+simples identifiants à utiliser dans le code comme des variables templates,
+tirées du C instrumenté de \rtx\ (Voir le chapitre au sujet de l'utilisation
+des variables templates).
+
+Ensuite vient le code C instrumenté contenu par ces chunks. Il doit être
+contenu dans un bloc identifié par des accolades. Ce code C instrumenté est en
+réalité une surcouche au langage C, afin d'y inclure des points de coupe et des
+variables templates (qui seront abordées plus tard dans ce document).
+
+Voici donc un rapide exemple avec des points de coupe sans paramètres, des
+chunks et du simple code C :
+
+\begin{lstlisting}
+chunk global
+{
+    int main()
+    {
+        int a;
+        printf("a = %i\n", a);
+        ${pointcut thePointcut default: printf("Hello World\n");};
+    }
+}
+
+chunk thePointcut
+{
+    printf("I am part of the chosen ones !\n");
+}
+\end{lstlisting}
+
+Dans le cas où le chunk est sélectionné et crée ainsi un point de jonction, le
+code qu'il contient aurait remplacé l'expression du point de coupe au sein du
+chunk associé au point de coupe nommé "global".
+
+
 \chapter{Le bloc “with”}
 
 L'expression “with” décrit les conditions à respecter dans le but de
@@ -122,7 +296,9 @@ d'exploitation spécifique (ex: Linux), avec une limitation de version
 (ex: supérieure à 2.6.24).
 
 Le code contenu dans le bloc de cette expression sera abordé plus tard dans ce
-document.
+document, bien qu'il soit d'ores et déjà utile de savoir que le bloc “with” peut
+contenir du code que nous qualifierons de ``code global'' ainsi que des
+expressions ``template''.
 
 \section{Les variables de configuration}
 
@@ -186,8 +362,82 @@ Avec cela, nous sommes maintenant capables d'écrire une expression “with”
 correcte qui permettra au compilateur de sélectionner notre code spécifique
 pour une bonne génération de code C.
 
-Il nous faut donc maintenant écrire le contenu de ce bloc “with” :
-les templates (ou modèles de code).
+\section{Contenu}
+
+Le bloc ``with'' peut contenir trois types d'expressions. Il peut contenir des
+points de coupes (chacun doit être suivi par un point-virgule), des chunks, et
+des templates. Les templates seront décrits dans le chapitre suivant.
+
+Étant donné que les points de coupes et les chunks ont une signification
+particulière au sein d'un bloc ``with'', nous allons commencer par les décrire.
+
+\subsection{Point de coupe global}
+
+Les points de coupe situés à l'intérieur d'un bloc ``with'' sont appelés des
+``points de coupe globaux'' en référence à la manière dont ils sont utilisés
+lors de l'étape de génération du code C.
+
+En effet, un point de coupe contenu par un tel bloc sera automatiquement inséré
+dans le code généré au niveau du scope global (après les autres points de coupe
+globaux sélectionnés auparavant). La raison de ce mécanisme est que c'est la
+meilleure méthode qui pouvait permettre de définir comment organiser le code
+généré d'un point de vue global.
+
+Puisque la génération part de l'interface le plus haut niveau (le Module
+noyau) pour descendre a l'interface la plus précise (utilisée par le pilote en
+cours de génération), le premier bloc ``with'' à être sélectionné pourrait
+ressembler à ceci :
+
+\begin{lstlisting}
+ // Sélectionné des que le sous-systeme Module noyau est utilisé (toujours)
+with LKM
+{
+    // Includes first
+    ${pointcut include_dependencies};
+
+    // Next, the globals and prototypes...
+    ${pointcut global_data_declaration};
+    ${pointcut global_code_declaration};
+    // Followed by the functions...
+    ${pointcut global_code_definition};
+    // And finally the base for the lkm.
+    ${pointcut lkm_base_code_definition};
+};
+\end{lstlisting}
+
+Ainsi, il est possible de définir la structure globale du code à généré. Ce
+mécanisme, qui interfère dans l'étape de génération, devrait être utilisé avec
+beaucoup de précautions.
+
+
+\subsection{Chunk global}
+
+Les chunks situés au sein d'un bloc ``with'' sont appelés des ``chunks
+globaux'', pour la même raison que les points de coupe sont appelés points de
+coupe globaux.
+
+Les chunks globaux seront insérés à la place du point de coupe associé (si
+celui-ci a été sélectionné et inséré dans le code à générer), dès que le bloc
+sera sélectionné pour la génération grâce à ses variables de configuration. Par
+exemple, on peut utiliser ce mécanisme afin de résoudre la problématique des
+dépendances de fichiers à inclure. Voici une illustration de cet exemple :
+
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+}
+
+with LKM
+values OS=windows, version=7
+{
+    chunk include_dependencies
+    {
+        #include "windows.h"
+    }
+}
+\end{lstlisting}
+
 
 
 \chapter{Définir un template}
@@ -259,6 +509,18 @@ with os=Linux, version >= 2.6.24
     }
 }
 \end{lstlisting}
+
+\section{Contenu}
+
+Un bloc template peut contenir un seul type d'expression : les chunks. À
+l'intérieur de ces chunks, il est possible d'utiliser les types des paramètres
+template.
+
+Le bloc du template peut contenir autant de chunks que désiré, incluant les
+chunks associés à des points de coupe builtins (on notera le point de coupe
+``call'' qui est utilisé lors de l'appel d'un template depuis le frontend).
+
+Seul le chunk associé à ``call'' peut utiliser le paramètre du template.
 
 
 \chapter{Variables templates}
@@ -454,7 +716,8 @@ voici la BNF associée :
 \begin{lstlisting}
 // This is the root entry point of the BNF
 
-with_block ::= "with" config_value_list '{' [ template_block ]* '}'
+with_block ::= "with" config_value_list
+                '{' [ "${" tpl_pointcut '}' ';' | chunk | template_block ]* '}'
 
 config_value_list ::= [ config_value ]*
 
@@ -467,7 +730,10 @@ config_condition ::= '<' | "<=" | '=' | "=>" | '>'
 config_value ::= identifier | version
 
 template_block ::= "template" type_key template_prototype
-                    '{' [ C | template_placeholder ]* '}'
+                    '{' [ chunk ]* '}'
+
+chunk ::= "chunk" identifier [ '(' tpl_var_id ')']?
+            '{' [ C | template_placeholder ]* '}'
 
 C ::= // this is the whole C syntax that we wont define here...
 
@@ -479,7 +745,9 @@ tpl_var_list ::= tpl_var_type tpl_var_id [ ',' tpl_var_type tpl_var_id ]*
 
 template_placeholder ::= [ prefix ]? [ template_braced_code ]+ [ postfix ]?
 
-template_braced_code ::= "${" tpl_each | tpl_link | tpl_var '}'
+template_braced_code ::= "${" tpl_each | tpl_link | tpl_var | tpl_pointcut '}'
+
+tpl_pointcut ::= "pointcut" identifier['(' tpl_var ')'] [ "default" ':' C ]?
 
 tpl_each ::= "each" tpl_var "as" alias "in" tpl_proto
 
