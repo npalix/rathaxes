@@ -5,11 +5,14 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
-\title{\rtx\ -- Technical Assessment 2}
+\title{\rtx\ -- Technical Assessment 3}
+\date{10 juin 2011}
 \author{Louis Opter \\ \texttt{<louis@lse.epitech.eu>}}
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={<-, >=latex, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape\Large{\textcolor{rathaxesred}{#1}}}}
 
 \begin{document}
 
@@ -24,20 +27,25 @@ compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux}
 \textcolor{rathaxesred}{Windows} et \textcolor{rathaxesred}{OpenBSD}.~»}}
 \end{frame}
 
+% We could a graph using the commit stats in linux:
 \begin{frame}{Développement de pilotes}
-\begin{itemize}
+\only<1>{
+\begin{center}
+Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
+\end{center}}
+\only<2>{\begin{itemize}
 \item code critique ;
-\item double compétence ;
+\item différentes compétences ;
 \item code spécifique ;
 \item auto formation.
-\end{itemize}
+\end{itemize}}
 \end{frame}
 
 \begin{frame}{Objectifs de Rathaxes}
 \begin{itemize}
 \item imposer plus de vérifications ;
-\item séparer les compétences ;
-\item unifier le développement.
+\item unifier le développement ;
+\item<3-> \cemph{séparer les compétences.}
 \end{itemize}
 \end{frame}
 
@@ -115,184 +123,7 @@ compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux}
 %\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur systèmes}}} ;
 \node[textbox] at (4, 1.5) {\textcolor{white}{Back-end}} ;
 \end{tikzpicture}}
-
-\only<2>{Clair :}
-
-\only<3>{\begin{tikzpicture}
-\node (inc) at (0, 0) {\ttfamily{%
-\begin{tabular}{l}
-++i \\
-i++ \\
-i = i + 1 \\
-i += 1
-\end{tabular}}} ;
-\draw (inc.west) node[left] {Clair :} ;
-\end{tikzpicture}}
-
-\only<4>{\begin{tikzpicture}
-\node (inc) at (0, 0) {\ttfamily{%
-\begin{tabular}{l}
-++i \\
-i++ \\
-i = i + 1 \\
-i += 1
-\end{tabular}}} ;
-\draw (inc.west) node[left] {Clair :} ;
-\draw[color=rathaxesred, ultra thick] (-1, 1) -- (1, -1) ;
-\draw[color=rathaxesred, ultra thick] (-1, -1) -- (1, 1) ;
-\end{tikzpicture}}
-
-\only<5>{\begin{tikzpicture}
-\node (inc) at (0, 0) {\ttfamily{%
-\begin{tabular}{l}
-++i \\
-i++ \\
-i = i + 1 \\
-i += 1
-\end{tabular}}} ;
-\draw (inc.west) node[left] {Clair :} ;
-\draw[color=rathaxesred, ultra thick] (-1, 1) -- (1, -1) ;
-\draw[color=rathaxesred, ultra thick] (-1, -1) -- (1, 1) ;
-\node[draw, color=rathaxesred, rectangle, text=white, rounded corners=3pt, ultra thick] (set) at (3, 0) {\ttfamily{SET(i, i + 1)}} ;
-\draw[componentarrow, ->] (inc.west) to (set) ;
-\end{tikzpicture}}
-
-\only<6>{\begin{tikzpicture}
-\draw (0, 0) node {\ttfamily{DECLARE REGISTER(RW) BIT[8] Register\_Type LIKE(........);}};
-\draw [<-, >=latex, ultra thick, shift={(-0.6, -0.2)}] (0, 0) -- (0, -2) ;
-\draw [<-, >=latex, ultra thick, shift={(4.3, -0.2)}] (0, 0) -- (0, -2) ;
-\draw (1.8, -2.5) node {Verbeux} ;
-\end{tikzpicture}}
-
-\only<7>{\begin{tikzpicture}
-\draw (0, 0) node {\ttfamily{DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS\_ALIGNED\_ON 16;}};
-\draw [<-, >=latex, ultra thick, shift={(0.0, -0.2)}] (0, 0) -- (0, -2) ;
-\draw [<-, >=latex, ultra thick, shift={(3, -0.2)}] (0, 0) -- (0, -2) ;
-\draw (1.5, -2.5) node {Explicite} ;
-\end{tikzpicture}}
-
-\only<8>{\begin{tikzpicture}
-\node [draw, color=rathaxesred, rectangle, text=white, rounded corners=3pt, ultra thick, fill=lightred] (provides) at (0, 0) {%
-\small{\ttfamily{\begin{tabular}{l}
-PROVIDES \{ \\
-    SEQUENCE deliver\_packet(BUFFER packet); \\
-    SEQUENCE register\_eth(STRING name); \\
-\};
-\end{tabular}}}};
-\node [above] (declare) at (-0.43, 1) {\small{\ttfamily{DECLARE INTERFACE interface\_name \{}}};
-\node [draw, color=rathaxesred, rectangle, text=white, rounded corners=3pt, ultra thick, fill=lightred, below] (sequences) at (0.49, -1.2) {%
-\small{\ttfamily{\begin{tabular}{l}
-    REQUIRE SEQUENCE send\_packet(BUFFER packet); \\
-    OPTIONAL SEQUENCE change\_mtu(INTEGER mtu); \\
-    OPTIONAL SEQUENCE get\_statistics(); \\
-\};
-\end{tabular}}}};
-\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (declare) (sequences) (provides)] {} ;
-\draw (box.west) node[left] {Interfaces :} ;
-\end{tikzpicture}}
-
-\only<9>{%
-\begin{itemize}
-\item Gestion d’erreurs ;
-\item Gestion de configuration avancée ;
-\item Conditions \& boucles ;
-\item Types de haut niveau.
-\end{itemize}}
-
 \end{center}
-\end{frame}
-
-% Note: I wanted to have only one frame for Compiler + Composants but then
-% this first sentence is not properlly vertically centered.
-\begin{frame}{Compilateur}
-\begin{center}
-\LARGE{\itshape{Séparé en plusieurs composants :}}
-\end{center}
-\end{frame}
-
-\begin{frame}{Composants du compilateur}
-
-\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
-\tikzset{hidden/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=black}}
-
-\begin{overprint}
-
-\onslide<1>
-\begin{center}
-\begin{tikzpicture}
-\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
-\node[component] (cnorm) at (-3, 0)  {\textcolor{white}{\LARGE{CNorm}}} ;
-\node[component, below] (codeworker) at (cnorm.south) {\textcolor{white}{\large{CodeWorker}}} ;
-\node[hidden] (rtxparse) at (2, 2.1)     {\Large{RTX\_Parse}} ;
-\node[hidden] (rtxtree)  at (2, 0.7)     {\Large{RTX\_Tree}} ;
-\node[hidden] (rtxlink)  at (2, -0.7)    {\Large{RTX\_Link}} ;
-\node[hidden] (rtxtpl)   at (2, -2.1)    {\Large{RTX\_Tpl}} ;
-\end{tikzpicture}
-\end{center}
-
-\onslide<2>
-\begin{center}
-\begin{tikzpicture}
-\tikzset{component/.style={draw, rectangle, rounded corners=3pt, ultra thick, color=rathaxesred}}
-\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
-\node[component, below] (codeworker) at (cnorm.south) {\textcolor{white}{\large{CodeWorker}}} ;
-\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
-\node[hidden] (rtxtree)     at (2, 0.7)     {\Large{RTX\_Tree}} ;
-\node[hidden] (rtxlink)     at (2, -0.7)    {\Large{RTX\_Link}} ;
-\node[hidden] (rtxtpl)      at (2, -2.1)    {\Large{RTX\_Tpl}} ;
-\draw[componentarrow] (cnorm) to (rtxparse) ;
-\end{tikzpicture}
-\end{center}
-
-\onslide<3>
-\begin{center}
-\begin{tikzpicture}
-\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
-\node[component, below] (codeworker) at (cnorm.south) {\textcolor{white}{\large{CodeWorker}}} ;
-\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
-\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
-\node[hidden] (rtxlink)     at (2, -0.7)    {\Large{RTX\_Link}} ;
-\node[hidden] (rtxtpl)      at (2, -2.1)    {\Large{RTX\_Tpl}} ;
-\draw[componentarrow] (cnorm) to (rtxparse) ;
-\draw[componentarrow] (cnorm) to (rtxtree) ;
-\end{tikzpicture}
-\end{center}
-
-\onslide<4>
-\begin{center}
-\begin{tikzpicture}
-\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
-\node[component, below] (codeworker) at (cnorm.south) {\textcolor{white}{\large{CodeWorker}}} ;
-\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
-\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
-\node[component] (rtxlink)  at (2, -0.7)    {\textcolor{white}{\Large{RTX\_Link}}} ;
-\node[hidden] (rtxtpl)   at (2, -2.1)       {\Large{RTX\_Tpl}} ;
-\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (rtxlink) (rtxtpl)] {} ;
-\draw[componentarrow] (cnorm) to (rtxparse) ;
-\draw[componentarrow] (cnorm) to (rtxtree) ;
-\draw[componentarrow] (codeworker) to (rtxlink) ;
-\end{tikzpicture}
-\end{center}
-
-\onslide<5>
-\begin{center}
-\begin{tikzpicture}
-\node[component] (cnorm)    at (-3, 0)      {\textcolor{white}{\LARGE{CNorm}}} ;
-\node[component, below] (codeworker) at (cnorm.south) {\textcolor{white}{\large{CodeWorker}}} ;
-\node[component] (rtxparse) at (2, 2.1)     {\textcolor{white}{\Large{RTX\_Parse}}} ;
-\node[component] (rtxtree)  at (2, 0.7)     {\textcolor{white}{\Large{RTX\_Tree}}} ;
-\node[component] (rtxlink)  at (2, -0.7)    {\textcolor{white}{\Large{RTX\_Link}}} ;
-\node[component] (rtxtpl)   at (2, -2.1)    {\textcolor{white}{\Large{RTX\_Tpl}}} ;
-\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (rtxlink) (rtxtpl)] {} ;
-\draw[componentarrow] (cnorm) to (rtxparse) ;
-\draw[componentarrow] (cnorm) to (rtxtree) ;
-\draw[componentarrow] (codeworker) to (rtxlink) ;
-\draw[componentarrow] (codeworker) to (rtxtpl) ;
-\end{tikzpicture}
-\end{center}
-
-\end{overprint}
-
 \end{frame}
 
 \begin{frame}{Merci}
