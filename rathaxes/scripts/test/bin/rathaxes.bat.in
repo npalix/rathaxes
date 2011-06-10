@@ -1,8 +1,14 @@
 @echo off
 
-set CNORM_PATH="@CNORM_PATH@"
-set COMPILER_PATH="@COMPILER_PATH@"
+rem Codeworker doesn't work with relative paths...
+rem This sucks since this won't work if you cd elsewhere
+rem This will ends up in something like the Visual Studio Shell.
 
-set INCLUDE_PATHS="-I %CNORM_PATH% -I %COMPILER_PATH%"
+set CNORM_PATH="%CD%/@CNORM_PATH@"
+set COMPILER_PATH="%CD%/@COMPILER_PATH@"
 
-@CODEWORKER_PATH@ --quiet %INCLUDE_PATHS% -script %COMPILER_PATH%/rathaxes.cws -args %*
+set INCLUDE_PATHS=-I %CNORM_PATH% -I %COMPILER_PATH%
+
+"%CD%/@CODEWORKER_PATH@" --quiet %INCLUDE_PATHS% -script %COMPILER_PATH%/rathaxes.cws -args %*
+
+pause
