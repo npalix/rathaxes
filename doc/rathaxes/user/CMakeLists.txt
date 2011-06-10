@@ -5,7 +5,7 @@ SET(USERS_DOC
     firststeps_fr
     dsl_frontend_en
     dsl_frontend_fr
-    dsl_backend_end
+    dsl_backend_en
     dsl_backend_fr
    )
 
