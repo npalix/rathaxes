@@ -45,14 +45,14 @@ Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
 \begin{itemize}
 \item imposer plus de vérifications ;
 \item unifier le développement ;
-\item<3-> \cemph{séparer les compétences.}
+\item<2-> \cemph{séparer les compétences.}
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Séparation des compétences}
 
 \begin{center}
-\only<1>{\LARGE\itshape{{Trois types d'utilisateurs :}}}
+\only<1>{\LARGE\itshape{{Deux domaines de compétences :}}}
 
 \only<2>{\begin{tikzpicture}
 \draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
@@ -75,22 +75,7 @@ Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
 \draw (-4, -3) node{\ldots} ;
 
 \draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur Rathaxes}}} ;
-
-\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur systèmes}} ;
-\draw (4, 0.5) node[below]{\includegraphics[width=2cm]{logos/tux}} ;
-\draw (4, 0) node[above]{\includegraphics[width=2cm]{logos/windows_7_white}} ;
-\draw (4, -3) node{\ldots} ;
-\end{tikzpicture}}
-
-\only<4>{\begin{tikzpicture}
-\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
-\draw (-4, -1) node[below]{\includegraphics[width=2cm]{logos/nvidia_white}} ;
-\draw (-4, 0) node[below]{\includegraphics[width=2cm]{logos/intel}} ;
-\draw (-4, 0.5) node[below]{\includegraphics[width=2cm]{logos/broadcom_white}} ;
-\draw (-4, -3) node{\ldots} ;
-
-\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur Rathaxes}} ;
-\draw (-0.5, 0.5) node[below]{\includegraphics[width=2cm]{logo_latex}} ;
+%\draw (-0.5, 0.5) node[below]{\includegraphics[width=2cm]{logo_latex}} ;
 
 \draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur systèmes}} ;
 \draw (4, 0.5) node[below]{\includegraphics[width=2cm]{logos/tux}} ;
@@ -104,7 +89,6 @@ Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
 
 \transdissolve<2>
 \transdissolve<3>
-\transdissolve<4>
 \end{frame}
 
 \begin{frame}{Langage}
@@ -115,13 +99,46 @@ Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
 \tikzset{textbox/.style={draw, ultra thick, color=rathaxesred, minimum width=2.5cm, minimum height=4cm, rectangle, rathaxesred, rounded corners=3pt, fill=lightred}}
 \begin{tikzpicture}
 %\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
-\node[textbox] at (-4, 1.5) {\textcolor{white}{Front-end}} ;
+\node[textbox] (frontend) at (-4, 1.5) {\textcolor{white}{Front-end}} ;
+\draw (-4, -1) node (title) {\cemph{Rathaxes}} ;
 
 %\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur Rathaxes}}} ;
-\node[textbox] at (0, 1.5) {\textcolor{white}{Middle-end}} ;
+%\node[textbox] (middleend) at (0, 1.5) {\textcolor{white}{Middle-end}} ;
 
 %\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur systèmes}}} ;
-\node[textbox] at (4, 1.5) {\textcolor{white}{Back-end}} ;
+\node[textbox] (backend) at (4, 1.5) {\textcolor{white}{Back-end}} ;
+\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (frontend) (backend) (title)] {} ;
+\end{tikzpicture}}
+
+\only<2>{%
+\tikzset{textbox/.style={draw, ultra thick, color=rathaxesred, minimum width=2.5cm, minimum height=4cm, rectangle, rathaxesred, rounded corners=3pt, fill=lightred}}
+\begin{tikzpicture}
+%\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
+\node[textbox] (frontend) at (-4, 1.5) {\textcolor{white}{Front-end}} ;
+\draw (-4, -1) node (title) {\cemph{Rathaxes}} ;
+
+%\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur Rathaxes}}} ;
+\node[textbox] (middleend) at (0, 1.5) {\textcolor{white}{Middle-end}} ;
+
+%\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur systèmes}}} ;
+\node[textbox] (backend) at (4, 1.5) {\textcolor{white}{Back-end}} ;
+\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (frontend) (middleend) (backend) (title)] {} ;
+\end{tikzpicture}}
+
+\only<3>{%
+\tikzset{textbox/.style={draw, ultra thick, color=rathaxesred, minimum width=2.5cm, minimum height=4cm, rectangle, rathaxesred, rounded corners=3pt, fill=lightred}}
+\tikzset{disabledbox/.style={draw, ultra thick, color=rathaxesred, minimum width=2.5cm, minimum height=4cm, rectangle, rathaxesred, rounded corners=3pt, fill=lightred, opacity=0.3}}
+\begin{tikzpicture}
+%\draw (-4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\small{Développeur de pilotes}} ;
+\node[textbox] (frontend) at (-4, 1.5) {\textcolor{white}{Front-end}} ;
+\draw (-4, -1) node (title) {\cemph{Rathaxes}} ;
+
+%\draw (0, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur Rathaxes}}} ;
+\node[disabledbox] (middleend) at (0, 1.5) {\textcolor{white}{Middle-end}} ;
+
+%\draw (4, 1.5) node[above, text width=2cm, text centered, rotate=45]{\textcolor{black}{\small{Développeur systèmes}}} ;
+\node[disabledbox] (backend) at (4, 1.5) {\textcolor{white}{Back-end}} ;
+\node[draw] (box) [ultra thick, dashed, color=rathaxesred, rounded corners=3pt, fit = (frontend) (middleend) (backend) (title)] {} ;
 \end{tikzpicture}}
 \end{center}
 \end{frame}
