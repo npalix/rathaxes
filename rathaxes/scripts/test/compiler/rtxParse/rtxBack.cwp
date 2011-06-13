@@ -39,19 +39,6 @@ rtx_stmt_with_operator ::=
 	"=" | ["<=" | ">=" | '<' [#!ignore !'<'] | '>' [#!ignore !'>'] ]
 ;
 
-rtx_stmt_with_value(theValue : node) ::=
-        #readIdentifier:sId
-        [ #!ignore !"." ]
-        #check(rtxNodeIdentifier(theValue, sId))
-    |
-        #readInteger:sInt
-        [ #!ignore !"." ]
-        #check(rtxNodeNumber(theValue, sInt))
-    |
-        #check(rtxNodeSerial(theValue))
-        rtx_serial(theValue)
-;
-
 rtx_stmt_with_constraint(theList : node) ::=
     #pushItem(theList)
 /**/=> local identifier;
@@ -59,7 +46,7 @@ rtx_stmt_with_constraint(theList : node) ::=
     rtx_stmt_with_operator:sOperator
 /**/=> local theVal;
     #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
-    rtx_stmt_with_value(theVal)
+    rtx_value(theVal)
 ;
 
 rtx_stmt_with_constraints(theList: node) ::=

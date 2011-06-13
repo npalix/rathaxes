@@ -66,3 +66,17 @@ rtx_serial(theSerial : node) ::=
         #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
     ]*
 ;
+
+rtx_value(theValue : node) ::=
+        #readIdentifier:sId
+        [ #!ignore !"." ]
+        #check(rtxNodeIdentifier(theValue, sId))
+    |
+        #readInteger:sInt
+        [ #!ignore !"." ]
+        #check(rtxNodeNumber(theValue, sInt))
+    |
+        #check(rtxNodeSerial(theValue))
+        rtx_serial(theValue)
+;
+
