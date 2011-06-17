@@ -13,7 +13,11 @@ rtx_stmt_config_block(theBlock : node) ::=
         #check(rtxNodeConfig_BodyAddField(theBlock,
                                           configField, theIdentifier, theValue))
         rtx_scoped_identifier(theIdentifier)
+        #continue(sError, "Expected assignment operator '=' after"
+                        + " configuration variable declaration.")
         '='
+        #continue(sError, "Expected value after configuration variable "
+                        + "assignment.")
         rtx_value(theValue)
         #continue(sError, "Expected extension block or "
                         + "';' after configuration variable assignment.")
@@ -23,8 +27,7 @@ rtx_stmt_config_block(theBlock : node) ::=
 /**/            =>local theBody;
                 #check(rtxNodeConfigField_Extend(configField, theBody))
                 rtx_stmt_config_block(theBody)
-                #continue(sError, "Expected '{' closing "
-                                + "configuration extension block.")
+                #continue(sError, "Expected '}' closing block.")
             '}'
         |
             /* Does not support extension */
@@ -34,7 +37,7 @@ rtx_stmt_config_block(theBlock : node) ::=
 ;
 
 rtx_stmt<"configuration">(theBlock : node) ::=
-    #pushItem(theBlock)
+    #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
 /**/=> local configBody;

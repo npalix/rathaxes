@@ -11,7 +11,7 @@ function rtxNodeConfig(local_node   : node,
 
     insert local_node.body;
     cnormNodeBlock(local_node.body);
-    out_ref_body = local_node.body;
+    ref out_ref_body = local_node.body;
 
     return true;
 }
@@ -26,8 +26,8 @@ function rtxNodeConfigField(local_node  : node,
     insert local_node.id;
     insert local_node.val;
 
-    out_ref_id = local_node.id;
-    out_ref_val = local_node.val;
+    ref out_ref_id = local_node.id;
+    ref out_ref_val = local_node.val;
 
     return true;
 }
@@ -43,9 +43,12 @@ function rtxNodeConfig_BodyAddField(local_node      : node,
         return false;
     pushItem local_node.block;
     
-    out_ref_field = local_node.block#back;
+    ref out_ref_field = local_node.block#back;
     
-    return rtxNodeConfigField(out_ref_field, out_ref_id, out_ref_val);
+    if (rtxNodeConfigField(out_ref_field, out_ref_id, out_ref_val) == false)
+        return false;
+
+    return true;
 }
 
 function rtxNodeConfigField_Extend(local_node   : node,
@@ -56,7 +59,7 @@ function rtxNodeConfigField_Extend(local_node   : node,
 
     insert local_node.extension;
     cnormNodeBlock(local_node.extension);
-    out_ref_body = local_node.extension;
+    ref out_ref_body = local_node.extension;
 
     return true;
 }
