@@ -32,6 +32,16 @@ function rtxNodeNumber(local_node : node, nb : value)
     return true;
 }
 
+function rtxNodeString(local_node : node, string : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_cstring__";
+
+    insert local_node.val = string;
+
+    return true;
+}
+
 function rtxNodeSerialUnit(local_node : node, theUnit : value)
 {
     rtxNode(local_node);
