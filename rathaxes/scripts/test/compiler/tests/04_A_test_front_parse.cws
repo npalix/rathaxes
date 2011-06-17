@@ -1,0 +1,73 @@
+/*
+ * Test for Front parsing
+ */
+
+local working_directory = "__04_A_test_front_parse";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+local dummy;
+local input;
+generateString({
+    configuration
+    {
+        LKM::arch = x86;
+        LKM::version_major = 1;
+        LKM::version_minor = 2;
+        LKM::version_patch = 1;
+
+         LKM::OS = Windows
+         {
+             LKM::driver_uid = 43298542HBFJDHF42HFJDHF;
+             LKM::driver_uid2 = FDHJFD43298542HBFJDHF42HFJDHF;
+         }
+
+         LKM::OS = Linux
+         {
+             LKM::version = 2.6.24
+             {
+                 // some extension here
+             }
+             LKM::something = "Blurp";
+         }
+
+         LKM::OS = OpenBSD
+         {
+             LKM::version = 4.8;
+         }
+    }
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "rtxNode/rtxNode.inc.cws"
+
+traceLine("input:\n" + input);
+
+
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("01_rtx_parse.tree", source);
+traceLine("====>Result of parsing: 01_rtx_parse.tree");
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}
