@@ -23,6 +23,53 @@ function        rtxNodeRType(local_node : node,
     return true;
 }
 
+function        rtxRTypeName<T>(theNode : node)
+{
+    traceLine("Bad node type: " + T + "\n");
+    error("Bad node type: " + T + "\n");
+}
+
+function        rtxRTypeName<"__rtx_rtype__">(rTypeNode : node)
+{
+    return rTypeNode.name.scope + "::" + rTypeNode.name.name;
+}
+
+function        rtxRTypeName<"__rtx_id__">(theNode : node)
+{
+    return theNode.scope + "::" + theNode.name;
+}
+
+function        rtxRTypeFullQualfiedName<T>(rTypeNode : node, identifiers : node)
+{
+    local       fullString;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "{";
+    fullString += joinStrings(identifiers, ",");
+    fullString += "}";
+    return fullString;
+}
+
+function        rtxRTypeFullQualfiedName<"variable">(rTypeNode : node, identifiers : node)
+{
+    return rtxRTypeName<rTypeNode.type>(rTypeNode) + "{}";
+}
+
+function        rtxRTypeFullQualfiedName<"sequence">(rTypeNode : node,
+                                                     identifiers : node)
+{
+    local       fullString;
+    local       paramsNameList;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "(";
+    foreach entry in rTypeNode.params
+    {
+        pushItem paramsNameList;
+        paramsNameList#back = rtxRTypeName<entry.type>(entry);
+    }
+    fullString += joinStrings(paramsNameList, ",") + ")";
+    return fullString;
+}
+
 function rtxNodeNumber(local_node : node, nb : value)
 {
     rtxNode(local_node);
