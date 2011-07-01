@@ -82,8 +82,8 @@ rtx_seq_param(theNode : node, theIdentifiers : node) ::=
 ;
 
 rtx_seq_parameter(theNode : node, theIdentifiers : node) ::=
-    '(' rtx_seq_param(theNode.params, theIdentifiers)
-    [',' rtx_seq_param(theNode.params, theIdentifiers)]* ')'
+    '(' [rtx_seq_param(theNode.params, theIdentifiers)
+    [',' rtx_seq_param(theNode.params, theIdentifiers)]*]? ')'
 ;
 
 rtx_itf_stmt<"sequence">(theNode : node) ::=
