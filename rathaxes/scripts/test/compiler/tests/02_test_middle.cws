@@ -18,22 +18,22 @@ generateString({
         // Simple interface
         interface BaseInterface
         {
-            provided    type    a_type;
+            provided    type    BaseInterface::a_type;
         }
 
         // interface with inheritance
         interface Userland : BaseInterface, OtherInterface
         {
-            required variable   req_var_type    dummy_name;
-            provided            builtintype     pro_builtin;
-            provided            type            some_type;
-            optional            type            opt_type { foo; bar; };
-            required            sequence        req_sequence(type1 a, type2 , type3 c);
+            required variable   Userland::req_var_type    dummy_name;
+            provided            builtintype     Userland::pro_builtin;
+            provided            type            Userland::some_type;
+            optional            type            Userland::opt_type { foo; bar; };
+            required            sequence        Userland::req_sequence(type1 a, type2 , type3 c);
         }
 
         interface OtherInterface
         {
-            required    builtintype     btype;
+            required    builtintype     OtherInterface::btype;
         }
 
 @}, dummy, input);

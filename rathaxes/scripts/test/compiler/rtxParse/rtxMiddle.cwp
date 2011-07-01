@@ -52,19 +52,23 @@ rtx_type_list(theNode : node) ::=
 ;
 
 rtx_itf_stmt<"type">(theNode : node) ::=
-    #readIdentifier:sName
-    #check(rtxNodeRType(theNode.rtype, sName))
+    => local nameNode;
+    rtx_scoped_identifier(nameNode)
+    #check(rtxNodeRType(theNode.rtype, nameNode))
     ['{' [rtx_type_list(theNode.identifiers)]* '}']?
 ;
 
 rtx_itf_stmt<"builtintype">(theNode : node) ::=
-    #readIdentifier:name
-    #check(rtxNodeRType(theNode.rtype, name))
+    => local nameNode;
+    rtx_scoped_identifier(nameNode)
+    #check(rtxNodeRType(theNode.rtype, nameNode))
 ;
 
 rtx_itf_stmt<"variable">(theNode : node) ::=
-    #readIdentifier:sType #readIdentifier:sName
-    #check(rtxNodeRType(theNode.rtype, sType))
+    => local typeNode;
+    rtx_scoped_identifier(typeNode)
+    #readIdentifier:sName
+    #check(rtxNodeRType(theNode.rtype, typeNode))
     #pushItem(theNode.identifiers)
     => theNode.identifiers#back = sName;
 ;
@@ -83,7 +87,8 @@ rtx_seq_parameter(theNode : node, theIdentifiers : node) ::=
 ;
 
 rtx_itf_stmt<"sequence">(theNode : node) ::=
-    #readIdentifier:sName
-    #check(rtxNodeRType(theNode.rtype, sName))
+    => local nameNode;
+    rtx_scoped_identifier(nameNode)
+    #check(rtxNodeRType(theNode.rtype, nameNode))
     rtx_seq_parameter(theNode.rtype, theNode.identifiers)
 ;
