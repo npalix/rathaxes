@@ -1,0 +1,128 @@
+\documentclass{beamer}
+
+\usepackage[francais]{babel}
+\usepackage{rtxslides}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\title{\rtx\ -- RMLL 2011}
+\date{8 Juillet 2011}
+\author{\rtx \\ \texttt{www.rathaxes.org}}
+
+\definecolor{lightred}{RGB}{147,36,33}
+\tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
+
+\newcommand{\tred}[1]{\textcolor{rathaxesred}{#1}}
+\newcommand{\twhite}[1]{\textcolor{white}{#1}}
+
+\tikzset{warrow/.style={->, >=stealth, color=white, ultra thick}}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Pilotes de périphériques}
+\begin{center}
+\only<1>{\LARGE{Souvent \cemph{\Huge{instables}} et \cemph{\Huge{bancals}}}}
+\only<2>{%
+\large{\itshape{\rmfamily{«~\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}~»}}}
+
+\vspace{1cm}
+\raggedleft\large{2.6.39: \itshape{\rmfamily{«~les pilotes (\tred{65 \% des patches})~»}} (patrick\_g)}
+
+\vspace{1cm}
+\large{2.6.35: \itshape{\rmfamily{«~les \tred{deux tiers des changements} dans les pilotes~»}}}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{Développement de pilotes de périphériques}
+\begin{center}
+\only<1>{\Large{Une tâche \cemph{\LARGE{difficile}}, \cemph{\LARGE{longue}} et \cemph{\LARGE{fastidieuse}}}}
+\only<2>{\Large{%
+\begin{itemize}
+\item Compétences requises ;
+\item Portabilité ;
+\item Maintenance.
+\end{itemize}
+}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Objectifs du DSL \rtx}
+\begin{center}
+\Large{\begin{itemize}
+\item Abstraction de la plateforme ;
+\item Vérifications statiques ;
+\item Séparation des compétences.
+\end{itemize}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Génération d'un pilote}
+\only<1>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred] (COMPILER) at (2,-0.5) {\twhite{Compilateur}};
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow] (RTX)--(COMPILER);
+\draw[warrow] (COMPILER)--(C);
+
+\draw (RTX.north east) node[below right]{%
+\begin{minipage}{9cm}
+Description du pilote :
+\small{
+\begin{itemize}
+\item Description du matériel ;
+\item Algorithmes ;
+\item Paramètres spécifiques à chaque système.
+\end{itemize}}
+\end{minipage}};
+\end{tikzpicture}}
+
+\only<2>{\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred] (COMPILER) at (2,-0.5) {\twhite{Compilateur}};
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow] (RTX)--(COMPILER);
+\draw[warrow] (COMPILER)--(C);
+
+\node[below right] (H1) at (RTX.north east) {%
+\begin{minipage}{7.5cm}
+Description du pilote : \\
+\small{\texttt{
+device Pipe use LKM, CharDev, Algorithms \{
+\hspace*{1ex} open(Context ctx) \{ \\
+\hspace*{2ex} log(“Open called on device Pipe”); \\
+\hspace*{1ex} \} \\
+\}
+}}
+\end{minipage}};
+\end{tikzpicture}}
+
+\only<3>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[draw,rectangle,rounded corners=5pt,minimum height=3.5cm, minimum width=2.5cm,ultra thick,color=rathaxesred] (COMPILER) at (2,-0.5) {};
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow,opacity=0.3] (RTX)--(COMPILER);
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+
+\draw (RTX.north east) node[below right, opacity=0.3]{Description du pilote};
+\draw (COMPILER.south east) node[above right]{Compilateur};
+
+\end{tikzpicture}}
+\end{frame}
+
+\end{document}
