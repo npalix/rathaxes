@@ -6,3 +6,6 @@ ADD_LATEX_DOCUMENT(2011_lse_internal.tex
                    IMAGE_DIRS pictures
                   )
 
+ADD_LATEX_DOCUMENT(rmll.tex
+                   DEFAULT_PDF MANGLE_TARGET_NAMES
+                  )
