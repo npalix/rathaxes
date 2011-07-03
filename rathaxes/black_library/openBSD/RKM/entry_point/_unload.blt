@@ -1,0 +1,21 @@
+<%
+/*
+**      unload.blt in black_library/openBSD/RKM/entry_point/
+**      for Rathaxes project
+**      made by Filth
+*/
+
+local   sDriverName = this.name;
+%>
+
+ADVICE unload PART_OF RKM
+{
+	/*
+	 ** LKM exit point
+	 */
+	static int      @sDriverName@_unload(struct lkm_table *l, int cmd)
+	{
+		JOINPOINT unregistration IN RKM.kernel_registration.unregistration;
+		return (0);
+	}
+};

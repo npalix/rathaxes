@@ -1,0 +1,508 @@
+\documentclass{beamer}
+
+\usepackage[francais]{babel}
+\usepackage{rtxslides}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\title{\rtx\ -- RMLL 2011}
+\date{8 Juillet 2011}
+\author{\rtx \\ \texttt{www.rathaxes.org}}
+
+\definecolor{lightred}{RGB}{147,36,33}
+\tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
+
+\newcommand{\tred}[1]{\textcolor{rathaxesred}{#1}}
+
+\tikzset{warrow/.style={->, >=stealth, color=white, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=white}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+
+\lstset{ %
+numbers=left,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+stepnumber=0,                   % the step between two line-numbers. If it's 1, each line
+                                % will be numbered
+basicstyle=\footnotesize\ttfamily,
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{black},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+tabsize=2,                      % sets default tabsize to 2 spaces
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)},         % if you want to add a comment within your code
+morekeywords={*,...}            % if you want to add more keywords to the set
+}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Pilotes de périphériques}
+\begin{center}
+\only<1>{\LARGE{Souvent \cemph{\Huge{instables}} et \cemph{\Huge{bancals}}}}
+\only<2>{%
+\large{\itshape{\rmfamily{«~\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}~»}}}
+
+\vspace{1cm}
+\raggedleft\large{2.6.39: \itshape{\rmfamily{«~les pilotes (\tred{65 \% des patches})~»}} (patrick\_g)}
+
+\vspace{1cm}
+\large{2.6.35: \itshape{\rmfamily{«~les \tred{deux tiers des changements} dans les pilotes~»}}}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{Développement de pilotes de périphériques}
+\begin{center}
+\only<1>{\Large{Une tâche \cemph{\LARGE{difficile}}, \cemph{\LARGE{longue}} et \cemph{\LARGE{fastidieuse}}}}
+\only<2>{\Large{%
+\begin{itemize}
+\item Compétences requises ;
+\item Portabilité ;
+\item Maintenance.
+\end{itemize}
+}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Objectifs du DSL \rtx}
+\begin{center}
+\Large{\begin{itemize}
+\item Abstraction de la plateforme ;
+\item Vérifications statiques ;
+\item Séparation des compétences.
+\end{itemize}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Génération d'un pilote}
+\only<1>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[redbox] (COMPILER) at (2,-0.5) {Compilateur};
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow] (RTX)--(COMPILER);
+\draw[warrow] (COMPILER)--(C);
+
+\draw (RTX.north east) node[below right]{%
+\begin{minipage}{9cm}
+\large{Description du pilote :}
+\small{
+\begin{itemize}
+\item Description du matériel ;
+\item Algorithmes ;
+\item Paramètres spécifiques à chaque système.
+\end{itemize}}
+\end{minipage}};
+
+\draw (C.north east) node [below right]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<2>{\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[redbox] (COMPILER) at (2,-0.5) {Compilateur};
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow] (RTX)--(COMPILER);
+\draw[warrow] (COMPILER)--(C);
+
+\node[below right] (H1) at (RTX.north east) {%
+\begin{minipage}{7.5cm}
+\large{Description du pilote :} \\
+\small{\texttt{
+device Pipe use LKM, CharDev, Algorithms \{
+\hspace*{1ex} open(Context ctx) \{ \\
+\hspace*{2ex} log(“Open called on device Pipe”); \\
+\hspace*{1ex} \} \\
+\}
+}}
+\end{minipage}};
+\draw (C.north east) node [below right]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<3>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\draw[warrow,opacity=0.3] (RTX)--(COMPILER);
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<4>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{AST}};
+\draw[warrow] (RTX)--(AST1);
+
+%\node[graybox] (AST2) at (2,-1.5) {\texttt{AST}};
+%\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+
+%\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{RTX\_Link}};
+%\draw[warrow] (AST1)--(RTXLINK);
+%\draw[warrow] (RTXLINK)--(AST2);
+
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<5>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{AST}};
+\draw[warrow] (RTX)--(AST1);
+
+%\node[graybox] (AST2) at (2,-1.5) {\texttt{AST}};
+%\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{RTX\_Link}};
+\draw[warrow] (AST1)--(RTXLINK);
+%\draw[warrow] (RTXLINK)--(AST2);
+
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<6>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{AST}};
+\draw[warrow] (RTX)--(AST1);
+
+%\node[graybox] (AST2) at (2,-1.5) {\texttt{AST}};
+%\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{RTX\_Link}};
+\draw[warrow] (AST1)--(RTXLINK);
+%\draw[warrow] (RTXLINK)--(AST2);
+
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+
+\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.east) node[above right]{\Large{Interfaces}};
+\draw[warrow] (RTI.west)--(RTXLINK.north);
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<7>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{AST}};
+\draw[warrow] (RTX)--(AST1);
+
+%\node[graybox] (AST2) at (2,-1.5) {\texttt{AST}};
+%\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{RTX\_Link}};
+\draw[warrow] (AST1)--(RTXLINK);
+%\draw[warrow] (RTXLINK)--(AST2);
+
+\draw[warrow,opacity=0.3] (COMPILER)--(C);
+
+\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.east) node[above right]{\Large{Interfaces}};
+\draw[warrow] (RTI.west)--(RTXLINK.north);
+
+\node (BLT) at (4.5,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
+\draw (BLT.east) node[above right]{\Large{Patrons de code}};
+\draw[warrow] (BLT.west)--(RTXLINK);
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+
+\only<8>{\begin{tikzpicture}[overlay]
+\node[right] (O) at (0,0) {$\bullet$};
+
+\node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
+
+\node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{AST}};
+\draw[warrow] (RTX)--(AST1);
+
+\node[graybox] (AST2) at (2,-1.5) {\texttt{AST}};
+\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\Large{Compilateur}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{RTX\_Link}};
+\draw[warrow] (AST1)--(RTXLINK);
+\draw[warrow] (RTXLINK)--(AST2);
+
+\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.east) node[above right]{\Large{Interfaces}};
+\draw[warrow] (RTI.west)--(RTXLINK.north);
+
+\node (BLT) at (4.5,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
+\draw (BLT.east) node[above right]{\Large{Patrons de code}};
+\draw[warrow] (BLT.west)--(RTXLINK);
+\draw (C.north east) node [below right, opacity=0.3]{\large{Module noyau}};
+\end{tikzpicture}}
+\end{frame}
+
+\begin{frame}{Interfaces et patrons de code}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.north east) node[below right]{%
+\begin{minipage}{10cm}
+Décrivent un \emph{«~sous système~»} avec :
+\begin{itemize}
+\item Des types ;
+\item Des séquences ;
+\item Des variables de configuration.
+\end{itemize}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Interfaces et patrons de code}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{10cm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Interfaces et patrons de code}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{10cm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-2.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.north east) node[below right]{%
+\begin{minipage}{10cm}
+Implémentations des interfaces pour chaque OS :
+\begin{itemize}
+\item Templates de types ;
+\item Templates de séquences.
+\end{itemize}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Interfaces et patrons de code}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{10cm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-2.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{%
+\begin{minipage}{10cm}
+\begin{lstlisting}
+with CharDev
+values OS = Linux, version >= 2.6.27 {
+  template sequence CharDev::open(Context ctx) {
+     chunk LKM::GLOBAL_CODE_DEFINITION {
+         /* C instrumente */
+     }
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Tissage des ASTs}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+device Pipe use LKM, CharDev, Algorithms {
+  open(Context ctx) {
+     log("Open called on device Pipe");
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (RTI) at (1.2,-0.1) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+with CharDev
+values OS = Linux, version >= 2.6.27 {
+  template sequence CharDev::open(Context ctx) {
+     chunk LKM::GLOBAL_CODE_DEFINITION {
+         /* C instrumente */
+     }
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Tissage des ASTs}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+device Pipe use LKM, CharDev, Algorithms {
+  open(Context ctx) {
+     log("Open called on device Pipe");
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (RTI) at (1.2,-0.1) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+with CharDev
+values OS = Linux, version >= 2.6.27 {
+  template sequence CharDev::open(Context ctx) {
+     chunk LKM::GLOBAL_CODE_DEFINITION {
+         /* C instrumente */
+     }
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
+\end{frame}
+
+\end{document}

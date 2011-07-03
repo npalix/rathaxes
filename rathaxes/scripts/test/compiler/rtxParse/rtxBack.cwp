@@ -1,0 +1,157 @@
+//////// POINTCUT
+rtx_pointcut(theBlock : node) ::=
+/**/=>traceLine("POINTCUT!");
+    #pushItem(theBlock.block)
+/**/=> local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    rtx_template_code:sPlaceHolder
+    #continue(sError, "Expected ';' after pointcut in with block.")
+    ';'
+    #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
+;
+
+/////// TEMPLATE
+rtx_stmt<"template">(theBlock : node) ::=
+/**/=>traceLine("TEMPLATE!");
+    // TODO: The proto is not parsed properly yet (we take everything)
+    [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // horrible barbarian way
+        ////////
+        // Create a block to host the template node.
+        #pushItem(theBlock.block)
+/**/    => local lastNode;
+        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+        // Create a rtxTPL node.
+        // The chunk_block var will reference the block of chunks
+/**/    => local chunk_block;
+        #check(rtxNodeTpl(lastNode, head, chunk_block))
+/**/    => traceLine("tplproto :" + head + " next:" + peekChar());
+/**/    =>traceLine("Chunks!");
+        [
+            // Theoretically, the template should only contain chunks...
+            "chunk" rtx_stmt<"chunk">(chunk_block)
+        ]*
+    '}'
+;
+
+
+/////// WITH
+rtx_stmt_with_operator ::=
+	"=" | ["<=" | ">=" | '<' [#!ignore !'<'] | '>' [#!ignore !'>'] ]
+;
+
+rtx_stmt_with_constraint(theList : node) ::=
+    #pushItem(theList)
+/**/=> local identifier;
+    rtx_scoped_identifier(identifier)
+    rtx_stmt_with_operator:sOperator
+/**/=> local theVal;
+    #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
+    rtx_value(theVal)
+;
+
+rtx_stmt_with_constraints(theList: node) ::=
+    rtx_stmt_with_constraint(theList)
+    [
+        ','
+        #continue
+        rtx_stmt_with_constraint(theList)
+    ]*
+;
+
+rtx_stmt_with_itf(theItfs : node) ::=
+    #readIdentifier:sInterface
+    #pushItem(theItfs)
+/**/=> theItfs#back = sInterface;
+    [
+        ','
+        #readIdentifier:sItf
+        #pushItem(theItfs)
+/**/    => theItfs#back = sItf;
+    ]*
+;
+
+rtx_stmt_with_descript(theItfs : node, theConstraints : node) ::=
+    // First read the dependencies...
+    rtx_stmt_with_itf(theItfs)
+    [
+        "values"
+        #continue(sError, "Constraints expected after values keyword.")
+        // variables of the with node
+        rtx_stmt_with_constraints(theConstraints)
+    ]?
+;
+
+rtx_stmt<"with">(theBlock : node) ::=
+    => traceLine("WITH");
+    // create a block to host the with node
+    #pushItem(theBlock.block)
+/**/=> local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    // link to the variable mapping
+/**/=> local interfaces;
+/**/=> local constraints;
+/**/=> local body;
+/**/=> local c_block;
+    #check(rtxNodeWith(lastNode, interfaces, constraints, body, c_block))
+    rtx_stmt_with_descript(interfaces, constraints)
+    // block of the with node
+    #continue(sError, "Expected block after constraints.")
+    '{'
+        [
+            // contains any kind of rtx stmt (with, template, chunk)
+            rtx_declaration(body)
+            |
+            // or global pointcuts
+            rtx_pointcut(c_block)
+        ]*
+    '}'
+;
+
+
+//////// CHUNK
+// If there is any parameters to the chunk, we push it into a param list
+rtx_stmt_chunk_params(theParams : node) ::=
+    '(' rtx_var_list(theParams) ')'
+;
+
+rtx_stmt<"chunk">(theBlock : node) ::=
+/**/=>traceLine("CHUNK");
+    // Create an item in the Block list to host the chunk
+    #pushItem(theBlock.block)
+/**/=> local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/=> local pointcut;
+    rtx_scoped_identifier(pointcut)
+    // Optional Joinpoint (argument of the pointcut)
+/**/=> local parameters;
+/**/=> local body;
+    // Build the chunk node, and retrieve the references to it's internals
+    // (body and parameters)
+    #check(rtxNodeChunk(lastNode, pointcut, parameters, body))
+    #check(rtxNodeVarList(parameters))
+    [
+        rtx_stmt_chunk_params(parameters)
+    ]?
+    #continue(sError, "Expected '{' after pointcut name.")
+    '{'
+        #continue(sError, "Expected instrumentalized C inside chunk block.")
+        block_item_list(body)
+        #continue(sError, "Expected '}' at end of block.")
+    '}'
+;
+
+
+// Don't care... for now...
+rtx_template_code ::= #!ignore "${" #continue(sError, "Expected '}' after \"'${\"") -> '}' 
+;
+
+/*
+ * This rule overload allows the template identifier concatenation
+ * for Rathaxes.
+ */
+#overload
+rootidentifier ::= #!ignore
+    [ 'a'..'z' | 'A'..'Z' | '_' | rtx_template_code ]
+    [ 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | rtx_template_code ]*
+;
+
