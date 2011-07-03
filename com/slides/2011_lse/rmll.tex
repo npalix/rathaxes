@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[xcolor={usenames,svgnames}]{beamer}
 
 \usepackage[francais]{babel}
 \usepackage{rtxslides}
@@ -446,7 +446,7 @@ with CharDev
 values OS = Linux, version >= 2.6.27 {
   template sequence CharDev::open(Context ctx) {
      chunk LKM::GLOBAL_CODE_DEFINITION {
-         /* C instrumente */
+         ${pointcut ALGO}
      }
   }
 }
@@ -496,12 +496,91 @@ with CharDev
 values OS = Linux, version >= 2.6.27 {
   template sequence CharDev::open(Context ctx) {
      chunk LKM::GLOBAL_CODE_DEFINITION {
-         /* C instrumente */
+         ${pointcut ALGO}
      }
   }
 }
 \end{lstlisting}
 \end{minipage}};
+
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.5,0.27) rectangle (9.15,0.67);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.67) -- (3.1,2.65);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.27) -- (8,-2.50);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Tissage des ASTs}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+device Pipe use LKM, CharDev, Algorithms {
+  open(Context ctx) {
+     log("Open called on device Pipe");
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (RTI) at (1.2,-0.1) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+with CharDev
+values OS = Linux, version >= 2.6.27 {
+  template sequence CharDev::open(Context ctx) {
+     chunk LKM::GLOBAL_CODE_DEFINITION {
+         ${pointcut ALGO}
+     }
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.5,0.27) rectangle (9.15,0.67);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.67) -- (3.1,2.65);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.27) -- (8,-2.50);
+
+\draw [ultra thick, rounded corners=3pt, color=MediumOrchid] (3.1,-0.47) rectangle (7.6,-0.87);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (6,-0.47) -- (5,2.25);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (6,-0.87) -- (5,-3.27);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Tissage des ASTs}
+\begin{tikzpicture}[overlay]
+\node (O) at (0,0) {$\bullet$};
+
+\node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.east) node[right]{\LARGE{Arbre d'\emph{« advices »}}};
+
+\node (RTI) at (1.2,-0.1) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{\LARGE{\emph{« Abstraction »} du backend}};
+
+\node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{\LARGE{Arbre de \emph{« pointcuts »}}};
 \end{tikzpicture}
 \end{frame}
 
