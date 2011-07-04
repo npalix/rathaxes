@@ -251,28 +251,6 @@ périphérique en C pour n'importe quel système d'exploitation supporté.
 \transdissolve<1>
 \end{frame}
 
-\begin{frame}
-\frametitle{Introduction à la programmation aspectuelle}
-\only<1> {
-    % Les concepts
-    Les intérêts de la Programmation Orientée Aspect :
-    \begin{itemize}
-        \item Séparer des éléments de métiers différents au sein d'un code ;
-        \item Centré sur l'idée d'injection de code statique ou dynamique.
-    \end{itemize}
-}
-\only<2> {
-    % Le lexique
-    Les mots clefs du paradigme :
-    \begin{itemize}
-        \item Aspect ;
-        \item Greffon (ou advice) ;
-        \item Point de coupe (ou pointcut) ;
-        \item Point de jonction (ou joinpoint).
-    \end{itemize}
-}
-\end{frame}
-
 \section{Problématiques de développement et solutions}
 
 \subsection{Définition du langage de templates}
@@ -409,7 +387,7 @@ values OS=Linux, version>2.6.30
 
 
 \begin{frame}
-\frametitle{Les manques des templates}
+\frametitle{Les manques des templates...}
 Plusieurs problématiques apparaissent :
 \begin{enumerate}
     \item Multiples insertions à un endroit précis par des sources
@@ -418,6 +396,29 @@ Plusieurs problématiques apparaissent :
     \item Imaginer un modèle extensible résolvant ces problématiques.
 \end{enumerate}
 \end{frame}
+
+\begin{frame}
+\frametitle{...et donc la programmation aspectuelle}
+\only<1> {
+    % Les concepts
+    Les intérêts de la Programmation Orientée Aspect :
+    \begin{itemize}
+        \item Séparer des éléments de métiers différents au sein d'un code ;
+        \item Centré sur l'idée de tissage de code statique ou dynamique.
+    \end{itemize}
+}
+\only<2> {
+    % Le lexique
+    Les mots clefs du paradigme :
+    \begin{itemize}
+        \item Aspect ;
+        \item Greffon (ou advice) ;
+        \item Point de coupe (ou pointcut) ;
+        \item Point de jonction (ou joinpoint).
+    \end{itemize}
+}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Arrivée de l'aspectuel dans le DSL}
@@ -456,11 +457,22 @@ Grâce à la Programmation Orientée Aspect, nous allons pouvoir :
 \frametitle{Implémentation dans le cache}
 \begin{enumerate}[<+->]
     \item Recherche par template (ex: appel d'un template en \rtx) ;
-    \item Recherche par greffon (résolution d'un pointcut') ;
+    \item Recherche par greffon (résolution d'un pointcut) ;
     \item Adaptabilité de la génération :
         génération de script et AST par configuration.
 \end{enumerate}
 \end{frame}
+
+\begin{frame}
+\frametitle{Pour résumer...}
+\begin{itemize}
+    \item Description des ``aspects'' du compilateur par des interfaces ;
+    \item Implémentation des templates respectant ces interfaces ;
+    \item Le langage utilisateur n'est qu'une suite de tissage de ces aspects.
+\end{itemize}
+\end{frame}
+
+\section{Présentation du langage}
 
 \begin{frame}
 \frametitle{Syntaxe d'une interface de sous-système}
@@ -719,6 +731,10 @@ configuration
 \end{itemize}
 \end{frame}
 
-
+\section{Conclusion}
+\begin{frame}
+\frametitle{Merci}
+Questions ?
+\end{frame}
 
 \end{document}
