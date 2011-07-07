@@ -48,6 +48,24 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 \titlepage
 \end{frame}
 
+\begin{frame}{Historique du projet}
+\begin{center}
+\Huge{TODO} % TODO
+\end{center}
+\end{frame}
+
+\begin{frame}{Avancement du projet}
+\begin{center}
+\begin{tikzpicture}
+\node (P) at (0,2.5) {\LARGE{pilotes}};
+\node (C) at (0,-2.5) {\LARGE{\cemph{compilateur}}};
+\draw (-5,0) node[above left] {\LARGE{Itérations :}};
+\draw[warrow] (-1.25,2.165) arc(120:240:2.5);
+\draw[warrow] (1.25,-2.165) arc(-60:60:2.5);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
 \begin{frame}{Pilotes de périphériques}
 \begin{center}
 \only<1>{\LARGE{Souvent \cemph{\Huge{instables}} et \cemph{\Huge{bancals}}}}
@@ -78,18 +96,17 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 
 \begin{frame}{Objectifs du DSL \rtx}
 \begin{center}
-\Large{\begin{itemize}
+\only<1>{\Large{\cemph{\LARGE{Simplifier}} les cycles de développement}}
+\only<2>{\Large{\begin{itemize}
 \item Abstraction de la plateforme ;
 \item Vérifications statiques ;
 \item Séparation des compétences.
-\end{itemize}}
+\end{itemize}}}
 \end{center}
 \end{frame}
 
 \begin{frame}{Génération d'un pilote}
 \only<1>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \node[redbox] (COMPILER) at (2,-0.5) {Compilateur};
 \node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
@@ -112,8 +129,6 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 \end{tikzpicture}}
 
 \only<2>{\begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \node[redbox] (COMPILER) at (2,-0.5) {Compilateur};
 \node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
@@ -136,8 +151,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<3>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \node[redcontainer] (COMPILER) at (2,-0.5) {};
 \node[opacity=0.3] (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
@@ -151,8 +164,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<4>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
 
@@ -176,8 +187,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<5>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
 
@@ -201,8 +210,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<6>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
 
@@ -230,8 +237,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<7>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
 
@@ -263,8 +268,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 \end{tikzpicture}}
 
 \only<8>{\begin{tikzpicture}[overlay]
-\node[right] (O) at (0,0) {$\bullet$};
-
 \node[opacity=0.3] (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.north east) node[below right, opacity=0.3]{\large{Description du pilote}};
 
@@ -296,8 +299,6 @@ device Pipe use LKM, CharDev, Algorithms \{
 
 \begin{frame}{Interfaces et patrons de code}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.north east) node[below right]{%
@@ -314,8 +315,6 @@ Décrivent un \emph{«~sous système~»} avec :
 
 \begin{frame}[fragile]{Interfaces et patrons de code}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.east) node[right]{%
@@ -336,8 +335,6 @@ interface CharDev : LKM {
 
 \begin{frame}[fragile]{Interfaces et patrons de code}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.east) node[right]{%
@@ -369,8 +366,6 @@ Implémentations des interfaces pour chaque OS :
 
 \begin{frame}[fragile]{Interfaces et patrons de code}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTI) at (1.2,1.6) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.east) node[right]{%
@@ -407,8 +402,6 @@ values OS = Linux, version >= 2.6.27 {
 
 \begin{frame}[fragile]{Tissage des ASTs}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
@@ -457,8 +450,6 @@ values OS = Linux, version >= 2.6.27 {
 
 \begin{frame}[fragile]{Tissage des ASTs}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
@@ -511,8 +502,6 @@ values OS = Linux, version >= 2.6.27 {
 
 \begin{frame}[fragile]{Tissage des ASTs}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
@@ -569,8 +558,6 @@ values OS = Linux, version >= 2.6.27 {
 
 \begin{frame}{Tissage des ASTs}
 \begin{tikzpicture}[overlay]
-\node (O) at (0,0) {$\bullet$};
-
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{\LARGE{Arbre d'\emph{« advices »}}};
 
@@ -582,6 +569,20 @@ values OS = Linux, version >= 2.6.27 {
 
 \draw (BLT.east) node[right]{\LARGE{Arbre de \emph{« pointcuts »}}};
 \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Questions}
+\begin{center}
+\Huge{Merci}
+
+\end{center}
+
+%\hspace{1em}\rule{5cm}{0.2mm}
+\vspace{2em}
+\begin{itemize}
+\item \Large{\texttt{http://www.rathaxes.org/}}
+\item \Large{\texttt{\#rathaxes sur irc.freenode.net}}
+\end{itemize}
 \end{frame}
 
 \end{document}
