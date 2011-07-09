@@ -73,22 +73,6 @@ rtx_itf_stmt<"variable">(theNode : node) ::=
     => theNode.identifiers#back = sName;
 ;
 
-rtx_seq_param(theNode : node, theIdentifiers : node) ::=
-    #pushItem(theIdentifiers)
-    #pushItem(theNode)
-    #readIdentifier:sType [#readIdentifier:sName]?
-#check(rtxNodeIdentifier(theNode#back, sType))
-    => theIdentifiers#back = sName;
-;
-
-rtx_seq_parameter(theNode : node, theIdentifiers : node) ::=
-    '(' [rtx_seq_param(theNode.params, theIdentifiers)
-    [',' rtx_seq_param(theNode.params, theIdentifiers)]*]? ')'
-;
-
 rtx_itf_stmt<"sequence">(theNode : node) ::=
-    => local nameNode;
-    rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theNode.rtype, nameNode))
-    rtx_seq_parameter(theNode.rtype, theNode.identifiers)
+    rtx_template_prototype(theNode)
 ;

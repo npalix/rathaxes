@@ -28,7 +28,7 @@ generateString({
          default:
              test = 3;
         };
-        template Userland::open(Context ctx)
+        template sequence Userland::open(Context ctx)
         {
             chunk LKM::typedefs_declaration
             {
@@ -77,7 +77,7 @@ generateString({
             }
         }
 
-        template LKM::test(Context ctx)
+        template sequence LKM::test(Context ctx)
         {
             chunk LKM::function_declaration
             {

@@ -52,6 +52,88 @@ function rtxNodeChunk(local_node        : node,
     return true;
 }
 
+// Manipulates the template node
+function rtxNodeTpl_HasMapping(local_node : node)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false;
+    if (!existVariable(local_node.mapping))
+        return false;
+
+    return true;
+}
+
+function rtxNodeIdentifierMapping(local_node : node,
+                                  out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_id_map__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body, true);
+
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+// Adds a mapping node into a template node
+function rtxNodeTpl_AddMapping(local_node : node, mapping : node)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false ;
+
+    if (rtxNodeTpl_HasMapping(local_node))
+        return false;
+
+    insert local_node.mapping;
+    setall local_node.mapping = mapping;
+
+    return true;
+}
+
+function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_map__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body, true);
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+// manipulates a TplTypeMapping
+function rtxNodeTplTypeMapping_HasIdentifier(local_node : node,
+                                             identifier : value)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    if (findElement(identifier, local_node.body.block))
+        return true;
+    return false;
+}
+
+function rtxNodeTplTypeMapping_AddIdentifier(local_node : node,
+                                             identifier : value,
+                                             mapped_body : reference)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    // Check the node does not already have the identifier mapped
+    if (rtxNodeTplTypeMapping_HasIdentifier(local_node, identifier))
+        return false;
+
+    // Then map it
+    insert local_node.body.block[identifier];
+    rtxNodeIdentifierMapping(local_node.body.block[identifier], mapped_body);
+
+    return true;
+}
+
 /*
  *
  * The following function are functions made to build rathaxes-specific
