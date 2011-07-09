@@ -12,14 +12,19 @@ function	rtxNode(local_node : node)
     return true;
 }
 
-function        rtxNodeRType(local_node : node,
-                             name       : node)
+function        rtxNodeRType(local_node     : node,
+                             name           : node,
+                             out_ref_params : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_rtype__";
+
     insert local_node.name;
     setall local_node.name = name;
+
     insert local_node.params;
+    ref out_ref_params = local_node.params;
+
     return true;
 }
 

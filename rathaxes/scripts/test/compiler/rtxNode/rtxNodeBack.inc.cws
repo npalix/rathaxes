@@ -3,19 +3,36 @@
 function rtxNodeBack_version()
 {return "1.0";}
 
-function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
+function	rtxNodeTpl(local_node : node, prototype : node, out_ref_block : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_tpl__";
 
-    insert local_node.tpl_type = "__decl__";
-    // For now, the prototype is stored as a string,
-    // but it will be parsed as well later.
-    insert local_node.prototype = input;
+    insert local_node.prototype;
+    setall local_node.prototype = prototype;
+
     insert local_node.body;
     cnormNodeBlock(local_node.body, true);
 
     ref out_ref_block = local_node.body;
+
+    return true;
+}
+
+function    rtxNodeTplPrototype(local_node      : node,
+                                tpl_type        : value,
+                                out_ref_rtype   : reference,
+                                out_ref_ids     : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_proto__";
+
+    insert local_node.tpl_type = tpl_type;
+
+    insert local_node.rtype;
+    ref out_ref_rtype = local_node.rtype;
+    insert local_node.identifiers;
+    ref out_ref_ids = local_node.identifiers;
 
     return true;
 }

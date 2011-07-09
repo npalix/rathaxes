@@ -106,25 +106,29 @@ rtx_value(theValue : node) ::=
  *
  */
 
-rtx_seq_param(theNode : node, theIdentifiers : node) ::=
+rtx_seq_param(theParams : node, theIdentifiers : node) ::=
     #pushItem(theIdentifiers)
-    #pushItem(theNode)
-    rtx_scoped_identifier(theNode#back) [#readIdentifier:sName]?
-/**/=> setall theIdentifiers#back = sName;
+    #pushItem(theParams)
+    rtx_scoped_identifier(theParams#back)
+    [
+        #readIdentifier:sName
+/**/    => setall theIdentifiers#back = sName;
+    ]?
 ;
 
-rtx_seq_parameter(theNode : node, theIdentifiers : node) ::=
+rtx_seq_parameter(theParams : node, theIdentifiers : node) ::=
     '('
     [
-        rtx_seq_param(theNode.params, theIdentifiers)
-        [ ',' rtx_seq_param(theNode.params, theIdentifiers) ]*
+        rtx_seq_param(theParams, theIdentifiers)
+        [ ',' rtx_seq_param(theParams, theIdentifiers) ]*
     ]?
     ')'
 ;
 
-rtx_template_prototype(theNode : node) ::=
+rtx_template_prototype(theRtype : node, theIdentifiers : node) ::=
 /**/=> local nameNode;
+/**/=> local params;
     rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theNode.rtype, nameNode))
-    rtx_seq_parameter(theNode.rtype, theNode.identifiers)
+    #check(rtxNodeRType(theRtype, nameNode, params))
+    rtx_seq_parameter(params, theIdentifiers)
 ;
