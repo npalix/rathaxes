@@ -14,13 +14,11 @@ rtx_pointcut(theBlock : node) ::=
 rtx_stmt<"template">(theBlock : node) ::=
 /**/=>traceLine("TEMPLATE!");
 /**/=> local prototype; 
-// TODO FIXME IT HORRIBLE TO DO THIS ! FUCK THAT WE SHOULD DO A NEW FUNCTION,
-// AND UNIFORMIZE WITH THE MIDDLE END.
-/**/=> insert prototype.rtype;
-/**/=> insert prototype.tpl_type;
+/**/=> local rtype;
+/**/=> local identifiers;
     #readIdentifier:sType
-/**/=> prototype.tpl_type = sType;
-    rtx_template_prototype(prototype)
+    #check(rtxNodeTplPrototype(prototype, sType, rtype, identifiers))
+    rtx_template_prototype(rtype, identifiers)
     #continue(sError, "Expected block after template prototype.")
     '{'
     // Create a block to host the template node.

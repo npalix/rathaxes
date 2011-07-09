@@ -39,40 +39,44 @@ rtx_itf_declaration(theBlock : node) ::=
     => local qualifier;
     => local sStmt;
     => local body;
+    => local rtype;
 
     rtx_itf_qualifier:qualifier
     rtx_itf_type:sStmt
-    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, body))
-    rtx_itf_stmt<sStmt>(body) ';'
+    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, rtype, body))
+    rtx_itf_stmt<sStmt>(body, rtype) ';'
 ;
 
-rtx_type_list(theNode : node) ::=
-    #pushItem(theNode)
-    #readIdentifier:theNode#back ';'
+rtx_type_list(theDecl : node, theRtype : node) ::=
+    #pushItem(theDecl)
+    #readIdentifier:theDecl#back ';'
 ;
 
-rtx_itf_stmt<"type">(theNode : node) ::=
+rtx_itf_stmt<"type">(theDecl : node, theRtype : node) ::=
     => local nameNode;
+    => local params;
     rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theNode.rtype, nameNode))
-    ['{' [rtx_type_list(theNode.identifiers)]* '}']?
+    #check(rtxNodeRType(theRtype, nameNode, params))
+    ['{' [ rtx_type_list(theDecl, theRtype) ]* '}']?
 ;
 
-rtx_itf_stmt<"builtintype">(theNode : node) ::=
+rtx_itf_stmt<"builtintype">(theDecl : node, theRtype : node) ::=
     => local nameNode;
+    => local params;
     rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theNode.rtype, nameNode))
+    #check(rtxNodeRType(theRtype, nameNode, params))
 ;
 
-rtx_itf_stmt<"variable">(theNode : node) ::=
+rtx_itf_stmt<"variable">(theDecl : node, theRtype : node) ::=
     => local typeNode;
+    => local params;
     rtx_scoped_identifier(typeNode)
     #readIdentifier:sName
-    #check(rtxNodeRType(theNode.rtype, typeNode))
-    #pushItem(theNode.identifiers)
-    => theNode.identifiers#back = sName;
+    #check(rtxNodeRType(theRtype, typeNode, params))
+    #pushItem(theDecl.identifiers)
+    => theDecl.identifiers#back = sName;
 ;
 
-rtx_itf_stmt<"sequence">(theNode : node) ::=
-    rtx_template_prototype(theNode)
+rtx_itf_stmt<"sequence">(theDecl : node, theRtype : node) ::=
+    rtx_template_prototype(theRtype, theDecl.identifiers)
 ;
