@@ -15,7 +15,8 @@ function rtxLink_version()
 // wrapper/faker for the template prototype hashing function (future)
 function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
 {
-    out_ref_hash = prototype_node;
+    local dummyIds;
+    out_ref_hash = rtxRTypeFullQualifiedName<"sequence">(prototype_node, dummyIds);
 }
 
 declare function rtxLink_CompareValues<T>(ref : node, val : node);
@@ -410,13 +411,13 @@ function rtxLink_selectUniqueTemplate(templates : node, config : node)
  * This functino returns a collection of template cache nodes for a given
  * template prototype (hashed).
  */
-function rtxLink_findTemplates(prototype : value, out_tpls : node)
+function rtxLink_findTemplates(theRtype : node, out_tpls : node)
 {
     if (!existVariable(this.session))
         error("rtxLink:<ERROR> The cache was not loaded before use !");
 
     local hash;
-    hashTemplatePrototype(prototype, hash);
+    hashTemplatePrototype(theRtype, hash);
     if (!findElement(hash, this.session.templates))
         return false;
 
@@ -597,14 +598,14 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
                                                 out_ref_id : reference)
 {
     local   hash;
-    hashTemplatePrototype(local_node.prototype, hash);
+    hashTemplatePrototype(local_node.prototype.rtype, hash);
 
     // First, check that the exact template/with_values does not already exist
     // within the cache
     if (rtxLink_CheckSingleTpl(hash, with_values) == false)
     {
         traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
-                  +" registering template '"+local_node.prototype+"'");
+                  +" registering template '"+hash+"'");
         if (!findElement(hash, this.session.templates))
         {
             insert this.session.templates[hash];

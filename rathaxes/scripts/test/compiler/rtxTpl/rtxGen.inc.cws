@@ -208,7 +208,7 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
     {
         // Add the template hash into the chunk node in order to
         // Set an about right specialisation for the instanceTpl function
-        hashTemplatePrototype(local_node.prototype, chunk.tpl_hash);
+        hashTemplatePrototype(local_node.prototype.rtype, chunk.tpl_hash);
         rtxGen<chunk.type>(chunk, uid);
     }
 }

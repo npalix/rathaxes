@@ -3,18 +3,20 @@
 function rtxNodeBack_version()
 {return "1.0";}
 
-function	rtxNodeTpl(local_node : node, prototype : node, out_ref_block : reference)
+function	rtxNodeTpl(local_node : node,
+                       out_ref_proto : reference,
+                       out_ref_block : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_tpl__";
 
     insert local_node.prototype;
-    setall local_node.prototype = prototype;
 
     insert local_node.body;
     cnormNodeBlock(local_node.body, true);
 
     ref out_ref_block = local_node.body;
+    ref out_ref_proto = local_node.prototype;
 
     return true;
 }
@@ -37,18 +39,20 @@ function    rtxNodeTplPrototype(local_node      : node,
     return true;
 }
 
-function rtxNodePointcut_Raw(local_node     : node,
-                              sPlaceHolder   : value)
+function rtxNodePointcut_Raw(local_node             : node,
+                             out_ref_placeHolder    : reference)
 {
     insert local_node.type = "__rtx_pointcut_raw__";
 
-    insert local_node.id = sPlaceHolder;
+    insert local_node.id;
+    
+    ref out_ref_placeHolder = local_node.id;
     
     return true;
 }
 
 function rtxNodeChunk(local_node        : node,
-                      thePointcut       : node,
+                      out_ref_pointcut  : reference,
                       out_ref_params    : reference,
                       out_ref_body      : reference)
 {
@@ -56,13 +60,13 @@ function rtxNodeChunk(local_node        : node,
     local_node.type = "__rtx_chunk__";
 
     insert local_node.pointcut;
-    setall local_node.pointcut = thePointcut;
     insert local_node.parameters;
     insert local_node.body;
     cnormNodeBlock(local_node.body);
     insert local_node.body.compile;
     insert local_node.body.compile.nbplaceholder = 0;
 
+    ref out_ref_pointcut = local_node.pointcut;
     ref out_ref_params = local_node.parameters;
     ref out_ref_body = local_node.body;
 
@@ -95,7 +99,8 @@ function rtxNodeIdentifierMapping(local_node : node,
 }
 
 // Adds a mapping node into a template node
-function rtxNodeTpl_AddMapping(local_node : node, mapping : node)
+function rtxNodeTpl_AddMapping(local_node : node,
+                               out_ref_mapping : reference)
 {
     if (local_node.type != "__rtx_tpl__")
         return false ;
@@ -104,7 +109,7 @@ function rtxNodeTpl_AddMapping(local_node : node, mapping : node)
         return false;
 
     insert local_node.mapping;
-    setall local_node.mapping = mapping;
+    ref out_ref_mapping = local_node.mapping;
 
     return true;
 }
@@ -203,17 +208,19 @@ function rtxNodeLink(local_node     : node,
 }
 
 function rtxNodePointcut(local_node         : node,
-                         pointcutIdentifier : node,
-                         parameters         : node,
-                         default            : node)
+                         out_ref_pointcut   : reference,
+                         out_ref_params     : reference,
+                         out_ref_default    : reference)
 {
     insert local_node.type = "__rtx_pointcut__";
     insert local_node.name;
-    setall local_node.name = pointcutIdentifier;
     insert local_node.parameters;
-    setall local_node.parameters = parameters;
     insert local_node.default;
-    setall local_node.default = default;
+
+    ref out_ref_pointcut = local_node.name;
+    ref out_ref_params = local_node.parameters;
+    ref out_ref_default = local_node.default;
+    
     return true;
 }
 
