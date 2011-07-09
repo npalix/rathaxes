@@ -3,35 +3,56 @@
 function rtxNodeBack_version()
 {return "1.0";}
 
-function	rtxNodeTpl(local_node : node, input : value, out_ref_block : reference)
+function	rtxNodeTpl(local_node : node,
+                       out_ref_proto : reference,
+                       out_ref_block : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_tpl__";
 
-    insert local_node.tpl_type = "__decl__";
-    // For now, the prototype is stored as a string,
-    // but it will be parsed as well later.
-    insert local_node.prototype = input;
+    insert local_node.prototype;
+
     insert local_node.body;
-    cnormNodeBlock(local_node.body, true);
+    cnormNodeBlock(local_node.body);
 
     ref out_ref_block = local_node.body;
+    ref out_ref_proto = local_node.prototype;
 
     return true;
 }
 
-function rtxNodePointcut_Raw(local_node     : node,
-                              sPlaceHolder   : value)
+function    rtxNodeTplPrototype(local_node      : node,
+                                tpl_type        : value,
+                                out_ref_rtype   : reference,
+                                out_ref_ids     : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_proto__";
+
+    insert local_node.tpl_type = tpl_type;
+
+    insert local_node.rtype;
+    ref out_ref_rtype = local_node.rtype;
+    insert local_node.identifiers;
+    ref out_ref_ids = local_node.identifiers;
+
+    return true;
+}
+
+function rtxNodePointcut_Raw(local_node             : node,
+                             out_ref_placeHolder    : reference)
 {
     insert local_node.type = "__rtx_pointcut_raw__";
 
-    insert local_node.id = sPlaceHolder;
+    insert local_node.id;
+    
+    ref out_ref_placeHolder = local_node.id;
     
     return true;
 }
 
 function rtxNodeChunk(local_node        : node,
-                      thePointcut       : node,
+                      out_ref_pointcut  : reference,
                       out_ref_params    : reference,
                       out_ref_body      : reference)
 {
@@ -39,15 +60,99 @@ function rtxNodeChunk(local_node        : node,
     local_node.type = "__rtx_chunk__";
 
     insert local_node.pointcut;
-    setall local_node.pointcut = thePointcut;
     insert local_node.parameters;
     insert local_node.body;
     cnormNodeBlock(local_node.body);
     insert local_node.body.compile;
     insert local_node.body.compile.nbplaceholder = 0;
 
+    ref out_ref_pointcut = local_node.pointcut;
     ref out_ref_params = local_node.parameters;
     ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+// Manipulates the template node
+function rtxNodeTpl_HasMapping(local_node : node)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false;
+    if (!existVariable(local_node.mapping))
+        return false;
+
+    return true;
+}
+
+function rtxNodeIdentifierMapping(local_node : node,
+                                  out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_id_map__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+// Adds a mapping node into a template node
+function rtxNodeTpl_AddMapping(local_node : node,
+                               out_ref_mapping : reference)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false ;
+
+    if (rtxNodeTpl_HasMapping(local_node))
+        return false;
+
+    insert local_node.mapping;
+    ref out_ref_mapping = local_node.mapping;
+
+    return true;
+}
+
+function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_map__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+// manipulates a TplTypeMapping
+function rtxNodeTplTypeMapping_HasIdentifier(local_node : node,
+                                             identifier : value)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    if (findElement(identifier, local_node.body.block))
+        return true;
+
+    return false;
+}
+
+function rtxNodeTplTypeMapping_AddIdentifier(local_node : node,
+                                             identifier : value,
+                                             mapped_body : reference)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    // Check the node does not already have the identifier mapped
+    if (rtxNodeTplTypeMapping_HasIdentifier(local_node, identifier))
+        return false;
+
+    // Then map it
+    insert local_node.body.block[identifier];
+    rtxNodeIdentifierMapping(local_node.body.block[identifier], mapped_body);
 
     return true;
 }
@@ -104,17 +209,19 @@ function rtxNodeLink(local_node     : node,
 }
 
 function rtxNodePointcut(local_node         : node,
-                         pointcutIdentifier : node,
-                         parameters         : node,
-                         default            : node)
+                         out_ref_pointcut   : reference,
+                         out_ref_params     : reference,
+                         out_ref_default    : reference)
 {
     insert local_node.type = "__rtx_pointcut__";
     insert local_node.name;
-    setall local_node.name = pointcutIdentifier;
     insert local_node.parameters;
-    setall local_node.parameters = parameters;
     insert local_node.default;
-    setall local_node.default = default;
+
+    ref out_ref_pointcut = local_node.name;
+    ref out_ref_params = local_node.parameters;
+    ref out_ref_default = local_node.default;
+    
     return true;
 }
 

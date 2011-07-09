@@ -3,7 +3,6 @@
 function rtxNode_version()
 {return "1.0";}
 
-
 function	rtxNode(local_node : node)
 {
     cnormNode(local_node);
@@ -12,14 +11,19 @@ function	rtxNode(local_node : node)
     return true;
 }
 
-function        rtxNodeRType(local_node : node,
-                             name       : node)
+function        rtxNodeRType(local_node     : node,
+                             name           : node,
+                             out_ref_params : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_rtype__";
+
     insert local_node.name;
     setall local_node.name = name;
+
     insert local_node.params;
+    ref out_ref_params = local_node.params;
+
     return true;
 }
 
@@ -39,7 +43,7 @@ function        rtxRTypeName<"__rtx_id__">(theNode : node)
     return theNode.scope + "::" + theNode.name;
 }
 
-function        rtxRTypeFullQualfiedName<T>(rTypeNode : node, identifiers : node)
+function        rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node)
 {
     local       fullString;
 
@@ -49,12 +53,12 @@ function        rtxRTypeFullQualfiedName<T>(rTypeNode : node, identifiers : node
     return fullString;
 }
 
-function        rtxRTypeFullQualfiedName<"variable">(rTypeNode : node, identifiers : node)
+function        rtxRTypeFullQualifiedName<"variable">(rTypeNode : node, identifiers : node)
 {
     return rtxRTypeName<rTypeNode.type>(rTypeNode) + "{}";
 }
 
-function        rtxRTypeFullQualfiedName<"sequence">(rTypeNode : node,
+function        rtxRTypeFullQualifiedName<"sequence">(rTypeNode : node,
                                                      identifiers : node)
 {
     local       fullString;

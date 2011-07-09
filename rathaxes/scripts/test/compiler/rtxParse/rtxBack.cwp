@@ -4,34 +4,96 @@ rtx_pointcut(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/=> local ph;
+    #check(rtxNodePointcut_Raw(lastNode, ph))
     rtx_template_code:sPlaceHolder
+/**/=> ph = sPlaceHolder;
     #continue(sError, "Expected ';' after pointcut in with block.")
     ';'
-    #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
 ;
 
 /////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
 /**/=>traceLine("TEMPLATE!");
-    // TODO: The proto is not parsed properly yet (we take everything)
-    [#!ignore ->(:head)[['\n'|' '|'\t']* '{']] // horrible barbarian way
-        ////////
-        // Create a block to host the template node.
-        #pushItem(theBlock.block)
-/**/    => local lastNode;
-        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-        // Create a rtxTPL node.
-        // The chunk_block var will reference the block of chunks
-/**/    => local chunk_block;
-        #check(rtxNodeTpl(lastNode, head, chunk_block))
-/**/    => traceLine("tplproto :" + head + " next:" + peekChar());
-/**/    =>traceLine("Chunks!");
-        [
-            // Theoretically, the template should only contain chunks...
-            "chunk" rtx_stmt<"chunk">(chunk_block)
-        ]*
+    #pushItem(theBlock.block)
+/**/=> local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    // Create a rtxTPL node.
+    // The chunk_block var will reference the block of chunks
+/**/=> local prototype; 
+/**/=> local chunk_block;
+    #check(rtxNodeTpl(lastNode, prototype, chunk_block))
+
+    // Now, retrieve the template's prototype.
+/**/=> local rtype;
+/**/=> local identifiers;
+    #readIdentifier:sType
+    #check(rtxNodeTplPrototype(prototype, sType, rtype, identifiers))
+    rtx_template_prototype(rtype, identifiers)
+
+    // And parse the template's block
+    #continue(sError, "Expected block after template prototype.")
+    '{'
+    // Create a block to host the template node.
+    rtx_stmt_template_content<prototype.tpl_type>(lastNode, chunk_block)
     '}'
 ;
+
+rtx_stmt_template_content<"sequence">(theTemplate : node, theBlock : node) ::=
+/**/=>traceLine("Template sequence block!");
+    [
+        // Theoretically, the template should only contain chunks...
+        "chunk" rtx_stmt<"chunk">(theBlock)
+    ]*
+;
+
+rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
+/**/=>traceLine("Template type block!");
+    
+    [
+        // Theoretically, the template should only contain chunks...
+        "chunk" rtx_stmt<"chunk">(theBlock)
+        |
+        [
+            "map"
+/**/        =>traceLine("MAP");
+/**/        =>local mapping;
+/**/        =>local body;
+            #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
+            #check(rtxNodeTplTypeMapping(mapping, body))
+            #continue(sError, "Mapping block expected after map statement.")
+            rtx_type_map(mapping)
+            #continue(sError, "The mapping for template type "
+                      + theTemplate.rtype.name.scope + "::"
+                      + theTemplate.rtype.name.id + " is defined twice.")
+        ]
+    ]*
+    #continue(sError, "No mapping defined for template type"
+              + theTemplate.rtype.name.scope
+              + "::" + theTemplate.rtype.name.id + "!")
+    #check(rtxNodeTpl_HasMapping(theTemplate))
+;
+
+rtx_type_map(theBlock : node) ::=
+    '{'
+        [ rtx_type_map_identifier(theBlock) ]*
+    '}'
+;
+
+rtx_type_map_identifier(theMap : node) ::=
+    #readIdentifier:sId
+    #continue(sError, "Mapping for identifier " + sId + " is already defined.")
+    #check(!rtxNodeTplTypeMapping_HasIdentifier(theMap, sId))
+/**/=> local mapped_body;
+    #check(rtxNodeTplTypeMapping_AddIdentifier(theMap, sId, mapped_body))
+    #continue(sError, "Expected ':' after identifier " + sId)
+    ':'
+    // C expression here.
+    #continue(sError, "No C code defined for the mapping of identifier " + sId)
+    single_statement(mapped_body)
+    =>traceLine("Statement = "+toString(mapped_body));
+;
+
 
 
 /////// WITH
@@ -111,7 +173,10 @@ rtx_stmt<"with">(theBlock : node) ::=
 //////// CHUNK
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=
-    '(' rtx_var_list(theParams) ')'
+    '('
+    [ rtx_var_list(theParams) ]?
+    #continue(sError, "Expected ')' to end parameter list.")
+    ')'
 ;
 
 rtx_stmt<"chunk">(theBlock : node) ::=
@@ -120,14 +185,15 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/=> local pointcut;
-    rtx_scoped_identifier(pointcut)
     // Optional Joinpoint (argument of the pointcut)
-/**/=> local parameters;
-/**/=> local body;
     // Build the chunk node, and retrieve the references to it's internals
     // (body and parameters)
+/**/=> local parameters;
+/**/=> local body;
+/**/=> local pointcut;
     #check(rtxNodeChunk(lastNode, pointcut, parameters, body))
+    rtx_scoped_identifier(pointcut)
+
     #check(rtxNodeVarList(parameters))
     [
         rtx_stmt_chunk_params(parameters)
@@ -136,7 +202,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     '{'
         #continue(sError, "Expected instrumentalized C inside chunk block.")
         block_item_list(body)
-        #continue(sError, "Expected '}' at end of block.")
+        #continue(sError, "Expected '}' at end of chunk's block.")
     '}'
 ;
 

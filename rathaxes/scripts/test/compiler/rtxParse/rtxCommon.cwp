@@ -5,6 +5,15 @@
  *
  */
 
+
+/*
+ *
+ * Here are the rules for the base builtin types parsing
+ *  - scoped_identifier
+ *  - serial value
+ *  - numeric value
+ *  - string value
+ */
 rtx_scoped_identifier(theNode : node) ::=
     #!ignore
 /**/=> local sScope = "";
@@ -86,4 +95,40 @@ rtx_value(theValue : node) ::=
 /**/    => local sString;
         string_constant(sString)
         #check(rtxNodeString(theValue, sString))
+;
+
+
+
+/*
+ *
+ * Here are the rules for the parsing of the template sequence prototypes
+ * It is used both in the backend and in the middle-end
+ *
+ */
+
+rtx_seq_param(theParams : node, theIdentifiers : node) ::=
+    #pushItem(theIdentifiers)
+    #pushItem(theParams)
+    rtx_scoped_identifier(theParams#back)
+    [
+        #readIdentifier:sName
+/**/    => setall theIdentifiers#back = sName;
+    ]?
+;
+
+rtx_seq_parameter(theParams : node, theIdentifiers : node) ::=
+    '('
+    [
+        rtx_seq_param(theParams, theIdentifiers)
+        [ ',' rtx_seq_param(theParams, theIdentifiers) ]*
+    ]?
+    ')'
+;
+
+rtx_template_prototype(theRtype : node, theIdentifiers : node) ::=
+/**/=> local nameNode;
+/**/=> local params;
+    rtx_scoped_identifier(nameNode)
+    #check(rtxNodeRType(theRtype, nameNode, params))
+    rtx_seq_parameter(params, theIdentifiers)
 ;

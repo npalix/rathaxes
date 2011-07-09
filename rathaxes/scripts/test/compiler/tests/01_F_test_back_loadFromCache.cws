@@ -23,11 +23,19 @@
 // First, hash the prototype, then find every template matching it,
 // And finally reduce the selection to only one template before loading.
 
-local theProto = "Userland::open(Context ctx)";
+// Build the rtype node for the template
+local theRtype;
+local name;
+local params;
+rtxNodeIdentifier(name, "open", "Userland");
+rtxNodeRType(theRtype, name, params);
+pushItem params;
+rtxNodeIdentifier(params#back, "Context");
+
 local theWith;
 local theTemplates;
 
-if (rtxLink_findTemplates(theProto, theTemplates) == false)
+if (rtxLink_findTemplates(theRtype, theTemplates) == false)
     error("01_F_test_back_loadFromCache.cws:"
           +" The template could not be found by rtxLink.");
 traceLine("A list of " + getArraySize(theTemplates)
