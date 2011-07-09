@@ -4,32 +4,37 @@ rtx_pointcut(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/=> local ph;
+    #check(rtxNodePointcut_Raw(lastNode, ph))
     rtx_template_code:sPlaceHolder
+/**/=> ph = sPlaceHolder;
     #continue(sError, "Expected ';' after pointcut in with block.")
     ';'
-    #check(rtxNodePointcut_Raw(lastNode, sPlaceHolder))
 ;
 
 /////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
 /**/=>traceLine("TEMPLATE!");
-/**/=> local prototype; 
-/**/=> local rtype;
-/**/=> local identifiers;
-    #readIdentifier:sType
-    #check(rtxNodeTplPrototype(prototype, sType, rtype, identifiers))
-    rtx_template_prototype(rtype, identifiers)
-    #continue(sError, "Expected block after template prototype.")
-    '{'
-    // Create a block to host the template node.
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
     // Create a rtxTPL node.
     // The chunk_block var will reference the block of chunks
+/**/=> local prototype; 
 /**/=> local chunk_block;
     #check(rtxNodeTpl(lastNode, prototype, chunk_block))
-=>traceLine("params giong to content "+ toString(prototype.rtype));
+
+    // Now, retrieve the template's prototype.
+/**/=> local rtype;
+/**/=> local identifiers;
+    #readIdentifier:sType
+    #check(rtxNodeTplPrototype(prototype, sType, rtype, identifiers))
+    rtx_template_prototype(rtype, identifiers)
+
+    // And parse the template's block
+    #continue(sError, "Expected block after template prototype.")
+    '{'
+    // Create a block to host the template node.
     rtx_stmt_template_content<prototype.tpl_type>(lastNode, chunk_block)
     '}'
 ;
@@ -53,13 +58,13 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
             "map"
 /**/        =>local mapping;
 /**/        =>local body;
+            #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
             #check(rtxNodeTplTypeMapping(mapping, body))
             #continue(sError, "Mapping block expected after map statement.")
             rtx_type_map(mapping)
             #continue(sError, "The mapping for template type "
                       + theTemplate.rtype.name.scope + "::"
                       + theTemplate.rtype.name.id + " is defined twice.")
-            #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
         ]
     ]*
     #continue(sError, "No mapping defined for template type"
@@ -175,14 +180,15 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     #pushItem(theBlock.block)
 /**/=> local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/=> local pointcut;
-    rtx_scoped_identifier(pointcut)
     // Optional Joinpoint (argument of the pointcut)
-/**/=> local parameters;
-/**/=> local body;
     // Build the chunk node, and retrieve the references to it's internals
     // (body and parameters)
+/**/=> local parameters;
+/**/=> local body;
+/**/=> local pointcut;
     #check(rtxNodeChunk(lastNode, pointcut, parameters, body))
+    rtx_scoped_identifier(pointcut)
+
     #check(rtxNodeVarList(parameters))
     [
         rtx_stmt_chunk_params(parameters)
