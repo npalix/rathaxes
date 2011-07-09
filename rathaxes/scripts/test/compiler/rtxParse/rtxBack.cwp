@@ -56,6 +56,7 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
         |
         [
             "map"
+/**/        =>traceLine("MAP");
 /**/        =>local mapping;
 /**/        =>local body;
             #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
@@ -75,14 +76,14 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 
 rtx_type_map(theBlock : node) ::=
     '{'
-        [ rtx_type_map_identifier(theBlock) ';' ]*
+        [ rtx_type_map_identifier(theBlock) ]*
     '}'
 ;
 
 rtx_type_map_identifier(theMap : node) ::=
     #readIdentifier:sId
     #continue(sError, "Mapping for identifier " + sId + " is already defined.")
-    #check(rtxNodeTplTypeMapping_HasIdentifier(theMap, sId))
+    #check(!rtxNodeTplTypeMapping_HasIdentifier(theMap, sId))
 /**/=> local mapped_body;
     #check(rtxNodeTplTypeMapping_AddIdentifier(theMap, sId, mapped_body))
     #continue(sError, "Expected ':' after identifier " + sId)
@@ -90,6 +91,7 @@ rtx_type_map_identifier(theMap : node) ::=
     // C expression here.
     #continue(sError, "No C code defined for the mapping of identifier " + sId)
     single_statement(mapped_body)
+    =>traceLine("Statement = "+toString(mapped_body));
 ;
 
 
@@ -171,7 +173,10 @@ rtx_stmt<"with">(theBlock : node) ::=
 //////// CHUNK
 // If there is any parameters to the chunk, we push it into a param list
 rtx_stmt_chunk_params(theParams : node) ::=
-    '(' rtx_var_list(theParams) ')'
+    '('
+    [ rtx_var_list(theParams) ]?
+    #continue(sError, "Expected ')' to end parameter list.")
+    ')'
 ;
 
 rtx_stmt<"chunk">(theBlock : node) ::=
@@ -197,7 +202,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     '{'
         #continue(sError, "Expected instrumentalized C inside chunk block.")
         block_item_list(body)
-        #continue(sError, "Expected '}' at end of block.")
+        #continue(sError, "Expected '}' at end of chunk's block.")
     '}'
 ;
 

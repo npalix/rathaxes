@@ -13,7 +13,7 @@ function	rtxNodeTpl(local_node : node,
     insert local_node.prototype;
 
     insert local_node.body;
-    cnormNodeBlock(local_node.body, true);
+    cnormNodeBlock(local_node.body);
 
     ref out_ref_block = local_node.body;
     ref out_ref_proto = local_node.prototype;
@@ -91,7 +91,7 @@ function rtxNodeIdentifierMapping(local_node : node,
     local_node.type = "__rtx_tpl_type_id_map__";
 
     insert local_node.body;
-    cnormNodeBlock(local_node.body, true);
+    cnormNodeBlock(local_node.body);
 
     ref out_ref_body = local_node.body;
 
@@ -120,7 +120,7 @@ function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference)
     local_node.type = "__rtx_tpl_type_map__";
 
     insert local_node.body;
-    cnormNodeBlock(local_node.body, true);
+    cnormNodeBlock(local_node.body);
 
     ref out_ref_body = local_node.body;
     return true;
@@ -135,6 +135,7 @@ function rtxNodeTplTypeMapping_HasIdentifier(local_node : node,
 
     if (findElement(identifier, local_node.body.block))
         return true;
+
     return false;
 }
 
