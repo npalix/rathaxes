@@ -57,7 +57,7 @@ parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
 
-saveProject("/__02_rtx_parse__.tree", source);
+saveProject("__02_rtx_parse__.tree", source);
 traceLine("Result of parsing:\n" + toString(source, true));
 if (!isEmpty(source.error))
 {
