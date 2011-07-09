@@ -10,7 +10,9 @@ ADD_RATHAXES_TEST(01_H_test_back_resolvePointcut.cws)
 ADD_RATHAXES_TEST(01_I_test_back_resolvePointcutDefault.cws)
 
 # Pure middle-end validation tests
-ADD_RATHAXES_TEST(02_test_middle.cws)
+ADD_RATHAXES_TEST(02_A_test_middle_parse.cws)
+ADD_RATHAXES_TEST(02_B_test_middle_check_inheritance.cws)
+ADD_RATHAXES_TEST(02_C_test_middle_validate_types.cws)
 
 # Tests for configuration matching (against with blocks)
 ADD_RATHAXES_TEST(03_A_match_less_configs.cws)

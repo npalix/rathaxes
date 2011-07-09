@@ -3,7 +3,7 @@
 */
 
 /* Switch to a tmp dir */
-local working_directory = "__02_test";
+local working_directory = "__02_A_test_middle_parse";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
@@ -11,6 +11,7 @@ if (existDirectory(working_directory))
 }
 traceLine("Creating directory: " + working_directory);
 createDirectory(working_directory);
+changeDirectory(working_directory);
 
 local dummy;
 local input;
@@ -28,7 +29,10 @@ generateString({
             provided            builtintype     Userland::pro_builtin;
             provided            type            Userland::some_type;
             optional            type            Userland::opt_type { foo; bar; };
-            required            sequence        Userland::req_sequence(type1 a, type2 , type3 c);
+            required            sequence        Userland::req_sequence(type1 a,
+                                                                       type2,
+                                                                       type3 c);
+            provided            sequence        Userland::seq();
         }
 
         interface OtherInterface
@@ -50,20 +54,17 @@ traceLine("Input:\n" + input + "\nEnd of input");
 local source;
 cnormDialect<"__std__">(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
-// enleve dialect
+// remove the dialect
 removeVariable(source.dialect);
 
+saveProject("__02_rtx_parse__.tree", source);
 traceLine("Result of parsing:\n" + toString(source, true));
-saveProject(working_directory + "/__02_rtx_parse__.tree", source);
-
-traceLine("Checking inheritance");
-#include "rtxInterfaces/rtxInterfaces.inc.cws"
-
-foreach itf_node in source.block
+if (!isEmpty(source.error))
 {
-    if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
-    {
-        traceLine("Error while checking inheritance");
-        exit 1;
-    }
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
 }
