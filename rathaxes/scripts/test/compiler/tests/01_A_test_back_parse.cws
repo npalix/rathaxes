@@ -15,9 +15,7 @@ changeDirectory(working_directory);
 
 local dummy;
 local input;
-generateString({
-
-    with LKM, Userland
+generateString({    with LKM, Userland
     values LKM::OS=pigeonMouette, maj=0, min=1
     {
         ${pointcut Userland::theTestPointcut(config.plop)
@@ -96,6 +94,30 @@ generateString({
             chunk CALL
             {
                 test_${ctx.name}();
+            }
+        }
+        template type Builtin::Buffer(Size sz)
+        {
+            chunk decl
+            {
+                typedef struct rtxBuiltinBuffer
+                {
+                    long long unsigned int  sz;
+                    char                    *buf;
+                } t_rtxBltinBuf;
+            }
+            chunk init(size)
+            {
+                ${self}.sz = size;
+                ${self}.buf = kmalloc(${self}.sz * sizeof(*${self}.buf));
+            }
+            chunk clean
+            {
+                kfree(${self}.buf);
+            }
+            map {
+                ptr : ${self}.buf;
+                size : ${self}.sz;
             }
         }
     }
