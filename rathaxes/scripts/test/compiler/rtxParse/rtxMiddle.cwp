@@ -38,14 +38,13 @@ rtx_itf_declaration(theBlock : node, nameList : node) ::=
 
     => local qualifier;
     => local sStmt;
-    => local body;
     => local rtype;
 
     rtx_itf_qualifier:qualifier
     rtx_itf_type:sStmt
-    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, rtype, body))
-    rtx_itf_stmt<sStmt>(body, rtype) ';'
-    => rtxItfAddTypeToList<body.type>(lastNode, nameList);
+    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, rtype))
+    rtx_itf_stmt<sStmt>(lastNode, rtype) ';'
+    => rtxItfAddTypeToList<lastNode.specifier>(lastNode, nameList);
 ;
 
 rtx_type_list(theDecl : node, theRtype : node) ::=

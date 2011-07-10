@@ -25,20 +25,17 @@ function        rtxNodeItf(local_node      : node,
 function        rtxNodeItfDeclaration(local_node        : node,
                                       qualifier         : value,
                                       dtype             : value,
-                                      out_ref_rtype     : reference,
-                                      out_ref_body      : reference)
+                                      out_ref_rtype     : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_itf_decl__";
 
     insert local_node.qualifier = qualifier;
-    insert local_node.body;
-    insert local_node.body.type = dtype;
-    insert local_node.body.rtype;
-    insert local_node.body.identifiers;
+    insert local_node.specifier = dtype;
+    insert local_node.rtype;
+    insert local_node.identifiers;
 
-    ref out_ref_rtype = local_node.body.rtype;
-    ref out_ref_body = local_node.body;
+    ref out_ref_rtype = local_node.rtype;
 
     return true;
 }
