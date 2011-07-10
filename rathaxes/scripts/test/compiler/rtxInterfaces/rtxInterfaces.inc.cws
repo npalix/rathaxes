@@ -1,6 +1,6 @@
 #if !existFunction(rtxInterfaces_version)
 
-function        rtxCompile_version()
+function        rtxInterfaces_version()
 { return "1.0"; }
 
 function        rtxItfCheckInheritance_walk<T>(interface_node : node,
@@ -24,5 +24,29 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node
     }
     return true;
 }
+
+function        rtxItfMakeTypeList_walk<T>(theNode : node, nameList : reference)
+{
+    local fullName = rtxRTypeFullQualifiedName<theNode.body.type>(theNode.body.rtype,
+                                                                  theNode.body.identifiers);
+    insert nameList[fullName];
+    ref nameList[fullName] = theNode;
+}
+
+function        rtxItfMakeTypeList_walk<"variable">(theNode : node, nameList : reference)
+{
+    /* Nothing to do here. */
+}
+
+function        rtxItfBuildTypeLists(interface_node : node)
+{
+    insert interface_node.types;
+
+    foreach item in interface_node.body.block
+    {
+        rtxItfMakeTypeList_walk<item.body.type>(item, interface_node.types);
+    }
+}
+
 
 #end    /* !existFunction(rtxInterfaces_version) */
