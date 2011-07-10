@@ -27,8 +27,8 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node
 
 function        rtxItfAddTypeToList<T>(theNode : node, nameList : reference)
 {
-    local fullName = rtxRTypeFullQualifiedName<theNode.body.type>(theNode.body.rtype,
-                                                                  theNode.body.identifiers);
+    local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
+                                                                  theNode.identifiers);
     insert nameList[fullName];
     ref nameList[fullName] = theNode;
 }
