@@ -13,14 +13,13 @@ traceLine("Creating directory: " + working_directory);
 createDirectory(working_directory);
 changeDirectory(working_directory);
 
+#include "rtxNode/rtxNode.inc.cws"
 
-/* traceLine("------------------------------------------"); */
-/* foreach itf_node in source.block */
-/* { */
-/*     foreach declaration_node in itf_node.body.block */
-/*     { */
-/*         traceLine(rtxRTypeFullQualfiedName<declaration_node.body.type>(declaration_node.body.rtype, */
-/*                                                                        declaration_node.body.identifiers)); */
-/*     } */
+traceLine("------------------------------------------");
+foreach itf_node in source.block
+{
+    rtxItfBuildTypeLists(itf_node);
+}
 
-/* } */
+saveProject("__02_C_validate_types__.tree", source);
+traceLine("Result of parsing:\n" + toString(source, true));

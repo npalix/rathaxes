@@ -21,6 +21,8 @@ generateString({
         interface BaseInterface
         {
             provided    type    BaseInterface::a_type;
+            provided    type    BaseInterface::type1;
+            provided    type    BaseInterface::type2;
         }
 
         // interface with inheritance
@@ -30,9 +32,9 @@ generateString({
             provided            builtintype     Userland::pro_builtin;
             provided            type            Userland::some_type;
             optional            type            Userland::opt_type { foo; bar; };
-            required            sequence        Userland::req_sequence(type1 a,
-                                                                       type2,
-                                                                       type3 c);
+            required            sequence        Userland::req_sequence(BaseInterface::type1 a,
+                                                                       BaseInterface::type2,
+                                                                       Userland::some_type c);
             provided            sequence        Userland::seq();
         }
 
