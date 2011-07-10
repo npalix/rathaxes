@@ -13,6 +13,7 @@ function        rtxNodeItf(local_node      : node,
     insert local_node.body;
     insert local_node.name = itf_name;
     insert local_node.inheritance;
+    insert local_node.types;
 
     /* XXX: Do we need the boolean argument ? */
     cnormNodeBlock(local_node.body);

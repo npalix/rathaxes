@@ -9,7 +9,7 @@ rtx_stmt<"interface">(theBlock : node) ::=
     #check(rtxNodeItf(lastNode, name, inheritNode, body))
     [inheritance(inheritNode)]?
     '{'
-        [rtx_itf_declaration(body)]*
+        [ rtx_itf_declaration(body, lastNode.types) ]*
     '}'
     => insert lastNode#root.interfaces[name] = $getArraySize(lastNode#root.interfaces) - 1$;
 ;
@@ -31,7 +31,7 @@ rtx_itf_type ::=
     "sequence" | "variable" | "type" | "builtintype"
 ;
 
-rtx_itf_declaration(theBlock : node) ::=
+rtx_itf_declaration(theBlock : node, nameList : node) ::=
     #pushItem(theBlock.block)
     => local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
@@ -45,6 +45,7 @@ rtx_itf_declaration(theBlock : node) ::=
     rtx_itf_type:sStmt
     #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, rtype, body))
     rtx_itf_stmt<sStmt>(body, rtype) ';'
+    => rtxItfAddTypeToList<body.type>(lastNode, nameList);
 ;
 
 rtx_type_list(theDecl : node, theRtype : node) ::=
