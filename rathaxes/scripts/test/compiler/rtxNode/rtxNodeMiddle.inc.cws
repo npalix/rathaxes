@@ -40,4 +40,41 @@ function        rtxNodeItfDeclaration(local_node        : node,
     return true;
 }
 
+function        addSequenceBody(theSequence : node, theBody : node)
+{
+    insert theSequence.body;
+    insert theSequence.body.type = "__block__";
+    insert theSequence.body.block;
+    setall theSequence.body.block = theBody;
+
+    return true;
+}
+
+function        rtxNodeItfPointcutDeclaration(local_node : node,
+                                              qualifier : value,
+                                              identifier : node,
+                                              params : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__pointcut_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.name;
+    setall local_node.name = identifier;
+    insert local_node.params;
+    setall local_node.params = params;
+    return true;
+}
+
+function        rtxNodeItfChunkDeclaration(local_node : node,
+                                           identifier : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__chunk_decl__";
+    insert local_node.qualifier = "provided"; /* Can't be "use" */
+    insert local_node.name;
+    setall local_node.name = identifier;
+    return true;
+}
+
+
 #end

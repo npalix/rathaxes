@@ -35,7 +35,12 @@ generateString({
             required            sequence        Userland::req_sequence(BaseInterface::type1 a,
                                                                        BaseInterface::type2,
                                                                        Userland::some_type c);
-            provided            sequence        Userland::seq();
+            provided            sequence        Userland::seq()
+            {
+                use      pointcut some_pointcut;
+                provided pointcut other_pointcut(JoinPointType);
+                provided chunk some_chunk;
+            }
         }
 
         interface OtherInterface
