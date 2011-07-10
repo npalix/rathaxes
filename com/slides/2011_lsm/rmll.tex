@@ -8,7 +8,7 @@
 
 \title{\rtx\ -- RMLL 2011}
 \date{8 Juillet 2011}
-\author{\rtx \\ \texttt{www.rathaxes.org}}
+\author{\rtx \\ \texttt{www.rathaxes.org} \\ L. Auroux \& D.Pineau }
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
@@ -28,7 +28,7 @@ numbers=left,                   % where to put the line-numbers
 numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
 stepnumber=0,                   % the step between two line-numbers. If it's 1, each line
                                 % will be numbered
-basicstyle=\footnotesize\ttfamily,
+basicstyle=\tiny\ttfamily,
 numbersep=5pt,                  % how far the line-numbers are from the code
 backgroundcolor=\color{black},  % choose the background color. You must add \usepackage{color}
 showspaces=false,               % show spaces adding particular underscores
@@ -50,21 +50,14 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 
 \begin{frame}{Historique du projet}
 \begin{center}
-\Huge{TODO} % TODO
+	\begin{itemize}
+		\item	Thèse de L.Reveillere "Devil" (2002);
+		\item	Début du projet (2007) LSE - EIP Epitech;
+		\item	RMLL / T-DOSE (2008).
+	\end{itemize}
 \end{center}
 \end{frame}
 
-\begin{frame}{Avancement du projet}
-\begin{center}
-\begin{tikzpicture}
-\node (P) at (0,2.5) {\LARGE{pilotes}};
-\node (C) at (0,-2.5) {\LARGE{\cemph{compilateur}}};
-\draw (-5,0) node[above left] {\LARGE{Itérations :}};
-\draw[warrow] (-1.25,2.165) arc(120:240:2.5);
-\draw[warrow] (1.25,-2.165) arc(-60:60:2.5);
-\end{tikzpicture}
-\end{center}
-\end{frame}
 
 \begin{frame}{Pilotes de périphériques}
 \begin{center}
@@ -103,6 +96,19 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 \item Séparation des compétences.
 \end{itemize}}}
 \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Qu'est ce qu'un driver}
+	\includegraphics[scale=0.37]{stateofdevice.pdf}
+\end{frame}
+
+\begin{frame}{Outils utilisés}
+	\begin{center}
+	\begin{itemize}
+		\item	Langage Codeworker (www.codeworker.org LGPL);
+		\item	Front end C : Cnorm (code.google.com/p/cnorm LGPL);
+	\end{itemize}
+	\end{center}
 \end{frame}
 
 \begin{frame}{Génération d'un pilote}
@@ -327,6 +333,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -347,6 +355,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -378,6 +388,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -426,6 +438,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -474,6 +488,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -494,9 +510,8 @@ values OS = Linux, version >= 2.6.27 {
 \end{lstlisting}
 \end{minipage}};
 
-\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.5,0.27) rectangle (9.15,0.67);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.67) -- (3.1,2.65);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.27) -- (8,-2.50);
+\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
 \end{tikzpicture}
 \end{frame}
 
@@ -526,6 +541,8 @@ interface CharDev : LKM {
      use pointcut      LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
+  required variable identifier  OS;
+  required variable serial      version;
 }
 \end{lstlisting}
 \end{minipage}};
@@ -545,14 +562,72 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
+\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
 
-\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.5,0.27) rectangle (9.15,0.67);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.67) -- (3.1,2.65);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (7,0.27) -- (8,-2.50);
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.43,0.39) rectangle (6.85,0.66);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.66) -- (2.9,2.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.39) -- (6.15,-2.70);
+\end{tikzpicture}
+\end{frame}
 
-\draw [ultra thick, rounded corners=3pt, color=MediumOrchid] (3.1,-0.47) rectangle (7.6,-0.87);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (6,-0.47) -- (5,2.25);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (6,-0.87) -- (5,-3.27);
+\begin{frame}[fragile]{Tissage des ASTs}
+\begin{tikzpicture}[overlay]
+\node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+device Pipe use LKM, CharDev, Algorithms {
+  open(Context ctx) {
+     log("Open called on device Pipe");
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (RTI) at (1.2,-0.1) {\includegraphics[height=1.5cm]{icons/rti}};
+
+\draw (RTI.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+interface CharDev : LKM {
+  provided type        Context;
+  required sequence    open(Context) {
+     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
+     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided pointcut ALGO;
+  }
+  required variable identifier  OS;
+  required variable serial      version;
+}
+\end{lstlisting}
+\end{minipage}};
+
+\node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
+
+\draw (BLT.east) node[right]{%
+\begin{minipage}{115mm}
+\begin{lstlisting}
+with CharDev
+values OS = Linux, version >= 2.6.27 {
+  template sequence CharDev::open(Context ctx) {
+     chunk LKM::GLOBAL_CODE_DEFINITION {
+         ${pointcut ALGO}
+     }
+  }
+}
+\end{lstlisting}
+\end{minipage}};
+\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
+
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.43,0.39) rectangle (6.85,0.66);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.66) -- (2.9,2.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.39) -- (6.15,-2.70);
+
+\draw [ultra thick, rounded corners=3pt, color=MediumOrchid] (2.8,-0.09) rectangle (5.85,-0.36);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.09) -- (5,2.27);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.36) -- (5,-3.22);
 \end{tikzpicture}
 \end{frame}
 
@@ -569,6 +644,29 @@ values OS = Linux, version >= 2.6.27 {
 
 \draw (BLT.east) node[right]{\LARGE{Arbre de \emph{« pointcuts »}}};
 \end{tikzpicture}
+\end{frame}
+
+
+\begin{frame}{Avancement du projet}
+\begin{center}
+\begin{tikzpicture}
+\node (P) at (0,2.5) {\LARGE{pilotes}};
+\node (C) at (0,-2.5) {\LARGE{\cemph{compilateur}}};
+\draw (-5,0) node[above left] {\LARGE{Itérations :}};
+\draw[warrow] (-1.25,2.165) arc(120:240:2.5);
+\draw[warrow] (1.25,-2.165) arc(-60:60:2.5);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Prochaines étapes}
+	\begin{center}
+	\begin{itemize}
+		\item	Fosdem 2012;
+		\item	Fin EIP;
+		\item	Evolution vers python -> contributeur.
+	\end{itemize}
+	\end{center}
 \end{frame}
 
 \begin{frame}{Questions}
