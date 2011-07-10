@@ -14,9 +14,270 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.1 r9760"
-   sodipodi:docname="stateofdevice.svg">
+   sodipodi:docname="stateofdevice.pdf">
   <defs
-     id="defs4" />
+     id="defs4">
+    <filter
+       id="filter4097"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4099"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4101"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4103"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4105"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4107"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4109"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4111"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4113"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4115"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4117"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4119"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4121"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4123"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4125"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4127"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4129"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4131"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4133"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4135"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4137"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4139"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4141"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4143"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4145"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4147"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4149"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4151"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4153"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4155"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4157"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4159"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4161"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4163"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4165"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4167"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4169"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4171"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4173"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+  </defs>
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -25,7 +286,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.78484657"
-     inkscape:cx="469.68473"
+     inkscape:cx="598.51183"
      inkscape:cy="442.91525"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -61,8 +322,17 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-308.2677)">
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect4177"
+       width="1173.2073"
+       height="757.95355"
+       x="-80"
+       y="-55.905518"
+       transform="translate(0,308.2677)" />
     <g
-       id="g3818">
+       id="g3818"
+       style="filter:url(#filter4097)">
       <rect
          y="392.36218"
          x="20"
@@ -84,7 +354,7 @@
            sodipodi:role="line">Programmes utilisateurs</tspan></text>
     </g>
     <rect
-       style="fill:#ffaaaa;fill-opacity:1;stroke:#ffaaaa;stroke-width:6.45699978;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#ffaaaa;fill-opacity:1;stroke:#ffaaaa;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter4103)"
        id="rect3782"
        width="140"
        height="540"
@@ -92,7 +362,7 @@
        y="392.36218" />
     <text
        xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter4109)"
        x="645.98615"
        y="438.2294"
        id="text3845"
@@ -102,7 +372,7 @@
          x="645.98615"
          y="438.2294">BUS</tspan></text>
     <rect
-       style="fill:#9dd4fa;fill-opacity:0.65201467000000002;stroke:#9dd4fa;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:0.65098041;stroke-dasharray:none"
+       style="fill:#9dd4fa;fill-opacity:0.65201467000000002;stroke:#9dd4fa;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:0.65098040999999995;stroke-dasharray:none;filter:url(#filter4115)"
        id="rect3780"
        width="420"
        height="540"
@@ -111,7 +381,8 @@
        transform="translate(0,308.2677)" />
     <g
        id="g3916"
-       transform="translate(-480,-60)">
+       transform="translate(-480,-60)"
+       style="filter:url(#filter4121)">
       <g
          transform="translate(20,220)"
          id="g3860">
@@ -137,7 +408,8 @@
     </g>
     <g
        id="g3931"
-       transform="translate(-460.00002,100)">
+       transform="translate(-460.00002,100)"
+       style="filter:url(#filter4127)">
       <g
          transform="translate(1.8e-5,-80)"
          id="g3911">
@@ -163,7 +435,8 @@
     </g>
     <g
        id="g3937"
-       transform="translate(-560,240)">
+       transform="translate(-560,240)"
+       style="filter:url(#filter4133)">
       <g
          transform="translate(1.8e-5,-80)"
          id="g3905">
@@ -193,7 +466,7 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter4139)"
        x="160"
        y="372.36218"
        id="text3944"
@@ -203,7 +476,8 @@
          x="160"
          y="372.36218">Noyau du système</tspan></text>
     <g
-       id="g4009">
+       id="g4009"
+       style="filter:url(#filter4145)">
       <g
          id="g3954">
         <g
@@ -233,7 +507,8 @@
     </g>
     <g
        transform="translate(-680,220)"
-       id="g3954-4">
+       id="g3954-4"
+       style="filter:url(#filter4151)">
       <g
          id="g4004">
         <rect
@@ -258,7 +533,8 @@
     </g>
     <g
        id="g4045"
-       transform="translate(-1100,500)">
+       transform="translate(-1100,500)"
+       style="filter:url(#filter4157)">
       <g
          id="g3954-4-7"
          transform="translate(240.00004,-260)">
@@ -287,7 +563,8 @@
     </g>
     <g
        id="g4067"
-       transform="translate(475.62199,85.824005)">
+       transform="translate(475.62199,85.824005)"
+       style="filter:url(#filter4163)">
       <rect
          y="332.36218"
          x="-180"
@@ -317,7 +594,8 @@
     </g>
     <g
        id="g4089"
-       transform="translate(-40,-1.9531262e-7)">
+       transform="translate(-40,-1.9531262e-7)"
+       style="filter:url(#filter4169)">
       <rect
          y="392.36218"
          x="920"
