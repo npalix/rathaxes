@@ -91,7 +91,6 @@ rtx_type_map_identifier(theMap : node) ::=
     // C expression here.
     #continue(sError, "No C code defined for the mapping of identifier " + sId)
     single_statement(mapped_body)
-    =>traceLine("Statement = "+toString(mapped_body));
 ;
 
 
