@@ -13,6 +13,7 @@ function        rtxNodeItf(local_node      : node,
     insert local_node.body;
     insert local_node.name = itf_name;
     insert local_node.inheritance;
+    insert local_node.types;
 
     /* XXX: Do we need the boolean argument ? */
     cnormNodeBlock(local_node.body);
@@ -23,23 +24,61 @@ function        rtxNodeItf(local_node      : node,
 
 function        rtxNodeItfDeclaration(local_node        : node,
                                       qualifier         : value,
-                                      dtype             : value,
-                                      out_ref_rtype     : reference,
-                                      out_ref_body      : reference)
+                                      dtype             : value)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_itf_decl__";
 
     insert local_node.qualifier = qualifier;
-    insert local_node.body;
-    insert local_node.body.type = dtype;
-    insert local_node.body.rtype;
-    insert local_node.body.identifiers;
-
-    ref out_ref_rtype = local_node.body.rtype;
-    ref out_ref_body = local_node.body;
+    insert local_node.specifier = dtype;
+    insert local_node.identifiers;
 
     return true;
 }
+
+function        addRTypeToItfDeclaration(declaration_node : node,
+                                         rtype : node)
+{
+    insert declaration_node.rtype;
+    setall declaration_node.rtype = rtype;
+}
+
+function        addSequenceBody(theSequence : node, theBody : node)
+{
+    insert theSequence.body;
+    insert theSequence.body.type = "__block__";
+    insert theSequence.body.block;
+    setall theSequence.body.block = theBody;
+
+    return true;
+}
+
+function        rtxNodeItfPointcutDeclaration(local_node : node,
+                                              qualifier : value,
+                                              identifier : node,
+                                              params : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__pointcut_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.name;
+    setall local_node.name = identifier;
+    insert local_node.params;
+    setall local_node.params = params;
+    return true;
+}
+
+function        rtxNodeItfChunkDeclaration(local_node : node,
+                                           identifier : node,
+                                           qualifier : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__chunk_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.name;
+    setall local_node.name = identifier;
+    return true;
+}
+
 
 #end

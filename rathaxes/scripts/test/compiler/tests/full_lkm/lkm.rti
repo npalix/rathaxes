@@ -11,12 +11,12 @@ interface LKM
     provided sequence           load()
     {
         provided pointcut       INIT_LKM_FPTRS(Symbol); // Symbol is the type of the joinpoint
-        use pointcut            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
     }
 
     provided sequence           unload()
     {
-        use pointcut            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk            BASE_LKM_CODE_LKM::GLOBAL_CODE_DEFINITION;
     }
 
     required variable Device_list 	Devices;
@@ -35,14 +35,14 @@ interface Algorithms : LKM
 
     provided sequence   log(string)
     {
-        use   LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
-        use  ::CALLS; // use current namespace/template from frontend
+        provided chunk   LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk  ::CALLS; // use current namespace/template from frontend
     }
 
-    provide sequence	set(register, register_field) // should be in subsystem BUS
+    provided sequence   set(register, register_field) // should be in subsystem BUS
     {
-    	use LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
-	use ::CALLS; // use current namespace/template from frontend
+    	provided chunk LKM::GLOBAL_CODE_LKM::GLOBAL_CODE_DEFINITION;
+	provided chunk ::CALLS; // use current namespace/template from frontend
     }
     //...
 }
@@ -54,37 +54,37 @@ interface User : LKM
 
     required sequence           open(Context)
     {
-        use	poincut         LKM::GLOBAL_CODE_DEFINITION;
-        use	pointcut          LKM::INIT_LKM_FPTRS;
-	provided pointcut	CALLS;
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut	CALLS;
     }
 
     required sequence           close(Context)
     {
-        use	pointcut          LKM::GLOBAL_CODE_DEFINITION;
-        use	pointcut          LKM::INIT_LKM_FPTRS;
-	provided pointcut	CALLS;
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       CALLS;
     }
-    
+
     required sequence           read(Context, Buffer)
     {
-        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
-        use pointcut          LKM::INIT_LKM_FPTRS;
-	provided pointcut	CALLS;
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut	CALLS;
     }
-    
+
     required sequence           write(Context, Buffer)
     {
-        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
-        use pointcut          INIT_LKM_FPTRS;
-	provided pointcut	CALLS;
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+        provided pointcut	CALLS;
     }
-    
+
     required sequence           on_plug(Context)
     {
-        use pointcut          LKM::GLOBAL_CODE_DEFINITION;
-        use pointcut          INIT_LKM_FPTRS;
-	provided pointcut	CALLS;
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          INIT_LKM_FPTRS;
+        provided pointcut	CALLS;
     }
 }
 
