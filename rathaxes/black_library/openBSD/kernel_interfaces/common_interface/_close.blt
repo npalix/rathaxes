@@ -1,0 +1,19 @@
+<%
+/*
+**  _close.blt in black_library/openBSD/kernel_interfaces/common_interfaces/
+**  for Rathaxes project
+**  made by Filth
+*/
+
+local	sDriverName = this.name;
+%>
+
+ADVICE close PART_OF kernel_interfaces
+{
+	int @sDriverName@_close(dev_t dev, int fflag, int devtype, struct proc *p)
+	{
+		printf("close");
+    JOINPOINT algorithms IN algorithms.algorithms;
+		return (0);
+	}
+};

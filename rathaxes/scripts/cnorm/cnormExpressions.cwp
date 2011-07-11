@@ -1,0 +1,659 @@
+/*
+** cnormExpressions.cwp for
+** "C normalise"
+** 
+** Authors:
+**	Lionel Auroux
+** Contributors:
+**	Cedric Lemaire
+**	David Giron
+**	David Amsallem	
+**
+** see cnorm.cwp for details
+*/
+
+//----------------------------------------------------------------------------
+//                            E X P R E S S I O N S
+//----------------------------------------------------------------------------
+
+/*
+  Les expressions sont specifies du plus generale au particuliers dans
+  l'ordre de precedence et de priorite des operateurs.
+*/
+expression(expr : node) ::=
+       assignment_expression(expr)
+       [ ',':sOperator #continue
+       /* nouvel expression on decale tout le noeud genere d'un niveau */
+	 => slideNodeContent(expr, left);
+	 => insert expr.operator = sOperator;
+       /* une autre expression apres la ',' */
+       assignment_expression(expr.right)
+	 => insert expr.type = "coma_expression";
+	 => insert expr.otype = "binary";
+       ]*
+;
+
+/*
+  a gauche d'un assignement (lvalue) on a forcement une unary expression.
+  ici recursivite a droite pour gerer a = b = c = d;
+*/
+assignment_expression(expr : node) ::= 
+	conditional_expression(expr)
+	[
+	 assignment_operator:sOperator
+	 #continue 
+	 => slideNodeContent(expr, left);
+	 => insert expr.operator = sOperator;
+	 assignment_expression(expr.right)
+	 => insert expr.type = "assignement_expression";
+	 => insert expr.otype = "binary";
+	 => {
+	   if (expr.left.type == "conditional_expression")
+	     cnormError("invalid lvalue in assignment. Conditional expression can't have assignment expression as right member.");
+	 }
+	]*
+;
+
+/* tous les operateurs d'assignement sont au meme niveau,
+   la priorite est donc donne par l'ordre de lecture.
+   (gauche - droite)
+*/
+assignment_operator ::= 
+'=' [#!ignore !'='] /* pas == */ | "*=" | "/=" | "%=" | "+=" | "-=" | "<<=" 
+| ">>=" | "&=" | "^=" | "|="
+;
+
+/*
+  une expression constante a une valeur.
+*/
+constant_expression(expr : node) ::= 
+	conditional_expression(expr)
+     => insert expr.type = "constant_expression";
+;
+
+/*
+  l'operateur ternaire est de plus haut niveau
+*/
+conditional_expression(expr : node) ::=
+     logical_or_expression(expr)
+     ['?' #continue
+      => slideNodeContent(expr, condition);
+      => insert expr.operator = '?';
+      [ expression(expr.then) ]? ':' [ conditional_expression(expr.else) ]?
+      => insert expr.type = "conditional_expression";
+      => insert expr.otype = "ternary";
+     ]?
+;
+
+/*
+  le OU booleen
+*/
+logical_or_expression(expr : node) ::= logical_and_expression(expr)
+     [ "||" #continue
+       => slideNodeContent(expr, left);
+       => insert expr.operator = "||";
+       logical_or_expression(expr.right)
+       => insert expr.type = "logical_or_expression";
+       => insert expr.otype = "binary";
+       ]*
+;
+
+/*
+  le ET booleen
+*/
+logical_and_expression(expr : node) ::=	inclusive_or_expression(expr)
+     [ "&&" #continue
+       => slideNodeContent(expr, left);
+       => insert expr.operator = "&&";
+       logical_and_expression(expr.right)
+       => insert expr.type = "logical_and_expression";
+       => insert expr.otype = "binary";
+       ]*
+;
+
+/*
+  le OU binaire inclusif.
+  ! comme le double & ou | est avant le simple, il faut un peu bidouiller
+  pour tester un unique symbole
+*/
+inclusive_or_expression(expr : node) ::=
+     exclusive_or_expression(expr)
+     [ ['|' [#!ignore !['|'|'=']]] #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = '|';
+      inclusive_or_expression(expr.right)
+      => insert expr.type = "inclusive_or_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+  le OU binaire exclusif.
+*/
+exclusive_or_expression(expr : node) ::=
+     and_expression(expr)
+     [ ['^' [#!ignore !'=']] #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = '^';
+      exclusive_or_expression(expr.right)
+      => insert expr.type = "exclusive_or_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+  le ET binaire
+*/
+and_expression(expr : node) ::=
+     equality_expression(expr)
+     [ ['&' [#!ignore !['&'|'=']]] #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = '&';
+      and_expression(expr.right)
+      => insert expr.type = "and_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+  operateur d'egalite avant comparaison.
+  a < b == c > d -> (a<b) == (c>d) comparaison de 2 expressions booleenes.
+*/
+equality_expression(expr : node) ::=
+     relational_expression(expr)
+     [ ["==" | "!="]:sOperator #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = sOperator;
+      equality_expression(expr.right)
+      => insert expr.type = "equality_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+relational_expression(expr : node) ::=
+     shift_expression(expr) 
+     [ ["<=" | ">=" | '<' [#!ignore !'<'] | '>' [#!ignore !'>'] ]:sOperator 
+      #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = sOperator;
+      relational_expression(expr.right)
+      => insert expr.type = "relational_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+shift_expression(expr : node) ::=
+     additive_expression(expr)
+     [ ["<<" [#!ignore !'='] | ">>" [#!ignore !'=']]:sOperator #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = sOperator;
+      shift_expression(expr.right)
+      => insert expr.type = "shift_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+  + et - au meme niveau priorite gauche droite
+*/
+additive_expression(expr : node) ::=
+     multiplicative_expression(expr)
+     [ ['+' [#!ignore !['+'|'=']] | '-' [#!ignore !['-'|'>'|'=']] ]:sOperator #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = sOperator;
+      additive_expression(expr.right)
+      => insert expr.type = "additive_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+ * / % au meme niveau priorite gauche droite
+*/
+multiplicative_expression(expr : node) ::=
+     unary_expression(expr)
+     [ [['*' | '/' | '%'] [#!ignore !'=']]:sOperator #continue
+      => slideNodeContent(expr, left);
+      => insert expr.operator = sOperator;
+      multiplicative_expression(expr.right)
+      => insert expr.type = "multiplicative_expression";
+      => insert expr.otype = "binary";
+     ]*
+;
+
+/*
+  une expression unaire est aussi la lvalue du langage C.
+  cf expression.
+*/
+unary_expression(expr : node) ::=
+[
+	["++" | "--"]:expr.operator #continue unary_expression(expr.left)
+     	=> insert expr.type = "prefix_expression";
+	| unary_operator:expr.operator #continue unary_expression(expr.left)
+       	=> insert expr.type = "unary_expression";
+	| #readIdentifier:{"sizeof", 
+	   /* c99 */ "__alignof", "__alignof__"}:expr.operator 
+	#continue  
+	   // for pretty printing we add a convenience space in operator
+	   => expr.operator += " ";
+	 [
+	     unary_expression(expr.left)
+	     | 
+	     => clearVariable(expr.left);
+	     => cnormCreateCtypeNode(expr.left);
+	    '(' type_name(expr.left) ')'
+	    => insert expr.left.otype = "typecast";
+	 ]
+	=> insert expr.type = "sizeof_expression";
+]
+	=> insert expr.otype = "unary";
+	| postfix_expression(expr)
+;
+
+/*
+  operateur unaire au meme niveau
+*/
+unary_operator ::= '&' [#!ignore !['&'|'=']] /* & */ 
+| '*' [#!ignore !'='] 
+| '+' [#!ignore !['+'|'=']] /* + */ 
+| '-' [#!ignore !['-'|'>'|'=']] /* - seul */ 
+| '~' [#!ignore !'=']
+| '!' [#!ignore !'=']
+/* c99: pour les complexes et operateur pour les labels */
+| #readIdentifier:{"__real", "__imag", "__real__", "__imag__"}
+| "&&"
+;
+
+
+postfix_expression(expr : node) ::= 
+["__extension__"]? // GnuC : pour enlever les warnings des extensions 
+	primary_expression(expr)
+     => local nSubExpr;
+     => local sOperator;
+     => local sType;
+     => local sOType;
+     => localref rExpr = expr;
+     => local flagArray = false;
+     [ 
+      [
+	'[' #continue expression(nSubExpr) ']'
+	=> insert sOperator = "[]";
+	=> insert sType = "index_expression";
+	=> flagArray = true;
+	    |
+	'(' [function_call_parameter_list(nSubExpr)]? ')'
+	=> insert sOperator = "()";
+	=> insert sType = "call_expression";
+	    |
+	'.':sOperator [#!ignore !['.']]
+	#continue primary_expression(nSubExpr)
+	=> insert sType = "field_expression";
+	=> insert sOType = "likebinary";
+            |
+	"->":sOperator #continue primary_expression(nSubExpr)
+	=> insert sType = "deref_expression";
+	=> insert sOType = "likebinary";
+            |
+	["++" | "--"]:sOperator
+	=> insert sType = "postfix_expression";
+	=> insert sOType = "post";
+      ]
+       => {
+	 // le cas de tableau multi-dimension est gere grace a flagArray
+	 // autrement toutes postfix_expr execute ce code
+	 if (sType != "index_expression" || flagArray)
+	 {
+	   slideNodeContent(rExpr, left);
+	   insert rExpr.type = sType;
+	   insert rExpr.otype = sOType;
+	   insert rExpr.operator = sOperator;
+	   flagArray = false;
+	 }
+	 // on pousse dans un tableau multi-dimension
+	 if (sType == "index_expression")
+	 {
+	   pushItem rExpr.right;
+	   setall rExpr.right#back = nSubExpr;
+	   insert rExpr.otype = "index";
+	 }
+	 else // ou on copie dans le champs de droite
+	 {	
+	   if (sType == "call_expression")
+	   {	
+	     setall rExpr.list = nSubExpr;
+	     insert rExpr.otype = "call";
+	   }
+	   else
+	   {	setall rExpr.right = nSubExpr;}
+	 }
+	 clearVariable(nSubExpr);
+	 // on recurse sur le membre droit
+	 if (sType != "index_expression" && sType != "call_expression")
+	 {	ref rExpr = rExpr.right;}
+       }
+     ]* // GnuC subscript so *
+;
+
+/*
+**  expression vraiment basique
+*/
+primary_expression(expr : node) ::= 
+=> insert expr.type = "primary_expression";
+[
+	constant(expr)
+	=> insert expr.operator = "literal";
+	=> insert expr.otype = "terminal";
+|
+	identifier:expr.value
+	=> insert expr.operator = "id";
+	=> insert expr.otype = "terminal";
+|
+[	'('
+	#insert(expr.left)
+	// on cree une reference sur le contexte parent
+	type_name(expr.left)
+	=> insert expr.left.otype = "typecast";
+	=> insert expr.left.type = "type_cast_expression";
+	=> insert expr.left.operator = "()";
+	=> insert expr.otype = "cast";
+	')' 
+	[
+	 #insert(expr.right)
+	 unary_expression(expr.right)
+	 => insert expr.operator = "cast";
+	 => insert expr.type = "cast_expression";
+	 | // c99 compound literal 
+	 '{' #insert(expr.init) [initializer_list(expr.init.block)]? [',']? '}'
+	 => insert expr.init.type = "compound_literal_expression";
+	 => insert expr.init.etype = "init";
+	 => insert expr.otype = "compound";
+	]
+]
+|	'(' expression(expr) ')'
+	=> { 
+	     localref rExpr = expr;
+	     slideNodeContent(rExpr, expr);
+	     insert expr.type = "priority_expression";
+	     insert expr.otype = "priority";
+	     insert expr.operator = "()";
+	}
+|	
+	'(' '{' #continue
+	[
+	 // on cree une reference sur le contexte parent
+	 => local nExpr;
+	 => {
+	   insert nExpr.etype = "statement";
+	   insert nExpr.otype = "block";
+	   insert nExpr.block;
+	   insert nExpr.block.pctx;   
+	   ref nExpr.block.pctx = this.gl_pctx;
+	 }
+	   block_item_list(nExpr.block)
+	   => {
+	     setall expr.expr = nExpr;
+	     insert expr.type = "priority_expression";
+	     insert expr.otype = "compoundstmt";
+	     insert expr.operator = "()";
+	   }
+	]?
+	  '}' ')' // c99
+|
+	// GnuC __builtin_offsetof
+	"__builtin_offsetof" 
+	'(' type_name(expr.left) ',' postfix_expression(expr.right)
+	')'
+	=> {
+	  insert expr.type = "builtin_offsetof_expression";
+	  insert expr.operator = "()";
+	  insert expr.otype = "offsetof";
+	}
+|
+	gnu_asm_expr:expr.asm // GnuC asm expression
+	=> insert expr.otype = "asmexpr";
+	=> insert expr.etype = "asmexpr";
+]
+;
+
+/* GnuC __builtin_offsetof */
+offsetof_member_designator(expr : node) ::=
+	=> localref rExpr = expr;
+	=> local nSubExpr;
+	identifier:expr.value
+	=> {
+	  insert rExpr.type = "primary_expression";
+	  insert rExpr.operator = "id";
+	  insert rExpr.otype = "terminal";
+	}
+	 => local sOperator;
+	 => local sType;
+	 => local sOType;
+	 => local flagArray = false;
+     	[
+	 [
+	  ".":sOperator offsetof_member_designator(nSubExpr)
+	  => insert sType = "field_expression";
+	  => insert sOType = "likebinary";
+	  |
+	  "[" expression(nSubExpr) "]"
+	  => insert sOperator = "[]";
+	  => insert sType = "index_expression";
+	  => insert sOType = "index";
+	 ]
+	 => {
+	   // voir le cas de [] en postfix expression
+	   if (sType != "index_expression" || flagArray)
+	   {
+	     slideNodeContent(rExpr, left);
+	     insert rExpr.type = sType;
+	     insert rExpr.otype = sOType;
+	     insert rExpr.operator = sOperator;
+	     flagArray = false;
+	   }
+	   // multi-dimension
+	   if (sType == "index_expression")
+	   {
+	     pushItem rExpr.right;
+	     setall rExpr.right#back = nSubExpr;
+	     insert rExpr.otype = "index";
+	   }
+	   else // ou copie simple
+	   { setall rExpr.right = nSubExpr;}
+	   clearVariable(nSubExpr);
+	   if (sType != "index_expression")
+	   { ref rExpr = rExpr.right;}
+	 }
+	]*
+;
+
+/*
+  added by CL 
+  liste d'appel d'une fonction
+*/
+function_call_parameter_list(expr : node) ::= #pushItem(expr)
+     assignment_expression(expr#back)
+     [ ',' #continue
+       => pushItem expr;
+       assignment_expression(expr#back)
+     ]*
+;
+
+/* c99. only in initializers */
+range_expression(expr : node) ::=
+	#pushItem(expr.from)
+	constant_expression(expr.from) "..." 
+	constant_expression(expr.to)
+     => insert expr.type = "range_expression";
+     => insert expr.otype = "ranged";
+;
+
+masm_expr ::=
+	#readIdentifier:{"asm","__asm","__asm__"} 
+	[#readIdentifier:{"volatile", "__volatile__"}]?
+	'{' -> '}'
+;
+
+/* Specif Gnu Asm directive : asm block */
+gnu_asm_expr ::=
+[
+#readIdentifier:{"asm","__asm","__asm__"} 
+[#readIdentifier:{"volatile", "__volatile__"}]?
+'(' #continue [#readCString]+
+	[':'
+	 ['[' #readIdentifier ']' ]?
+	 [gnu_asm_str [',' gnu_asm_str]* ]?
+	 ]0..3:m
+')']
+;
+
+/* Specif Gnu Asm directive : string expression */
+gnu_asm_str ::=
+	=> local subExp;
+	#readCString ['(' #continue expression(subExp) ')']?
+;
+
+
+//----------------------------------------------------------------------------
+//                            c o n s t a n t
+//----------------------------------------------------------------------------
+
+constant(expr : node) ::=
+	hexadecimal_constant(expr)
+    | octal_constant(expr)
+	| decimal_constant(expr)
+	| complex_constant(expr)
+    | string_constant(expr)
+	| character_constant(expr)
+;
+
+hexadecimal_prefix ::=  #!ignore '0' ['x'|'X']
+;
+hexadecimal_digit ::= #!ignore ['0'..'9'|'a'..'f'|'A'..'F']
+;
+hexadecimal_constant(expr : node) ::=
+	[
+	 hexadecimal_prefix
+	 [hexadecimal_digit]+
+	 ]:xValue
+	[ // hex floating representation
+	 [
+	  #!ignore '.' #continue [hexadecimal_digit]+
+	  [ ['p'|'P'] #continue #readInteger ]?
+	 ]
+	 => insert expr.ctype.identifier = "double";
+	| // normal hex number
+	 => insert expr.ctype.identifier = "int";
+	 => insert expr.ctype.sign = "signed";
+	 [
+	  unsigned_suffix
+	  => insert expr.ctype.sign = "unsigned";
+	  |long_suffix
+	  => insert expr.ctype.specifier = "long";
+	  ]0..3
+	]:xValueFl
+	=> xValue = xValue + xValueFl;
+	=> insert expr.value = xValue;
+;
+
+unsigned_suffix ::= ['u' | 'U']
+;
+long_suffix ::= ['l' | 'L']
+;
+decimal_constant(expr : node) ::=
+	 // decimal
+	 #readInteger:expr.value !'.'
+	 [
+	  unsigned_suffix
+	  => insert expr.ctype.sign = "unsigned";
+	  => expr.value = expr.value + 'u';
+	 ]? 
+	 [
+	  long_suffix
+	  => {
+	    if (expr.ctype.specifier == "long")
+	    {	
+	      expr.ctype.specifier += " long";
+	      expr.value = expr.value + 'l';
+	    }
+	    else
+	    {	insert expr.ctype.specifier = "long"; expr.value = expr.value + 'l'; }
+	  }
+	 ]0..2
+	 => insert expr.ctype.identifier = "int";
+;
+
+octal_prefix ::= '0'
+;
+octal_digit ::= ['0'..'7']
+;
+octal_constant(expr : node) ::=
+	[
+	 octal_prefix
+	 [octal_digit]+
+	]
+	[ // oct floating representation
+	 [
+	  #!ignore '.' #continue [octal_digit]+
+	  [ ['p'|'P'] #continue #readInteger ]?
+	 ]
+	| // normal oct number
+	 => insert expr.ctype.sign = "unsigned";
+	 => insert expr.ctype.identifier = "int";
+	]
+;
+
+float_suffix ::= ['f'|'F'|'l'|'L']
+;
+complex_constant(expr : node) ::=
+	#readNumeric:expr.value
+	[#!ignore float_suffix:sSuf]? 
+	// c99 complex
+	[
+	 #!ignore ['i'|'I']
+	 => insert expr.ctype.specifier = "__complex__";
+	 => expr.value = expr.value + 'i';
+	]?
+	=> {
+	     if (!sSuf)
+	     {	insert expr.ctype.identifier = "double"; }
+	     else if (sSuf == 'f' || sSuf == 'F')
+	     {	insert expr.ctype.identifier = "float" = 1; expr.value = expr.value + 'f'; }
+	     else if (sSuf == 'l' || sSuf == 'L')
+	     {
+	       insert expr.ctype.specifier = "long"; 
+	       insert expr.ctype.identifier = "double";
+	       expr.value = expr.value + 'l';
+	     }
+	}
+;
+
+string_constant(expr : node) ::=
+	=> local sString; 
+	[
+	 ['L'#!ignore]? // for wide string
+	 // TODO: #readCString can't read multiline string
+	 #readCString:sV => sString += sV; 
+	]+
+	=> insert expr.value = '\"' + sString + '\"';
+	=> insert expr.ctype.infoType["const"] = "typeQualifier";
+	=> insert expr.ctype.identifier = "char";
+	=> insert expr.ctype.pointer;
+	=> pushItem expr.ctype.pointer;
+	=> insert expr.ctype.pointer#back.level = "*";
+;
+
+character_constant(expr: node) ::=
+=> local c;
+	['L'#!ignore]? // for wide char
+	// TODO: #readCChar can't read '\400'
+	"'" #!ignore
+	[
+		['\\' '\'']
+		| ~['\'']
+	]*:c
+	"'"
+	=> insert expr.value = "\'";
+	=> insert expr.value += c;
+	=> insert expr.value += "\'";
+	=> insert expr.ctype.identifier = "char";
+;

@@ -1,0 +1,64 @@
+/*
+**	rdsl_variables.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** ---------------------------------------------------------------------------
+*/
+
+rdsl_variable(nParameter : node) ::=
+	#readIdentifier:sParameterName
+	[
+		rdsl_variable_member(nParameter)
+		| rdsl_variable_slice (nParameter)
+	]?
+	=>
+	{
+		insert nParameter.name = sParameterName;
+		insert nParameter.rtype = "variable";
+	}
+	// here we have to get the local variable or the global variable if exists.
+;
+
+rdsl_variable_slice(nParameter : node) ::=
+	'['
+		[
+			rdsl_variable_range(nParameter)
+			| rdsl_variable_index(nParameter) 
+		]
+	']'
+;
+
+rdsl_variable_range(nParameter : node) ::=
+	#readInteger:iLeftRange ".." #readInteger:iRightRange
+	=>
+	{
+		insert nParameter.length = $iRightRange - iLeftRange + 1$;
+		insert nParameter.left = iLeftRange;
+		insert nParameter.right = iRightRange;
+		insert nParameter.range = iLeftRange + ".." + iRightRange;
+		insert nParameter.operator = "[..]";
+	}
+;
+
+rdsl_variable_index(nParameter : node) ::=
+	#readInteger:iIndex
+	=> insert nParameter.index = iIndex;
+	=> insert nParameter.operator = "[]";
+;
+
+rdsl_variable_member(nNode : node) ::=
+	[ '.' | "->" ]:sOperator  #readIdentifier:sMemberName
+	[
+		#insert(nNode.member)
+		[
+			rdsl_variable_member(nNode.member)
+			| rdsl_variable_slice(nNode.member)
+		]
+	]?
+	=>
+	{
+		insert nNode.hasmember = "TRUE";
+		insert nNode.member.name = sMemberName;
+		insert nNode.member.operator = sOperator;
+	}
+;

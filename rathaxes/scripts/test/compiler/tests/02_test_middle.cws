@@ -1,0 +1,69 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+/* Switch to a tmp dir */
+local working_directory = "__02_test";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+
+local dummy;
+local input;
+generateString({
+        // Simple interface
+        interface BaseInterface
+        {
+            provided    type    BaseInterface::a_type;
+        }
+
+        // interface with inheritance
+        interface Userland : BaseInterface, OtherInterface
+        {
+            required variable   Userland::req_var_type    dummy_name;
+            provided            builtintype     Userland::pro_builtin;
+            provided            type            Userland::some_type;
+            optional            type            Userland::opt_type { foo; bar; };
+            required            sequence        Userland::req_sequence(type1 a, type2 , type3 c);
+        }
+
+        interface OtherInterface
+        {
+            required    builtintype     OtherInterface::btype;
+        }
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+#include "rtxNode/rtxNode.inc.cws"
+
+traceLine("Input:\n" + input + "\nEnd of input");
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+// enleve dialect
+removeVariable(source.dialect);
+
+traceLine("Result of parsing:\n" + toString(source, true));
+saveProject(working_directory + "/__02_rtx_parse__.tree", source);
+
+traceLine("Checking inheritance");
+#include "rtxInterfaces/rtxInterfaces.inc.cws"
+
+foreach itf_node in source.block
+{
+    if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
+    {
+        traceLine("Error while checking inheritance");
+        exit 1;
+    }
+}

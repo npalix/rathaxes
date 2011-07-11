@@ -1,0 +1,42 @@
+/***********
+Script de loadProject
+*********/
+
+function loadProject(treeFile : value, internalNode : value, result : node)
+{
+	local referenceList;
+	local res;
+
+	insert result.internalNode = internalNode;
+	parseAsBNF("loadProject.cwp", result, treeFile);
+
+	setall referenceList = result.loadProject.referenceList;
+
+	removeVariable(result.internalNode);
+	removeVariable(result.loadProject);
+
+	setall res = #evaluateVariable("result." + internalNode);
+	setall result = res;
+
+	foreach reference in referenceList
+	{
+		reference.dest = replaceString("&quot;", "\"", reference.dest);
+		if (internalNode == "this")
+		{
+			ref #evaluateVariable(reference.source) = #evaluateVariable(reference.dest);
+		}
+		else
+		{
+			local tempSource = "result" + subString(reference.source, lengthString("this." + internalNode));
+			local tempDest = reference.dest;
+
+			if existVariable(#evaluateVariable(reference.source))
+				&& existVariable(#evaluateVariable(reference.dest))
+			{
+				ref #evaluateVariable(tempSource) = #evaluateVariable(tempDest);
+			}
+		}
+	}
+
+	return ;
+}

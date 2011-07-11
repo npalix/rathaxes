@@ -1,0 +1,56 @@
+/*
+**	cnormToolkit.cwp
+**	for LSE - cnorm
+**	made by amsall_d and giron_d
+**	review by auroux_l (add cnormToolInArrayValues)
+*/
+
+/*
+**	function (void)		cnormError(sError : value)
+**	function (void)		cnormWarning(sWarn : value)
+**	function (void)		cnormInfo(sInfo : value, bPath : value)
+**	function (bool)		cnormToolInArrayValues(sVal : value, nTree : node, rRes : reference)
+*/
+
+function	cnormError(sError : value)
+{
+  local		red = "\033[1;31m";
+  local		blue = "\033[1;34m";
+  local		normal = "\033[0m";
+
+  error(blue + "[" + red + " error " + blue + "] " + normal + sError + "\n");
+}
+
+function	cnormWarning(sWarn : value)
+{
+  local		yellow = "\033[1;33m";
+  local		blue = "\033[1;34m";
+  local		normal = "\033[0m";
+
+  traceLine(getInputFilename() + "(" + countInputLines() + "," + countInputCols() + "):");
+  traceLine(blue + "[" + yellow + " warning " + blue + "] " + normal + sWarn + "\n");
+}
+
+function	cnormInfo(sInfo : value, bPath : value)
+{
+  local		green = "\033[1;32m";
+  local		blue = "\033[1;34m";
+  local		normal = "\033[0m";
+
+  if (bPath == true)
+    traceLine(getInputFilename() + "(" + countInputLines() + "," + countInputCols() + "):");
+  traceLine(blue + "[" + green + " info " + blue + "] " + normal + sInfo + "\n");
+}
+
+function	cnormToolInArrayValues(sVal : value, nTree : node, rRes : reference)
+{
+  foreach item in nTree
+    {
+      if (item == sVal)
+	{
+	  ref rRes = item;
+	  return true;
+	}
+    }
+  return false;
+}

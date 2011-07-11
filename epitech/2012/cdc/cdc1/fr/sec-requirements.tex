@@ -1,0 +1,62 @@
+\section{Contraintes}
+
+\subsection{Le DSL}
+
+Le DSL Rathaxes doit :
+\begin{itemize}
+\item Décrire simplement et efficacement un pilote périphérique ;
+\item Être capable d'intégrer des morceaux de code C ;
+\item Être naturel au possible pour un programmeur et un ingénieur en
+électronique ;
+\item Avoir une syntaxe robuste et et une forte sémantique.
+\end{itemize}
+
+Le code C généré doit être robuste puisque le système d'exploitation dépend de lui.
+
+\subsection{Le compilateur}
+
+Avec le multi-plateforme, la capacité de réutiliser le code devient un enjeu.
+Pour chaque plateforme, le générateur de pilote doit :
+\begin{itemize}
+\item Être installable sur chaque système supporté ;
+\item Être capable d'être lancé en ligne de commande ;
+\item Vérifier la syntaxe du DSL ;
+\item Vérifier la sémantique de ses entrées ;
+\item Utiliser le CodeWorker\cite{CodeWorker} ;
+\item Utiliser les outils natifs \`a chaque plateforme.
+\end{itemize}
+
+\subsection{La \BL}
+
+La \BL\ doit :
+\begin{itemize}
+\item Contenir le code des patrons utilisés par le compilateur ;
+\item Être amélioré avec la gestion des bus ;
+\item Mise \`a jour avec la nouvelle version du compilateur.
+\end{itemize}
+
+\subsection{Support de l'asynchrone}
+
+Actuellement, Rathaxes supporte seulement la communication synchrone avec les
+périphériques. Cependant, la plupart des périphériques communiquent de manière
+asynchrone (comme l'USB) et sa gestion dans le DSL est incontournable.
+
+\subsection{Nouveaux pilotes}
+
+A la fin du projet, les pilotes suivants devront être disponibles :
+\begin{itemize}
+\item souris USB ;
+\item clef de stockage USB ;
+\item carte Ethernet ;
+\item sondes a travers l'i2c.
+\end{itemize}
+
+\subsection{Licence}
+
+En tant que projet scientifique Rathaxes est distribué selon deux licences open
+source :
+\begin{description}
+\item[GPLv3:] Pour le compilateur, afin de garder une propriété intellectuelle ;
+\item[BSD:] Pour la \BL\ afin de rendre possible l'adoption de Rathaxes par des
+entreprises.
+\end{description}
