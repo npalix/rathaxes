@@ -49,4 +49,11 @@ foreach template in source.block[0].body.block
     }
 }
 
-exit(ret);
+saveProject("type_hashed.tree", source);
+
+if (ret != 0)
+{
+    traceLine("FAILURE!!");
+    exit(ret);
+}
+traceLine("====>Result of Type Hash pass : __01_D_test_back_type_hash/*.tree");

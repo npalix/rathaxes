@@ -2,13 +2,13 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_G_test_back_loadFromCache.cws"
+#include  "01_H_test_back_loadFromCache.cws"
 
 
 // The previous test's code has already created a directory.
 // We need to load files from there, so we wont change it.
 
-//working_directory = "../__01_J_test_back_resolvePointcutDefault";
+//working_directory = "../__01_K_test_back_resolvePointcutDefault";
 //if (existDirectory(working_directory))
 //{
 //    traceLine("Directory " + working_directory + " already exists");
@@ -26,13 +26,13 @@ local theWith;
 local theCacheNode;
 
 if (rtxLink_findGlobalCode(theWith, theCacheNode) == false)
-    error("01_H_test_back_resolvePointcut.cws:"
+    error("01_K_test_back_resolvePointcutDefault.cws:"
           +" The global code could not be found by rtxLink.");
 
 traceLine("Loading global_code... cache_node : "+toString(theCacheNode, true));
 local c_tree;
 if (rtxLink_LoadScript(theCacheNode, c_tree) == false)
-    error("01_H_test_back_resolvePointcut.cws:"
+    error("01_K_test_back_resolvePointcutDefault.cws:"
           +" Could not load either script or tree files");
 
 traceLine("====>Codeworker Script and tree Loaded with success.");
