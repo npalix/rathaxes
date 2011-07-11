@@ -9,7 +9,7 @@ rtx_stmt<"interface">(theBlock : node) ::=
     #check(rtxNodeItf(lastNode, name, inheritNode, body))
     [inheritance(inheritNode)]?
     '{'
-        [rtx_itf_declaration(body)]*
+    [ rtx_itf_pointcut(body) | rtx_itf_declaration(body, lastNode.types) ]*
     '}'
     => insert lastNode#root.interfaces[name] = $getArraySize(lastNode#root.interfaces) - 1$;
 ;
@@ -28,23 +28,39 @@ rtx_itf_qualifier ::=
 ;
 
 rtx_itf_type ::=
-    "sequence" | "variable" | "type" | "builtintype"
+    "sequence" | "variable" | "type" | [ "builtin" "type" ]
 ;
 
-rtx_itf_declaration(theBlock : node) ::=
+rtx_itf_pointcut(theBlock : node) ::=
+    #pushItem(theBlock.block)
+    => local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+    => local qualifier;
+    rtx_itf_qualifier:qualifier
+    "pointcut"
+
+    => local nameNode;
+    => local params;
+    => local default;
+
+    #check(rtxNodePointcut(lastNode, nameNode, params, default))
+    rtx_scoped_identifier(nameNode)
+    [rtx_pointcut_parameter(params)]?
+    ';'
+;
+
+rtx_itf_declaration(theBlock : node, nameList : node) ::=
     #pushItem(theBlock.block)
     => local lastNode;
     #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
 
     => local qualifier;
     => local sStmt;
-    => local body;
-    => local rtype;
 
     rtx_itf_qualifier:qualifier
     rtx_itf_type:sStmt
-    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt, rtype, body))
-    rtx_itf_stmt<sStmt>(body, rtype) ';'
+    #check(rtxNodeItfDeclaration(lastNode, qualifier, sStmt))
+    rtx_itf_stmt<sStmt>(lastNode, nameList)
 ;
 
 rtx_type_list(theDecl : node, theRtype : node) ::=
@@ -52,31 +68,81 @@ rtx_type_list(theDecl : node, theRtype : node) ::=
     #readIdentifier:theDecl#back ';'
 ;
 
-rtx_itf_stmt<"type">(theDecl : node, theRtype : node) ::=
+rtx_itf_stmt<"type">(theDecl : node, nameList : node) ::=
     => local nameNode;
     => local params;
+    => local rtypeNode;
+
     rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theRtype, nameNode, params))
-    ['{' [ rtx_type_list(theDecl, theRtype) ]* '}']?
+    #check(rtxNodeRType(rtypeNode, nameNode, params))
+    => addRTypeToItfDeclaration(theDecl, rtypeNode);
+    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
+    ['{' [ rtx_type_list(theDecl, rtypeNode) ]* '}']?
+    ';'
 ;
 
-rtx_itf_stmt<"builtintype">(theDecl : node, theRtype : node) ::=
+rtx_itf_stmt<"builtin type">(theDecl : node, nameList : node) ::=
     => local nameNode;
     => local params;
-    rtx_scoped_identifier(nameNode)
-    #check(rtxNodeRType(theRtype, nameNode, params))
+    => local rtypeNode;
+
+    rtx_scoped_identifier(nameNode) ';'
+    #check(rtxNodeRType(rtypeNode, nameNode, params))
+    => addRTypeToItfDeclaration(theDecl, rtypeNode);
+    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
 ;
 
-rtx_itf_stmt<"variable">(theDecl : node, theRtype : node) ::=
+rtx_itf_stmt<"variable">(theDecl : node, nameList : node) ::=
     => local typeNode;
-    => local params;
+    => local rtypeNode;
+
     rtx_scoped_identifier(typeNode)
-    #readIdentifier:sName
-    #check(rtxNodeRType(theRtype, typeNode, params))
+    #readIdentifier:sName ';'
+    #check(rtxNodeRType(rtypeNode, typeNode, params))
+    => addRTypeToItfDeclaration(theDecl, rtypeNode);
+    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
     #pushItem(theDecl.identifiers)
     => theDecl.identifiers#back = sName;
 ;
 
-rtx_itf_stmt<"sequence">(theDecl : node, theRtype : node) ::=
-    rtx_template_prototype(theRtype, theDecl.identifiers)
+rtx_itf_stmt<"sequence">(theDecl : node, nameList : node) ::=
+    => local rtypeNode;
+    rtx_template_prototype(rtypeNode, theDecl.identifiers)
+    => addRTypeToItfDeclaration(theDecl, rtypeNode);
+    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
+    [ ';' | [
+            => local sequenceBody;
+            '{' [ rtx_itf_sequence_declaration(sequenceBody) ]+ '}'
+            #check(addSequenceBody(theDecl, sequenceBody))
+            ]
+    ]
+;
+
+rtx_itf_sequence_declaration(theBlock : node) ::=
+    => local local_node;
+    rtx_itf_chunk_declaration(local_node)
+    #pushItem(theBlock)
+    => setall theBlock#back = local_node;
+    ';'
+;
+
+
+rtx_pointcut_param(theParams : node) ::=
+    #pushItem(theParams)
+    rtx_scoped_identifier(theParams#back)
+;
+
+rtx_pointcut_parameter(theParams : node) ::=
+    '('
+    [ rtx_pointcut_param(theParams) [ ',' rtx_pointcut_param(theParams) ]* ]?
+    ')'
+;
+
+rtx_itf_chunk_declaration(theNode : node) ::=
+    => local id;
+    => local qualifier;
+    rtx_itf_qualifier:qualifier
+    "chunk"
+    rtx_scoped_identifier(id)
+    #check(rtxNodeItfChunkDeclaration(theNode, id, qualifier))
 ;
