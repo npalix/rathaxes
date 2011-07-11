@@ -2,13 +2,13 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_F_test_back_loadFromCache.cws"
+#include  "01_G_test_back_loadFromCache.cws"
 
 
 // The previous test's code has already created a directory.
 // We need to load files from there, so we wont change it.
 
-//working_directory = "../__01_H_test_back_resolvePointcut";
+//working_directory = "../__01_I_test_back_resolvePointcut";
 //if (existDirectory(working_directory))
 //{
 //    traceLine("Directory " + working_directory + " already exists");

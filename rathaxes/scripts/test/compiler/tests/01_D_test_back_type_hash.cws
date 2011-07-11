@@ -1,0 +1,52 @@
+
+#include  "01_C_test_back_meta.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_D_test_back_type_hash";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+#include "rtxTpl/rtxTypeHash.inc.cws"
+
+// Apply the pass...
+rtxTypeHash(source);
+
+
+// Now check that each chunk was altered with the right templates parameters.
+// Iterate on the templates...
+local ret = 0;
+foreach template in source.block[0].body.block
+{
+    local nbargs = getArraySize(template.prototype.rtype.params);
+    foreach chunk in template.body.block
+    {
+        if (!existVariable(chunk.type_map))
+        {
+            traceLine("<ERROR>: The chunk" + chunk.pointcut.scope + "::"
+                      + chunk.pointcut.name + " does not contain a field type_map.");
+            increment(ret);
+        }
+        else if (getArraySize(chunk.type_map) == nbargs)
+        {
+             traceLine("<SUCCESS>: The chunk " + chunk.pointcut.scope + "::"
+                      + chunk.pointcut.name + " contains the right number"
+                      +" of template parameters types.");
+        }
+        else
+        {
+            traceLine("<ERROR>: The chunk " + chunk.pointcut.scope + "::"
+                      + chunk.pointcut.name + " does not contain the right"
+                      +" type number !");
+            increment(ret);
+        }
+    }
+}
+
+exit(ret);
