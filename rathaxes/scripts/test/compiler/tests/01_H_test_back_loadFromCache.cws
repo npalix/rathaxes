@@ -2,7 +2,7 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_F_test_back_registerToCache.cws"
+#include  "01_G_test_back_registerToCache.cws"
 
 
 // The previous test's code uses the same directory, so no
@@ -36,20 +36,20 @@ local theWith;
 local theTemplates;
 
 if (rtxLink_findTemplates(theRtype, theTemplates) == false)
-    error("01_F_test_back_loadFromCache.cws:"
+    error("01_H_test_back_loadFromCache.cws:"
           +" The template could not be found by rtxLink.");
 traceLine("A list of " + getArraySize(theTemplates)
           + " templates was foud matching the prototype '"
           + theProto + "'");
 
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
-    error("01_F_test_back_loadFromCache.cws:"
+    error("01_H_test_back_loadFromCache.cws:"
           +" rtxLink could not select an unique template :"+toString(theTemplates, true));
 traceLine("An Unique template could be identified for resolution.");
 
 traceLine("Loading template : Userland::open(Context ctx)...");
 local c_tree;
 if (rtxLink_LoadScript(theTemplates, c_tree) == false)
-    error("01_F_test_back_loadFromCache.cws: ");
+    error("01_H_test_back_loadFromCache.cws: ");
 
 traceLine("====>Codeworker Script and tree Loaded with success.");

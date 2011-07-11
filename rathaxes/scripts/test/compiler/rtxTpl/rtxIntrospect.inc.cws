@@ -1,0 +1,387 @@
+#if !existFunction(rtxIntrospect_version)
+
+function rtxIntrospect_version()
+{ return 1.0; }
+/*
+function rtxIntrospect_code<T>(local_node : node, theChunk : node);
+function rtxIntrospect_decl<T>(local_node : node, theChunk : node);
+function rtxIntrospect_stmt<T>(local_node : node, theChunk : node);
+function rtxIntrospect_cond<T>(local_node : node, theChunk : node);
+function rtxIntrospect_expr<T>(local_node : node, theChunk : node);
+*/
+function rtxIntrospect_code<T>(local_node : node, theChunk : node)
+{ error("rtxIntrospect_code<"+T+"> is not implemented."); }
+function rtxIntrospect_decl<T>(local_node : node, theChunk : node)
+{ error("rtxIntrospect_decl<"+T+"> is not implemented."); }
+function rtxIntrospect_stmt<T>(local_node : node, theChunk : node)
+{ error("rtxIntrospect_stmt<"+T+"> is not implemented."); }
+function rtxIntrospect_cond<T>(local_node : node, theChunk : node)
+{ error("rtxIntrospect_cond<"+T+"> is not implemented."); }
+function rtxIntrospect_expr<T>(local_node : node, theChunk : node)
+{ error("rtxIntrospect_expr<"+T+"> is not implemented."); }
+
+
+
+function rtxIntrospect_checkPlaceHolder(identifier : node, theChunk : node, out_ref_pHNode : reference)
+{
+    if (charAt(identifier, 0) == "_")
+    {
+        if (findElement(identifier, theChunk.body.compile) == false)
+            return false;
+//       traceLine("Found PlaceHolder in chunk " + theChunk.pointcut.scope
+//                 + "::" + theChunk.pointcut.name + " -> " + identifier);
+        ref out_ref_pHNode = theChunk.body.compile[identifier];
+        return true;
+    }
+    return false;
+}
+
+
+/*
+ *
+ * General code introspection functions
+ *
+ */
+function rtxIntrospect_code<"__block__">(local_node : node, theChunk : node)
+{
+    foreach item in local_node.block
+    {
+        rtxIntrospect_code<item.type>(item, theChunk);
+    }
+}
+function rtxIntrospect_code<"__source_block__">(local_node : node, theChunk : node)
+{ rtxIntrospect_code<"__block__">(local_node, theChunk); }
+function rtxIntrospect_code<"__block_init__">(local_node : node, theChunk : node)
+{ rtxIntrospect_code<"__block__">(local_node, theChunk); }
+
+
+/*
+ * Walk functions for all decl nodes types.
+ */
+function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node)
+{
+    local placeHolder;
+    local dummy;
+    // First, check if the type of the decl is a placeHolder ?
+    if (rtxIntrospect_checkPlaceHolder(local_node.ctype.identifier,
+                                       theChunk, placeHolder))
+        insert placeHolder.weave_type = "__weave_value__";
+    // Next, check if the variable's name is a placeHolder ?
+    ref placeHolder = dummy;
+    if (existVariable(local_node.name))
+    {
+        if (rtxIntrospect_checkPlaceHolder(local_node.name, theChunk,
+                                           placeHolder))
+            insert placeHolder.weave_type = "__weave_value__";
+    }
+
+    // And check each of the possible members...
+    // the colon expression for C++ ctor init list and bitfields
+    if (existVariable(local_node.colon_expr))
+        rtxIntrospect_code<local_node.colon_expr.type>(local_node.colon_expr,
+                                                       theChunk);
+    // the assign_expression for initialization list
+    if (existVariable(local_node.assign_expr))
+        rtxIntrospect_code<local_node.assign_expr.type>(local_node.assign_expr,
+                                                        theChunk);
+
+    // Finally, recurse.
+    rtxIntrospect_decl<local_node.ctype.cdecl_type>(local_node, theChunk);
+}
+function	rtxIntrospect_code<"__field_decl__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<"__decl__">(local_node, theChunk);
+}
+function	rtxIntrospect_code<"__param_decl__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<"__decl__">(local_node, theChunk);
+}
+function	rtxIntrospect_code<"__fwd_decl__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<"__decl__">(local_node, theChunk);
+}
+
+
+/*
+ * Walker functions for the main statement node type.
+ */
+function rtxIntrospect_code<"__stmt__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_stmt<local_node.stmt_type>(local_node, theChunk);
+}
+
+
+/*
+ * Walker functions for the main statement node type.
+ */
+function rtxIntrospect_code<"__expr__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_expr<local_node.expr_type>(local_node, theChunk);
+}
+
+
+/*
+ * Walker functions for annex node types.
+ */
+function rtxIntrospect_code<"__index_designation__">(local_node : node, theChunk : node)
+{
+    // First, look into the index (most likely an expression/terminal expr)
+	rtxIntrospect_code<local_node.index.type>(local_node.index, theChunk);
+    // Next look into the rhs expr.
+	rtxIntrospect_code<local_node.expr.type>(local_node.expr, theChunk);
+}
+
+function rtxIntrospect_code<"__field_designation__">(local_node : node, theChunk : node)
+{
+    // First check that the field is not a placeHolder
+    local placeHolder;
+    if (rtxIntrospect_checkPlaceHolder(local_node.name, theChunk, placeHolder))
+    {
+        insert placeHolder.weave_type = "__weave_value__";
+    }
+    // Next check the rhs for a placeHolder
+	rtxIntrospect_code<local_node.expr.type>(local_node.expr, theChunk);
+}
+
+
+
+/*
+ *
+ * Declaration type code introspection functions
+ *
+ */
+function rtxIntrospect_decl<"__primary__">(local_node : node, theChunk : node)
+{
+    // Lastly, recursively check the ctype.param field and body (functions decl)
+    if (existVariable(local_node.ctype.param))
+        rtxIntrospect_code<local_node.ctype.param.type>(local_node.ctype.param,
+                                                        theChunk);
+    if (existVariable(local_node.body))
+        rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+
+function rtxIntrospect_decl<"__enum__">(local_node : node, theChunk : node)
+{
+    local placeHolder;
+    local dummy;
+    foreach val in local_node.ctype.enum
+    {
+        local kval = key(val);
+        ref placeHolder = dummy;
+        if (rtxIntrospect_checkPlaceHolder(kval, theChunk, placeHolder))
+            insert placeHolder.weave_type = "__weave_enum_key__";
+
+        // val Should be either "true" (defined but no value assignated)
+        // either an expression.
+        if (existVariable(val.type))
+            rtxIntrospect_expr<val.expr_type>(val, theChunk);
+    }
+}
+
+function rtxIntrospect_decl<"__composed__">(local_node : node, theChunk : node)
+{
+    // Recurse in the type definition to find placeHolders.
+    if (existVariable(local_node.ctype.body))
+        rtxIntrospect_code<local_node.ctype.body.type>(local_node.ctype.body,
+                                                       theChunk);
+}
+
+function rtxIntrospect_decl<"__pointer__">(local_node : node, theChunk : node)
+{ /* Dont care about this... */ }
+
+/*
+ *
+ * Statement type code introspection functions
+ *
+ */
+function rtxIntrospect_stmt<"__expr__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.expr.type>(local_node.expr, theChunk);
+}
+function rtxIntrospect_stmt<"__label__">(local_node : node, theChunk : node)
+{
+    local placeHolder;
+    if (rtxIntrospect_checkPlaceHolder(local_node.label, theChunk, placeHolder))
+        insert placeHolder.weave_type = "__weave_value__";
+}
+function rtxIntrospect_stmt<"__ctrl__">(local_node : node, theChunk : node)
+{
+    local placeHolder;
+    if (rtxIntrospect_checkPlaceHolder(local_node.ctrl, theChunk, placeHolder))
+        insert placeHolder.weave_type = "__weave_value__";
+}
+function rtxIntrospect_stmt<"__branch__">(local_node : node, theChunk : node)
+{
+    if (existVariable(local_node.expr))
+        rtxIntrospect_code<local_node.expr.type>(local_node.expr, theChunk);
+}
+function rtxIntrospect_stmt<"__case__">(local_node : node, theChunk : node)
+{
+    local placeHolder;
+    if (rtxIntrospect_checkPlaceHolder(local_node.ctrl, theChunk, placeHolder))
+        insert placeHolder.weave_type = "__weave_value__";
+    if (existVariable(local_node.expr))
+        rtxIntrospect_code<local_node.expr.type>(local_node.expr, theChunk);
+}
+function rtxIntrospect_stmt<"__cond__">(local_node : node, theChunk : node)
+{
+    // First check the condition...
+    rtxIntrospect_code<local_node.condition.type>(local_node.condition,
+                                                  theChunk);
+    // Next, check the rest depending on the statement (if, while, for, etc...)
+    rtxIntrospect_cond<local_node.name>(local_node, theChunk);
+}
+
+function rtxIntrospect_cond<"do">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+function rtxIntrospect_cond<"while">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+function rtxIntrospect_cond<"switch">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+function rtxIntrospect_cond<"if">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.then.type>(local_node.then, theChunk);
+    rtxIntrospect_code<local_node.else.type>(local_node.else, theChunk);
+}
+function rtxIntrospect_cond<"for">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.increment.type>(local_node.increment, theChunk);
+    rtxIntrospect_code<local_node.init.type>(local_node.init, theChunk);
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+
+
+/*
+ *
+ * Expression type code introspection function
+ *
+ */
+function rtxIntrospect_expr<"__terminal__">(local_node : node, theChunk : node)
+{
+    // We could have either a literla teminal (.literal) or an id.
+    // Only the id matters in terms of rathaxes.
+    if (existVariable(local_node.id))
+    {
+        local placeHolder;
+        if (rtxIntrospect_checkPlaceHolder(local_node.id, theChunk, placeHolder))
+            insert placeHolder.weave_type = "__weave_value__";
+    }
+}
+function rtxIntrospect_expr<"__cast__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.left.type>(local_node.left, theChunk);
+    rtxIntrospect_code<local_node.right.type>(local_node.right, theChunk);
+}
+function rtxIntrospect_expr<"__unary__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.right.type>(local_node.right, theChunk);
+}
+function rtxIntrospect_expr<"__binary__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.left.type>(local_node.left, theChunk);
+    rtxIntrospect_code<local_node.right.type>(local_node.right, theChunk);
+}
+function rtxIntrospect_expr<"__ternary__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.condition.type>(local_node.condition, theChunk);
+    rtxIntrospect_code<local_node.then.type>(local_node.then, theChunk);
+    rtxIntrospect_code<local_node.else.type>(local_node.else, theChunk);
+}
+function rtxIntrospect_expr<"__post__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.left.type>(local_node.left, theChunk);
+}
+function rtxIntrospect_expr<"__postexpr__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.left.type>(local_node.left, theChunk);
+    foreach item in local_node.list
+    {
+//        if (item.postexpr_type == "__call__")
+//        {
+//        }
+//        else if (item.postexpr_type == "__index__")
+//        {
+//        }
+		if (existVariable(item.expr.list))
+        {
+			foreach param in item.expr.list
+            {
+			    if (existVariable(param.expr_type))
+                    rtxIntrospect_code<param.type>(param, theChunk);
+            }
+        }
+    }
+}
+function rtxIntrospect_expr<"__paranth__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+function rtxIntrospect_expr<"__sizeof__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.right.type>(local_node.right, theChunk);
+}
+function rtxIntrospect_expr<"__builtinoffsetof__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.left.type>(local_node.left, theChunk);
+    rtxIntrospect_code<local_node.right.type>(local_node.right, theChunk);
+}
+function rtxIntrospect_expr<"__compound__">(local_node : node, theChunk : node)
+{
+    rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk);
+}
+
+
+
+function rtxIntrospectChunk(theChunk : node)
+{
+    insert theChunk.variables;
+
+    foreach stmt in theChunk.body.block
+    {
+        rtxIntrospect_code<stmt.type>(stmt, theChunk);
+    }
+}
+
+
+
+function    rtxIntrospect_walk<"__block__">(local_node : node)
+{
+    foreach item in local_node.block
+    { rtxIntrospect_walk<item.type>(item); }
+}
+
+function    rtxIntrospect_walk<"__root_block__">(local_node : node)
+{
+    rtxIntrospect_walk<"__block__">(local_node);
+}
+
+function    rtxIntrospect_walk<"__rtx_with__">(local_node : node)
+{
+    foreach chunk in local_node.body.block
+    { rtxIntrospect_walk<chunk.type>(chunk); }
+}
+
+function    rtxIntrospect_walk<"__rtx_tpl__">(local_node : node)
+{
+    foreach chunk in local_node.body.block
+    { rtxIntrospect_walk<chunk.type>(chunk); }
+}
+
+function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
+{
+    rtxIntrospectChunk(local_node);
+}
+
+function    rtxIntrospect(local_node : node)
+{
+    rtxIntrospect_walk<local_node.type>(local_node);
+}
+
+
+#end

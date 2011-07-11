@@ -2,7 +2,7 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_E_test_back_gen.cws"
+#include  "01_F_test_back_gen.cws"
 
 
 // The previous test's code uses the same directory, so no
@@ -23,7 +23,7 @@
 traceLine("====>Registering template code to CACHE");
 if (rtxLink_RegisterToCache(source) == false)
 {
-    traceLine("01_test_back.cws: Could not register blt into the cache !");
+    traceLine("01_G_test_back_registerToCache.cws: Could not register blt into the cache !");
     exit (1);
 }
 saveProject("__session_cache.tree", this.session);
