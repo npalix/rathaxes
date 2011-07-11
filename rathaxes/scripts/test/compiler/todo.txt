@@ -66,6 +66,26 @@ Tests Backend :
 
  * Empecher le cache de charger plusieurs fois le meme script           <= TODO
 
+ * Mettre en place la génération de code pour les templates de type     <= TODO
+   * Definir les prototypes des fonctions à générer pour le mapping     <= TODO
+   * Coder les fonctions de mapping pour les builtins (local, config)   <= TODO
+     * local: symbole du bloc C                                         <= TODO
+     * local: error_label() -> generation d'un label unique pour erreur <= TODO
+     * local: tmp() -> generation d'un identifiant unique dans le bloc  <= TODO
+     * local: lookup(symbol) -> analyse prototype func pour recup types
+                                a partir d'un index de parametre        <= TODO
+   * Implémenter l'appel à des fonctions appliquées à un type (chunks)  <= TODO
+
+ * Gestion d'erreur :                                                   <= TODO
+   * implem le bloc on_error des chunks                                 <= TODO
+     * Parsing                                                          <= TODO
+     * Resolution                                                       <= TODO
+     * Tissage                                                          <= TODO
+       * Résoudre/Générer le label d'erreur                             <= TODO
+       * inserer a la suite des instructions                            <= TODO
+       * Inserer le on_error avant les on_error precedents              <= TODO
+       * Inserer le label généré avant le on_error                      <= TODO
+
 
 
 
