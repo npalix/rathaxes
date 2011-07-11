@@ -20,16 +20,18 @@ generateString({
         // Simple interface
         interface BaseInterface
         {
-            provided    type    BaseInterface::a_type;
-            provided    type    BaseInterface::type1;
-            provided    type    BaseInterface::type2;
+            provided    type            BaseInterface::a_type;
+            provided    type            BaseInterface::type1;
+            provided    type            BaseInterface::type2;
+            provided    pointcut        BaseInterface::a_pointcut;
+            provided    pointcut        BaseInterface::foo(bar);
         }
 
         // interface with inheritance
         interface Userland : BaseInterface, OtherInterface
         {
             required variable   Userland::req_var_type    dummy_name;
-            provided            builtintype     Userland::pro_builtin;
+            provided            builtin type    Userland::pro_builtin;
             provided            type            Userland::some_type;
             optional            type            Userland::opt_type { foo; bar; };
             required            sequence        Userland::req_sequence(BaseInterface::type1 a,
@@ -37,15 +39,15 @@ generateString({
                                                                        Userland::some_type c);
             provided            sequence        Userland::seq()
             {
-                use      pointcut some_pointcut;
-                provided pointcut other_pointcut(JoinPointType);
+                provided chunk some_pointcut;
+                /* provided pointcut other_pointcut(JoinPointType); */
                 provided chunk some_chunk;
             }
         }
 
         interface OtherInterface
         {
-            required    builtintype     OtherInterface::btype;
+            required    builtin type     OtherInterface::btype;
         }
 
 @}, dummy, input);

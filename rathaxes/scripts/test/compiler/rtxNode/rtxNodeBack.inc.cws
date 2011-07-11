@@ -208,34 +208,6 @@ function rtxNodeLink(local_node     : node,
     return true;
 }
 
-function rtxNodePointcut(local_node         : node,
-                         out_ref_pointcut   : reference,
-                         out_ref_params     : reference,
-                         out_ref_default    : reference)
-{
-    insert local_node.type = "__rtx_pointcut__";
-    insert local_node.name;
-    insert local_node.parameters;
-    insert local_node.default;
-
-    ref out_ref_pointcut = local_node.name;
-    ref out_ref_params = local_node.parameters;
-    ref out_ref_default = local_node.default;
-    
-    return true;
-}
-
-function rtxNodePointcut_Default(local_node : node,
-                                 body       : reference)
-{
-    insert local_node.type = "__rtx_pointcut_default__";
-    insert local_node.body;
-    // the body Should pure C code.
-    cnormNodeBlock(local_node.body);
-    ref body = local_node.body;
-    return true;
-}
-
 function rtxNodeEach(local_node     : node,
                      tpl_vars       : node,
                      item_name      : value,
