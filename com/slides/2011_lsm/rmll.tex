@@ -8,12 +8,8 @@
 
 \definecolor{grey}{rgb}{0.10,0.10,0.10}
 \definecolor{rBlue}{rgb}{0.0,0.44,0.96}
-\definecolor{rRed}{rgb}{0.6,0.0,0.0}
-\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
-
-\definecolor{tblR}{rgb}{1.0,0.0,0.0}
-\definecolor{tblG}{rgb}{0.0,1.0,0.0}
-\definecolor{tblB}{rgb}{0.3,0.7,1.0}
+\definecolor{rRed}{rgb}{0.6,0.2,0.2}
+\definecolor{rGreen}{rgb}{0.67,1,0.3}
 
 \lstdefinelanguage{rathaxes}%
 {
@@ -23,22 +19,22 @@
         with, values,                           % backend+interface
         builtin, provided, required, optional,  % interfaces: implem
         type, sequence, variable,               % general: element type
-        use, pointcut, chunk,                   % for aspectual concepts
+        pointcut, chunk,                        % for aspectual concepts
         template                                % backend
     },%
 	sensitive=true,%
 	morecomment=[l][\color{rRed}]{//},%
  	morecomment=[l][\color{rRed}]{\#},%
 	morecomment=[s][\color{rRed}]{/*}{*/},%
-	morestring=[b][\color{rGreen}]",%
-	morestring=[b][\color{rGreen}]',%
+	morestring=[b][\color{lststring}]",%
+	morestring=[b][\color{lststring}]',%
 	keywordstyle={\color{rBlue}}%
 }[keywords,comments,strings]
 
 \definecolor{lstbackground}{rgb}{0.0, 0.0, 0.0}
 \definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
-\definecolor{lstkeyword}{rgb}{0.23, 0.13, 0.78}
-\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstkeyword}{rgb}{0.35, 0.65, 0.88}
+\definecolor{lststring}{rgb}{0.67, 7, 0.33}
 \definecolor{lstidentifier}{rgb}{0.82, 0.82, 0.82}
 
 \linespread{1.0}
@@ -110,7 +106,7 @@
 \large{\itshape{\rmfamily{«~\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}~»}}}
 
 \vspace{1cm}
-\raggedleft\large{2.6.39: \itshape{\rmfamily{«~les pilotes (\tred{65 \% des patches})~»}} (patrick\_g)}
+\raggedleft\large{2.6.39: \itshape{\rmfamily{«~les pilotes (\tred{65 \% des patchs})~»}} (patrick\_g)}
 
 \vspace{1cm}
 \large{2.6.35: \itshape{\rmfamily{«~les \tred{deux tiers des changements} dans les pilotes~»}}}
@@ -379,8 +375,8 @@ Décrivent un \emph{«~sous système~»} avec :
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -401,8 +397,8 @@ interface CharDev : LKM {
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -434,8 +430,8 @@ Implémentations des interfaces pour chaque OS :
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -484,8 +480,8 @@ device Pipe use LKM, CharDev, Algorithms {
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -534,8 +530,8 @@ device Pipe use LKM, CharDev, Algorithms {
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -560,8 +556,8 @@ values OS = Linux, version >= 2.6.27 {
 \end{lstlisting}
 \end{minipage}};
 
-\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
+\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
 \end{tikzpicture}
 \end{frame}
 
@@ -587,8 +583,8 @@ device Pipe use LKM, CharDev, Algorithms {
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -612,12 +608,12 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
-\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
+\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
 
-\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.43,0.39) rectangle (6.85,0.66);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.66) -- (2.9,2.55);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.39) -- (6.15,-2.70);
+\draw [ultra thick, rounded corners=2pt, color=LimeGreen] (2.43,0.44) rectangle (6.85,0.71);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.71) -- (2.9,2.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.44) -- (6.15,-2.70);
 \end{tikzpicture}
 \end{frame}
 
@@ -643,8 +639,8 @@ device Pipe use LKM, CharDev, Algorithms {
 interface CharDev : LKM {
   provided type        Context;
   required sequence    open(Context) {
-     use pointcut      LKM::GLOBAL_CODE_DEFINITION;
-     use pointcut      LKM::INIT_LKM_FPTRS;
+     provided chunk    LKM::GLOBAL_CODE_DEFINITION;
+     provided chunk    LKM::INIT_LKM_FPTRS;
      provided pointcut ALGO;
   }
   required variable identifier  OS;
@@ -668,16 +664,16 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
-\draw [ultra thick, rounded corners=3pt, color=SkyBlue] (2.43,-0.84) rectangle (6.65,-0.57);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.84) -- (3.3,-2.45);
+\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
+\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
 
-\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.43,0.39) rectangle (6.85,0.66);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.66) -- (2.9,2.55);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.39) -- (6.15,-2.70);
+\draw [ultra thick, rounded corners=2pt, color=LimeGreen] (2.43,0.44) rectangle (6.85,0.71);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.71) -- (2.9,2.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.44) -- (6.15,-2.70);
 
-\draw [ultra thick, rounded corners=3pt, color=MediumOrchid] (2.8,-0.09) rectangle (5.85,-0.36);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.09) -- (5,2.27);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.36) -- (5,-3.22);
+\draw [ultra thick, rounded corners=2pt, color=MediumOrchid] (2.8,-0.04) rectangle (5.85,-0.31);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.04) -- (5,2.27);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.31) -- (5,-3.22);
 \end{tikzpicture}
 \end{frame}
 
@@ -719,13 +715,13 @@ values OS = Linux, version >= 2.6.27 {
        provided sequence   load()
        {
            provided pointcut   lkm_init_fptrs;
-           use      pointcut   lkm_base_code_definition;
+           provided chunk      lkm_base_code_definition;
        }
 
        provided sequence   unload()
        {
            provided pointcut   unload_setup;
-           use      pointcut   lkm_base_code_definition;
+           provided chunk      lkm_base_code_definition;
        }
        required variable Builtins::string OS;
        required variable Builtins::serial version;
@@ -827,7 +823,7 @@ configuration
 	\begin{itemize}
 		\item	Fosdem 2012;
 		\item	Fin EIP;
-		\item	Evolution vers python -> contributeur.
+		\item	Évolution vers python -> contributeur.
 	\end{itemize}
 	\end{center}
 \end{frame}
