@@ -1,0 +1,17 @@
+<%
+
+/*
+**  _open.blt in black_library/linux/user_interface
+**  for Rathaxes project
+**  made by StuFF
+*/
+local	sDriverName = this.name;
+localref nSelf = project.references.currentContext;
+
+%>
+
+ADVICE open PART_OF kernel_interfaces
+{
+    <% local sToken = getContextToken(nSelf.block); %>
+    JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+};

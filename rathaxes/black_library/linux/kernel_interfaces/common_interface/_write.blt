@@ -1,0 +1,35 @@
+<%
+/*
+**  _write.blt in black_library/linux/user_interface
+**  for Rathaxes project
+**  made by StuFF
+*/
+
+local	sDriverName = this.name;
+localref nSelf = project.references.currentContext;
+
+%>
+
+ADVICE write PART_OF kernel_interfaces
+{
+    ssize_t @sDriverName@_write(struct file *filp, const char /*__user*/ *ubuff, size_t size, loff_t *offset)
+    {
+        char*   input = 0x0;
+        int     ret = 0;
+
+        input = kmalloc(sizeof(*input) * size + 1, GFP_KERNEL);
+        if (!input)
+            return (-ENOMEM);
+        ret = copy_from_user(input, ubuff, size);
+        if (ret)
+            goto exit;
+        <% local sToken = getContextToken(nSelf.block); %>
+        JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+        kfree(input);
+        return (current_size);
+    exit:
+        if (input)
+            kfree(input);
+        return (-1);
+    }
+};

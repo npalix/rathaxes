@@ -1,0 +1,46 @@
+with LKM, User
+values OS=linux, version >= 2.6.24
+{
+    template sequence User::open(Context ctx)
+    {
+    }
+
+    template sequence User::close(Context ctx)
+    {
+    }
+
+    template sequence User::read(Context ctx)
+    {
+        chunk LKM::GLOBAL_CODE_DEFINITION
+        {
+            typedef void dev_t;
+            int ${config.device_name}_read(dev_t *)
+            {
+                return (0);
+            }
+        }
+
+        chunk LKM::INIT_LKM_FPTRS(init)
+        {
+		    ${init}.read      = &${config.device_name}_read;
+        }
+    }
+
+    template sequence User::write(Context ctx)
+    {
+        chunk LKM::GLOBAL_CODE_DEFINITION
+        {
+            typedef void dev_t;
+            int ${config.device_name}_write(dev_t *)
+            {
+                return (0);
+            }
+        }
+
+        chunk LKM::INIT_LKM_FPTRS(init)
+        {
+		    ${init}.write      = &${config.device_name}_write;
+        }
+    }
+}
+

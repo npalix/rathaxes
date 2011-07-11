@@ -1,0 +1,144 @@
+/*
+**	cnorm statements generation templates
+**	made by David Giron for cnorm_2.0
+**	review by Auroux Lionel
+*/
+
+declare function	cnormIterBlocks(block : node);
+declare function	nodeIsStatement(node : node);
+declare function	cnormPrintIfStatement(statement : node);
+declare function	cnormPrintSwitchStatement(statement : node);
+declare function	cnormPrintWhileStatement(statement : node);
+declare function	cnormPrintDoWhileStatement(statement : node);
+declare function	cnormPrintForStatement(statement : node);
+declare function	cnormPrintGotoStatement(statement : node);
+declare function	cnormPrintReturnStatement(statement : node);
+
+function	nodeIsStatement(node : node)
+{
+  switch ( node.type )
+    {
+    case "if":
+      {
+	cnormPrintIfStatement(node);
+	return true;
+      }
+    case "switch":
+      {
+	cnormPrintSwitchStatement(node);
+	return true;
+      }
+    case "break":
+      {
+	%>break<%
+        return true;
+      }
+    case "while":
+      {
+	cnormPrintWhileStatement(node);
+	return true;
+      }
+    case "do":
+      {
+	cnormPrintDoWhileStatement(node);
+	return true;
+      }
+    case "for":
+      {
+	cnormPrintForStatement(node);
+	return true;
+      }
+    case "goto":
+      {
+	cnormPrintGotoStatement(node);
+	return true;
+      }
+    case "continue":
+      {
+	%>continue;<%
+	return true;
+      }
+    case "return":
+      {
+	cnormPrintReturnStatement(node);
+	return true;
+      }
+    default:
+      return false;
+    }
+}
+
+function	cnormPrintIfStatement(statement : node)
+{
+  /*
+  @if (@ cnormIterExpressions(statement.condition); @)@"\n"@{@"\n"@@
+   cnormIterBlocks(statement.then);
+  @}@"\n"@@
+  if (existVariable(statement.else))
+    {
+      @else@"\n"@{@"\n"@@
+      cnormIterBlocks(statement.else);
+      @}@"\n"@@
+    }
+  */
+  %>if (<% cnormIterExpressions(statement.condition); %>)<%@"\n"@
+  %>{@"\n"@<%
+   cnormIterBlocks(statement.then);
+  %>}@"\n"@<%
+  if (existVariable(statement.else))
+    {
+      %>else@"\n"@
+      %>{@"\n"@<%
+	   cnormIterBlocks(statement.else);
+      %>}@"\n"@<%
+    }
+}
+
+function	cnormPrintSwitchStatement(statement : node)
+{
+  @switch (@ cnormIterExpressions(statement.condition); @)@"\n"@{@"\n"@@
+  foreach entry in statement.switch
+    {
+      if (entry.type == "case")
+	{ @case @ }
+      if (entry.type == "default")
+	{ @default @ }
+      cnormIterExpressions(entry.case); @:@"\n"@{@"\n"@@
+      cnormIterBlocks(entry.block) @}@"\n"@@
+    }
+  @}@"\n"@@
+}
+
+function	cnormPrintWhileStatement(statement : node)
+{
+  @while (@ cnormIterExpressions(statement.condition); @)@"\n"@{@"\n"@@
+   cnormIterBlocks(statement.block);
+  @}@"\n"@@
+}
+
+function	cnormPrintDoWhileStatement(statement : node)
+{
+  @do@"\n"@{@"\n"@@
+  cnormIterBlocks(statement.block); @}@"\n"@@
+  @while (@ cnormIterExpressions(statement.condition); @)@"\n"@;@
+}
+
+function	cnormPrintForStatement(statement : node)
+{
+  @for (@
+  cnormIterExpressions(statement.init); @; @
+  cnormIterExpressions(statement.condition); @; @
+  cnormIterExpressions(statement.increment);
+  @)@"\n"@{@"\n"@@
+  cnormIterBlocks(statement.block); @}@"\n"@@
+}
+
+function	cnormPrintGotoStatement(statement : node)
+{
+  @goto @ cnormIterExpressions(statement.expr)@;@
+}
+
+function	cnormPrintReturnStatement(statement : node)
+{
+  @return @ cnormIterExpressions(statement.block);@;@
+}

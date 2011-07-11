@@ -1,0 +1,27 @@
+/*
+**	rdsl_declaration_buffer.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+*/
+
+declare function buildBufferFields(nBuffer : node);
+
+/*
+** Build buffer's fields names.
+** -----------------------------------------------------------------------------
+**	This function mangle buffer fields names.
+*/
+function buildBufferFieldsNames(nBuffer : node)
+{
+	if (existVariable(nBuffer.name))
+	{
+		local sName = nBuffer.name;
+		if (nBuffer.from == "USERLAND")
+			sName = "user_buffer_" + sName;
+		else
+			sName = "kernel_buffer_" + sName;
+		insert nBuffer.pointerName = sName;
+		insert nBuffer.sizeName = sName + "_size";
+		insert nBuffer.offsetName = sName + "_offset";
+	}
+}

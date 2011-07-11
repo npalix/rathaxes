@@ -1,0 +1,8 @@
+declare function	getTempDir<"linux">();
+
+function	getTempDir<"linux">()
+{
+	local	directory;
+	directory = "/tmp/";
+	return directory;
+}

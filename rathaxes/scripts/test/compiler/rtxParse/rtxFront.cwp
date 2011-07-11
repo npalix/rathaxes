@@ -1,0 +1,50 @@
+
+/*
+ *
+ * Rules for the configuration block
+ *
+ */
+
+rtx_stmt_config_block(theBlock : node) ::=
+    [
+/**/    => local configField;
+/**/    => local theIdentifier;
+/**/    => local theValue;
+        #check(rtxNodeConfig_BodyAddField(theBlock,
+                                          configField, theIdentifier, theValue))
+        rtx_scoped_identifier(theIdentifier)
+        #continue(sError, "Expected assignment operator '=' after"
+                        + " configuration variable declaration.")
+        '='
+        #continue(sError, "Expected value after configuration variable "
+                        + "assignment.")
+        rtx_value(theValue)
+        #continue(sError, "Expected extension block or "
+                        + "';' after configuration variable assignment.")
+        [
+            /* Supports extension on this variable : block*/
+            '{'
+/**/            =>local theBody;
+                #check(rtxNodeConfigField_Extend(configField, theBody))
+                rtx_stmt_config_block(theBody)
+                #continue(sError, "Expected '}' closing block.")
+            '}'
+        |
+            /* Does not support extension */
+            ';'
+        ]
+    ]*
+;
+
+rtx_stmt<"configuration">(theBlock : node) ::=
+    #pushItem(theBlock.block)
+/**/=> local lastNode;
+    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/=> local configBody;
+    #check(rtxNodeConfig(lastNode, configBody))
+    #continue(sError, "Expected block after configuration statement.")
+    '{'
+        rtx_stmt_config_block(configBody)
+        #continue(sError, "Expected '}' closing configuration block.")
+    '}'
+;

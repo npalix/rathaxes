@@ -1,0 +1,37 @@
+/*
+**	rdsl_declaration_variables.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+** ---------------------------------------------------------------------------
+*/
+
+rdsl_declaration_variables(nVariableDeclarationScope : node) ::=
+    => local nVariableDeclaration;
+	[
+		variable_declaration(nVariableDeclaration)
+		| buffer(nVariableDeclaration)
+	]
+	=>
+	{
+		if (!findElement(nVariableDeclaration.name, nVariableDeclarationScope)
+				&& !findElement(nVariableDeclaration.name, this.driver.globals))
+			setall nVariableDeclarationScope[nVariableDeclaration.name] = nVariableDeclaration;
+		else
+			rtxError("Variable '" + nVariableDeclaration.name + "' already defined.");
+	}
+;
+
+variable_declaration(nVariableDeclaration : node) ::=
+	rathaxes_basic_types:sType #readIdentifier:sVarName
+	=>
+	{
+		insert nVariableDeclaration.name = sVarName;
+		insert nVariableDeclaration.rtype = sType;
+	}
+	[ 
+		'[' #readInteger:iSize ']'
+		=> insert nVariableDeclaration.size = iSize;
+		=> insert nVariableDeclaration.operator = "[]";
+	]?
+	';'
+;
