@@ -2,7 +2,7 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_D_test_back_gen.cws"
+#include  "01_E_test_back_gen.cws"
 
 
 // The previous test's code uses the same directory, so no

@@ -7,7 +7,7 @@ function rtxResolve_version()
 /*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
- * the global scopem and every other node in the block starting at the current
+ * the global scope, and every other node in the block starting at the current
  * index.
  *
  * It is only used by a link resolution.
@@ -111,6 +111,20 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     local fieldValue;
     local finalString = "";
 
+    /*
+     *
+     * This block of code has for role to check wether we're manipulating
+     * a rathaxes type or a variable of a rathaxes type.
+     *
+     */
+
+
+    /*
+     *
+     * This block of code means to replace the placeHolder by a simple
+     * identifier in the code.
+     *
+     */
     // First concat prefix
     finalString = finalString + treeNode.prefix;
 

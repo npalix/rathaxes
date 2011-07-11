@@ -2,7 +2,7 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_C_test_back_meta.cws"
+#include  "01_D_test_back_type_hash.cws"
 
 
 // The previous test's code has already created a directory.
