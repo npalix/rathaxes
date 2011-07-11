@@ -6,6 +6,69 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
+\definecolor{grey}{rgb}{0.10,0.10,0.10}
+\definecolor{rBlue}{rgb}{0.0,0.44,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\definecolor{tblR}{rgb}{1.0,0.0,0.0}
+\definecolor{tblG}{rgb}{0.0,1.0,0.0}
+\definecolor{tblB}{rgb}{0.3,0.7,1.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={
+        interface, extend,                      % interfaces : decl
+        device, configuration, driver,          % devices
+        with, values,                           % backend+interface
+        builtin, provided, required, optional,  % interfaces: implem
+        type, sequence, variable,               % general: element type
+        use, pointcut, chunk,                   % for aspectual concepts
+        template                                % backend
+    },%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+ 	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+
+\definecolor{lstbackground}{rgb}{0.0, 0.0, 0.0}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.23, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.82, 0.82, 0.82}
+
+\linespread{1.0}
+\lstset{
+    language=rathaxes,
+    tabsize=2,
+    captionpos=b,
+    emptylines=0,
+    frame=single,
+    breaklines=false,
+    breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+    extendedchars=false,
+    showstringspaces=false,
+    showspaces=false,
+    showtabs=false,
+    framexrightmargin=-100pt,
+    basicstyle=\color{white}\tiny\ttfamily,
+    numbers=right,                   % where to put the line-numbers
+    numberstyle=\scriptsize\ttfamily,
+    stepnumber=1,                   % the step between two line-numbers. If it's 1, each line
+    numbersep=-90pt,                  % how far the line-numbers are from the code
+    keywordstyle=\color{lstkeyword},
+    commentstyle=\color{lstcomment},
+    identifierstyle=\color{lstidentifier},
+    stringstyle=\color{lststring},
+    backgroundcolor=\color{lstbackground},
+    escapeinside={\%*}{*)},         % if you want to add a comment within your code
+    morekeywords={*,...}            % if you want to add more keywords to the set
+}
+
 \title{\rtx\ -- RMLL 2011}
 \date{8 Juillet 2011}
 \author{\rtx \\ \texttt{www.rathaxes.org} \\ L. Auroux \& D.Pineau }
@@ -22,25 +85,6 @@
 \tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=white}}
 \tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
 \tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
-
-\lstset{ %
-numbers=left,                   % where to put the line-numbers
-numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
-stepnumber=0,                   % the step between two line-numbers. If it's 1, each line
-                                % will be numbered
-basicstyle=\tiny\ttfamily,
-numbersep=5pt,                  % how far the line-numbers are from the code
-backgroundcolor=\color{black},  % choose the background color. You must add \usepackage{color}
-showspaces=false,               % show spaces adding particular underscores
-showstringspaces=false,         % underline spaces within strings
-showtabs=false,                 % show tabs within strings adding particular underscores
-tabsize=2,                      % sets default tabsize to 2 spaces
-captionpos=b,                   % sets the caption-position to bottom
-breaklines=true,                % sets automatic line breaking
-breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
-escapeinside={\%*}{*)},         % if you want to add a comment within your code
-morekeywords={*,...}            % if you want to add more keywords to the set
-}
 
 \begin{document}
 
@@ -108,6 +152,12 @@ morekeywords={*,...}            % if you want to add more keywords to the set
 		\item	Langage Codeworker (www.codeworker.org LGPL);
 		\item	Front end C : Cnorm (code.google.com/p/cnorm LGPL);
 	\end{itemize}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Première approche}
+	\begin{center}
+	\large{Démonstration}
 	\end{center}
 \end{frame}
 
@@ -645,6 +695,119 @@ values OS = Linux, version >= 2.6.27 {
 \draw (BLT.east) node[right]{\LARGE{Arbre de \emph{« pointcuts »}}};
 \end{tikzpicture}
 \end{frame}
+
+\begin{frame}[containsverbatim]
+\frametitle{Exemple d'interface (\texttt{.rti})}
+%\lstset{
+%    basicstyle=\color{black}\tiny\ttfamily,
+%    numberstyle=\tiny\ttfamily
+%}
+\begin{lstlisting}
+/*
+ * This interface describes the basic needs for
+ * any loadable kernel module
+ */
+   interface LKM : Builtins
+   {
+       builtin  type       Device;
+
+       provided pointcut   include_dependencies;
+       provided pointcut   global_data_declaration;
+       provided pointcut   code_declaration;
+       provided pointcut   lkm_base_code_definition;
+
+       provided sequence   load()
+       {
+           provided pointcut   lkm_init_fptrs;
+           use      pointcut   lkm_base_code_definition;
+       }
+
+       provided sequence   unload()
+       {
+           provided pointcut   unload_setup;
+           use      pointcut   lkm_base_code_definition;
+       }
+       required variable Builtins::string OS;
+       required variable Builtins::serial version;
+   }
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[containsverbatim]
+\frametitle{Exemple de template (\texttt{.blt})}
+%\lstset{
+%    basicstyle=\color{black}\tiny\ttfamily,
+%    numberstyle=\tiny\ttfamily
+%}
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+    ${pointcut global_data_declaration};
+    ${pointcut code_declaration};
+    ${pointcut lkm_base_code_definition};
+}
+with LKM
+values OS=Linux, version>=2.6.24
+{
+    template sequence load()
+    {
+        chunk lkm_base_code_definition
+        {
+            int modentry()
+            { /* Init some stuff here */ }
+            module_init(modentry);
+        }
+        chunk global_data_declaration
+        {
+            struct module myModule = {
+                ${pointcut lkm_init_fptrs
+                  default:
+                      .module_open = NULL;
+                },
+            };
+        }
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[containsverbatim]
+\frametitle{Exemple d'implémentation de pilote (\texttt{.rtx})}
+%\lstset{
+%    basicstyle=\color{black}\tiny\ttfamily,
+%    numberstyle=\tiny\ttfamily
+%}
+\begin{lstlisting}
+device myDriver
+{
+    // Here the driver's registers description
+}
+
+driver myDriver
+{
+    Userland::open(Context ctx) {
+        log("Opening device...\n");
+    }
+    Userland::close(Context ctx) {
+        log("Closing device...\n");
+    }
+}
+
+configuration
+{
+    LKM::devices = myDriver;
+    LKM::arch = x86;
+    LKM::OS=Linux {
+        LKM::version = 2.6.34;
+    }
+    LKM::OS=Windows7 {
+    }
+};
+\end{lstlisting}
+\end{frame}
+
+
 
 
 \begin{frame}{Avancement du projet}
