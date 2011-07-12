@@ -51,28 +51,6 @@ function rtxNodePointcut_Raw(local_node             : node,
     return true;
 }
 
-function rtxNodeChunk(local_node        : node,
-                      out_ref_pointcut  : reference,
-                      out_ref_params    : reference,
-                      out_ref_body      : reference)
-{
-    rtxNode(local_node);
-    local_node.type = "__rtx_chunk__";
-
-    insert local_node.pointcut;
-    insert local_node.parameters;
-    insert local_node.body;
-    cnormNodeBlock(local_node.body);
-    insert local_node.body.compile;
-    insert local_node.body.compile.nbplaceholder = 0;
-
-    ref out_ref_pointcut = local_node.pointcut;
-    ref out_ref_params = local_node.parameters;
-    ref out_ref_body = local_node.body;
-
-    return true;
-}
-
 // Manipulates the template node
 function rtxNodeTpl_HasMapping(local_node : node)
 {
