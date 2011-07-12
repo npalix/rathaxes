@@ -1,0 +1,51 @@
+<%
+/*
+**  _registers_bitfields.blt for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+** -----------------------------------------------------------------------------
+**  TODO:
+**      - Add device name to all identifers.
+** -----------------------------------------------------------------------------
+*/
+
+%>
+
+ADVICE registers_bitfields PART_OF registers
+{
+  <%
+    foreach device in this.devices
+    {
+        foreach register in device.registers
+        {
+            local bit = 0;
+            %>typedef struct        s_<%
+            @@register.definition.name@@"_register\n{\n"@@
+            while (bit < register.definition.size)
+            {
+                local found = 0;
+                foreach var in register.block
+                {
+                    if (found == 0)
+                    {
+                        if (charAt(var.definition.range, 0) == bit)
+                        {
+                            @  int        @toUpperString(var.definition.name)@ : @var.definition.length@;@
+                            @    // @toUpperString(var.definition.name)@ is type of e_@var.definition.name@@"\n"@@
+                            bit = $bit + var.definition.length$;
+                            found = 1;
+                        }
+                    }
+                }
+                if (found == 0)
+                {
+                    @  int        __UNDEF_@bit@_@" : 1;\n"@@      
+                    bit = $bit + 1$;
+                }
+            }
+            @}t_@register.definition.name@@"_register;\n\n"@@
+            insert register.fullname = "t_" + register.definition.name + "_register";
+        }
+    }
+  %>
+};

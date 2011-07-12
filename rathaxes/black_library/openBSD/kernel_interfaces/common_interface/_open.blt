@@ -1,0 +1,20 @@
+<%
+/*
+**  _open.blt in black_library/openBSD/kernel_interfaces/common_interfaces/
+**  for Rathaxes project
+**  made by Filth
+*/
+
+local	sDriverName = this.name;
+%>
+
+ADVICE open PART_OF kernel_interfaces
+{
+	int @sDriverName@_open(dev_t dev, int oflags, int devtype, struct proc *p)
+	{
+		printf("open");
+    JOINPOINT algorithms IN algorithms.algorithms;
+		return (0);
+	}
+};
+

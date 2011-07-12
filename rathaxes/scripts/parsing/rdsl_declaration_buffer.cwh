@@ -1,0 +1,66 @@
+/*
+**	rdsl_declaration_buffer.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**
+**	---------------------------------------------------------------------------
+**	TODO: Une gestion d'erreure plus fine.
+*/
+
+#include "rdsl_declaration_buffer.cwf"
+
+/*
+**	File rules:
+**
+**		- bufferDefinition
+**		- bufferBlock
+*/
+
+buffer(nBuffer : node) ::=
+	bufferDefinition(nBuffer)
+	[ bufferBlock(nBuffer.block) ] ?
+	';'
+	=> buildBufferFieldsNames(nBuffer);
+;
+
+/*
+ * Buffer description
+ */
+bufferDefinition(theDefinition : node) ::=
+	#readIdentifier:{"BUFFER"}
+	rathaxes_basic_types:sBufferType ['[' #continue #readInteger:iBufferSize ']']?
+	#readIdentifier:sBufferId
+	=> {
+			insert theDefinition.rtype = "buffer";
+			insert theDefinition.name = sBufferId;
+			insert theDefinition.type = sBufferType;
+			if (iBufferSize)
+				insert theDefinition.size = iBufferSize;
+	   }
+;
+
+/*
+ * Buffer block
+ * All buffer properties are optionals
+ */
+bufferBlock(theBlock : node) ::=
+	'{'
+		[
+			[#readIdentifier:{"FROM"} '=' [#readIdentifier:{"USERLAND"} | #readIdentifier:{"KERNELLAND"}]:sBufferFrom ';']?
+			[#readIdentifier:{"ACCESS"} '=' [#readIdentifier:{"MUTEXED"}]:sBufferAccess ';']?
+			[#readIdentifier:{"PADDING"} '=' [#readInteger]:iBufferPadding ';']?
+			[#readIdentifier:{"OFFSET"} '=' [#readInteger]:iBufferOffset ';']?
+		]*
+	'}'
+	// Insertion dans l'arbre des inforations du buffer.
+	=> {
+			if (sBufferFrom)
+				insert theBlock.from = sBufferFrom;
+			if (sBufferAccess)
+				insert theBlock.access = sBufferAccess;
+			if (iBufferPadding)
+				insert theBlock.padding = iBufferPadding;
+			if (iBufferOffset)
+				insert theBlock.offset = iBufferOffset;
+	   }
+;

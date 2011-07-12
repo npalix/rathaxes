@@ -1,0 +1,67 @@
+/**
+ ** cnormRulesDispatcher.cwp for
+ ** "C normalise"
+ ** 
+ ** Authors:
+ **	Lionel Auroux
+ **
+ ** Features:
+ **	- this grammar allow cnorm users to call a specific parsing rules within a function to obtain a subtree
+ **	representing a chunk of C code.
+ **	- only used by the cnormPatchLib.
+ **
+ **
+ ** see cnorm.cwp for details
+ **/
+
+#include "../cnorm.cwp"
+
+#overload
+translation_unit ::= #ignore
+	=> {
+	  switch (this)
+	  {
+	    case "declaration":
+	    {
+	      #applyBNFRule declarations(this);
+	      break;
+	    }
+	    case "statement":
+	    {
+	      #applyBNFRule statements(this);
+	      break;
+	    }
+	    case "function_param":
+	    {
+	      #applyBNFRule params(this);
+	      break;
+	    }
+	    case "structunion_field":
+	    {
+	      #applyBNFRule su_fields(this);
+	      break;
+	    }
+	    case "enum_field":
+	    {
+	      #applyBNFRule e_fields(this);
+	      break;
+	    }
+	  }
+	}
+	#continue #empty
+;
+
+declarations(theNode : node) ::= [ declaration(theNode.block) ]+
+;
+
+statements(theNode : node) ::= [ single_statement(theNode.block) ]+
+;
+
+params(theNode : node) ::= parameter_type_list(theNode)
+;
+
+su_fields(theNode : node) ::= [ #pushItem(theNode) struct_declaration(theNode#back) ]+
+;
+
+e_fields(theNode : node) ::= enumerator_list(theNode)
+;

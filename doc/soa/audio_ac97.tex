@@ -1,0 +1,108 @@
+\documentclass[a4paper,american]{rtxarticle}
+
+\author{Louis Opter}
+
+\title{AC `97 Sound Cards Implementations}
+
+\rtxdoctype{State Of the Art}
+\rtxdocversion{0.3}
+\rtxdocstatus{WIP, \emph{\textbf{informations may be wrong!}}}
+
+\rtxdochistory{
+0.1 & 11/23/2010 & Louis Opter & Skeleton and abstract \\
+\hline
+0.2 & 11/26/2010 & Louis Opter & Add entries in the bibliography \\
+\hline
+0.3 & 11/28/2010 & Louis Opter & Document how the device is registered on Linux \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document aims to explain how AC~`97 sound cards driver are implemented in
+our different targets. AC~`97 stands for \emph{Audio Codec `97} and has been
+developed by Intel in 1997. AC~`97 can be found in a wide range of sound cards
+and motherboards chipsets. AC~`97 hardware is cheap and easy to find. In 2004,
+this standard has been superseded by \emph{Intel High Definition Audio} (also
+called \emph{HD Audio}, \emph{HDA-Intel} or \emph{Azalia}).
+\end{abstract}
+
+\section{Specification and existing drivers}
+
+The AC~`97 specification tells us\cite[p. 11]{AC97spec} that AC~`97 is split in
+several devices:
+\begin{itemize}
+\item a digital controller connected on the PCI bus of the computer;
+\item an audio codec connected to the digital controller via an \emph{AC-link};
+\item a modem codec connected to the digital controller via the AC-link.
+\end{itemize}
+The AC~`97 specification is, actually, intended for OEM manufacturers and covers
+everything except the digital controller which makes it useless for \rtx.
+
+A working AC~`97 driver can be found on each of our supported Operating System:
+\begin{description}
+\item[Linux:] \texttt{/sound/pci/intel8x0.c};
+\item[OpenBSD:] \texttt{/sys/dev/pci/auich.c};
+\item[Windows:] \ldots
+\end{description}
+
+The following sections will explain how AC~`97 compliant sound cards works and
+how their driver interact with the sound subsystem of each our target platform.
+
+\section{Linux/ALSA driver}
+
+On Linux the driver interacts with both the PCI and ALSA\cite{ALSADriver,ALSAAPI}
+APIs. We will first see how the kernel module have to register with these two
+APIs. Then we will details hardware operations with the digital controller.
+Finally, we will cover the audio operations between the kernel and the
+controller.
+
+\subsection{PCI/ALSA registration}
+
+% Maybe we should consider to write a doc about PCI.
+The PCI registration doesn't differ from other PCI drivers\cite[chap. 12]{LDD3}.
+
+The ALSA registration takes place in the \emph{probe} PCI callback. The main
+ALSA structure for the sound card ---the \texttt{struct snd\_card}--- is used as
+the private data for the \texttt{struct pci\_dev} and contains a pointer to the
+driver private structure (\texttt{struct rtx\_ac97}):
+\begin{center}
+% Use tikz for this drawing:
+\begin{verbatim}
++----------------+
+| struct pci_dev |
+|                |    +-----------------+
+|       *--------+--->| struct snd_card |
+|                |    |                 |    +-----------------+
++----------------+    |        *--------+--->| struct rtx_ac97 |
+                      |                 |    +-----------------+
+                      +-----------------+
+\end{verbatim}
+\end{center}
+
+The \emph{probe} callback calls in turn a \emph{``create''} function which build
+the rtx\_ac97 structure and initialize the PCI bus.
+
+The cleaning of the snd\_card and rtx\_ac97 structures are done through the ALSA
+API in the \emph{remove} PCI callback. It is worth noting that the ALSA API is
+somewhat hacked with a dummy sub device to provide a destructor callback for the
+rtx\_ac97 structure. This destructor resets the sound card and disable it before
+freeing the rtx\_ac97 structure.
+
+\subsection{Hardware operations}
+
+\subsection{Audio operations}
+
+\section{OpenBSD driver}
+
+\section{Windows driver}
+
+\newpage
+
+\rtxmaketitleblock
+
+\rtxbibliography
+
+\end{document}

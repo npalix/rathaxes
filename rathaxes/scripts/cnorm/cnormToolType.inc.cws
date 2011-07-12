@@ -1,0 +1,154 @@
+/*
+**	cnormToolType.inc.cws
+**	for LSE - cnorm
+**	made by auroux_l
+*/
+
+/*
+**	function (bool)       cnormToolTypeIsSpecifier(theType : node)
+**	function (void)       cnormToolTypeNormalizeCType(theType : node)
+**	function (bool)       cnormToolTypeSearchInTypes(key : value, type : node)
+**	function (bool)       cnormToolTypeSearchInVariables(key : value, type : node)
+*/
+
+function cnormToolTypeIsSpecificSpecifier(theType : node)
+/*
+  test les specifier specifique aux compilateurs ou aux normes
+*/
+{
+  return (theType.specifier == "__complex__" 
+	  || theType.specifier == "__complex"
+	  || theType.specifier == "_Complex"
+	  || theType.specifier == "__imaginary__"
+	  || theType.specifier == "__imaginary"
+	  || theType.specifier == "_Imaginary"
+	  );
+}
+
+function cnormToolTypeNormalizeCType(theType : node)
+/*
+  normalise les types int pour que le type soit toujours complet:
+  ex: int devient signed int
+  long long devient signed long long int
+*/
+{
+  if (theType.specifier == "struct"
+      || theType.specifier == "union"
+      || theType.specifier == "enum"
+      )
+    {
+      if (theType.identifier == "__UNDEF__")
+	theType.identifier = "";
+      return;
+    }
+  if (!existVariable(theType.identifier) 
+      || (theType.identifier == "__UNDEF__" && !cnormToolTypeIsSpecificSpecifier(theType)))
+    insert theType.identifier = "int";
+  if (!existVariable(theType.identifier) 
+      || (theType.identifier == "__UNDEF__" && cnormToolTypeIsSpecificSpecifier(theType)))
+    insert theType.identifier = "double";
+  if (theType#parent.type == "__UNDEF__")
+    insert theType#parent.type = "__PRIMARY__";
+  if ((theType.identifier == "int" || theType.identifier == "char")
+      && !existVariable(theType.sign)
+      )
+    insert theType.sign = "signed";
+}
+
+
+
+function cnormToolTypeSearchInTypes(key : value, type : node)
+/*
+  pour desambiguiser le parsing on test si un identifiant est un type ou nom.
+*/
+{	
+	local leaf;
+	
+	ref leaf = type;
+	// cas 
+	if (existVariable(leaf.pctx))
+	  {
+	    local i = 0;
+	    while (existVariable(leaf.pctx))
+	      {
+		if (this.debug == true)
+		{
+		    traceLine("\n-------");
+		    traceLine(" search :" + key + " " + i);
+		    traceObject(leaf.types);
+		    traceLine("-------\n"); 
+		  }
+		// au niveau local
+		if (existVariable(leaf.types) && findElement(key, leaf.types))
+		  {
+		    if (this.debug == true)
+		      traceLine(" found :" + key);
+		    return true; 
+		  }
+		if (this.debug == true)
+		  {
+		    traceLine(" subechec :" + key);
+		    traceObject(leaf, 5);
+		  }
+		// on remonte d'un cran
+		ref leaf = leaf.pctx;
+		if (this.debug == true)
+		  {
+		    traceLine(" after DEREF :" + key);
+		    traceObject(leaf, 2);
+		  }
+		i = $i + 1$;
+	      }
+	  }
+	if (this.debug == true)
+	  traceLine(" globechec :" + key);
+	return false;
+}
+
+function cnormToolTypeSearchInVariables(key : value, type : node)
+/*
+  pour desambiguiser le parsing on test si un identifiant est une variables ou nom.
+*/
+{	
+	local leaf;
+	
+	ref leaf = type;
+	// cas 
+	if (existVariable(leaf.pctx))
+	  {
+	    local i = 0;
+	    while (existVariable(leaf.pctx))
+	      {
+		if (this.debug == true)
+		{
+		    traceLine("\n-------");
+		    traceLine(" search :" + key + " " + i);
+		    traceObject(leaf.variables);
+		    traceLine("-------\n"); 
+		  }
+		// au niveau local
+		if (existVariable(leaf.variables) && findElement(key, leaf.variables))
+		  {
+		    if (this.debug == true)
+		      traceLine(" found :" + key);
+		    return true; 
+		  }
+		if (this.debug == true)
+		  {
+		    traceLine(" subechec :" + key);
+		    traceObject(leaf, 5);
+		  }
+		// on remonte d'un cran
+		ref leaf = leaf.pctx;
+		if (this.debug == true)
+		  {
+		    traceLine(" after DEREF :" + key);
+		    traceObject(leaf, 2);
+		  }
+		i = $i + 1$;
+	      }
+	  }
+	if (this.debug == true)
+	  traceLine(" globechec :" + key);
+	return false;
+}

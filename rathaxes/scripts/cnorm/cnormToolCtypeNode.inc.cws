@@ -1,0 +1,235 @@
+/*
+**	cnormToolCtypeNode.inc.cws
+**	for LSE - cnorm
+**	made by amsall_d and giron_d
+**	review by auroux_l
+*/
+
+/*
+**	function (string)	cnormToolCtypeNode_getInfoTypeName(pattern : value)
+**	function (void)		cnormToolCtypeNode_fillInfoTypeValue(infoType : node, infoTypeName : value, pattern : value)
+**	function (void)		cnormToolCtypeNode_fillSignValue(sign : node, sSign : value)
+**	function (void)		cnormToolCtypeNode_fillTypeid(type : node, sType : value)
+*/
+
+function	cnormToolCtypeNode_getInfoTypeName(pattern : value)
+/*
+  This function is a selector, checking the specifier/qualifier
+  applicant exists in one of the 3 classes, (storageClassSpecifier,
+  typeQualifier or functionSpecifier) then returns the found class
+  name or raises an error otherwise.
+*/
+{
+  local		infoTypeName;
+  switch ( pattern )
+    {
+    case "auto" :
+    case "register" :
+    case "static" :
+    case "typedef" :
+    case "extern" :
+    case "__thread" :
+      infoTypeName = "storageClassSpecifier";
+      break;
+    case "const" :
+    case "volatile" :
+    case "__volatile" :
+    case "__volatile__" :
+    case "restrict" :
+    case "__const" :
+    case "__restrict" :
+	/* Windows C compiler */
+	case "__w64" :
+	case "__ptr32" :
+	case "__ptr64" :
+      infoTypeName = "typeQualifier";
+      break;
+    case "inline" :
+    case "__inline" :
+    case "__inline__" :
+	/* Windows */
+    case "__forceinline" :
+    case "__declspec" :
+      infoTypeName = "functionSpecifier";
+      break;
+    default :
+      infoTypeName = "__UNDEF__";
+      cnormError("Unknown info-type name for ctype node");
+      break;
+    }
+  return infoTypeName;
+}
+
+
+function	cnormToolCtypeNode_fillInfoTypeValue(ctype : node, infoTypeName : value, pattern : value)
+/*
+  This function fills the infoType node's value safely,
+  checking there is no storage class specfiers nor
+  function specifiers multiple entries, nor type qualifiers
+  doublons. This behaviour is closer to semantic analysis
+  than syntaxis analysis, but this checking is easy to perform
+  and might detect basic errors upstream the compiler.
+*/
+{
+  foreach entry in ctype.infoType
+    {
+      if (infoTypeName == "storageClassSpecfier" &&
+	  entry == "storageClassSpecifier")
+	cnormError("Multiple storage class specifier forbidden");
+    //  if (infoTypeName == "functionSpecifier"
+	//  && entry == "functionSpecifier")
+	//cnormError("Multiple function specifier forbidden");
+      if (entry.key() == pattern)
+	{
+	  cnormWarning("Redondant type qualifier: [" + pattern + "]. Occurence ignored.");
+	  return;
+	}
+    }
+  if (existVariable(ctype.type) && ctype.type == "__COMPOSED__")
+    { cnormWarning("Composed type can't have type info such as [" + pattern + "]"); }
+  insert ctype.infoType[pattern] = infoTypeName;
+  ctype.infoType = $ctype.infoType + 1$;
+}
+
+
+function 	cnormToolCtypeNode_fillSignValue(type : node, sSign : value)
+/*
+  Short function to check if the given sign identifier
+  is effetively a C one. Raises an  error otherwise
+  The won't be very usefull in automated tree generation,
+  but can become more usefull in case the node is hand
+  crafted.
+*/
+{
+  if (type.type == "__COMPOSED__")
+    { cnormError("Sign value for composed types makes non-sense"); }
+  if (sSign != "signed" && sSign != "unsigned" && sSign != "__signed__" && sSign != "__unsigned__"
+		  && sSign != "__signed")
+    cnormError("Sign value must be 'signed' or 'unsigned'. [" + sSign + "] is dummy.");
+  insert type.sign = sSign;
+}
+
+
+function	cnormToolCtypeNode_fillTypeid(type : node, sType : value)
+/*
+  The ctype's type is induced by it's couple type specifier/identifier:
+  specfiers :	short, long, long long, __complex__ = __PRIMARY__
+		struct, union, enum = __COMPOSED__
+  identifiers:	void, char, int, float, double = __PRIMARY__
+		others = __COMPOSED__
+*/
+// TODO: MANQUE : _Imaginary
+{
+  // primary types specifiers
+  if ((!existVariable(type.specifier))
+      && (sType == "short"
+	  || sType == "long"
+	  || sType == "__complex"
+	  || sType == "__complex__"
+	  || sType == "_Complex"
+	  || sType == "__imaginary"
+	  || sType == "__imaginary__"
+	  || sType == "_Imaginary"
+	  ))
+    { 
+      insert type.type = "__PRIMARY__"; 
+      insert type.specifier = sType; 
+      return; 
+    }
+  // primary types identifiers
+  else if ((type.identifier == "__UNDEF__")
+      && (sType == "void" 
+	  || sType == "char"
+	  || sType == "int"
+	  || sType == "float"
+	  || sType == "double"
+	  // gnuC
+	  || sType == "__label__"
+	  || sType == "_Bool"
+	  || sType == "__builtin_va_list"
+	  // Windows C compiler VC++ 6.0+
+	  || sType == "__int8"
+	  || sType == "__int16"
+	  || sType == "__int32"
+	  || sType == "__int64"
+	  ))
+    {
+      insert type.type = "__PRIMARY__";
+      insert type.identifier = sType;
+      if (!existVariable(type.sign) && (sType == "int" || sType == "char"))
+	{ insert type.sign = "signed"; }
+      return;
+    }
+  // composed types specifiers
+  else if (!existVariable(type.specifier)
+      && (sType == "struct"
+	  || sType == "union"
+	  || sType == "enum"))
+    {
+      if (existVariable(type.sign))
+	{ cnormError("Sign value for composed types makes non-sense"); }
+      insert type.type = "__COMPOSED__";
+      insert type.specifier = sType;
+      return;
+    }
+  // composed types identifiers
+  else if (type.specifier == "struct"
+      || type.specifier == "union"
+      || type.specifier == "enum")
+    {
+      if (existVariable(type.sign))
+	{ cnormError("Sign value for composed types makes non-sense"); }
+      insert type.type = "__COMPOSED__";
+      insert type.identifier = sType;
+      return;
+    }
+  // special case for double long  
+  else if (type.specifier == "long"
+	   && sType == "long")
+    {
+      insert type.specifier = type.specifier + " " + sType;      
+      return; 
+    }
+  // error
+  else
+    { cnormError("Unhandable typeid specifier or identifier: [" + sType + "]."); }
+
+}
+
+
+function	cnormToolCtypeNode_fillPointer(ctype : node, arg : value)
+/*
+  This function is used to make difference between single
+  pointers, const pointers and pointed arrays, remembering
+  witch pointer is affected by the const type qualifier.
+
+  the subnode (level, const, ...) may disappear.
+*/
+{
+  switch ( arg )
+    {
+    case "*":
+      {
+	pushItem ctype.pointer;
+	insert ctype.pointer#back.level = "*";
+	break;
+      }
+    case "const":
+    case "__const":
+    case "volatile":
+    case "restrict":
+    case "__restrict":
+    case "__ptr32":
+    case "__ptr64":
+      {
+	pushItem ctype.pointer;
+	insert ctype.pointer#back.qualifier = arg;
+	break;
+      }
+    case "array": /* arf... array is a node... */
+      {
+	/* gosh... */
+	break;
+      }
+    }
+}
