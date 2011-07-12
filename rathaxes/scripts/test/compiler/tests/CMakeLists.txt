@@ -12,7 +12,10 @@ ADD_RATHAXES_TEST(01_J_test_back_resolvePointcutDefault.cws)
 
 # Pure middle-end validation tests
 ADD_RATHAXES_TEST(02_A_test_middle_parse.cws)
+ADD_RATHAXES_TEST(02_A_prime_test_middle_parse.cws)
 ADD_RATHAXES_TEST(02_B_test_middle_check_inheritance.cws)
+
+FILE_COPY(full_lkm/simplified_lkm.rti full_lkm/simplified_lkm.rti)
 
 # Tests for configuration matching (against with blocks)
 ADD_RATHAXES_TEST(03_A_match_less_configs.cws)
