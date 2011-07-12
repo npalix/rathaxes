@@ -11,69 +11,6 @@ function	rtxNode(local_node : node)
     return true;
 }
 
-function        rtxNodeRType(local_node     : node,
-                             name           : node,
-                             out_ref_params : reference)
-{
-    rtxNode(local_node);
-    local_node.type = "__rtx_rtype__";
-
-    insert local_node.name;
-    setall local_node.name = name;
-
-    insert local_node.params;
-    ref out_ref_params = local_node.params;
-
-    return true;
-}
-
-function        rtxRTypeName<T>(theNode : node)
-{
-    traceLine("Bad node type: " + T + "\n");
-    error("Bad node type: " + T + "\n");
-}
-
-function        rtxRTypeName<"__rtx_rtype__">(rTypeNode : node)
-{
-    return rTypeNode.name.scope + "::" + rTypeNode.name.name;
-}
-
-function        rtxRTypeName<"__rtx_id__">(theNode : node)
-{
-    return theNode.scope + "::" + theNode.name;
-}
-
-function        rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node)
-{
-    local       fullString;
-
-    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "{";
-    fullString += joinStrings(identifiers, ",");
-    fullString += "}";
-    return fullString;
-}
-
-function        rtxRTypeFullQualifiedName<"variable">(rTypeNode : node, identifiers : node)
-{
-    return rtxRTypeName<rTypeNode.type>(rTypeNode) + "{}";
-}
-
-function        rtxRTypeFullQualifiedName<"sequence">(rTypeNode : node,
-                                                     identifiers : node)
-{
-    local       fullString;
-    local       paramsNameList;
-
-    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "(";
-    foreach entry in rTypeNode.params
-    {
-        pushItem paramsNameList;
-        paramsNameList#back = rtxRTypeName<entry.type>(entry);
-    }
-    fullString += joinStrings(paramsNameList, ",") + ")";
-    return fullString;
-}
-
 function rtxNodeNumber(local_node : node, nb : value)
 {
     rtxNode(local_node);
@@ -270,6 +207,77 @@ function rtxNodeWith_BuildFromConstraints(local_node : node)
     return true;
 }
 
+
+/*
+ *
+ * Common nodes  for the middle-end/backend typechecking
+ * And coherence.
+ *
+ */
+
+function        rtxNodeRType(local_node     : node,
+                             name           : node,
+                             out_ref_params : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_rtype__";
+
+    insert local_node.name;
+    setall local_node.name = name;
+
+    insert local_node.params;
+    ref out_ref_params = local_node.params;
+
+    return true;
+}
+
+function        rtxRTypeName<T>(theNode : node)
+{
+    traceLine("Bad node type: " + T + "\n");
+    error("Bad node type: " + T + "\n");
+}
+
+function        rtxRTypeName<"__rtx_rtype__">(rTypeNode : node)
+{
+    return rTypeNode.name.scope + "::" + rTypeNode.name.name;
+}
+
+function        rtxRTypeName<"__rtx_id__">(theNode : node)
+{
+    return theNode.scope + "::" + theNode.name;
+}
+
+function        rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node)
+{
+    local       fullString;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "{";
+    fullString += joinStrings(identifiers, ",");
+    fullString += "}";
+    return fullString;
+}
+
+function        rtxRTypeFullQualifiedName<"variable">(rTypeNode : node, identifiers : node)
+{
+    return rtxRTypeName<rTypeNode.type>(rTypeNode) + "{}";
+}
+
+function        rtxRTypeFullQualifiedName<"sequence">(rTypeNode : node,
+                                                     identifiers : node)
+{
+    local       fullString;
+    local       paramsNameList;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "(";
+    foreach entry in rTypeNode.params
+    {
+        pushItem paramsNameList;
+        paramsNameList#back = rtxRTypeName<entry.type>(entry);
+    }
+    fullString += joinStrings(paramsNameList, ",") + ")";
+    return fullString;
+}
+
 function rtxNodePointcut(local_node         : node,
                          out_ref_pointcut   : reference,
                          out_ref_params     : reference,
@@ -297,6 +305,29 @@ function rtxNodePointcut_Default(local_node : node,
     ref body = local_node.body;
     return true;
 }
+
+function rtxNodeChunk(local_node        : node,
+                      out_ref_pointcut  : reference,
+                      out_ref_params    : reference,
+                      out_ref_body      : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_chunk__";
+
+    insert local_node.pointcut;
+    insert local_node.parameters;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    insert local_node.body.compile;
+    insert local_node.body.compile.nbplaceholder = 0;
+
+    ref out_ref_pointcut = local_node.pointcut;
+    ref out_ref_params = local_node.parameters;
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
 
 #include "rtxNodeFront.inc.cws"
 #include "rtxNodeMiddle.inc.cws"

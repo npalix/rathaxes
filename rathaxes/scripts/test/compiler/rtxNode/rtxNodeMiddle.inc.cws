@@ -58,13 +58,11 @@ function        rtxNodeItfPointcutDeclaration(local_node : node,
                                               identifier : node,
                                               params : node)
 {
-    rtxNode(local_node);
-    local_node.type = "__pointcut_decl__";
+    local dummy_default;
+    rtxNodePointcut(local_node, identifier, params, dummy_default);
+
     insert local_node.qualifier = qualifier;
-    insert local_node.name;
-    setall local_node.name = identifier;
-    insert local_node.params;
-    setall local_node.params = params;
+
     return true;
 }
 
@@ -72,11 +70,13 @@ function        rtxNodeItfChunkDeclaration(local_node : node,
                                            identifier : node,
                                            qualifier : value)
 {
-    rtxNode(local_node);
-    local_node.type = "__chunk_decl__";
+    local dummy_param;
+    local dummy_body;
+    rtxNodeChunk(local_node, identifier, dummy_param, dummy_body);
+    clearVariable(dummy_body);
+    
     insert local_node.qualifier = qualifier;
-    insert local_node.name;
-    setall local_node.name = identifier;
+
     return true;
 }
 
