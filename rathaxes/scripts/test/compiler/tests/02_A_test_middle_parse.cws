@@ -25,13 +25,14 @@ generateString({
             provided    type            BaseInterface::type2;
             provided    pointcut        BaseInterface::a_pointcut;
             provided    pointcut        BaseInterface::foo(bar);
+
         }
 
         // interface with inheritance
         interface Userland : BaseInterface, OtherInterface
         {
             required variable   Userland::req_var_type    dummy_name;
-            provided            builtin type    Userland::pro_builtin;
+            provided            builtintype     Userland::pro_builtin;
             provided            type            Userland::some_type;
             optional            type            Userland::opt_type { foo; bar; };
             required            sequence        Userland::req_sequence(BaseInterface::type1 a,
@@ -47,7 +48,7 @@ generateString({
 
         interface OtherInterface
         {
-            required    builtin type     OtherInterface::btype;
+            required builtintype        OtherInterface::btype;
         }
 
 @}, dummy, input);

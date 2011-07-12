@@ -56,11 +56,12 @@ function        addSequenceBody(theSequence : node, theBody : node)
 function        rtxNodeItfPointcutDeclaration(local_node : node,
                                               qualifier : value,
                                               identifier : node,
-                                              params : node)
+                                              out_ref_params : reference)
 {
     local dummy_default;
     local id_out_ref;
-    rtxNodePointcut(local_node, id_out_ref, params, dummy_default);
+
+    rtxNodePointcut(local_node, id_out_ref, out_ref_params, dummy_default);
 
     insert local_node.qualifier = qualifier;
     setall id_out_ref = identifier;
