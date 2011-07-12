@@ -39,9 +39,9 @@ generateString({
                                                                        Userland::some_type c);
             provided            sequence        Userland::seq()
             {
-                provided chunk some_pointcut;
+                provided chunk foo::some_pointcut;
                 /* provided pointcut other_pointcut(JoinPointType); */
-                provided chunk some_chunk;
+                provided chunk ::some_chunk;
             }
         }
 
