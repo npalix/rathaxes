@@ -6,7 +6,7 @@
 
 // The previous test's code has already created a directory.
 // Change to our own...
-working_directory = "../__02_B_test_middle_check_inheritance";
+working_directory = "../__02_C_test_middle_check_inheritance";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
