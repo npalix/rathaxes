@@ -35,7 +35,8 @@ function        rtxItfAddTypeToList<T>(theNode : node, nameList : reference)
 
 function        rtxItfAddTypeToList<"variable">(theNode : node, nameList : reference)
 {
-    /* Nothing to do here. */
+    traceLine("A variable souldn't be in the types list.");
+    error("A variable souldn't be in the types list.");
 }
 
 
