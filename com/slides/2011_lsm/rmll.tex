@@ -6,11 +6,6 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
-\definecolor{grey}{rgb}{0.10,0.10,0.10}
-\definecolor{rBlue}{rgb}{0.0,0.44,0.96}
-\definecolor{rRed}{rgb}{0.6,0.2,0.2}
-\definecolor{rGreen}{rgb}{0.67,1,0.3}
-
 \lstdefinelanguage{rathaxes}%
 {
 	morekeywords={
@@ -22,52 +17,40 @@
         pointcut, chunk,                        % for aspectual concepts
         template                                % backend
     },%
-	sensitive=true,%
-	morecomment=[l][\color{rRed}]{//},%
- 	morecomment=[l][\color{rRed}]{\#},%
-	morecomment=[s][\color{rRed}]{/*}{*/},%
-	morestring=[b][\color{lststring}]",%
-	morestring=[b][\color{lststring}]',%
-	keywordstyle={\color{rBlue}}%
+	morecomment=[l][\color{Gainsboro}]{//},%
+ 	morecomment=[l][\color{Gainsboro}]{\#},%
+	morecomment=[s][\color{Gainsboro}]{/*}{*/},%
+	morestring=[b][\color{Gold}]",%
+	morestring=[b][\color{Gold}]',%
+	keywordstyle={\color{Tomato}}%
 }[keywords,comments,strings]
 
-\definecolor{lstbackground}{rgb}{0.0, 0.0, 0.0}
-\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
-\definecolor{lstkeyword}{rgb}{0.35, 0.65, 0.88}
-\definecolor{lststring}{rgb}{0.67, 7, 0.33}
-\definecolor{lstidentifier}{rgb}{0.82, 0.82, 0.82}
-
-\linespread{1.0}
 \lstset{
     language=rathaxes,
-    tabsize=2,
+    tabsize=4,
     captionpos=b,
     emptylines=0,
-    frame=single,
     breaklines=false,
     breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
     extendedchars=false,
     showstringspaces=false,
     showspaces=false,
+    numbersep=1ex,
     showtabs=false,
-    framexrightmargin=-100pt,
-    basicstyle=\color{white}\tiny\ttfamily,
-    numbers=right,                   % where to put the line-numbers
-    numberstyle=\scriptsize\ttfamily,
+    basicstyle=\color{white}\scriptsize\ttfamily,
+    numberstyle=\color{Gainsboro}\scriptsize\ttfamily,
     stepnumber=1,                   % the step between two line-numbers. If it's 1, each line
-    numbersep=-90pt,                  % how far the line-numbers are from the code
-    keywordstyle=\color{lstkeyword},
-    commentstyle=\color{lstcomment},
-    identifierstyle=\color{lstidentifier},
-    stringstyle=\color{lststring},
-    backgroundcolor=\color{lstbackground},
+    keywordstyle=\color{Tomato},
+    commentstyle=\color{Gainsboro},
+    stringstyle=\color{white},
+    backgroundcolor=\color{black},
     escapeinside={\%*}{*)},         % if you want to add a comment within your code
     morekeywords={*,...}            % if you want to add more keywords to the set
 }
 
 \title{\rtx\ -- RMLL 2011}
-\date{8 Juillet 2011}
-\author{\rtx \\ \texttt{www.rathaxes.org} \\ L. Auroux \& D.Pineau }
+\date{13 Juillet 2011}
+\author{L. Auroux \& D. Pineau \\ \texttt{www.rathaxes.org}}
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
@@ -90,11 +73,13 @@
 
 \begin{frame}{Historique du projet}
 \begin{center}
+\Large{%
 	\begin{itemize}
-		\item	Thèse de L.Reveillere "Devil" (2002);
-		\item	Début du projet (2007) LSE - EIP Epitech;
-		\item	RMLL / T-DOSE (2008).
+		\item 2002: Thèse de L. Reveillere \emph{«~Devil~»} ;
+		\item 2007: Début du projet LSE -- EIP Epitech ;
+		\item 2008: RMLL / T-DOSE.
 	\end{itemize}
+}
 \end{center}
 \end{frame}
 
@@ -139,21 +124,37 @@
 \end{frame}
 
 \begin{frame}[fragile]{Qu'est ce qu'un driver}
-	\includegraphics[scale=0.37]{stateofdevice.pdf}
+\begin{center}
+       \includegraphics[scale=0.4]{stateofdevice.pdf}
+\end{center}
 \end{frame}
+%\begin{frame}[fragile]{Qu'est ce qu'un driver}
+%\begin{tikzpicture}[overlay]
+%\node[redbox,minimum width=6cm,minimum height=1cm, rotate=270] (DEV) at (1,0) {\Large{Périphériques}};
+%\node[graybox, minimum width=5cm,minimum height=8mm, rotate=270, above] at (DEV.north) {Registres};
+%
+%\node[redbox, minimum height=6cm, minimum width=15mm, ] (BUS) at (3.7,0) {};
+%\draw (BUS.north) node [below]{\Large{BUS}};
+%\node[graybox] (PCI) at (BUS.center) {PCI};
+%\node[graybox] (ISA) at (3.7,1) {ISA};
+%\node[graybox] (I2C) at (3.7,-1) {I\textsuperscript{2}C};
+%\end{tikzpicture}
+%\end{frame}
 
 \begin{frame}{Outils utilisés}
 	\begin{center}
+        \Large{%
 	\begin{itemize}
-		\item	Langage Codeworker (www.codeworker.org LGPL);
-		\item	Front end C : Cnorm (code.google.com/p/cnorm LGPL);
+		\item	Langage CodeWorker {\small (\url{http://www.codeworker.org/})} ;
+		\item	Front-end C : cnorm {\small (\url{http://code.google.com/p/cnorm/})}.
 	\end{itemize}
+        }
 	\end{center}
 \end{frame}
 
 \begin{frame}{Première approche}
 	\begin{center}
-	\large{Démonstration}
+	\Huge{\emph{Démonstration}}
 	\end{center}
 \end{frame}
 
@@ -192,9 +193,9 @@
 \begin{minipage}{7.5cm}
 \large{Description du pilote :} \\
 \small{\texttt{
-device Pipe use LKM, CharDev, Algorithms \{
+\textcolor{Tomato}{device} Pipe use LKM, CharDev, Algorithms \{
 \hspace*{1ex} open(Context ctx) \{ \\
-\hspace*{2ex} log(“Open called on device Pipe”); \\
+\hspace*{2ex} log(\textcolor{Gold}{“Open called on device Pipe”}); \\
 \hspace*{1ex} \} \\
 \}
 }}
@@ -555,9 +556,8 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
-
-\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
+\draw [ultra thick, rounded corners=3pt, color=DodgerBlue] (2.47,-0.74) rectangle (8.22,-1.1);
+\draw [ultra thick, color=DodgerBlue, ->, >=stealth] (5.5,-1.1) -- (3.7,-2.19);
 \end{tikzpicture}
 \end{frame}
 
@@ -608,12 +608,13 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
-\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
+\draw [ultra thick, rounded corners=3pt, color=DodgerBlue] (2.47,-0.74) rectangle (8.22,-1.1);
+\draw [ultra thick, color=DodgerBlue, ->, >=stealth] (5.5,-1.1) -- (3.7,-2.19);
 
-\draw [ultra thick, rounded corners=2pt, color=LimeGreen] (2.43,0.44) rectangle (6.85,0.71);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.71) -- (2.9,2.55);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.44) -- (6.15,-2.70);
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.50,0.90) rectangle (8.3,0.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.90) -- (2.9,2.6);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.55) -- (7.45,-2.50);
+
 \end{tikzpicture}
 \end{frame}
 
@@ -664,16 +665,16 @@ values OS = Linux, version >= 2.6.27 {
 }
 \end{lstlisting}
 \end{minipage}};
-\draw [ultra thick, rounded corners=2pt, color=SkyBlue] (2.43,-0.81) rectangle (6.65,-0.54);
-\draw [ultra thick, color=SkyBlue, ->, >=stealth] (5,-0.81) -- (3.3,-2.42);
+\draw [ultra thick, rounded corners=3pt, color=DodgerBlue] (2.47,-0.74) rectangle (8.22,-1.1);
+\draw [ultra thick, color=DodgerBlue, ->, >=stealth] (5.5,-1.1) -- (3.7,-2.19);
 
-\draw [ultra thick, rounded corners=2pt, color=LimeGreen] (2.43,0.44) rectangle (6.85,0.71);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.71) -- (2.9,2.55);
-\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.44) -- (6.15,-2.70);
+\draw [ultra thick, rounded corners=3pt, color=LimeGreen] (2.50,0.90) rectangle (8.3,0.55);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.90) -- (2.9,2.6);
+\draw [ultra thick, color=LimeGreen, ->, >=stealth] (6.80,0.55) -- (7.45,-2.50);
 
-\draw [ultra thick, rounded corners=2pt, color=MediumOrchid] (2.8,-0.04) rectangle (5.85,-0.31);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.04) -- (5,2.27);
-\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.7,-0.31) -- (5,-3.22);
+\draw [ultra thick, rounded corners=3pt, color=MediumOrchid] (3,-0.09) rectangle (7,-0.43);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.8,-0.09) -- (5,2.27);
+\draw [ultra thick, color=MediumOrchid, ->, >=stealth] (5.8,-0.41) -- (5,-3.22);
 \end{tikzpicture}
 \end{frame}
 
@@ -692,92 +693,86 @@ values OS = Linux, version >= 2.6.27 {
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[containsverbatim]
-\frametitle{Exemple d'interface (\texttt{.rti})}
-%\lstset{
-%    basicstyle=\color{black}\tiny\ttfamily,
-%    numberstyle=\tiny\ttfamily
-%}
+\begin{frame}[fragile]{Exemple d'interface (\texttt{.rti})}
+\begin{tikzpicture}
+\draw (0,0) node[right]{%
+\begin{minipage}{100mm}
+\lstset{numbers=left}
 \begin{lstlisting}
 /*
- * This interface describes the basic needs for
- * any loadable kernel module
+ * This interface describes the basic needs for any
+ * loadable kernel module
  */
-   interface LKM : Builtins
-   {
-       builtin  type       Device;
+interface LKM : Builtins
+{
+    builtin  type       Device;
 
-       provided pointcut   include_dependencies;
-       provided pointcut   global_data_declaration;
-       provided pointcut   code_declaration;
-       provided pointcut   lkm_base_code_definition;
+    provided pointcut   include_dependencies;
+    provided pointcut   global_data_declaration;
+    provided pointcut   code_declaration;
+    provided pointcut   lkm_base_code_definition;
 
-       provided sequence   load()
-       {
-           provided pointcut   lkm_init_fptrs;
-           provided chunk      lkm_base_code_definition;
-       }
+    provided sequence       load() {
+        provided pointcut   lkm_init_fptrs;
+        provided chunk      lkm_base_code_definition;
+    }
 
-       provided sequence   unload()
-       {
-           provided pointcut   unload_setup;
-           provided chunk      lkm_base_code_definition;
-       }
-       required variable Builtins::string OS;
-       required variable Builtins::serial version;
-   }
+    provided sequence       unload() {
+        provided pointcut   unload_setup;
+        provided chunk      lkm_base_code_definition;
+    }
+
+    required variable Builtins::string OS;
+    required variable Builtins::serial version;
+}
 \end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}[containsverbatim]
-\frametitle{Exemple de template (\texttt{.blt})}
-%\lstset{
-%    basicstyle=\color{black}\tiny\ttfamily,
-%    numberstyle=\tiny\ttfamily
-%}
+\begin{frame}[fragile]{Exemple de template (\texttt{.blt})}
+\begin{tikzpicture}
+\draw (0,0) node[right]{%
+\begin{minipage}{121mm}
+\lstset{numbers=left}
 \begin{lstlisting}
-with LKM
-{
+with LKM {
     ${pointcut include_dependencies};
     ${pointcut global_data_declaration};
     ${pointcut code_declaration};
     ${pointcut lkm_base_code_definition};
 }
 with LKM
-values OS=Linux, version>=2.6.24
-{
-    template sequence load()
-    {
-        chunk lkm_base_code_definition
-        {
-            int modentry()
-            { /* Init some stuff here */ }
+values OS=Linux, version>=2.6.24 {
+    template sequence load() {
+        chunk lkm_base_code_definition {
+            int modentry() { /* Init some stuff here */ }
             module_init(modentry);
         }
-        chunk global_data_declaration
-        {
+        chunk global_data_declaration {
             struct module myModule = {
                 ${pointcut lkm_init_fptrs
                   default:
                       .module_open = NULL;
-                },
+                 },
             };
         }
     }
 }
 \end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}[containsverbatim]
-\frametitle{Exemple d'implémentation de pilote (\texttt{.rtx})}
-%\lstset{
-%    basicstyle=\color{black}\tiny\ttfamily,
-%    numberstyle=\tiny\ttfamily
-%}
+\begin{frame}[fragile]{Exemple d'implémentation de pilote (\texttt{.rtx})}
+\begin{tikzpicture}
+\draw (0,0) node[right]{%
+\begin{minipage}{70mm}
+\lstset{numbers=left}
 \begin{lstlisting}
 device myDriver
 {
-    // Here the driver's registers description
+    /* Registers description */
 }
 
 driver myDriver
@@ -801,6 +796,8 @@ configuration
     }
 };
 \end{lstlisting}
+\end{minipage}};
+\end{tikzpicture}
 \end{frame}
 
 
@@ -820,11 +817,13 @@ configuration
 
 \begin{frame}{Prochaines étapes}
 	\begin{center}
+        \Large{%
 	\begin{itemize}
 		\item	Fosdem 2012;
 		\item	Fin EIP;
-		\item	Évolution vers python -> contributeur.
+		\item	Évolution vers Python $\rightarrow$ contributeur.
 	\end{itemize}
+        }
 	\end{center}
 \end{frame}
 
