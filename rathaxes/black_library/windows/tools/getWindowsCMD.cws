@@ -1,0 +1,39 @@
+declare function	getCMD<"windows">(file : value, outputFile : value);
+
+function	getCMD<"windows">(file : value, outputFile : value)
+{
+	local line;
+
+	line = CL + " /Ii386" +
+			" /I. " +
+			" /I" + INC_API +
+			" /I" + INC_DDK +
+			" /I" + INC_KMDF +
+			" /I" + INC_CRT +
+			" /D_X86_=1" +
+			" /Di386=1" +
+ 			" /DSTD_CALL" +
+ 			" /DCONDITION_HANDLING=1" +
+ 			" /DNT_INST=0" +
+ 			" /DWIN32=100" +
+ 			" /D_NT1X_=100" +
+ 			" /DWINNT=1" +
+ 			" /D_WIN32_WINNT=0x0501" +
+ 			" /DWINVER=0x0501" +
+ 			" /D_WIN32_IE=0x0603" +
+ 			" /DWIN32_LEAN_AND_MEAN=1" +
+ 			" /DDEVL=1" +
+ 			" /DDBG=1" +
+ 			" /D__BUILDMACHINE__=WinDDK" +
+ 			" /DFPO=0" +
+ 			" /D_DLL=1" +
+ 			" /DNDEBUG" +
+ 			" /DDEPRECATE_DDK_FUNCTIONS=1" +
+ 			" /DMSC_NOOPT" +
+ 			" /DNTDDI_VERSION=0x05010200" +
+ 			" /DKMDF_MAJOR_VERSION=01" +
+ 			" /DKMDF_MINOR_VERSION=007" +
+			" /E" +
+ 			" .\\" + file + " > " + outputFile;
+	return line;
+}

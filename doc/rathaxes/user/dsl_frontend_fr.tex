@@ -1,0 +1,574 @@
+\documentclass{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{Thomas Sanchez}
+
+\title{Documentation utilisateur du langage}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{Documentation utilisateur}
+\rtxdocref{fr\_user\_doc}
+\rtxdocversion{0.2}
+\rtxdocstatus{Brouillon}
+
+\rtxdochistory{
+0.2 & 11/04/2011 & Thomas Sanchez & Correction des typos \\
+\hline
+0.1 & 07/04/2011 & Thomas Sanchez & Premier jet de la documentation utilisateur \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={DECLARE, SEQUENCE, INTERFACE, IMPLEMENTATION, FROM, READ,
+        OPTIONAL, CONFIGURATION_VARIABLE, USE, AS, WITH, SEQUENCES, ON, ELSE,
+        LET, PROVIDES, REQUIRE, THROWS, FINALLY, FOREACH, IN, AND, OR, THROW,
+        HANDLE_ERROR, NOT, REGISTER, LIKE, BIT, INTEGER, DOUBLE, BOOLEAN,
+        STRING, MAPPED_AT, PCI, SET, ADDRESS\_OF, SIZEOF},%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{\rtx\ est un ensemble d'outils permettant de simplifier l'écriture de pilote de
+périphérique. Le projet permet de générer un code source écrit en C pour Linux,
+Windows 7 et OpenBSD à partir d'un fichier de description de pilote.
+
+
+Cette documentation s’adresse aux développeurs voulant savoir comment
+écrire un fichier de description de pilote de périphérique.}
+
+\lstset{language=rathaxes}
+
+\chapter{Structure du fichier}
+
+%% formaliser la section configuration
+
+\chapter{Structure du compilateur}
+
+%% A corriger si besoin, David c'est pour toi :)
+
+Le but de ce document n'est pas de d\'ecrire le compilateur, mais une compréhension basique de ce qu'il est
+facilitera l'utilisation de \rtx.
+
+
+\section{Le "front end"}
+
+Le "front end" est le langage \`a proprement parler. C'est ce qui va lire votre fichier afin d'en extraire
+les informations.
+
+\section{Le "middle end"}
+
+Le "middle end" va lier les informations extraites par le "front end" et celles du "back end". Il va aussi vérifier
+la validité sémantique de ce qui a été écrit. Par exemple, c'est lui qui va vérifier que toutes les séquences
+d'une interface ont bien été implémentées.
+
+
+\section{Le "back end"}
+
+Le "back end" est toute la partie qui s'occupe de récupérer les primitives utilisées implicitement par
+le pilote étant en train d'être générée et de l'injecter dans le fichier C génère au final.
+
+\chapter{Le langage}
+
+Cette section va expliquer comment écrire en langage \rtx\ .
+
+Le langage \rtx\  a pour but de permettre de décrire un pilote de périphérique.
+C'est quelque chose de sensible et, où les erreurs peuvent signer la mort de votre matériel.
+Pour éviter ceci, nous avons voulu proposer un langage redondant dans la définition de ses types
+et où les validations syntaxiques et sémantiques statiques sont nombreuses.
+
+Nous avons voulu aussi propose un langage sans ambiguïté et qui n'offre, dans la mesure du possible,
+qu'une seule façon d'écrire une opération.
+
+L'exemple le plus parfait de ce que nous voulions éviter est le cas de l'incrémentation d'une variable dans certains
+langages:
+
+\lstset{language=C++}
+\begin{lstlisting}
+int i = 0;
+
+++i;
+i++;
+i = i + 1;
+i += 1;
+\end{lstlisting}
+
+\lstset{language=rathaxes}
+
+Nous avons aussi voulu éviter les effets de bords:
+Dans la mesure du possible, une séquence appelée avec les mêmes arguments aura toujours le même effet.
+
+\section{Les types}
+\rtx\  a pour but de proposer un langage de description de pilote de
+périphérique complet et sûr.  Afin de pouvoir proposer une vérification la plus
+exhaustive possible du code écrit, le langage doit forcement proposer des types
+explicites et donc par extension être fortement type.
+
+\rtx\  propose un certain nombre de types prédéfinis. L'utilisation de ces
+types est un peu particulière: ils ne sont pas utilisables directement. Afin
+d'utiliser un registre, il faudra redéfinir le type registre en ajoutant les
+informations proposées au registre auquel vous voulez accéder et instancier ce
+type-là.
+
+
+\subsection{Les registres}
+Les registres représentent des cases mémoires particulières, souvent associées
+à une adresse particulière, et où chaque bit a une fonction particulière.
+
+Par exemple pour activer une fonction d’un périphérique particulier, un
+changement de bit dans un registre donne peut-être requis.
+Ce type la propose donc une gestion fine des bits composant le registre.
+
+Voici la syntaxe pour d\'eclarer un type de registre:
+\begin{lstlisting}[caption=Declaration d'un type de registre sur un octet]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
+\end{lstlisting}
+
+Le registre sera donc sur 8 bits, accessible en lecture/écriture.
+
+Le \emph{LIKE} représente le rôle de chacun des bits du registre. Il s'agit
+d'un masque afin de déterminer ce qui doit être pris en compte ou pas.  Le
+masque doit contenir autant de caractère que le registre contient de bit.
+
+Le masque peut contenir ces valeurs:
+\begin{itemize}
+	\item $\star$: on ne tient pas compte de la valeur de ce bit;
+	\item \emph{1}: Ce bit sera toujours a 1;
+	\item \emph{0}: Ce bit sera toujours a 0;
+	\item .: la valeur de ce bit est prise en compte.
+\end{itemize}
+\begin{lstlisting}[caption=Exemple de masque different]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(....0000); # le dernier quarte sera toujours a 0
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(.***0000); # le dernier quarte sera toujours a 0, on ne tient pas compte
+# de la valeur des bit 5 a 7 et on ne tient compte que du premier bit
+\end{lstlisting}
+
+
+Un bit ou un groupe de bit composant un registre peut avoir une signification particulière.
+Par exemple, les deux premiers bits pourraient donner des informations sur le statut du
+périphérique.
+
+Pour gérer ça, \rtx\  donne la possibilité de nommer des groupes de bits d'un registre
+afin d'y accéder par leur nom. Il est aussi possible de spécifier toutes les valeurs
+que peut prendre le groupe de bits et de les nommer aussi.
+
+Exemple:
+\begin{lstlisting}[caption=Exemple de description interne du registre]
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........)
+{
+    [7] AS divisor_lacht_access_bit
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [6] AS set_break_enable
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [3..5] AS parity_select
+    {
+        (000) -> NO_PARITY;
+        (001) -> ODD_PARITY;
+        (011) -> EVEN_PARITY;
+        (101) -> HIGH_PARITY;
+        (111) -> LOW_PARITY;
+    };
+
+    [2] AS length_of_stop_bit
+    {
+        (0) -> ONE_STOP_BIT;
+        (1) -> TWO_STOP_BITS;
+    };
+
+    [0..1] AS word_length
+    {
+        (00) -> _5_BITS;
+        (01) -> _6_BITS;
+        (10) -> _7_BITS;
+        (11) -> _8_BITS;
+    };
+
+};
+\end{lstlisting}
+
+
+L'instanciation d'un registre se fait comme ceci:
+\begin{lstlisting}[caption=Instanciation d'un registre]
+DECLARE REGISTER Register_type Register_name Bus_type MAPPED_AT address;
+\end{lstlisting}
+
+Le type du bus sert à déterminer comment le registre va être accédé.
+
+\texttt{Bus\_type} peut être égal à:
+\begin{itemize}
+	\item PCI;
+	\item IOPORT;
+	\item MEMORY.
+\end{itemize}
+
+Le \texttt{MAPPED\_AT} sert à spécifier l'adresse à laquelle le registre va être mappé.
+Cela peut être une expression dont la valeur a laquelle elle sera évaluée représentera l'adresse (c.-à-d.\ une expression
+arithmétique).
+
+
+Exemple:
+\begin{lstlisting}[caption=Exemple d'instanciation de registre]
+DECLARE REGISTER EepromReadRegister eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
+\end{lstlisting}
+
+\subsection{Les types primitifs}
+\rtx\  propose certains types primitifs:
+\begin{lstlisting}[caption=Les types primitifs]
+DECLARE INTEGER i_name = 123;
+DECLARE DOUBLE d_name = 123.123;
+DECLARE BOOLEAN b = TRUE OR FALSE;
+DECLARE STRING str = "hello, world !";
+\end{lstlisting}
+
+\subsection{Les adresses}
+%% Ce type etait controverse mais je prefere le remettre afin qu'on en rediscute
+
+Il arrive de devoir jouer un petit peu avec les adresses lorsqu'on fait de la programmation de pilote.
+Par exemple, on peut devoir mettre une adresse dans un registre pointant sur une zone mémoire
+et que cette zone soit remplie par des structures par la suite.
+
+Pour faciliter ce cas-là, il existe le type \texttt{ADDRESS}.
+
+\begin{lstlisting}[caption=Instanciation d'une adresse]
+DECLARE ADDRESS Address_name ALIGNED_ON nbrbits OFFSET off;
+\end{lstlisting}
+
+\begin{description}
+\item[\texttt{nbrbits}] \hfill \\
+	Represente le nombre de bits sur lequel l'adresse va être alignée.
+\item[\texttt{off}] \hfill \\
+	Représente le nombre d'octets nécessaire pour passer d'un objet à un autre.
+\end{description}
+
+
+\subsection{Les memoires tampons}
+Beaucoup de périphériques aujourd’hui nous permettent d’acquérir des données,
+ou d’en envoyer : webcam, scanneur, carte son, carte vidéo, carte réseau\ldots
+Cela passe par la manipulation de ces données, que ce soit pour les décoder,
+les encoder, ou seulement les donner à l’utilisateur.
+
+Le type \texttt{BUFFER} repond à ce besoin.
+
+On peut:
+\begin{enumerate}
+	\item Accéder aux données grâce à un index ; 
+	\item Le copier/vider ; 
+	\item Diviser son espace en champ nommé ; 
+	\item Spécifier sa taille (en octet) et un alignement particulier (en bit).
+\end{enumerate}
+
+
+\begin{lstlisting}[caption=Déclaration\, instanciation\, utilisation d'une mémoire tampon]
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer[3], unoctet);
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=Déscription du contenu d'une mémoire tampon]
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
+
+	[0..4] AS low_address;
+	[5] AS status {
+		(0) -> OK;
+		(1) -> ERROR;
+	};
+};
+
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer.status, MyBufferType.status.OK);
+\end{lstlisting}
+
+La représentation réelle d'une mémoire tampon est équivalente à une structure en C.
+Dans ce type de donné la taille demande sera la taille donnée.
+
+%% Ajouter un moyen de specifier la structure comme etant "packed"
+
+\subsection{Les collections}
+
+Deux types sont disponibles afin de gérer des collections d'objets:
+le type \texttt{VECTOR} et le type \texttt{LIST}.
+
+Un vecteur d'objet sera contigu en mémoire.  Lorsque le vecteur sera référencé,
+l’adresse obtenue sera celle du premier objet.  Cependant, la taille totale du
+vecteur ne sera pas forcément le nombre d'éléments multiplié par leur taille. À
+la fin de la zone mémoire occupe par le vecteur se trouvera des meta-données.
+
+
+\begin{lstlisting}
+DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
+
+DECLARE VectorType my_vector;
+PUSH(my_vector, element);
+POP(my_vector);
+
+REALLOC_VECTOR(my_vector, new_size);
+\end{lstlisting}
+
+%% donne un exemple de recuperation d'un element
+%% ca n'a pas ete specifie mais je verrais bien une syntaxe du genre:
+%% DECLARE REFERENCE_ON MyBufferType element_name = my_vector[x];
+%% dans le REFERENCE_ON ca pourrait etre une copie qui est effectue
+
+Créer une liste d'objet est le moyen le plus dynamique de garder la trace de
+plusieurs éléments qui ne doivent pas se suivre en mémoire.  La seule
+contrepartie est le fait que le temps d'accès est proportionnel a l'index de
+l'élément voulu.
+
+\begin{lstlisting}
+DECLARE LIST ListType ELEMENT_TYPE MyBufferType;
+DECLARE ListType my_list;
+
+PUSH(my_list, element);
+PUSH(my_list, element);
+PUSH(my_list, element);
+
+POP(my_list);
+POP(my_list);
+POP(my_list);
+
+PUSH_AFTER(my_list, ref, element);
+\end{lstlisting}
+
+%% meme syntaxe que pour le vector
+%% on pourrait voir une extension du truc en s'inspirant de linq:
+%% DECLARE REFERENCE_ON MyBufferType element_name = element from my_vector WHERE element.field_from_buffer = AVALUE;
+%% Bon, ok ca complexifie un peu le truc, un foncteur suffira:
+%% DECLARE REFERENCE_ON MyBufferType element_name = FIND_IF(my_vector, FONCTEUR);
+
+
+\subsection{La desallocation}
+Il n'y en a pas c'est automatique.
+
+Si, si, c'est vrai !
+
+\section{Conditions}
+%% si vous me prouvez qu'il n'y en a pas besoin, ok on les vire.
+%% Je pense que j'ai donne quand meme pas mal d'exemple different sur ce pourquoi on en aurait besoin.
+%% ne serait ce que le fait de faire uen condition sur la valeur d'un bit dans un registre
+
+Faire une condition en \rtx\  est très simple:
+\begin{lstlisting}[caption=Syntaxe des conditions]
+ON expression LET expression_then;
+ELSE expression_else;
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Exemple de condition]
+ON a == b LET a_equal_b_sequence();
+ELSE a_and_b_different();
+\end{lstlisting}
+
+
+\section{Expression}
+Les expressions en \rtx\  s'écrivent comme ceci:
+\begin{lstlisting}[caption=Ecriture des expressions]
+
+DECLARE INTEGER i = 124;
+DECLARE INTEGER j = i;
+
+SET(j, j + 1);
+SET(i, i * j);
+
+DECLARE REGISTER EepromReadRegister eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
+
+ON eer[0] == 1 LET SET(j, 0)
+ELSE SET(i, 0);
+
+\end{lstlisting}
+
+
+\section{Les interfaces}
+
+Un pilote a besoin de s'interfacer avec le sous-système auquel le matériel qu'il pilote appartient.
+Pour cela, il a besoin d'implémenter les séquences requises pour être fonctionnel.
+
+Lorsqu'un pilote décide d'implémenter une interface, il bénéficie automatiquement de toutes
+les séquences qu'elle propose.
+
+De ce fait, l'appréhension d'une interface se fait en deux temps: le premier étant les séquences
+qu'elle exporte et en deuxième temps les séquences qu'elle attend.
+
+
+Prenons le cas du sous-système réseau, raisonnablement on s'attend à trouver une séquence exporté:
+\texttt{deliver\_packet}, alors qu'une séquence \texttt{send\_packet} sera a implementer.
+
+Certaine séquences seront aussi facultatives à implementer.
+
+\begin{lstlisting}[caption=Exemple de declaration d'une interface]
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE deliver_packet(ARGS, ARGS2);
+		SEQUENCE register_eth(NAME);
+	};
+
+	REQUIRE SEQUENCE send_packet(sk_buff);
+	OPTIONAL SEQUENCE change_mtu(A1);
+	OPTIONAL SEQUENCE get_statistics();
+};
+\end{lstlisting}
+
+L'implémentation d'une interface s'exprime de cette manière:
+
+\begin{lstlisting}[caption=Utilisation d'une interface]
+DECLARE DRIVER e1000 USE interface_name interface_name2{
+	DECLARE SEQUENCE init() {
+		register_eth("my awesome driver");
+	};
+
+	DECLARE SEQUENCE send_packet(ARG a) {
+		send_pigeon(a);
+	};
+};
+\end{lstlisting}
+
+
+\section{Les algorithmes}
+\emph{Cette section sera a completer}
+
+L'affectation se fait toujours par l'algorithme \texttt{SET}.
+
+\section{Mot clefs}
+
+Les mots clefs sont:
+\begin{itemize}
+	\item SIZEOF: Récupère la taille d'un objet. Exemple:
+	\begin{lstlisting}[caption=Exemple du sizeof]
+		DECLARE INTEGER size = SIZEOF object;
+	\end{lstlisting}
+
+	\item ADDRESS\_OF: Récupère l'adresse d'un objet. Exemple:
+	\begin{lstlisting}[caption=Exemple du sizeof]
+		SET(my_register.buffer_address, ADDRESS_OF my_buffer);
+	\end{lstlisting}
+\end{itemize}
+
+\section{La configuration}
+
+À n’importe quel endroit dans le programme on peut se retrouver à avoir besoin
+des variables utilisées pour la configuration. 
+
+\begin{lstlisting} [caption=Exemple de comment lire les variables de configuration]
+READ OPTIONAL CONFIGURATION_VARIABLE minor AS minor;
+READ CONFIGURATION_VARIABLE major;
+
+ON major = X LET Y();
+ON IS_SET(minor) LET Z();
+\end{lstlisting}
+
+\section{La gestion d'erreur}
+
+
+Par nature, il est pénible de gérer les erreurs. C'est quelque chose de
+répétitifs, indispensables, frustrants\ldots Le fait de faire un pilote de
+périphérique est encore plus sujet aux erreurs: Défaillance du matériel,
+débranchement\ldots en plus des erreurs normales.  Elles sont par leur nature
+imprédictibles.
+
+\rtx\  essaie de donner un moyen simple et efficace de remonter les erreurs.
+Toutes les erreurs lie au système (problème d'allocation, appel système qui
+échoue) est automatiquement gérée. Les seules choses qui vous restent sont les
+erreurs qui peuvent être liées au matériel.
+
+La gestion d'erreur se fait par la remonté d'un symbole, c'est a dire une
+entité a laquelle aucune valeur n'est attache si ce n'est son nom.
+
+Par exemple, voici le code d'une fonction susceptible de lever une exception:
+
+\begin{lstlisting}[caption=Exemple d'une fonction levant une exception]
+DECLARE SEQUENCE func_name(...) THROWS	ERROR_TYPE_1
+					ERROR_TYPE_2
+					ERROR_TYPE_3 {
+		THROW ERROR_TYPE_1;
+		THROW ERROR_TYPE_2;
+		THROW ERROR_TYPE_3;
+};
+\end{lstlisting}
+
+Les termes \texttt{ERROR\_TYPE\_$\star$} sont les symboles d'erreur.
+Il est aussi spécifié dans la signature de la séquence qu'elle peut lever des
+exceptions.
+
+Si une séquence est marque comme susceptible de lever une erreur, le
+programmeur DEVRA les gérer.
+
+
+Exemple:
+
+\begin{lstlisting} [caption=Exemple de gestion d'erreur]
+HANDLE_ERROR {
+	FUNC_THAT_RAISE_ERROR_1();
+	FUNC_THAT_RAISE_ERROR_2();
+	FUNC_THAT_RAISE_ERROR_3();
+}
+ON ERROR_TYPE_1 {
+	RECOVERY_1();
+}
+ON ERROR_TYPE_2 {
+	RECOVERY_2();
+}
+ON ERROR_TYPE_3 OR ERROR_TYPE_4 {
+}
+FINALLY {
+};
+\end{lstlisting}
+
+\chapter{La bibliotheque standard}
+\end{document}

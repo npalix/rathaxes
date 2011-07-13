@@ -1,0 +1,336 @@
+#if !existFunction(rtxNode_version)
+
+function rtxNode_version()
+{return "1.0";}
+
+function	rtxNode(local_node : node)
+{
+    cnormNode(local_node);
+    local_node.type = "__rtx_node__";
+
+    return true;
+}
+
+function rtxNodeNumber(local_node : node, nb : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_nb__";
+
+    insert local_node.val = nb;
+
+    return true;
+}
+
+function rtxNodeString(local_node : node, string : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_cstring__";
+
+    insert local_node.val = string;
+
+    return true;
+}
+
+function rtxNodeSerialUnit(local_node : node, theUnit : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_serial_unit__";
+
+    insert local_node.val = theUnit;
+
+    return true;
+}
+
+function rtxNodeSerialSep(local_node : node, theSeparator : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_serial_sep__";
+
+    insert local_node.val = theSeparator;
+
+    return true;
+}
+
+function rtxNodeSerial_AddUnit(theSerial : node, theSerialUnit : node)
+{
+    if (theSerial.type != "__rtx_serial__")
+        return false;
+
+    pushItem theSerial.list;
+    setall theSerial.list#back = theSerialUnit;
+
+    return true;
+}
+
+function rtxNodeSerial(local_node : node)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_serial__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+function rtxNodeIdentifier(local_node : node, id : value, scope : value = "")
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_id__";
+
+    insert local_node.scope = scope;
+    insert local_node.name = id;
+
+    return true;
+}
+
+function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
+{
+    pushItem local_node.identifiers;
+
+    local theIdentifier;
+    ref theIdentifier = local_node.identifiers#back;
+    rtxNodeIdentifier(theIdentifier, theField);
+
+    return true;
+}
+
+function rtxNodeVar(local_node   : node,
+                    theVar       : value)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_var__";
+
+    // A list of chained identifiers constituting the real field identifier
+    insert local_node.identifiers;
+    // Add the var as the first identifier
+    rtxNodeVar_AddIdentifier(local_node, theVar);
+
+    return true;
+}
+
+function rtxNodeVarList_AddNode(local_node : node,
+                                theVar     : node)
+{
+    pushItem local_node.list;
+    setall local_node.list#back = theVar;
+
+    return true;
+}
+
+function rtxNodeVarList(local_node : node)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_varlist__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+function rtxNodeWithConstraint(local_node   : node,
+                               theId        : node,
+                               theOperator  : value,
+                               out_ref_val  : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_with_constraint__";
+
+    insert local_node.var;
+    setall local_node.var = theId;
+    insert local_node.op = theOperator;
+    insert local_node.val;
+    ref out_ref_val = local_node.val;
+
+    return true;
+}
+
+function rtxNodeWith(local_node             : node,
+                     out_ref_interfaces     : reference,
+                     out_ref_constraints    : reference,
+                     out_ref_body           : reference,
+                     out_ref_c_block        : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_with__";
+
+    // To be used by typechecking, to reorganize data.
+    insert local_node.config;
+
+    insert local_node.interfaces;
+    ref out_ref_interfaces = local_node.interfaces;
+
+    insert local_node.constraints;
+    ref out_ref_constraints = local_node.constraints;
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+
+    insert local_node.c_block;
+    cnormNodeBlock(local_node.c_block);
+    insert local_node.c_block.compile;
+    insert local_node.c_block.compile.nbplaceholder = 0;
+    ref out_ref_c_block = local_node.c_block;
+
+    return true;
+}
+
+function rtxNodeWith_AssocInterfaceConstraint(local_node      : node,
+                                              interface       : value,
+                                              constraint_key  : value)
+{
+    if (!findElement(interface, local_node.config))
+        insert local_node.config[interface];
+    localref constraint = local_node.constraints[constraint_key];
+    insert local_node.config[interface][constraint.var.name];
+    setall local_node.config[interface][constraint.var.name] = constraint;
+
+    return true;
+}
+
+function rtxNodeWith_BuildFromConstraints(local_node : node)
+{
+    local   to_remove;
+    
+    if (!existVariable(local_node.config))
+        insert local_node.config;
+
+    foreach constraint in local_node.constraints
+    {
+        rtxNodeWith_AssocInterfaceConstraint(local_node,
+                                             constraint.var.scope, // itf name
+                                             key(constraint));
+        pushItem to_remove = key(constraint);
+    }
+    foreach theKey in to_remove
+        removeElement(local_node.constraints, theKey);
+    return true;
+}
+
+
+/*
+ *
+ * Common nodes  for the middle-end/backend typechecking
+ * And coherence.
+ *
+ */
+
+function        rtxNodeRType(local_node     : node,
+                             name           : node,
+                             out_ref_params : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_rtype__";
+
+    insert local_node.name;
+    setall local_node.name = name;
+
+    insert local_node.params;
+    ref out_ref_params = local_node.params;
+
+    return true;
+}
+
+function        rtxRTypeName<T>(theNode : node)
+{
+    traceLine("Bad node type: " + T + "\n");
+    error("Bad node type: " + T + "\n");
+}
+
+function        rtxRTypeName<"__rtx_rtype__">(rTypeNode : node)
+{
+    return rTypeNode.name.scope + "::" + rTypeNode.name.name;
+}
+
+function        rtxRTypeName<"__rtx_id__">(theNode : node)
+{
+    return theNode.scope + "::" + theNode.name;
+}
+
+function        rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node)
+{
+    local       fullString;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "{";
+    fullString += joinStrings(identifiers, ",");
+    fullString += "}";
+    return fullString;
+}
+
+function        rtxRTypeFullQualifiedName<"variable">(rTypeNode : node, identifiers : node)
+{
+    return rtxRTypeName<rTypeNode.type>(rTypeNode) + "{}";
+}
+
+function        rtxRTypeFullQualifiedName<"sequence">(rTypeNode : node,
+                                                     identifiers : node)
+{
+    local       fullString;
+    local       paramsNameList;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "(";
+    foreach entry in rTypeNode.params
+    {
+        pushItem paramsNameList;
+        paramsNameList#back = rtxRTypeName<entry.type>(entry);
+    }
+    fullString += joinStrings(paramsNameList, ",") + ")";
+    return fullString;
+}
+
+function rtxNodePointcut(local_node         : node,
+                         out_ref_pointcut   : reference,
+                         out_ref_params     : reference,
+                         out_ref_default    : reference)
+{
+    insert local_node.type = "__rtx_pointcut__";
+    insert local_node.name;
+    insert local_node.parameters;
+    insert local_node.default;
+
+    ref out_ref_pointcut = local_node.name;
+    ref out_ref_params = local_node.parameters;
+    ref out_ref_default = local_node.default;
+
+    return true;
+}
+
+function rtxNodePointcut_Default(local_node : node,
+                                 body       : reference)
+{
+    insert local_node.type = "__rtx_pointcut_default__";
+    insert local_node.body;
+    // the body Should pure C code.
+    cnormNodeBlock(local_node.body);
+    ref body = local_node.body;
+    return true;
+}
+
+function rtxNodeChunk(local_node        : node,
+                      out_ref_pointcut  : reference,
+                      out_ref_params    : reference,
+                      out_ref_body      : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_chunk__";
+
+    insert local_node.pointcut;
+    insert local_node.parameters;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    insert local_node.body.compile;
+    insert local_node.body.compile.nbplaceholder = 0;
+
+    ref out_ref_pointcut = local_node.pointcut;
+    ref out_ref_params = local_node.parameters;
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+
+#include "rtxNodeFront.inc.cws"
+#include "rtxNodeMiddle.inc.cws"
+#include "rtxNodeBack.inc.cws"
+
+#end

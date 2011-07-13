@@ -1,0 +1,55 @@
+/*
+	TEST for template codeworker generation
+*/
+
+#include  "01_G_test_back_registerToCache.cws"
+
+
+// The previous test's code uses the same directory, so no
+// change about it : We need the asvec files !
+//working_directory = "../__01_test_back_cache";
+//if (existDirectory(working_directory))
+//{
+//    traceLine("Directory " + working_directory + " already exists");
+//    traceLine("Removing directory: " + working_directory);
+//}
+//traceLine("Creating directory: " + working_directory);
+//createDirectory(working_directory);
+//changeDirectory(working_directory);
+
+#include "rtxTpl/rtxResolve.inc.cws"
+
+// Load the two templates :
+// First, hash the prototype, then find every template matching it,
+// And finally reduce the selection to only one template before loading.
+
+// Build the rtype node for the template
+local theRtype;
+local name;
+local params;
+rtxNodeIdentifier(name, "open", "Userland");
+rtxNodeRType(theRtype, name, params);
+pushItem params;
+rtxNodeIdentifier(params#back, "Context");
+
+local theWith;
+local theTemplates;
+
+if (rtxLink_findTemplates(theRtype, theTemplates) == false)
+    error("01_H_test_back_loadFromCache.cws:"
+          +" The template could not be found by rtxLink.");
+traceLine("A list of " + getArraySize(theTemplates)
+          + " templates was foud matching the prototype '"
+          + theProto + "'");
+
+if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
+    error("01_H_test_back_loadFromCache.cws:"
+          +" rtxLink could not select an unique template :"+toString(theTemplates, true));
+traceLine("An Unique template could be identified for resolution.");
+
+traceLine("Loading template : Userland::open(Context ctx)...");
+local c_tree;
+if (rtxLink_LoadScript(theTemplates, c_tree) == false)
+    error("01_H_test_back_loadFromCache.cws: ");
+
+traceLine("====>Codeworker Script and tree Loaded with success.");

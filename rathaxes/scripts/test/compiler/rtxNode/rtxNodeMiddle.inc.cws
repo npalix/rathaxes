@@ -1,0 +1,105 @@
+#if !existFunction(rtxNodeMiddle_version)
+
+function rtxNodeMiddle_version()
+{return "1.0";}
+
+function        rtxNodeItf(local_node      : node,
+                           itf_name        : value,
+                           out_ref_inherit : reference,
+                           out_ref_body    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    insert local_node.name = itf_name;
+    insert local_node.inheritance;
+    insert local_node.types;
+
+    /* XXX: Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    ref out_ref_inherit = local_node.inheritance;
+    return true;
+}
+
+function        rtxNodeItfDeclaration(local_node        : node,
+                                      qualifier         : value,
+                                      dtype             : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_decl__";
+
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = dtype;
+    insert local_node.identifiers;
+
+    return true;
+}
+
+function        addRTypeToItfDeclaration(declaration_node : node,
+                                         rtype : node)
+{
+    insert declaration_node.rtype;
+    setall declaration_node.rtype = rtype;
+}
+
+function        addSequenceBody(theSequence : node, theBody : node)
+{
+    insert theSequence.body;
+    insert theSequence.body.type = "__block__";
+    insert theSequence.body.block;
+    setall theSequence.body.block = theBody;
+
+    return true;
+}
+
+function        rtxItfAddTypeToList<T>(theNode : node, nameList : reference)
+{
+    local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
+                                                                  theNode.identifiers);
+    insert nameList[fullName];
+    ref nameList[fullName] = theNode;
+}
+
+function        rtxItfAddTypeToList<"variable">(theNode : node, nameList : reference)
+{
+    traceLine("A variable souldn't be in the types list.");
+    error("A variable souldn't be in the types list.");
+}
+
+
+function        rtxNodeItfPointcutDeclaration(local_node : node,
+                                              qualifier : value,
+                                              identifier : node,
+                                              out_ref_params : reference)
+{
+    local dummy_default;
+    local id_out_ref;
+
+    rtxNodePointcut(local_node, id_out_ref, out_ref_params, dummy_default);
+
+    insert local_node.qualifier = qualifier;
+    setall id_out_ref = identifier;
+
+    return true;
+}
+
+function        rtxNodeItfChunkDeclaration(local_node : node,
+                                           identifier : node,
+                                           qualifier : value)
+{
+    local dummy_param;
+    local dummy_body;
+    local id_out_ref;
+
+    rtxNodeChunk(local_node, id_out_ref, dummy_param, dummy_body);
+    clearVariable(dummy_body);
+
+    insert local_node.qualifier = qualifier;
+    setall id_out_ref = identifier;
+
+    return true;
+}
+
+
+#end
