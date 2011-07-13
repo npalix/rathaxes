@@ -53,18 +53,18 @@ function        addSequenceBody(theSequence : node, theBody : node)
     return true;
 }
 
-function        rtxItfAddTypeToList<T>(theNode : node, nameList : reference)
+function        rtxItfAddTypeToList(theNode : node, nameList : reference)
 {
+    if (theNode.specifier == "variable")
+    {
+        traceLine("A variable souldn't be in the types list.");
+        error("A variable souldn't be in the types list.");
+    }
+
     local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
                                                                   theNode.identifiers);
     insert nameList[fullName];
     ref nameList[fullName] = theNode;
-}
-
-function        rtxItfAddTypeToList<"variable">(theNode : node, nameList : reference)
-{
-    traceLine("A variable souldn't be in the types list.");
-    error("A variable souldn't be in the types list.");
 }
 
 

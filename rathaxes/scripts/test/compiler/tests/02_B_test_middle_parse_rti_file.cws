@@ -6,7 +6,7 @@ local sourceFile = "full_lkm/simplified_lkm.rti";
 local input = loadFile(sourceFile);
 
 /* Switch to a tmp dir */
-local working_directory = "__02_A_prime_test_middle_parse";
+local working_directory = "__02_B_test_middle_parse_rti_file";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
