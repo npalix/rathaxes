@@ -2,11 +2,11 @@
 	TEST GENERAL DU MIDDLE
 */
 
-#include "02_A_test_middle_parse.cws"
+#include "02_B_test_middle_parse_rti_file.cws"
 
 // The previous test's code has already created a directory.
 // Change to our own...
-working_directory = "../__02_B_test_middle_check_inheritance";
+working_directory = "../__02_C_test_middle_check_inheritance";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
@@ -28,3 +28,7 @@ foreach itf_node in source.block
         exit 1;
     }
 }
+
+local savePath = "__02_rtx_parse__.tree";
+traceLine("Writing tree to: " + savePath);
+saveProject(savePath, source);

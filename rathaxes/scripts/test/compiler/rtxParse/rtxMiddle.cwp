@@ -11,12 +11,12 @@ rtx_stmt<"interface">(theBlock : node) ::=
     '{'
     [ rtx_itf_declaration(body, lastNode.types) ]*
     '}'
-    => insert lastNode#root.interfaces[name] = $getArraySize(lastNode#root.interfaces) - 1$;
+    => ref lastNode#root.interfaces[name] = lastNode;
 ;
 
 inherit(theNode : node) ::=
-    #pushItem(theNode)
-    #readIdentifier:theNode#back
+    #readIdentifier:parentName
+    => insert theNode[parentName];
 ;
 
 inheritance(theNode : node) ::=
@@ -76,7 +76,7 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
     rtx_scoped_identifier(nameNode)
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
+    => rtxItfAddTypeToList(theDecl, nameList);
     ['{' [ rtx_type_list(theDecl, rtypeNode) ]* '}']?
     ';'
 ;
@@ -86,11 +86,11 @@ rtx_itf_stmt<"builtintype">(theDecl : node, nameList : node, theQualif : value) 
     => local params;
     => local rtypeNode;
 
-    #check(rtxNodeItfDeclaration(theDecl, theQualif, "builtin type"))
+    #check(rtxNodeItfDeclaration(theDecl, theQualif, "builtintype"))
     rtx_scoped_identifier(nameNode) ';'
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
+    => rtxItfAddTypeToList(theDecl, nameList);
 ;
 
 rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=
@@ -112,7 +112,7 @@ rtx_itf_stmt<"sequence">(theDecl : node, nameList : node, theQualif : value) ::=
     => local rtypeNode;
     rtx_template_prototype(rtypeNode, theDecl.identifiers)
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList<theDecl.specifier>(theDecl, nameList);
+    => rtxItfAddTypeToList(theDecl, nameList);
     [
         ';'
     |
