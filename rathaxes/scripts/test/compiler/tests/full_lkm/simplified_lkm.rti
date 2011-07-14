@@ -2,6 +2,9 @@ interface LKM
 {
     provided builtintype        LKM::Device_list;//??
     provided builtintype        LKM::Symbol;
+    provided builtintype        LKM::string;
+    provided builtintype        LKM::number;
+    provided builtintype        LKM::numser;
 
     provided pointcut           LKM::INCLUDE_DEPENDENCIES;
     provided pointcut           LKM::GLOBAL_DATA_DECLARATION;
@@ -20,18 +23,15 @@ interface LKM
     }
 
     required variable LKM::Device_list  LKM::Devices;
-    required variable string            LKM::OS;
-    optional variable numser            LKM::version;
-    optional variable numser            LKM::arch;
+    required variable LKM::string       LKM::OS;
+    optional variable LKM::numser       LKM::version;
+    optional variable LKM::numser       LKM::arch;
 }
 
 interface Algorithms : LKM
 {
-    provided builtintype        string;
-    provided builtintype        number;
-    provided builtintype        numser;
-    provided builtintype        register; //collection?
-    provided type               Buffer;
+    provided builtintype        LKM::register; //collection?
+    provided type               LKM::Buffer;
 
     provided sequence   log(string)
     {
@@ -50,6 +50,7 @@ interface Algorithms : LKM
 interface User : LKM
 {
     provided type               Context;//why not device?
+    required variable LKM::Device_list  User::Devices;
 
 
     required sequence           open(Context)
