@@ -30,18 +30,23 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node
     return true;
 }
 
+function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
+{
+    local dummy_out_ref;
+
+    rtxNodeRType(rtypeNode, idNode, dummy_out_ref);
+}
+
 function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
 {
     if (rtypeNode.type != "__rtx_rtype__")
-        error("Bad node type");
+        error("Bad node type. Received: " + rtypeNode.type);
 
     /* Check current interface. */
     local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
     if (findElement(name + "{}", interfaceNode.types) == true)
         return true;
 
-
-    traceLine(">>> Check type: " + rtypeNode.name.scope + "::" + rtypeNode.name.name + "in parent interfaces.");
     /* Recursive check in parents interfaces. */
     foreach parentInterface in interfaceNode.inheritance
     {
@@ -56,7 +61,6 @@ function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
                                                 currentInterface : node,
                                                 interfacesList : node)
 {
-    traceLine("Specifier: " + T + " - skipping");
     return true;
 }
 
@@ -69,9 +73,6 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
     local ret = false;
 
-    local varName = currentDeclaration.identifiers.scope + "::" + currentDeclaration.identifiers.name;
-    traceLine("Searching for ``" + varName + "'' variable's type: " + typeName);
-
     if (scope == "")
     {
         traceLine("Type should be define in the global namespace");
@@ -79,10 +80,27 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     }
     else
     {
-        traceLine("Searching " + name + " in inherited interfaces");
         ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
     }
 
+    return ret;
+}
+
+function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local ret = isEmpty(currentDeclaration.rtype.params) ? true : false;
+
+    foreach entry in currentDeclaration.rtype.params
+    {
+        local rtypeNode;
+        rtxItfIdNodeToRType(entry, rtypeNode);
+        ret = rtxInterfaceHasType(rtypeNode, currentInterface);
+    }
     return ret;
 }
 
