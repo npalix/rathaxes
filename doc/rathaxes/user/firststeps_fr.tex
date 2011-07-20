@@ -13,7 +13,7 @@ backgroundcolor=\color{black}
 
 \tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=black}}
 \tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
-\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=2.5cm,minimum width=6cm}}
 
 \title{Premiers Pas}
 \author{Louis Opter}
@@ -111,34 +111,33 @@ d'ensemble du processus de génération d'un pilote~:
 
 \begin{figure}[ht!]
 \begin{center}
-% TODO: we should re-do this drawing horizontally.
 \begin{tikzpicture}
-\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right]{\large{\sffamily{Description du pilote}}};
+\node (RTX) at (-5,0) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.south) node[below]{\large{\sffamily{Description du pilote}}};
 
-\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+\node (C) at (5,0) {\includegraphics[height=1.5cm]{icons/c}};
+\draw (C.south) node [below]{\large{\sffamily{Module noyau}}};
 
-\node[graybox] (AST1) at (2,0.5){\texttt{\large{AST}}};
+\node[graybox] (AST1) at (-2,0){\texttt{\large{AST}}};
 \draw[warrow] (RTX)--(AST1);
 
-\node[graybox] (AST2) at (2,-1.5) {\texttt{\large{AST}}};
+\node[graybox] (AST2) at (2,0) {\texttt{\large{AST}}};
 \draw[warrow] (AST2)--(C);
 
-\node[redcontainer] (COMPILER) at (2,-0.5) {};
-\draw (COMPILER.south east) node[above right]{\large{\sffamily{Compilateur}}};
+\node[redcontainer] (COMPILER) at (0,0) {};
+\draw (COMPILER.south) node[below]{\large{\sffamily{Compilateur}}};
 
 \node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{\large{RTX\_Link}}};
 \draw[warrow] (AST1)--(RTXLINK);
 \draw[warrow] (RTXLINK)--(AST2);
 
-\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
-\draw (RTI.east) node[above right]{\large{\sffamily{Interfaces}}};
-\draw[warrow] (RTI.west)--(RTXLINK.north);
+\node (RTI) at (-1.5,2.7) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.north west) node[above right]{\large{\sffamily{Interfaces}}};
+\draw[warrow] (RTI.south)--(RTXLINK);
 
-\node (BLT) at (4.5,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
-\draw (BLT.east) node[above right]{\large{\sffamily{Patrons de code}}};
-\draw[warrow] (BLT.west)--(RTXLINK);
-\draw (C.north east) node [below right]{\large{\sffamily{Module noyau}}};
+\node (BLT) at (0.5,2.7) {\includegraphics[height=1.3cm]{icons/blt}};
+\draw (BLT.north west) node[above right]{\large{\sffamily{Patrons de code}}};
+\draw[warrow] (BLT.south)--(RTXLINK);
 \end{tikzpicture}
 \caption{Vue d'ensemble de la génération d'un pilote}
 \end{center}
