@@ -13,8 +13,8 @@ FOREACH(I ${RATHAXES_TEX_FILE})
                        IMAGES
                        ArchitectureGrandPublic.png
                        ComunicationDiagram.png
-                       functional_diagram.eps
-                       implementation.eps
+                       functional_diagram.pdf
+                       implementation.pdf
                        DEFAULT_PDF MANGLE_TARGET_NAMES
                       )
 ENDFOREACH(I ${RATHAXES_TEX_FILE})
