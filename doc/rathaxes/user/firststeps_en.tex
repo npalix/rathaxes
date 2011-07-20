@@ -1,18 +1,26 @@
 \documentclass[american]{rtxarticle}
 
 \usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
 
 \lstset{%
 basicstyle=\ttfamily\footnotesize\color{LightGray},
 backgroundcolor=\color{black}
 }
 
+\tikzset{warrow/.style={->, >=stealth, color=black, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=black}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+
 \title{First steps}
 \author{Louis Opter}
 
 \rtxdoctype{User Documentation}
 \rtxdocstatus{Draft}
-\rtxdocversion{0.3}
+\rtxdocversion{0.4}
 
 \rtxdochistory
 {
@@ -21,6 +29,8 @@ backgroundcolor=\color{black}
 0.2 & 04/09/2011 & Louis Opter & Lot of improvements \\
 \hline
 0.3 & 04/09/2011 & David Pineau & Quick fixes \\
+\hline
+0.4 & 07/19/2011 & Louis Opter & Add on overview of the generation of a driver \\
 }
 
 \begin{document}
@@ -28,7 +38,7 @@ backgroundcolor=\color{black}
 \maketitle
 
 \begin{abstract}
-\rtx\ is a Domain Specific Language to describes peripherals drivers. \rtx\
+\rtx\ is a Domain Specific Language to describes peripherals drivers. It
 compiles to kernel modules written in C for Linux, Windows and OpenBSD.
 
 This document explains how to setup the \rtx\ compiler on Windows and Unix like
@@ -40,6 +50,8 @@ explains how to build the latest version of \rtx.
 
 \tableofcontents
 
+\pagebreak
+
 \section{Installation}
 
 An installer exists for Windows, on other operating systems only installations
@@ -49,7 +61,7 @@ the sources (i.e. without the installer).
 
 Although \rtx\ only generate drivers for Windows, Linux and OpenBSD it can be
 installed and used from others operating systems as well (including other BSDs
-and MacOS X).
+and MacOS~X).
 
 \subsection{Using the Windows installer}
 
@@ -85,13 +97,55 @@ $ sudo make install
 
 \section{Generate your first driver}
 
+If you are on Windows open the ``Rathaxes Shell'', otherwise open your favorite
+terminal emulator.
+
 TBD.
+
+\newpage
 
 \section{Diving in}
 
-TBD.
+Before we explain the compiler and the language in details here is an overview
+of the generation of a driver:
 
-% Give links to the documentation here.
+\begin{figure}[ht!]
+\begin{center}
+% TODO: we should re-do this drawing horizontally.
+\begin{tikzpicture}
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right]{\large{\sffamily{Driver description}}};
+
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{\large{AST}}};
+\draw[warrow] (RTX)--(AST1);
+
+\node[graybox] (AST2) at (2,-1.5) {\texttt{\large{AST}}};
+\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\large{\sffamily{Compiler}}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{\large{RTX\_Link}}};
+\draw[warrow] (AST1)--(RTXLINK);
+\draw[warrow] (RTXLINK)--(AST2);
+
+\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.east) node[above right]{\large{\sffamily{Interfaces}}};
+\draw[warrow] (RTI.west)--(RTXLINK.north);
+
+\node (BLT) at (4.5,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
+\draw (BLT.east) node[above right]{\large{\sffamily{Code templates}}};
+\draw[warrow] (BLT.west)--(RTXLINK);
+\draw (C.north east) node [below right]{\large{\sffamily{Kernel module}}};
+\end{tikzpicture}
+\caption{Overview of the generation of a driver}
+\end{center}
+\end{figure}
+
+% TODO: explain the different parts of the DSL and how they fit together. And
+% give links to their respective documentations here.
 
 \section{Install the development version}
 
