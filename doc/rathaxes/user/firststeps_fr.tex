@@ -1,22 +1,32 @@
 \documentclass[francais]{rtxarticle}
 
 \usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
 
 \lstset{%
 basicstyle=\ttfamily\footnotesize\color{LightGray},
 backgroundcolor=\color{black}
 }
 
+\tikzset{warrow/.style={->, >=stealth, color=black, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=black}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+
 \title{Premiers Pas}
 \author{Louis Opter}
 
 \rtxdoctype{Documentation Utilisateur}
 \rtxdocstatus{Brouillon}
-\rtxdocversion{0.1}
+\rtxdocversion{0.2}
 
 \rtxdochistory
 {
 0.1 & 09/04/2011 & Louis Opter & Traduction de la version Anglaise \\
+\hline
+0.2 & 19/07/2011 & Louis Opter & Ajout d'une vue d'ensemble de la génération d'un pilote \\
 }
 
 \begin{document}
@@ -38,6 +48,8 @@ et comment compiler la dernière la version de \rtx.
 
 \tableofcontents
 
+\pagebreak
+
 \section{Installation}
 
 Un installateur existe pour Windows, sur les autres systèmes d'exploitation
@@ -47,7 +59,7 @@ choisir d'installer \rtx\ depuis les sources (càd sans l'installateur).
 
 Bien que \rtx\ génère des pilotes uniquement pour Windows, Linux et OpenBSD il
 est possible de l'installer et de l'utiliser depuis d'autre systèmes (comme
-d'autre BSD et MacOS X).
+d'autre BSD et MacOS~X).
 
 \subsection{Avec l'installateur Windows}
 
@@ -85,13 +97,55 @@ utilise «~sudo~» mais adaptez le à votre installation locale}.
 
 \section{Générer votre premier pilote}
 
+Si vous êtes sous Windows ouvrez le «~Rathaxes Shell~», sinon ouvrez votre
+émulateur de terminal favoris.
+
 TBD.
+
+\newpage
 
 \section{Plongée dans \rtx}
 
-TBD.
+Avant d'aborder en détail le compilateur et le langage \rtx\ voici une vue
+d'ensemble du processus de génération d'un pilote~:
 
-% Give links to the documentation here.
+\begin{figure}[ht!]
+\begin{center}
+% TODO: we should re-do this drawing horizontally.
+\begin{tikzpicture}
+\node (RTX) at (2,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
+\draw (RTX.north east) node[below right]{\large{\sffamily{Description du pilote}}};
+
+\node (C) at (2,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
+
+\node[graybox] (AST1) at (2,0.5){\texttt{\large{AST}}};
+\draw[warrow] (RTX)--(AST1);
+
+\node[graybox] (AST2) at (2,-1.5) {\texttt{\large{AST}}};
+\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (2,-0.5) {};
+\draw (COMPILER.south east) node[above right]{\large{\sffamily{Compilateur}}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{\large{RTX\_Link}}};
+\draw[warrow] (AST1)--(RTXLINK);
+\draw[warrow] (RTXLINK)--(AST2);
+
+\node (RTI) at (4.5,0.85) {\includegraphics[height=1.3cm]{icons/rti}};
+\draw (RTI.east) node[above right]{\large{\sffamily{Interfaces}}};
+\draw[warrow] (RTI.west)--(RTXLINK.north);
+
+\node (BLT) at (4.5,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
+\draw (BLT.east) node[above right]{\large{\sffamily{Patrons de code}}};
+\draw[warrow] (BLT.west)--(RTXLINK);
+\draw (C.north east) node [below right]{\large{\sffamily{Module noyau}}};
+\end{tikzpicture}
+\caption{Vue d'ensemble de la génération d'un pilote}
+\end{center}
+\end{figure}
+
+% TODO: explain the different parts of the DSL and how they fit together. And
+% give links to their respective documentations here.
 
 \section{Installer la version de développement}
 
