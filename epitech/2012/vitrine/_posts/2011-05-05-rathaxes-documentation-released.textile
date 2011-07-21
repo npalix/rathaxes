@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Rathaxes Documentation Released
+title: EN - Rathaxes Documentation Released
 ---
 
 h1. {{ page.title }}
