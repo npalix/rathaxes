@@ -98,6 +98,10 @@ ul.posts {
   margin-bottom: 2em;
 }
 
+#titlelink {
+  margin-left: 5px;
+}
+
   .site .title a {
     color: #a00;
     font-size: 100px;
