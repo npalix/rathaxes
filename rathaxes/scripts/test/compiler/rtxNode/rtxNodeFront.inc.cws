@@ -64,4 +64,53 @@ function rtxNodeConfigField_Extend(local_node   : node,
     return true;
 }
 
+function rtxNodeDevice(local_node : node, name : value, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_device__";
+    insert local_node.name = name;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    return true; 
+}
+
+function rtxNodeDevice_AddUseInterface(local_node : node, name : value)
+{
+    if (!existVariable(local_node.use))
+    {	insert local_node.use;}
+    pushItem local_node.use = name;
+    return true;
+}
+
+function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_register__";
+	insert local_node.name;
+	insert local_node.regtype;
+	insert local_node.like;
+	insert local_node.body;
+	cnormNodeBlock(local_node.body);
+	ref regtype_ref = local_node.regtype;
+	ref like_ref = local_node.like;
+	ref body_ref = local_node.body;
+	return true;
+}
+
+function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_like__";
+	insert local_node.mode = mode;
+	insert local_node.pattern = pattern;
+	insert local_node.offset = offset;
+	return true;
+}
+
+function rtxNodeRegMap(local_node : node)
+{
+
+}
+
 #end
