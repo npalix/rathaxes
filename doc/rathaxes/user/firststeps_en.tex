@@ -112,10 +112,10 @@ of the generation of a driver:
 \begin{figure}[ht!]
 \begin{center}
 \begin{tikzpicture}
-\node (RTX) at (-5,0) {\includegraphics[height=1.5cm]{icons/rtx}};
+\node (RTX) at (-5,0) {\includegraphics[height=1.5cm]{icons/rtx_no_stroke}};
 \draw (RTX.south) node[below]{\large{\sffamily{Driver description}}};
 
-\node (C) at (5,0) {\includegraphics[height=1.5cm]{icons/c}};
+\node (C) at (5,0) {\includegraphics[height=1.5cm]{icons/c_no_stroke}};
 \draw (C.south) node [below]{\large{\sffamily{Kernel module}}};
 
 \node[graybox] (AST1) at (-2,0){\texttt{\large{AST}}};
@@ -131,12 +131,12 @@ of the generation of a driver:
 \draw[warrow] (AST1)--(RTXLINK);
 \draw[warrow] (RTXLINK)--(AST2);
 
-\node (RTI) at (-1.5,2.7) {\includegraphics[height=1.3cm]{icons/rti}};
+\node (RTI) at (-1.5,2.7) {\includegraphics[height=1.3cm]{icons/rti_no_stroke}};
 % The hidden character is a hack to verticaly align "Code templates" and "Interfaces"
 \draw (RTI.north west) node[above right]{\large{\sffamily{Interfaces\textcolor{white}{p}}}};
 \draw[warrow] (RTI.south)--(RTXLINK);
 
-\node (BLT) at (0.5,2.7) {\includegraphics[height=1.3cm]{icons/blt}};
+\node (BLT) at (0.5,2.7) {\includegraphics[height=1.3cm]{icons/blt_no_stroke}};
 \draw (BLT.north west) node[above right]{\large{\sffamily{Code templates}}};
 \draw[warrow] (BLT.south)--(RTXLINK);
 \end{tikzpicture}
