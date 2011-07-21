@@ -5,14 +5,14 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
-\title{\rtx\ -- Technical Assessment 3}
-\date{10 juin 2011}
+\title{\rtx\ -- Technical Assessment Final 4}
+\date{21 juillet 2011}
 \author{Louis Opter \\ \texttt{<louis@lse.epitech.eu>}}
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={<-, >=latex, color=rathaxesred, ultra thick}}
 
-\newcommand{\cemph}[1]{{\itshape\Large{\textcolor{rathaxesred}{#1}}}}
+\newcommand{\cemph}[1]{{\itshape\LARGE{\textcolor{rathaxesred}{#1}}}}
 
 \begin{document}
 
@@ -29,24 +29,28 @@ compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux}
 
 % We could a graph using the commit stats in linux:
 \begin{frame}{Développement de pilotes}
-\only<1>{
 \begin{center}
-Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
-\end{center}}
-\only<2>{\begin{itemize}
-\item code critique ;
-\item différentes compétences ;
-\item code spécifique ;
-\item auto formation.
-\end{itemize}}
+\only<1>{
+\Large{Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :}}
+\only<2>{\Large{%
+\begin{itemize}
+\item Compétences requises ;
+\item Portabilité ;
+\item Maintenance.
+\end{itemize}
+}}
+\end{center}
 \end{frame}
 
 \begin{frame}{Objectifs de Rathaxes}
-\begin{itemize}
-\item imposer plus de vérifications ;
-\item unifier le développement ;
-\item<2-> \cemph{séparer les compétences.}
-\end{itemize}
+\begin{center}
+\only<1>{\Large{\cemph{\LARGE{Simplifier}} les cycles de développement}}
+\only<2>{\Large{\begin{itemize}
+\item Abstraction de la plateforme ;
+\item Vérifications statiques ;
+\item \cemph{\Huge{séparer les compétences.}}
+\end{itemize}}}
+\end{center}
 \end{frame}
 
 \begin{frame}{Séparation des compétences}
@@ -145,8 +149,13 @@ Une tâche \cemph{difficile}, \cemph{longue} et \cemph{fastidieuse} :
 
 \begin{frame}{Merci}
 \begin{center}
-\LARGE{\itshape{Questions ?}}
+\Huge{\emph{Questions ?}}
 \end{center}
+
+\vspace{2em}
+\begin{itemize}
+\item \Large{\texttt{http://www.rathaxes.org/}}
+\end{itemize}
 \end{frame}
 
 \end{document}
