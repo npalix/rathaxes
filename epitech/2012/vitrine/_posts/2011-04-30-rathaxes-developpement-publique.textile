@@ -1,6 +1,6 @@
 ---
 layout: post
-title: FR - Le dévelopment de Rathaxes devient publique
+title: FR - Le développement de Rathaxes devient publique
 ---
 
 h1. {{ page.title }}
@@ -13,22 +13,18 @@ La nouvelle équipe, plus petite que la précédente, se compose de 5 personnes�
 * Thomas Luquet ;
 * Zoltan Konarzewski.
 
-Cette nouvelle équipe est toujours sous la direction de Lionel Auroux. Être moins nombreux nous permet d’être plus versatiles. Pour cette nouvelle session, nous avons
-décidé de nous concentrer sur deux choses :
+Cette nouvelle équipe est toujours sous la direction de Lionel Auroux. Être moins nombreux nous permet d’être plus versatiles. Pour cette nouvelle session, nous avons décidé de nous concentrer sur deux choses :
+
 * Une nouvelle version du langage dédié et de son compilateur ;
 * Des pilotes d’exemple basés sur l’état de l’art.
 
-Plus important encore, Rathaxes est maintenant un projet libre : le langage est le compilateur sont maintenant sous licence GPLv3, quant au patron de code, qui sont
-spécifique a un système d’exploitation ou a un périphérique sont sous licence BSD.
+Plus important encore, Rathaxes est maintenant un projet libre : le langage est le compilateur sont maintenant sous licence GPLv3, quant au patron de code, qui sont spécifique a un système d’exploitation ou a un périphérique sont sous licence BSD.
 
-L’ouverture signifie deux choses pour nous. Premièrement, nous voulons attirer l’attention de la communauté libre et celle de développeur systèmes. Deuxièmement,
-cela va nous aider à créer un projet plus utilisable et documenté gardant à l’esprit
-qu’une communauté est derrière nous.
+L’ouverture signifie deux choses pour nous. Premièrement, nous voulons attirer l’attention de la communauté libre et celle de développeur systèmes. Deuxièmement, cela va nous aider à créer un projet plus utilisable et documenté gardant à l’esprit qu’une communauté est derrière nous.
 
-Espérant travailler avec d’autre personne, nous avons postulé aux RMLL cet été à
-Strasbourg, France.
+Espérant travailler avec d’autre personne, nous avons postulé aux RMLL cet été à Strasbourg, France.
 
-Bien sûr, attendez-vous à des documentations et un aperçu du nouveau langage.
+Bien sûr, attendez vous à des documentations et un aperçu du nouveau langage.
 
 À bientôt.
 

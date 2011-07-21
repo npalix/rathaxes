@@ -9,8 +9,7 @@ Notre candidature pour les "12es rencontres du logiciel libre":http://2011.rmll.
 
 Cela signifie que nous serons à Strasbourg en juillet du dimanche 9 jusqu’au mardi 14.
 
-David Pineau et moi-même animerons une présentation sur Rathaxes. L’équipe entière,
-excepté Thomas Sanchez (qui sera aux Sessions d’été de Berkeley), sera disponible sur le stand durant tout l’événement.
+David Pineau et moi-même animerons une présentation sur Rathaxes. L’équipe entière, excepté Thomas Sanchez (qui sera aux Sessions d’été de Berkeley), sera disponible sur le stand durant tout l’événement.
 
 Si vous êtes intéressé par Rathaxes, n’hésitez pas à venir et discuter : les boissons seront pour nous !
 
