@@ -116,10 +116,7 @@ IF (UNIX)
 ENDIF (UNIX)
 
 IF (WIN32)
-    SET(CPACK_NSIS_CREATE_ICONS_EXTRA
-"SetOutPath '$INSTDIR\\\\bin'
-CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Rathaxes.lnk' '$INSTDIR\\\\bin\\\\rathaxes.bat'
-SetOutPath '$INSTDIR'")
+    SET(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Rathaxes.lnk' '%comspec%' '/k bin\\\\rathaxesvars.bat'")
     SET(CPACK_GENERATOR "NSIS")
     SET(CPACK_SOURCE_GENERATOR "ZIP")
 ENDIF (WIN32)
