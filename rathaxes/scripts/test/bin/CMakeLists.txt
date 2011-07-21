@@ -3,8 +3,10 @@
 IF (WIN32)
     # On windows you have to use relative paths and install the proper
     # shortcut using nsis.
-    SET(PATH_PREFIX "..")
-    SET(RATHAXES_SCRIPT_NAME "rathaxes.bat")
+    SET(PATH_PREFIX "")
+    SET(RATHAXES_SCRIPT_NAME "rathaxesvars.bat")
+
+    INSTALL(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/rathaxes.bat" DESTINATION bin)
 ELSE (WIN32)
     SET(PATH_PREFIX "${CMAKE_INSTALL_PREFIX}")
     SET(RATHAXES_SCRIPT_NAME "rathaxes")
