@@ -1,4 +1,3 @@
-
 /*
  *
  * Rules for the configuration block
@@ -47,4 +46,125 @@ rtx_stmt<"configuration">(theBlock : node) ::=
         rtx_stmt_config_block(configBody)
         #continue(sError, "Expected '}' closing configuration block.")
     '}'
+;
+
+rtx_stmt<"device">(theBlock : node) ::=
+	#readIdentifier:device_name
+	=> traceLine("Gruuuu: " + device_name);
+	#pushItem(theBlock.block)
+/**/	=> local lastNode;
+	#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/	=> local deviceBody;
+	#check(rtxNodeDevice(lastNode, device_name, deviceBody))
+	["use" 
+		#readIdentifier:itf 
+		#check(rtxNodeDevice_AddUseInterface(lastNode, itf))
+		[',' #continue(sError, "ITF FUCK")
+			#readIdentifier:itf
+			#check(rtxNodeDevice_AddUseInterface(lastNode, itf))
+		]*
+	]?:use
+	=> traceLine(use);
+	#continue(sError, "Expected block after device statement.")
+	'{'
+		[rtx_stmt_device_block(deviceBody)]*
+		#continue(sError, "Expected '}' closing device block.")
+	'}'
+;
+
+rtx_stmt_device_block(theBlock : node) ::= 
+	#pushItem(theBlock.block)
+	=> local lastNode;
+	#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+	[rtx_register(lastNode) | rtx_property(lastNode) | rtx_sequence(lastNode)]
+;
+
+rtx_register_like(theNode : node) ::= 
+	"mode" ["RW"|"R"|"W"]:mode
+	"like" 
+	['(' ['.'|'0'|'1'|'*']+:pattern ')'] 
+	"at" #readInteger:offset
+	#check(rtxNodeLike(theNode, mode, pattern, offset))
+;
+
+rtx_bit_range ::= '[' #readInteger [".." #readInteger]? ']'
+;
+
+rtx_bit_mask ::= ['(' ['0'|'1']+ ')'] "->" #readIdentifier ';'
+;
+
+rtx_register_map(theBlock : value) ::= 
+	#pushItem(theBlock.block)
+	=> local last_node;
+	#check(cnormNodeBlock_GetLastNode(theBlock, last_node))
+	rtx_bit_range "as" #readIdentifier
+	[';'
+	|
+		'{'[rtx_bit_mask:bm =>traceLine("bm:" + bm);]+ '}'
+	]
+;
+
+rtx_register(theNode : node) ::= "register" 
+	=> local type;
+	=> local like;
+	=> local body;
+	#check(rtxNodeRegister(theNode, type, like, body))
+    	rtx_scoped_identifier(type)
+	#readIdentifier:theNode.name
+	rtx_register_like(like)
+	=>traceLine("l:" + toString(theNode, true));
+	[';'
+	| 
+		'{' =>traceLine("RMAP"); [rtx_register_map(body)]+ '}'
+	]
+;
+
+rtx_property(theNode : node) ::= 
+	["public"|"private"]? "property" rtx_qualified_name #readIdentifier:name
+	=>traceLine("end decl property:" + name);
+	'{'
+		[rtx_sequence_call]*
+	'}'
+;
+
+rtx_qualified_name ::= #!ignore [#readIdentifier:itf =>traceLine("i:" + itf); "::"]? #readIdentifier:seq_name =>traceLine("o:" + seq_name);
+;
+
+rtx_sequence(theNode : node) ::= rtx_qualified_name rtx_sequence_params
+	'{'
+		[rtx_sequence_call]*
+	'}'
+;
+
+rtx_label ::= #!ignore #readIdentifier ':' !':'
+;
+
+rtx_sequence_params ::= '(' [rtx_sequence_param [',' rtx_sequence_param]*]? ')'
+;
+
+rtx_sequence_param ::= rtx_qualified_name #readIdentifier
+;
+
+rtx_sequence_args ::=  =>traceLine("rsa");'(' [ rtx_sequence_arg [',' rtx_sequence_arg]*]? ')'
+;
+
+rtx_sequence_arg ::= [ #readCString | #readCChar | [~[','|')']]+ ]:arg
+	=> traceLine("ARG:" + arg);
+;
+
+rtx_sequence_call ::= 
+	rtx_qualified_name:n [rtx_sequence_args]?:a
+	=>traceLine("n:" + n + " a:" + a);
+	[';' =>traceLine("end call");
+	| '{'
+	 	[rtx_label | rtx_sequence_call]*
+	  '}'
+	]
+;
+
+// ??
+rtx_stmt<"driver">(theBlock : node) ::=
+	#readIdentifier:device_name
+	'{'
+	'}'
 ;
