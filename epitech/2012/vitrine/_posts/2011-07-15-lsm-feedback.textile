@@ -5,17 +5,13 @@ title: EN - LSM feedback
 
 h1. {{ page.title }}
 
-The LSM are over. We wanted to thank you for your concern and support!
-This time frame was very productive: 10% of the commits on the repository were
-done during the LSM week!
+The LSM are over. We wanted to thank you for your concern and support!  This time frame was very productive: 10% of the commits on the repository were done during the LSM week!
 
 The presentation went well. We are hoping that the present person start to speak about Rathaxes and we rely on the word of mouth in order to create a small community in a first time.
 
 It was a great experience because it permitted us to meet several persons and to present the project. We were able to get some feedback about Rathaxes and we will try take in consideration everything.
 
 We hope, via this kind of event, to start to create some interest to Rathaxes and get some support on it by people around the web.
-
-
 
 We hope to see you soon!
 
