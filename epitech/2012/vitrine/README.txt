@@ -46,6 +46,7 @@ Add the following environment variables into your shell startup script (e.g.
 .. code-block:: sh
 
    export GEM_HOME=$HOME/.ruby-env/gems
+   export RUBYLIB=$HOME/.ruby-env/lib
    PATH="$HOME/.ruby-env/bin/:$GEM_HOME/bin/:$PATH"
 
 Again, add an alias for *gem* if needed.
