@@ -68,6 +68,8 @@ function	rtxTpl_havePlaceHolder(ref_node : reference)
 function	rtxTpl_mapPlaceHolder(ref_node : reference, compile : node,
                                   node_idx : value)
 {
+    if (!existVariable(compile.nbplaceholder))
+        insert compile.nbplaceholder;
 	compile.nbplaceholder = $compile.nbplaceholder + 1$;
 	local sKey = "_" + compile.nbplaceholder;
     insert compile[sKey].block_idx = node_idx;
@@ -85,6 +87,23 @@ function	rtxTpl_compile<T>(local_node : node, compile : node,
     error("rtxTpl_compile<"+T+"> Hasn't been implemented yet ("+T+")...");
 }
 
+function	rtxTpl_compile<"__block__">(local_node : node, compile : node,
+                                        node_idx : value)
+{
+	traceLine("COMPILE BLOCK");
+	// find every single placeHolder in the cNorm tree
+    foreach item in local_node.block
+	{
+        rtxTpl_compile<item.type>(item, compile, index(item));
+    }
+}
+function rtxTpl_compile<"__source_block__">(local_node : node, compile : node, node_idx : value)
+{ rtxTpl_compile<"__block__">(local_node, compile, node_idx); }
+function rtxTpl_compile<"__block_init__">(local_node : node, compile : node, node_idx : value)
+{ rtxTpl_compile<"__block__">(local_node, compile, node_idx); }
+
+
+
 function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
                                        node_idx : value)
 {
@@ -100,6 +119,13 @@ function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
 			traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
 			rtxTpl_mapPlaceHolder(ctype_ref.identifier, compile, node_idx);
 		}
+        if (existVariable(ctype_ref.list))
+        {
+            foreach item in ctype_ref.list
+            {
+                rtxTpl_compile<item.type>(item, compile, node_idx);
+            }
+        }
 		// recurse param list
 		//...
 		// recurse field list
@@ -109,6 +135,7 @@ function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
 		// deref
 		ref ctype_ref = ctype_ref.pointer;
 	} while(true);
+
 	// variable name
 	if (existVariable(local_node.name)
         && rtxTpl_havePlaceHolder(local_node.name))
@@ -116,6 +143,17 @@ function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
 		traceLine("MAP PLACE HOLDER:" + toString(local_node.name));
 		rtxTpl_mapPlaceHolder(local_node.name, compile, node_idx);
 	}
+
+    // And check each of the possible members...
+    // the colon expression for C++ ctor init list and bitfields
+    if (existVariable(local_node.colon_expr))
+        rtxTpl_compile<local_node.colon_expr.type>(local_node.colon_expr,
+                                                       compile, node_idx);
+    // the assign_expression for initialization list
+    if (existVariable(local_node.assign_expr))
+        rtxTpl_compile<local_node.assign_expr.type>(local_node.assign_expr,
+                                                        compile, node_idx);
+
 	// recurse on the function's code
 	if (existVariable(local_node.body))
 	{
@@ -123,7 +161,16 @@ function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
                                              node_idx);
     }
 }
+function	rtxTpl_compile<"__field_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxTpl_compile<"__decl__">(local_node, compile, node_idx); }
+function	rtxTpl_compile<"__param_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxTpl_compile<"__decl__">(local_node, compile, node_idx); }
+function	rtxTpl_compile<"__fwd_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxTpl_compile<"__decl__">(local_node, compile, node_idx); }
 
+
+// The subtypes of expression offer many different attributes to the node,
+// So do not bother with subtypes and check them all and then recurse.
 function	rtxTpl_compile<"__expr__">(local_node : node, compile : node,
                                        node_idx : value)
 {
@@ -137,6 +184,40 @@ function	rtxTpl_compile<"__expr__">(local_node : node, compile : node,
         rtxTpl_compile<local_node.right.type>(local_node.right, compile,
                                               node_idx);
     }
+    if (existVariable(local_node.condition))
+    {
+        rtxTpl_compile<local_node.condition.type>(local_node.condition, compile,
+                                                  node_idx);
+    }
+    if (existVariable(local_node.then))
+    {
+        rtxTpl_compile<local_node.then.type>(local_node.then, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.else))
+    {
+        rtxTpl_compile<local_node.else.type>(local_node.else, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.body))
+    {
+        rtxTpl_compile<local_node.body.type>(local_node.body, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.list))
+    {
+        foreach item in local_node.list
+        {
+            if (existVariable(item.expr.list))
+            {
+                foreach param in item.expr.list
+                {
+                    if (existVariable(param.expr_type))
+                        rtxTpl_compile<param.type>(param, compile, node_idx);
+                }
+            }
+        }
+    }
 	if (existVariable(local_node.id) && rtxTpl_havePlaceHolder(local_node.id))
 	{
 		traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
@@ -147,26 +228,79 @@ function	rtxTpl_compile<"__expr__">(local_node : node, compile : node,
 function	rtxTpl_compile<"__stmt__">(local_node : node, compile : node,
                                        node_idx : value)
 {
-	// only the expressions are managed for now.
-	if (local_node.stmt_type == "__expr__")
+	if (existVariable(local_node.expr))
 	{
         rtxTpl_compile<local_node.expr.type>(local_node.expr, compile,
                                              node_idx);
     }
-	else
-		traceLine("SKIP");
-}
-
-function	rtxTpl_compile<"__block__">(local_node : node, compile : node,
-                                        node_idx : value)
-{
-	traceLine("COMPILE BLOCK");
-	// find every single placeHolder in the cNorm tree
-    foreach item in local_node.block
-	{
-        rtxTpl_compile<item.type>(item, compile, index(item));
+    if (existVariable(local_node.label) && rtxTpl_havePlaceHolder(local_node.label))
+    {
+		traceLine("MAP PLACE HOLDER:" + toString(local_node.label));
+		rtxTpl_mapPlaceHolder(local_node.label, compile, node_idx);
+    }
+    if (existVariable(local_node.ctrl) && rtxTpl_havePlaceHolder(local_node.ctrl))
+    {
+		traceLine("MAP PLACE HOLDER:" + toString(local_node.ctrl));
+		rtxTpl_mapPlaceHolder(local_node.ctrl, compile, node_idx);
+    }
+    if (existVariable(local_node.condition))
+    {
+        rtxTpl_compile<local_node.condition.type>(local_node.condition, compile,
+                                                  node_idx);
+    }
+    if (existVariable(local_node.then))
+    {
+        rtxTpl_compile<local_node.then.type>(local_node.then, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.else))
+    {
+        rtxTpl_compile<local_node.else.type>(local_node.else, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.init))
+    {
+        rtxTpl_compile<local_node.init.type>(local_node.init, compile,
+                                             node_idx);
+    }
+    if (existVariable(local_node.increment))
+    {
+        rtxTpl_compile<local_node.increment.type>(local_node.increment, compile,
+                                                  node_idx);
+    }
+    if (existVariable(local_node.body))
+    {
+        rtxTpl_compile<local_node.body.type>(local_node.body, compile,
+                                             node_idx);
     }
 }
+
+/*
+ * Walker functions for annex node types.
+ */
+function rtxTpl_compile<"__index_designation__">(local_node : node, compile : node,
+                                                 node_idx : value)
+{
+    // First, look into the index (most likely an expression/terminal expr)
+	rtxTpl_compile<local_node.index.type>(local_node.index, compile, node_idx);
+    // Next look into the rhs expr.
+	rtxTpl_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+}
+
+function rtxTpl_compile<"__field_designation__">(local_node : node, compile : node,
+                                                 node_idx : value)
+{
+    // First check that the field is not a placeHolder
+    if (rtxTpl_havePlaceHolder(local_node.name))
+    {
+        rtxTpl_mapPlaceHolder(local_node.name, compile, node_idx);
+    }
+    // Next check the rhs for a placeHolder
+	rtxTpl_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+}
+
+
+
 
 function    rtxTpl_compile<"__rtx_pointcut_raw__">(local_node : node,
                                                    compile : node,
