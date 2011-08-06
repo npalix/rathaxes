@@ -43,13 +43,18 @@ Tests Backend :
 
  * Mettre a jour la syntaxe du with                                     <= DONE
 
+ * Build une structure commune pour tous les prototypes de templates    <= DONE
+
+ * Ajouter la gestion des pointcuts avec noms pleinement qualifiés      <= DONE
+   * Preparer rtxGen, rtxLink et rtxResolve pour cette gestion          <= DONE
+   * Inserer les full qualified names lors du type-checking             <= DONE
+   * Gerer le cache uniquement avec du fully qualified                  <= DONE
+
  * Coder la fonction de match de configuration/with dans rtxLink        <= TODO
    * Coder les fonctions de normalisation de la config                  <= DONE
    * Le with doit être formaté lors du type-checking avec middle-end    <= TODO
    * Coder la fonction de comparaison config/with                       <= DONE
    * Ajouter un test de validation                                      <= DONE
-
- * Build une structure commune pour tous les prototypes de templates    <= DONE
 
  * Ajouter le Type-checking vs interfaces une fois le middle-end ok     <= TODO
  
@@ -57,14 +62,9 @@ Tests Backend :
 
  * Introspection du c_tree  : resolverValues "local".                   <= TODO
 
- * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
-
- * Ajouter la gestion des pointcuts avec noms pleinement qualifiés      <= DONE
-   * Preparer rtxGen, rtxLink et rtxResolve pour cette gestion          <= DONE
-   * Inserer les full qualified names lors du type-checking             <= DONE
-   * Gerer le cache uniquement avec du fully qualified                  <= DONE
-
  * Empecher le cache de charger plusieurs fois le meme script           <= TODO
+
+ * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
 
  * Mettre en place la génération de code pour les templates de type     <= TODO
    * Definir les prototypes des fonctions à générer pour le mapping     <= TODO
