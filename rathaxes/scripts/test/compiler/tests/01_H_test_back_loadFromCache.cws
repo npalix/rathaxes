@@ -39,7 +39,7 @@ if (rtxLink_findTemplates(theRtype, theTemplates) == false)
     error("01_H_test_back_loadFromCache.cws:"
           +" The template could not be found by rtxLink.");
 traceLine("A list of " + getArraySize(theTemplates)
-          + " templates was foud matching the prototype '"
+          + " templates was found matching the prototype '"
           + theProto + "'");
 
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
@@ -47,9 +47,17 @@ if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
           +" rtxLink could not select an unique template :"+toString(theTemplates, true));
 traceLine("An Unique template could be identified for resolution.");
 
+local theChunk;
+if (rtxLink_selectChunkFromTemplate(theTemplates, "::CALL", theChunk) == false)
+    error("01_H_test_back_loadFromCache.cws:"
+          +" rtxLink could not find a '::CALL' chunk in template "
+          +rtxRTypeName<theRtype.type>(theRtype));
+traceLine("The chunk '::CALL' was found for the template.");
+
 traceLine("Loading template : Userland::open(Context ctx)...");
 local c_tree;
-if (rtxLink_LoadScript(theTemplates, c_tree) == false)
-    error("01_H_test_back_loadFromCache.cws: ");
+if (rtxLink_LoadScript(theChunk, c_tree) == false)
+    error("01_H_test_back_loadFromCache.cws: Could not load script for chunk"
+          + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
 
 traceLine("====>Codeworker Script and tree Loaded with success.");
