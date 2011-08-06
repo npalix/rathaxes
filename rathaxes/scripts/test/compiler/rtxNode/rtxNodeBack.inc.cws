@@ -63,10 +63,13 @@ function rtxNodeTpl_HasMapping(local_node : node)
 }
 
 function rtxNodeIdentifierMapping(local_node : node,
+                                  identifier : value,
                                   out_ref_body : reference)
 {
     rtxNode(local_node);
     local_node.type = "__rtx_tpl_type_id_map__";
+
+    insert local_node.id = identifier;
 
     insert local_node.body;
     cnormNodeBlock(local_node.body);
@@ -130,7 +133,7 @@ function rtxNodeTplTypeMapping_AddIdentifier(local_node : node,
 
     // Then map it
     insert local_node.body.block[identifier];
-    rtxNodeIdentifierMapping(local_node.body.block[identifier], mapped_body);
+    rtxNodeIdentifierMapping(local_node.body.block[identifier], identifier, mapped_body);
 
     return true;
 }
