@@ -4,19 +4,6 @@
 
 #include  "01_G_test_back_registerToCache.cws"
 
-
-// The previous test's code uses the same directory, so no
-// change about it : We need the asvec files !
-//working_directory = "../__01_test_back_cache";
-//if (existDirectory(working_directory))
-//{
-//    traceLine("Directory " + working_directory + " already exists");
-//    traceLine("Removing directory: " + working_directory);
-//}
-//traceLine("Creating directory: " + working_directory);
-//createDirectory(working_directory);
-//changeDirectory(working_directory);
-
 #include "rtxTpl/rtxResolve.inc.cws"
 
 // Load the two templates :
