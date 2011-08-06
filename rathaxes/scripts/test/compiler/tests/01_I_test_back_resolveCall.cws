@@ -2,26 +2,61 @@
 	TEST for template codeworker generation
 */
 
-#include  "01_H_test_back_loadFromCache.cws"
+#include  "01_G_test_back_registerToCache.cws"
 
+#include "rtxTpl/rtxResolve.inc.cws"
 
-// The previous test's code has already created a directory.
-// Change to our own...
-working_directory = "../__01_I_test_back_resolveCall";
-if (existDirectory(working_directory))
-{
-    traceLine("Directory " + working_directory + " already exists");
-    traceLine("Removing directory: " + working_directory);
-}
-traceLine("Creating directory: " + working_directory);
-createDirectory(working_directory);
-changeDirectory(working_directory);
+// Load the template :
+// First, hash the prototype, then find every template matching it,
+// And finally reduce the selection to only one template before loading.
 
+// Build the rtype node for the template
+local theRtype;
+local name;
+local params;
+rtxNodeIdentifier(name, "open", "Userland");
+rtxNodeRType(theRtype, name, params);
+pushItem params;
+rtxNodeIdentifier(params#back, "Context");
+
+local theWith;
+local theTemplates;
+
+if (rtxLink_findTemplates(theRtype, theTemplates) == false)
+    error("01_I_test_back_resolveCall.cws:"
+          +" The template could not be found by rtxLink.");
+traceLine("A list of " + getArraySize(theTemplates)
+          + " templates was found matching the prototype '"
+          + theProto + "'");
+
+if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
+    error("01_I_test_back_resolveCall.cws:"
+          +" rtxLink could not select an unique template :"+toString(theTemplates, true));
+traceLine("An Unique template could be identified for resolution.");
+
+local theChunk;
+if (rtxLink_selectChunkFromTemplate(theTemplates, "::CALL", theChunk) == false)
+    error("01_I_test_back_resolveCall.cws:"
+          +" rtxLink could not find a '::CALL' chunk in template "
+          +rtxRTypeName<theRtype.type>(theRtype));
+traceLine("The chunk '::CALL' was found for the template.");
+
+traceLine("Loading template : Userland::open(Context ctx)...");
+local c_tree;
+if (rtxLink_LoadScript(theChunk, c_tree) == false)
+    error("01_I_test_back_resolveCall.cws: Could not load script for chunk"
+          + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
+
+traceLine("====>Codeworker Script and tree Loaded with success.");
 
 // Now, try the C code generation out : simulate an input (the resVal node)
 // And start the resolution of the placeHolders.
 local resVals;
 rtxNodeResVal(resVals);
+insert resVals["config"];
+rtxNodeResVal(resVals["config"]);
+insert resVals["config"]["OS"];
+rtxNodeResValLeaf(resVals["config"]["OS"], "Linux");
 insert resVals["KK"];
 rtxNodeResValLeaf(resVals["KK"], "caca");
 insert resVals["KKK"];
