@@ -23,6 +23,16 @@ function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
     {
         rtxTpl_walk<chunk.type>(chunk);
     }
+    if (existVariable(local_node.mapping))
+    {
+        local   dummyIdx = $-1$;
+        foreach item in local_node.mapping.body.block
+        {
+            rtxTpl_compile<item.body.type>(item.body,
+                                           item.compile,
+                                           dummyIdx);
+        }
+    }
 }
 
 function    rtxTpl_walk<"__rtx_chunk__">(local_node : node)

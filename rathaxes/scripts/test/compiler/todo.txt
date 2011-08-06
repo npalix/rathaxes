@@ -67,9 +67,10 @@ Tests Backend :
  * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
 
  * Mettre en place la génération de code pour les templates de type     <= TODO
-   * Definir les prototypes des fonctions à générer pour le mapping     <= TODO
+   * Definir les prototypes des fonctions à générer pour le mapping     <= DONE
+   * Mettre  en place un nouvel element dans le cache dedie au mapping  <= TODO
    * Coder les fonctions de mapping pour les builtins (local, config)   <= TODO
-     * local: symbole du bloc C                                         <= TODO
+     * local: symbole du bloc C                                         <= DONE
      * local: error_label() -> generation d'un label unique pour erreur <= TODO
      * local: tmp() -> generation d'un identifiant unique dans le bloc  <= TODO
      * local: lookup(symbol) -> analyse prototype func pour recup types
@@ -86,6 +87,15 @@ Tests Backend :
        * Inserer le on_error avant les on_error precedents              <= TODO
        * Inserer le label généré avant le on_error                      <= TODO
 
+ * Mettre à jour les fonctions d'inject pour filer la  VRAIE config     <= TODO
+
+ * Faire une passe de validation apres rtxMeta pour valider  le mapping
+   ou non (placeHolders == "${self}" ?)                                 <= TODO
+
+ * Mettre à jour les fonctions de tissage pour empecher l'insertion
+   multiple d'un meme code (fonction, type definition, etc...)
+   + remonter correctement ces éléments au tissage (ordre, etc...)      <= TODO
+    
 
 
 
