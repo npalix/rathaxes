@@ -13,10 +13,10 @@ function rtxLink_version()
 /******************************************************************************/
 
 // wrapper/faker for the template prototype hashing function (future)
-function hashTemplatePrototype(prototype_node : node, out_ref_hash : reference)
+function hashTemplatePrototype(theRType : node, out_ref_hash : reference)
 {
     local dummyIds;
-    out_ref_hash = rtxRTypeFullQualifiedName<"sequence">(prototype_node, dummyIds);
+    out_ref_hash = rtxRTypeFullQualifiedName<"sequence">(theRType, dummyIds);
 }
 
 declare function rtxLink_CompareValues<T>(ref : node, val : node);
