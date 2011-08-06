@@ -4,6 +4,10 @@ function rtxResolve_version()
 { return "1.0"; }
 
 
+declare function type_map<T>(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node);
+
 /*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
@@ -40,6 +44,41 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : value,
     }
 }
 
+
+function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node)
+{
+    local typeDef;
+    local typeDecl;
+    // those booleans are a fucking workaround cause the isEmpty()
+    // function doesn't seem to work.
+    local hasTypeDef = 0;
+    local hasTypeDecl = 0;
+
+    foreach decl in typeDeclBlock.block
+    {
+        if (decl.ctype.storage == "typedef")
+        {
+            ref typeDef = decl;
+            hasTypeDef = 1;
+        }
+        else if (decl.ctype.storage == "auto") // not a typedef, then a simple decl
+        {
+            ref typeDecl = typeDeclBlock.block[key(decl)];
+            hasTypeDecl = 1;
+        }
+    }
+    if (hasTypeDef == 1)
+    {
+        theDecl.ctype.identifier = typeDef.name;
+    }
+    else if (hasTypeDecl)
+    {
+        theDecl.ctype.specifier = typeDecl.ctype.specifier;
+        theDecl.ctype.identifier = typeDecl.ctype.identifier;
+    }
+    else
+        error("rtxResolve_InsertType:<ERROR> Could not identify how to weave type !");
+}
 
 
 /*
@@ -84,7 +123,7 @@ function    inject<"">(resolverValues : node, treeNode : node,
                        local_node : node)
 {
     // we should NEVER fallback here.
-    error("BAD NODE - Empty Template Node Type !");
+    error("inject: BAD NODE - Empty Template Node Type !");
     return false;
 }
 
@@ -92,7 +131,7 @@ function    inject<sNodeType>(resolverValues : node, treeNode   : node,
                               local_node : node)
 {
     // we should NEVER fallback here.
-    error("BAD NODE - Unknown Template Node Type : "+sNodeType);
+    error("inject: BAD NODE - Unknown Template Node Type : "+sNodeType);
 }
 
 function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
@@ -139,7 +178,97 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
      * This block of code has for role to check wether we're manipulating
      * a rathaxes type or a variable of a rathaxes type.
      *
+     * Here we can manage the access to a mapped identifier in a type
+     * We need to build the ResVal for the "${self}" placeHolder of the var.
+     * 
      */
+    //    local_node <=> with.c_block.compile[X].node
+    // or local_node <=> chunk.body.compile[X].node
+    // or local_node <=> chunk.body.compile[X].node
+    localref theChunk = local_node#parent#parent#parent#parent;
+    localref varName = local_node.body.identifiers[0].name;
+    // First, check that there is not prefix or suffix.
+    if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix))
+    {
+        // TODO FIXME XXX FIME TODO          A
+        // TODO FIXME XXX FIME TODO         / \
+        // TODO FIXME XXX FIME TODO        / | \
+        // TODO FIXME XXX FIME TODO       /  .  \
+        // TODO FIXME XXX FIME TODO      /_______\
+
+        // identify if it's a type declaration (i.e. "${Builtin::Buffer} buf;")
+        if (local_node#parent.weave_type == "__weave_type_id__")
+        {
+            traceLine("rtxResolve:<LOG> Injecting a type name.");
+            // refplaceholder = decl.ctype.id;
+            localref theDecl = local_node#parent.ref_placeholder#parent#parent;
+            local   theRtype;
+            setall theRtype = theChunk.type_map[theDecl.name];
+            // First we must select an unique template matching the rtype and config
+            local   templates;
+            local   declChunk;
+            if (!rtxLink_findTemplates(theRtype, templates))
+            {
+                error("inject<\"__rtx_var__\">: Could not find template "
+                      + "associated to type "
+                      + rtxRTypeName<theRtype.type>(theRtype));
+            }
+            if (!rtxLink_selectUniqueTemplate(templates, config))
+            {
+                error("inject<\"__rtx_var__\">: Could not select an unique template"
+                      + " associated to type "
+                      + rtxRTypeName<theRtype.type>(theRtype));
+            }
+            if (!rtxLink_selectChunkFromTemplate(templates, "::decl", declChunk))
+            {
+                error("inject<\"__rtx_var__\">: Could not select chunk '::decl'"
+                      + " associated to type "
+                      + rtxRTypeName<theRtype.type>(theRtype));
+            }
+
+            // Now that we have selected the decl chunk, load the tree & script
+            local   subtree;
+            rtxLink_LoadScript(declChunk, subtree);
+
+            rtxResolve_InsertType(theDecl, subtree.body);
+
+            return true;
+        }
+        // If not, is it a variable of a rathaxes type : check in type_map ?
+        else if (existVariable(theChunk.type_map)
+                 && findElement(varName, theChunk.type_map))
+        {
+            traceLine("rtxResolve:<LOG> Injecting a type mapping.");
+            // Create the resolvervalues for the type resolution:
+            // This should not need any more than config and var's identifier.
+            local resVal;
+            insert resVal["config"];
+            setall resVal["config"] = resolverValues["config"];
+            insert resVal["self"];
+            rtxNodeResValLeaf(resVal["self"], varName);
+            
+            local qTypeName = rtxRTypeName<theChunk.type_map[varName].type>(
+                                    theChunk.type_map[varName]
+                                );
+
+            type_map<qTypeName>(resVal, theChunk.type_map[varName],
+                                local_node.body.identifiers[1].name,
+                                local_node);
+
+            return true;
+        }
+        // NOT IMPLEMENTED YET
+        //// If not, is it an identifier to generate through local.tmp(X) ?
+        //else if (varName == "local" && ...)
+        //{
+        //    return true;
+        //}
+        //
+
+        // If both of the conditionis weren't entered, then that means that
+        // it is a simple value weaving, and the next part takes care of it.
+    }
+    traceLine("rtxResolve:<LOG> Could not find any type manipulation for injection.");
 
 
     /*
@@ -282,6 +411,80 @@ function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
                           theLink.ref_placeholder, phIdx, tpl_c_tree.body);
 
     return true;
+}
+
+
+/*
+ * The functions that resolve a type mapping.
+ */
+
+// Builtin functions for type mapping
+declare function instanceMapping<T>(resVals : node, c_tree : node);
+
+/*
+ * The function to call when encountering a type mapping...
+ *
+ * resolverValues : hashtable of values for placeHolder resolution
+ * theRtype       : a __rtx_rtype__ node  matching the template's type
+ * mappedId       : the identifier used in the mapping call
+ * local_node     : the mapping's placeHolder .node
+ */
+function type_map<T>(resolverValues : node,
+                     theRtype : node, mappedId : value,
+                     placeHolder : node)
+{
+    // FIXME TODO XXX TODO FIXME
+    // FIXME TODO XXX TODO FIXME
+    local config;
+    //setall config = local_node.body.with;
+    // FIXME TODO XXX TODO FIXME
+    // FIXME TODO XXX TODO FIXME
+
+
+    traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedId+"'");
+    // First we must select an unique template matching the rtype and config
+    local   templates;
+    if (!rtxLink_findTemplates(theRtype, templates))
+    {
+        error("type_map<"+T+">: Could not find template associated to type "
+              + rtxRTypeName<theRtype.type>(theRtype));
+    }
+    if (!rtxLink_selectUniqueTemplate(templates, config))
+    {
+        error("type_map<"+T+">: Could not select an unique template associated"
+              " to type " + rtxRTypeName<theRtype.type>(theRtype));
+    }
+
+    // Now that we have selected an unique template, load the tree+script
+    local   subtree;
+    rtxLink_LoadScript(templates, subtree);
+    localref theMapping = subtree.mapping.body.block[mappedId];
+
+    // Call the right mapping function (based on hash + identifier mapped).
+    traceLine("rtxResolve:<LOG> type_map<" + T + ">: Calling mapping key : "
+              + subtree.mapping.body.block[mappedId].instanceKey);
+    instanceMapping<theMapping.instanceKey>(resolverValues, subtree);
+
+    // Here, the interesting thing to replace is the id's parent.
+    localref theNode = placeHolder#parent.ref_placeholder#parent;
+    if (theNode.type == "__expr__")
+    {
+        setall theNode = theMapping.body.expr;
+    }
+    else
+    {
+        error("rtxResolve:<ERROR>: type_map<" + T + ">: Weaving for node of type '"
+              + theNode.type + "' not implemented.");
+    }
+
+    return true;
+}
+
+// The builtin specializations.
+function type_map<"Builtin::Local">(resolverValues : node,
+                                    theRtype : node, mappedId : value,
+                                    placeHolder : node)
+{
 }
 
 

@@ -27,9 +27,10 @@ rtx_scoped_identifier(theNode : node) ::=
 
 // This rule dissects an identifier in parts separated by dots.
 rtx_composed_identifier(theNode : node) ::=
-    identifier:varId
+/**/=>local theVar;
+    rtx_scoped_identifier(theVar)
     // Create the node from
-    #check(rtxNodeVar(theNode, varId))
+    #check(rtxNodeVar(theNode, theVar))
     [
         '.' identifier:curField
         // add the field into the block

@@ -436,6 +436,7 @@ function rtxLink_selectChunkFromTemplate(theTemplate : node,
     return false;
 }
 
+
 /*
  * This functino returns a collection of template cache nodes for a given
  * template prototype (hashed).
@@ -647,10 +648,19 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
         ref cachedTpl = cachedTpl#back;
         insert cachedTpl.with;
         setall cachedTpl.with = with_values;
+        insert cachedTpl.rtype;
+        setall cachedTpl.rtype = local_node.prototype.rtype;
+        if (rtxNodeTpl_HasMapping(local_node))
+        {
+            traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
+                      + " registering type template's associated script and tree.");
+            insert cachedTpl.script_file = local_node.script_file;
+            insert cachedTpl.tree_file = local_node.tree_file;
+        }
+
         // Update the cache session differencial too...
         pushItem this.session.temp.templates[hash];
         ref this.session.temp.templates[hash]#back = cachedTpl;
-
 
         insert cachedTpl.chunks;
         // Second, register each of its chunks into the cache, and keep

@@ -73,6 +73,7 @@ function rtxNodeIdentifierMapping(local_node : node,
 
     insert local_node.body;
     cnormNodeBlock(local_node.body);
+    insert local_node.body.compile;
 
     ref out_ref_body = local_node.body;
 

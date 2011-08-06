@@ -87,15 +87,13 @@ function rtxNodeVar_AddIdentifier(local_node : node, theField : value)
 {
     pushItem local_node.identifiers;
 
-    local theIdentifier;
-    ref theIdentifier = local_node.identifiers#back;
-    rtxNodeIdentifier(theIdentifier, theField);
+    rtxNodeIdentifier(local_node.identifiers#back, theField);
 
     return true;
 }
 
-function rtxNodeVar(local_node   : node,
-                    theVar       : value)
+function rtxNodeVar(local_node      : node,
+                    theIdentifier   : node)
 {
     rtxNode(local_node);
     insert local_node.type = "__rtx_var__";
@@ -103,7 +101,8 @@ function rtxNodeVar(local_node   : node,
     // A list of chained identifiers constituting the real field identifier
     insert local_node.identifiers;
     // Add the var as the first identifier
-    rtxNodeVar_AddIdentifier(local_node, theVar);
+    pushItem local_node.identifiers;
+    setall local_node.identifiers#back = theIdentifier;
 
     return true;
 }

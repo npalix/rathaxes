@@ -185,6 +185,16 @@ function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
     {
         rtxMeta_walk<chunk.type>(chunk);
     }
+    if (rtxNodeTpl_HasMapping(local_node))
+    {
+        foreach mapping in local_node.mapping.body.block
+        {
+            foreach placeHolder in mapping.compile
+            {
+                rtxMeta_parsePlaceHolder(placeHolder);
+            }
+        }
+    }
 }
 
 #end

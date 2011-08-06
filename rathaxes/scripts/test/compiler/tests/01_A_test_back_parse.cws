@@ -15,7 +15,8 @@ changeDirectory(working_directory);
 
 local dummy;
 local input;
-generateString({    with LKM, Userland
+generateString({
+    with LKM, Userland
     values LKM::OS=pigeonMouette, maj=0, min=1
     {
         ${pointcut Userland::theTestPointcut(config.plop)
@@ -66,11 +67,11 @@ generateString({    with LKM, Userland
                 ${OneRandomSymbol.name} |= 1;
             }
 
-            chunk CALL
+            chunk ::CALL
             {
                 void fake_func()
                 {
-                    ${ctx.name} = 0x2a;
+                    printf("Hello world!");
                 }
             }
         }
@@ -91,14 +92,26 @@ generateString({    with LKM, Userland
                 ${OneRandomSymbol.name} |= 2;
             }
 
-            chunk CALL
+            chunk ::CALL
             {
-                test_${ctx.name}();
+                // Soon the unstrict cnorm...
+                typedef int ${Builtin::Buffer};
+                ${Builtin::Buffer}  buf;
+                int tab[${buf.size}] = {${buf.size}};
+                ${buf.size} = 256;
+                ${buf.ptr} = kmalloc(${buf.size} * sizeof(*${buf.ptr}));
+                int a = ${buf.constant};
+                a = ${buf.constant};
+                char * s = ${buf.name};
+                s = ${buf.name};
+                int b = ${buf.id};
+                b = ${buf.id};
             }
         }
-        template type Builtin::Buffer(Size sz)
+
+        template type Builtin::Buffer()
         {
-            chunk decl
+            chunk ::decl
             {
                 typedef struct rtxBuiltinBuffer
                 {
@@ -106,18 +119,36 @@ generateString({    with LKM, Userland
                     char                    *buf;
                 } t_rtxBltinBuf;
             }
-            chunk init(size)
+            chunk ::init(size)
             {
                 ${self}.sz = size;
                 ${self}.buf = kmalloc(${self}.sz * sizeof(*${self}.buf));
             }
-            chunk clean
+            chunk ::clean
             {
                 kfree(${self}.buf);
             }
-            map {
+            map
+            {
+                // Let's try all kinds of mapping expressions
                 ptr : ${self}.buf;
                 size : ${self}.sz;
+                constant : 42;
+                name : "Buffer";
+                id : pouet;
+            }
+        }
+
+        template type ::Context()
+        {
+            /*
+            chunk ::decl { }
+            chunk ::init { }
+            chunk ::clean { }
+            //*/
+            map
+            {
+                name : ContextRocks; 
             }
         }
     }
