@@ -38,15 +38,30 @@ rtx_composed_identifier(theNode : node) ::=
     ]*
 ;
 
+rtx_numeric(theNumber : node) ::=
+    #readInteger:number
+    #check(rtxNodeNumber(theNumber, number))
+;
+
+// A variable/parameter for a list of variable/parameters
+rtx_var(theVar : node) ::=
+    [
+        rtx_composed_identifier(theVar)
+    |
+        rtx_numeric(theVar)
+    ]
+;
+
+
 // Here we can identify a list of template variables
 rtx_var_list(theBlock : node) ::=
 /**/=> local lastNode;
-    rtx_composed_identifier(lastNode)
+    rtx_var(lastNode)
     #check(rtxNodeVarList_AddNode(theBlock, lastNode))
     [
         ','
 /**/    => local lastVar;
-        rtx_composed_identifier(lastVar)
+        rtx_var(lastVar)
         #check(rtxNodeVarList_AddNode(theBlock, lastVar))
     ]*
 ;

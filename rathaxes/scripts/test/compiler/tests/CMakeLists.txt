@@ -11,6 +11,7 @@ ADD_RATHAXES_TEST(01_I_test_back_resolveCall.cws)
 ADD_RATHAXES_TEST(01_J_test_back_resolvePointcut.cws)
 ADD_RATHAXES_TEST(01_K_test_back_resolvePointcutDefault.cws)
 ADD_RATHAXES_TEST(01_L_test_back_resolveTypeMapping.cws)
+ADD_RATHAXES_TEST(01_L_test_back_resolveTypeChunkCall.cws)
 
 # Pure middle-end validation tests
 ADD_RATHAXES_TEST(02_A_test_middle_parse.cws)

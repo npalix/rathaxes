@@ -611,6 +611,21 @@ function    rtxIntrospect_walk<"__rtx_tpl__">(local_node : node)
 function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
 {
     rtxIntrospectChunk(local_node);
+
+    // Now that we retrieved every template type used for each variable,
+    // let's check/save the types into the placeHolders associated
+    foreach placeHolder in local_node.body.compile
+    {
+        localref nodeBody = placeHolder.node.body;
+        // We Need to have the type stored for the calls...
+        if (nodeBody.type == "__rtx_tpl_chunk_call__")
+        {
+            if (findElement(nodeBody.var.name, local_node.type_map))
+            {
+                setall nodeBody.rtype = local_node.type_map[nodeBody.var.name];
+            }
+        }
+    }
 }
 
 function    rtxIntrospect(local_node : node)

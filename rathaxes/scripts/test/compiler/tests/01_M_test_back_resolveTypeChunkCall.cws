@@ -23,28 +23,28 @@ local theWith;
 local theTemplates;
 
 if (rtxLink_findTemplates(theRtype, theTemplates) == false)
-    error("01_L_test_back_resolveTypeMapping.cws:"
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
           +" The template could not be found by rtxLink.");
 traceLine("A list of " + getArraySize(theTemplates)
           + " templates was found matching the prototype '"
-          + theProto + "'");
+          + rtxRTypeName<theRtype.type>(theRtype) + "'");
 
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
-    error("01_L_test_back_resolveTypeMapping.cws:"
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
           +" rtxLink could not select an unique template :"+toString(theTemplates, true));
 traceLine("An Unique template could be identified for resolution.");
 
 local theChunk;
-if (rtxLink_selectChunkFromTemplate(theTemplates, "::CALL", theChunk) == false)
-    error("01_L_test_back_resolveTypeMapping.cws:"
-          +" rtxLink could not find a '::CALL' chunk in template "
+if (rtxLink_selectChunkFromTemplate(theTemplates, "::type_call", theChunk) == false)
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
+          +" rtxLink could not find a '::type_call' chunk in template "
           +rtxRTypeName<theRtype.type>(theRtype));
-traceLine("The chunk '::CALL' was found for the template.");
+traceLine("The chunk '::type_call' was found for the template.");
 
 traceLine("Loading template : LKM::test(Context ctx)...");
 local c_tree;
 if (rtxLink_LoadScript(theChunk, c_tree) == false)
-    error("01_L_test_back_resolveTypeMapping.cws: Could not load script for chunk"
+    error("01_M_test_back_resolveTypeChunkCall.cws: Could not load script for chunk"
           + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
 
 traceLine("====>Codeworker Script and tree Loaded with success.");
@@ -73,4 +73,5 @@ instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
 traceLine("INSTANCIATING TEMPLATE[CALL]: LKM::test(Context ctx)");
 traceLine("Template resolved : The call will be replaced by :"
           + cnorm2c(c_tree.body));
+
 
