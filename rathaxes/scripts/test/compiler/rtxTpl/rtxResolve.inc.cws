@@ -8,6 +8,10 @@ declare function type_map<T>(resolverValues : node,
                              theRtype : node, mappedId : value,
                              placeHolder : node);
 
+declare function type_call<T>(resolverValues : node,
+                              chunkName : value,
+                              placeHolder : node);
+
 /*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
@@ -181,7 +185,6 @@ function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
 function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                                       local_node : node)
 {
-    traceLine("The current resval = "+toString(resolverValues,true));
     //traceLine("Injecting into var : "+toString(local_node));
     local curCtxNode;
 
@@ -386,10 +389,22 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
     return true;
 }
 
+//function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
+//                                             treeNode : node,
+//                                             local_node : node)
+//{
+//}
 
-function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
-                                             treeNode : node,
-                                             local_node : node)
+/*
+ *
+ * This function is used to resolve an explicit call to a chunk
+ * contained in a type template.
+ * This model allows easy builtin implementations.
+ *
+ */
+function    type_call<T>(resolverValues : node,
+                         chunkName : value,
+                         placeHolder : node)
 {
     // FIXME TODO XXX TODO FIXME
     // FIXME TODO XXX TODO FIXME
@@ -399,25 +414,18 @@ function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
 
     local   templates;
     local   theChunk;
-    localref theRtype = local_node.body.rtype;
+    localref theRtype = placeHolder.body.rtype;
     if (!rtxLink_findTemplates(theRtype, templates))
     {
-        error("inject<\"__rtx_tpl_chunk_call__\">: Could not find template "
-              + "associated to type "
-              + rtxRTypeName<theRtype.type>(theRtype));
+        error("type_call<"+T+">: Could not find template.");
     }
     if (!rtxLink_selectUniqueTemplate(templates, config))
     {
-        error("inject<\"__rtx_tpl_chunk_call__\">: Could not select an unique"
-              " template associated to type "
-              + rtxRTypeName<theRtype.type>(theRtype));
+        error("type_call<"+T+">: Could not select an unique template.");
     }
-    local chunkName = rtxRTypeName<local_node.body.chunk.type>(local_node.body.chunk);
     if (!rtxLink_selectChunkFromTemplate(templates, chunkName, theChunk))
     {
-        error("inject<\"__rtx_tpl_chunk_call__\">: Could not select chunk '"
-              + chunkName + "' associated to type "
-              + rtxRTypeName<theRtype.type>(theRtype));
+        error("type_call<"+T+">: Could not select chunk '" + chunkName + "'.");
     }
 
     // Now that we have selected the decl chunk, load the tree & script
@@ -433,27 +441,26 @@ function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
     //setall resVals["global"] = resolverValues["global"];
     // Now add the "self" to the resVals
     insert resVals["self"];
-    rtxNodeResValLeaf(resVals["self"], local_node.body.var.name);
+    rtxNodeResValLeaf(resVals["self"], placeHolder.body.var.name);
     // Then add the call (chunk's) parameters to the resval.
-    rtxResolve_BuildParameterResVals(resolverValues, local_node.body.parameters,
+    rtxResolve_BuildParameterResVals(resolverValues, placeHolder.body.parameters,
                                      resVals, subtree.parameters);
 
-    traceLine("inject<\"__rtx_tpl_chunk_call__\">:<LOG> Resolving chunk "
-              + chunkName + "... "+toString(resVals, true));
+    traceLine("type_call<"+T+">:<LOG> Resolving chunk " + chunkName + "... ");
     instanceChunk<subtree.instanceKey>(resVals, subtree.body);
 
     // Now, insert the subtree in place of the placeHolder !
     // placeHolder actually is : block.[idx].expr.id, so unwind until theBlock.type != "__block__".
-    localref theBlock = local_node#parent.ref_placeholder;
+    localref theBlock = placeHolder#parent.ref_placeholder;
     do { ref theBlock = theBlock#parent; } while (theBlock.type != "__block__");
-    localref theCall = local_node#parent;
+    localref theCall = placeHolder#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
     removeElement(theBlock.block, theCall.block_idx);
     rtxResolve_InsertCode(theBlock.block, theCall.block_idx,
                           theCall.ref_placeholder, phIdx, subtree.body);
 
-    traceLine("inject<\"__rtx_tpl_chunk_call__\">:<LOG> Resolved call to chunk "
+    traceLine("type_call<"+T+">:<LOG> Resolved call to chunk "
               + chunkName + "...");
     return true;
 }
