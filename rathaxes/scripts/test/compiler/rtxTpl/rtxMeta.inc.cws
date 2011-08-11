@@ -51,11 +51,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             ]?
             "${"
             [
-                tpl_link_expr(theNode.body)
+                tpl_chunk_call(theNode.body)
             |
                 rtx_composed_identifier(theNode.body)
-//          |
-//              tpl_each_expr(theNode.body)
             ]
             '}'
             [
@@ -66,23 +64,25 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         ;
 
         /*
-         * Functions used for the parsing of the link
+         * Parse a chunk call (i.e. "${buf.init()}" )
          */
-        // Here, a hard-coded test for a one-param function template
-        tpl_type(theType : node) ::=
-            "test(Context ctx)"
-            #check(rtxNodeLinkType(theType, "test(Context ctx)"))
-        ;
 
-        tpl_link_expr(theLink : node) ::=
-            "link"
-/**/        => local theVars;
-            #check(rtxNodeVarList(theVars))
-            rtx_var_list(theVars)
-            "to"
-/**/        => local theType;
-            tpl_type(theType)
-            #check(rtxNodeLink(theLink, theVars, theType))
+        tpl_chunk_call(theCall : node) ::=
+/**/        => local parameters;
+/**/        => local theVar;
+/**/        => local theChunk;
+            identifier:var_name
+            #check(rtxNodeIdentifier(theVar, var_name))
+            '.'
+            rtx_scoped_identifier(theChunk)
+            // Create the node from
+            #check(rtxNodeCall(theCall, theVar, theChunk, parameters))
+            '('
+                #continue(sError, "Expected closing parenthesis in chunk call")
+                [
+                    rtx_var_list(parameters)
+                ]?
+            ')'
         ;
 
 

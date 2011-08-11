@@ -52,7 +52,6 @@ generateString({
                     // It is a side effect of the default type int of C
                     ${ctx.name} = 42;
                     ${TOTO} += 3;
-                    ${link ctx to test(Context ctx)};
                     return 0;
                 }
             }
@@ -92,6 +91,14 @@ generateString({
                 ${OneRandomSymbol.name} |= 2;
             }
 
+            chunk ::type_call
+            {
+                // Soon the unstrict cnorm...
+                typedef int ${Builtin::Buffer};
+                ${Builtin::Buffer}  buf;
+                ${buf.init(42)};
+            }
+
             chunk ::CALL
             {
                 // Soon the unstrict cnorm...
@@ -121,7 +128,7 @@ generateString({
             }
             chunk ::init(size)
             {
-                ${self}.sz = size;
+                ${self}.sz = ${size};
                 ${self}.buf = kmalloc(${self}.sz * sizeof(*${self}.buf));
             }
             chunk ::clean

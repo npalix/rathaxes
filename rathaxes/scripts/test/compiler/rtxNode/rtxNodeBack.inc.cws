@@ -162,53 +162,30 @@ function rtxNodePlaceHolder(local_node   : node)
     return true;
 }
 
-function rtxNodeLinkType(local_node : node,
-                         content    : value)
+// chunk call (ex : ${Builtin::Buffer.init(params)})
+function rtxNodeCall(local_node     : node,
+                     theVar         : node,
+                     theChunk       : node,
+                     out_ref_params : reference)
 {
-    insert local_node.type = "__rtx_tpl_link_type__";
+    insert local_node.type = "__rtx_tpl_chunk_call__";
 
-    insert local_node.body = content;
+    // the type of the template associated
+    insert local_node.var;
+    setall local_node.var = theVar;
 
-    return true;
-}
+    // The name of the chunk (simple value)
+    insert local_node.chunk;
+    setall local_node.chunk = theChunk;
 
-function rtxNodeLink(local_node     : node,
-                     tpl_vars       : node,
-                     linked         : node)
-{
-    insert local_node.type = "__rtx_tpl_link__";
+    // And then the parameter list.
+    insert local_node.parameters;
+    rtxNodeVarList(local_node.parameters);
 
-    // Add the list of link variables
-    insert local_node.vars;
-    setall local_node.vars = tpl_vars;
+    // Add a rtype node for future filling (Gen/resolve)
+    insert local_node.rtype;
 
-    // For now, let's insert the prototype as-is
-    // but it will need to be compiled later...
-    insert local_node.linkedType;
-    setall local_node.linkedType = linked;
-
-    return true;
-}
-
-function rtxNodeEach(local_node     : node,
-                     tpl_vars       : node,
-                     item_name      : value,
-                     linked         : value)
-{
-    insert local_node.type = "__rtx_tpl_each__";
-
-    // Add the list of link variables
-    insert local_node.vars;
-    setall local_node.vars = tpl_vars;
-
-    // Add the referent item name (should be a simple identifier)
-    insert local_node.alias;
-    local_node.alias = item_name;
-
-    // For now, let's insert the prototype as-is
-    // but it will need to be compiled later...
-    insert local_node.linkedType;
-    local_node.linkedType = linked;
+    ref out_ref_params = local_node.parameters;
 
     return true;
 }
@@ -237,7 +214,7 @@ function rtxNodeResVal_GetField(resolver_values : node,
     {
         if (!findElement(listIt.name, path))
             error("Element ->" + listIt.name
-                  + "<- could not be found in the ResolverValues : "
+                  + "<- from "+toString(idList,true)+" could not be found in the ResolverValues : "
                   + toString(resolver_values,true));
         ref path = path[listIt.name];
     } while next(listIt);
@@ -261,13 +238,35 @@ function rtxNodeResVal(local_node : node)
 
 // Build a node identified as a ResolverValue and
 // Abstracts the fact that it is a collection or a value.
-function rtxNodeResValLeaf(local_node : node, theValue : value)
+function rtxNodeResValLeaf(local_node : node, theValue : node)
 {
     insert local_node.type;
     local_node.type = "__rtx_resval_leaf__";
 
     insert local_node.body;
-    local_node.body = theValue;
+    setall local_node.body = theValue;
 }
+
+
+
+/*
+ *
+ * Translate rathaxes basic nodes to cnorm basic nodes,
+ * in order to keep consistency while generating some resolved chunks.
+ *
+ */
+declare function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node);
+
+function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node)
+{
+    error("Translation for rathaxes node of type " + T
+          + " not implemented yet !");
+}
+
+function rtxNode2cnormNode<"__rtx_nb__">(rtxNode : node, cnormNode : node)
+{
+    return cnormNode_TerminalLiteral(cnormNode, rtxNode.val);
+}
+
 
 #end

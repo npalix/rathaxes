@@ -40,17 +40,20 @@ traceLine("====>Codeworker Script and tree Loaded with success.");
 // Now, try the C code generation out : simulate an input (the resVal node)
 // And start the resolution of the placeHolders.
 local resVals;
+local curvalue;
 rtxNodeResVal(resVals);
 insert resVals["Context"];
 rtxNodeResVal(resVals["Context"]);
 insert resVals["Context"]["name"];
-rtxNodeResValLeaf(resVals["Context"]["name"], "theContextType");
+curvalue = "theContextType";
+rtxNodeResValLeaf(resVals["Context"]["name"], curvalue);
 insert resVals["config"];
 rtxNodeResVal(resVals["config"]);
 insert resVals["config"]["plop"];
 rtxNodeResVal(resVals["config"]["plop"]);
 insert resVals["config"]["plop"]["name"];
-rtxNodeResValLeaf(resVals["config"]["plop"]["name"], "theConfigName");
+curvalue = "theConfigName";
+rtxNodeResValLeaf(resVals["config"]["plop"]["name"], curvalue);
 
 // We have a pointcut node that should be replaced by its default code
 inject<"__rtx_pointcut__">(resVals,

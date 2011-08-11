@@ -5,11 +5,11 @@ function rtxGen_version()
 
 
 // The tree save must already be loaded into c_tree before calling it...
-declare function instanceTpl<T>(resVals : node, c_tree : node);
-function	     instanceTpl<T>(resVals : node, c_tree : node)
+declare function instanceChunk<T>(resVals : node, c_tree : node);
+function	     instanceChunk<T>(resVals : node, c_tree : node)
 {
 	// If this cocde is called, there was a linking problem.
-	error("instanceTpl: BAD LINK - Unkown registry value: " + T);
+	error("instanceChunk: BAD LINK - Unkown registry value: " + T);
 }
 
 declare function instanceMapping<T>(resVals : node, c_tree : node);
@@ -81,7 +81,7 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
     removeVariable(item.key);
 }
 
-function    rtxGenPlaceHolder<"__rtx_tpl_link__">(item : node, theKey : value)
+function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : value)
 {
     insert item.cws_expr;
     insert item.key = theKey;
@@ -137,7 +137,7 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 		// auto generated codeworker DO NOT EDIT
 		// Here, we specialise the function instanceTPL with this.prototype
         // as the key, but in the long term, an ID would be best
-		function	instanceTpl<"@this.instanceKey@">(resVals : node,
+		function	instanceChunk<"@this.instanceKey@">(resVals : node,
                                                       c_tree : node)
 		{
 			// save again for comparison out of the process
@@ -167,7 +167,7 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 	generateString({
 		// auto generated codeworker DO NOT EDIT
 		// Here, we specialise the function instanceTPL with a computed key
-		function	instanceTpl<"@this.instanceKey@">(resVals : node,
+		function	instanceChunk<"@this.instanceKey@">(resVals : node,
                                                                  c_tree : node)
 		{
 			// save again for comparison out of the process
@@ -360,7 +360,7 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
     foreach chunk in local_node.body.block
     {
         // Add the template hash into the chunk node in order to
-        // Set an about right specialisation for the instanceTpl function
+        // Set an about right specialisation for the instanceChunk function
         hashTemplatePrototype(local_node.prototype.rtype, chunk.tpl_hash);
         rtxGen<chunk.type>(chunk, uid);
     }

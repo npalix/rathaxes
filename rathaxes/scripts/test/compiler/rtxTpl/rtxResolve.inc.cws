@@ -97,12 +97,30 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                                           dst_params    : node)
 {
     local idx = $0$;
+    local newValue;
     foreach dst_param in dst_params.list
     {
         localref theValue = src_resVals;
-        foreach src_param_field in src_params.list[idx].identifiers
+        localref theParam = src_params.list[idx];
+        if (existVariable(theParam.identifiers))
         {
-            ref theValue = theValue[src_param_field.name];
+            foreach param_field in theParam.identifiers
+            {
+                if (!findElement(param_field.name, theValue))
+                    error("Could not find an element named " + param_field.name
+                          + " in the source Resolver values.");
+                ref theValue = theValue[param_field.name];
+            }
+        }
+        else
+        {
+            // Then we're building a node leaf from another thing
+            local translatedParam;
+            if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
+                error("Could not translate rathaxes node "
+                      + toString(theParam, true) + " to cnorm node.");
+            rtxNodeResValLeaf(newValue, translatedParam);
+            ref theValue = newValue;
         }
         insert dst_resVals[dst_param.identifiers[0].name];
         setall dst_resVals[dst_param.identifiers[0].name] = theValue;
@@ -163,10 +181,9 @@ function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
 function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                                       local_node : node)
 {
+    traceLine("The current resval = "+toString(resolverValues,true));
     //traceLine("Injecting into var : "+toString(local_node));
     local curCtxNode;
-    local fieldValue;
-    local finalString = "";
 
     // TODO FIXME XXX FIXME TODO
     local config;
@@ -277,16 +294,30 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
      * identifier in the code. (May be used for the self resolution)
      *
      */
-    // First concat prefix
-    finalString = finalString + local_node.prefix;
-    // Next resolve the value and concat it
-    traceLine("rtxResolve:<LOG> Concatenating identifier : "+toString(local_node.body.identifiers));
+    local fieldValue;
+    local finalNode;
     rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers,
                            fieldValue);
-    finalString = finalString + fieldValue;
-    // Finally, concat suffix
-    finalString = finalString + local_node.sufix;
-    local_node#parent.ref_placeholder = finalString;
+    // The ResValLeaf is a whole node : setall it into the placeholder's parent
+    if (existVariable(fieldValue.type))
+    {
+        traceLine("rtxResolve:<LOG> Replacing identifier : "+toString(local_node.body.identifiers));
+        localref theId = local_node#parent.ref_placeholder;
+        //traceLine("So we have the resolver placeholders parent : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
+        setall theId#parent = fieldValue;
+        //traceLine("So we have the resolver placeholders parent resolved : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
+    }
+    else
+    {
+        traceLine("rtxResolve:<LOG> Concatenating identifier : "+toString(local_node.body.identifiers));
+        // First concat prefix
+        finalNode = finalNode + local_node.prefix;
+        // Next resolve the value and concat it
+        finalNode = finalNode + fieldValue;
+        // Finally, concat suffix
+        finalNode = finalNode + local_node.sufix;
+        local_node#parent.ref_placeholder = finalNode;
+    }
 }
 
 function    inject<"__rtx_pointcut__">(resolverValues   : node,
@@ -341,7 +372,7 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
                                                  local_node.body.parameters,
                                                  resVals, c_tree.parameters);
 
-                instanceTpl<c_tree.instanceKey>(resVals, c_tree.body);
+                instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
                 rtxResolve_InsertCode(theBlock,
                                       startIdx, phName, phIdx,
                                       c_tree.body);
@@ -356,60 +387,74 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
 }
 
 
-function    inject<"__rtx_tpl_link__">(resolverValues : node, treeNode : node,
-                                       local_node : node)
+function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
+                                             treeNode : node,
+                                             local_node : node)
 {
     // FIXME TODO XXX TODO FIXME
     // FIXME TODO XXX TODO FIXME
     local config;
     // FIXME TODO XXX TODO FIXME
     // FIXME TODO XXX TODO FIXME
-    local template;
-    local tree_file;
-    local tpl_c_tree;
 
-    // Each of these functions can throw an error to notify failure.
-    if (rtxLink_findTemplates(local_node.body.linkedType.body, template) == false)
+    local   templates;
+    local   theChunk;
+    localref theRtype = local_node.body.rtype;
+    if (!rtxLink_findTemplates(theRtype, templates))
     {
-        error("inject<\"__rtx_tpl_link__\">: No template matching"+
-              " prototype '"+local_node.body.linkedType.body+"' in cache.");
+        error("inject<\"__rtx_tpl_chunk_call__\">: Could not find template "
+              + "associated to type "
+              + rtxRTypeName<theRtype.type>(theRtype));
     }
-    rtxLink_selectUniqueTemplate(template, config);
-    rtxLink_LoadScript(template, tree_file);
+    if (!rtxLink_selectUniqueTemplate(templates, config))
+    {
+        error("inject<\"__rtx_tpl_chunk_call__\">: Could not select an unique"
+              " template associated to type "
+              + rtxRTypeName<theRtype.type>(theRtype));
+    }
+    local chunkName = rtxRTypeName<local_node.body.chunk.type>(local_node.body.chunk);
+    if (!rtxLink_selectChunkFromTemplate(templates, chunkName, theChunk))
+    {
+        error("inject<\"__rtx_tpl_chunk_call__\">: Could not select chunk '"
+              + chunkName + "' associated to type "
+              + rtxRTypeName<theRtype.type>(theRtype));
+    }
 
-    local resVals;
+    // Now that we have selected the decl chunk, load the tree & script
+    local   subtree;
+    rtxLink_LoadScript(theChunk, subtree);
+
     // To actually resolve this, we need : 
     //  * Current resolverValues (OK)
-    //  * The parameters in the linking template (OK)
-    //  * sub-template parameters (XXX TODO FIXME)
+    //  * The parameters to the chunk (TBD) FIXME XXX TODO
     //
-    // Thus is needed :
-    //  * a more precise parsing of the template's type and parameters,
-    //    both in the template type and in the link.
-    //
-// rtxResolve_extractResVal(resolverValues, local_node.vars, linkedTpl.params);
-    insert resVals["ctx"];
-    setall resVals["ctx"] = resolverValues["ctx"];
+    local resVals;
+    //insert resVals["global"];
+    //setall resVals["global"] = resolverValues["global"];
+    // Now add the "self" to the resVals
+    insert resVals["self"];
+    rtxNodeResValLeaf(resVals["self"], local_node.body.var.name);
+    // Then add the call (chunk's) parameters to the resval.
+    rtxResolve_BuildParameterResVals(resolverValues, local_node.body.parameters,
+                                     resVals, subtree.parameters);
 
-    cwLoadProject(tree_file, tpl_c_tree);
-    instanceTpl<local_node.body.linkedType.body>(resVals, tpl_c_tree.body);
+    traceLine("inject<\"__rtx_tpl_chunk_call__\">:<LOG> Resolving chunk "
+              + chunkName + "... "+toString(resVals, true));
+    instanceChunk<subtree.instanceKey>(resVals, subtree.body);
 
-    // Replace the node by the whole resolved c_tree
-    //traceLine("Current placeholder :"
-    //          +toString(local_node#parent.ref_placeholder));
-    //traceLine("Current resolved tree : "+toString(c_tree, true));
-    //traceLine(cnorm2c(c_tree));
-    traceLine("Resolved one link...");
-
-    // placeHolder actually is : block.[idx].expr.id, so #parent * 3
-    localref theBlock = local_node#parent.ref_placeholder#parent#parent#parent;
-    localref theLink = local_node#parent;
+    // Now, insert the subtree in place of the placeHolder !
+    // placeHolder actually is : block.[idx].expr.id, so unwind until theBlock.type != "__block__".
+    localref theBlock = local_node#parent.ref_placeholder;
+    do { ref theBlock = theBlock#parent; } while (theBlock.type != "__block__");
+    localref theCall = local_node#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
-    removeElement(theBlock, theLink.block_idx);
-    rtxResolve_InsertCode(theBlock, theLink.block_idx,
-                          theLink.ref_placeholder, phIdx, tpl_c_tree.body);
+    removeElement(theBlock.block, theCall.block_idx);
+    rtxResolve_InsertCode(theBlock.block, theCall.block_idx,
+                          theCall.ref_placeholder, phIdx, subtree.body);
 
+    traceLine("inject<\"__rtx_tpl_chunk_call__\">:<LOG> Resolved call to chunk "
+              + chunkName + "...");
     return true;
 }
 
