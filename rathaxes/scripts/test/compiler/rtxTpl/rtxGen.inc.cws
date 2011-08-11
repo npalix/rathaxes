@@ -85,17 +85,20 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
 {
     insert item.cws_expr;
     insert item.key = theKey;
+    hashTemplatePrototype(item.node.body.rtype, item.tpl_hash);
+    insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
     generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : @this.template_expr@"
                           +" (@this.node.body.type@)");
-                inject<c_tree.compile["@this.key@"].node.type>(
-                    resVals,
-                    c_tree,
-                    c_tree.compile["@this.key@"].node
-                );
+                type_call<"@this.tpl_hash@">(
+                            resVals,
+                            "@this.chunkName@",
+                            c_tree.compile["@this.key@"].node);
     @}, item, item.cws_expr);
     removeVariable(item.key);
+    removeVariable(item.tpl_hash);
+    removeVariable(item.chunkName);
 }
 
 
