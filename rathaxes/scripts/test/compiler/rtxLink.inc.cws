@@ -546,13 +546,13 @@ function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
 /*
  *
  * This function caches the with as follows :
- * session = [
- *      "0" = [
+ * session.global_code = {[
+ *      "0" = {
  *              .with = constraint_node;
  *              .script_file = script_path;
  *              .tree_file = tree_path;
- *      ]
- * ]
+ *      }
+ * ]}
  *
  */
 function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
@@ -609,7 +609,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
 /*
  *
  * This function caches the template as follows :
- * session = [
+ * session.templates = [
  *      "template_hashed_prototype" = [
  *          "0" : {
  *              .with = with_node,
@@ -685,13 +685,14 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
 /*
  *
  * This function caches the chunks as follows :
- * session = [
+ * session.chunks = [
  *      "chunk_name1" : [       // pointcut to which the chunks are associated
  *          "0" : {             // This is a table of chunk entries
  *              .name = "string"
  *              .tpl_id = "hashed_template_prototype"
  *              .with = with_node
- *              .script_path = "path_to_script"
+ *              .script_file = "path_to_script"
+ *              .tree_file = "path_to_tree"
  *          }
  *      ]
  * ]
