@@ -12,11 +12,16 @@
 \rtxdocstatus{Release}
 
 \rtxdochistory{
-0.1 & 10/03/2011 & David Pineau & Plan of the Technical Documentation \\
+0.1 & 10/03/2011 & David Pineau& Plan of the Technical Documentation \\
 \hline
-0.2 & 11/03/2011 & David Pineau & Chapters 1 to 3 done Intro and Chapter 4 still missing \\
+0.2 & 11/03/2011 & David Pineau& Chapters 1 to 3 done Intro and Chapter
+                                  4 still missing \\
 \hline
 0.3 & 11/03/2011 & Louis Opter & Cosmetic improvements \\
+\hline
+0.4 & 13/08/2011 & David Pineau& Added cache description section to chapter 4\\
+\hline
+0.5 & 13/08/2011 & David Pineau& Added compilation steps sections to chapter 4\\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -263,7 +268,7 @@ For example, we could have:
 \begin{itemize}
     \item Userland interface: describes the \emph{LKM}'s functions and types;
     \item PCI interface: describes the PCI BUS function's and types;
-    \item IO interface : describing the functions that can be used
+    \item IO interface: describing the functions that can be used
 for a device driver which device is on the IO port.
 \end{itemize}
 
@@ -414,9 +419,9 @@ of files.
 
 From the parsing of a \texttt{.rtx} file to the generation of the driver's C
 code, the AST will undergo a number of transformations. However, the templates
-of code are also compiled in order to allow caching in the core of the compiler.
-That leads to two compilation schemes: a template's compilation and a driver's
-compilation.
+of code are also compiled in order to allow caching in the core of the
+compiler.  That leads to two compilation schemes: a template's compilation and
+a driver's compilation.
 
 \subsection{Steps of a template's compilation}
 
@@ -436,17 +441,17 @@ We can then identify the following steps:
         linkage of the main AST with the template AST Node.
 \end{enumerate}
 
-Afterwards, the developer will be able to install the template into the Back-End
-Library. Installing it means that an entry will be added into a specific
-cache/registry of the compiler, that helps it associate the right templates to
-a given driver at compile-time.
+Afterwards, the developer will be able to install the template into the
+Back-End Library. Installing it means that an entry will be added into a
+specific cache/registry of the compiler, that helps it associate the right
+templates to a given driver at compile-time.
 
 
 \subsection{Steps of a driver's compilation}
 \label{sec:driverCompilation}
 
-The compilation of a driver is a complex process, where every single part of the
-DSL is taken in account.
+The compilation of a driver is a complex process, where every single part of
+the DSL is taken in account.
 
 Here is a short list of the steps of its compilation:
 \begin{enumerate}
@@ -469,12 +474,12 @@ Here is a short list of the steps of its compilation:
 
 \subsection{General compilation process}
 
-As you may have already understood, if we talked about three different parts
-of the DSL, that means that it is one and only one language. Actually, one could
+As you may have already understood, if we talked about three different parts of
+the DSL, that means that it is one and only one language. Actually, one could
 write a driver with the three parts in one same file. Although this is not
 planned to be offered to driver or kernel developers, since their roles are
-confined to one part of the language each, it is a possibility. The keywords
-in the file will then tell which kind of compilation to activate.
+confined to one part of the language each, it is a possibility. The keywords in
+the file will then tell which kind of compilation to activate.
 
 Here is a schema picturing this general process:
 
@@ -482,7 +487,281 @@ Here is a schema picturing this general process:
 
 
 
-%\chapter{Details of implementation}
+\chapter{Details of implementation}
+
+
+\section{Cache of registered items}
+
+One of the most important and core elements of the compiler is the
+\emph{cache}.  Through it, the compiler will be able to keep a list of
+registered interfaces and templates that will help finding the right ones to be
+used for a driver's compilation and generation.
+
+CodeWorker uses a global variable called ``this'', where one can keep any
+information one wants. It is actually used by rathaxes to host the
+\emph{cache}. It contains four types of informations:
+\begin{enumerate}
+    \item Registered ``global codes''
+    \item Registered templates
+    \item Registered chunks
+    \item Differential session
+\end{enurmerate}
+
+Each one of those categories is translated as an item contained in the
+``session'' node of the ``this'' tree of CodeWorker. We will call this the
+cache session.
+
+Any registered item is a code that has already been compiled and checked by the
+compiler, before being added to the cache. Therefore, each of them is
+associated to a script file, containing the CodeWorker script that will resolve
+the placeholders contained by the code, and a tree file containing the AST of
+the code. Those two fields may be optional for some registered items.
+
+Now, we will describe in a more detailed fashion each of those types of items,
+and explain their use and how they are used.
+
+
+\subsection{Registered Global code}
+
+A global code is a specific bit of code inside of rathaxes: it's a sort of
+chunk outside of a template, that is automatically selected and instantiated as
+soon as the associated interface is selected for use. This code is contained
+inside a \emph{with} block.
+
+Only one item can be loaded for a given interface. At driver generation time,
+each global code associated to each interface will be automatically loaded and
+instanciated, as soon as the associated interface is selected by the driver.
+
+When it is registered inside the cache, each global code is inserted as an item
+in a list, containing three fields:
+\begin{itemize}
+    \item ``.with'': the configuration constraint associated (incidentally also
+            tells which interfaces it is associated with)
+    \item ``.script\_file'': Mandatory
+            placeholders
+    \item ``.tree\_file'': Mandatory
+\end{itemize}
+
+
+\subsection{Registered Template}
+
+The registered templates are stored in the ``.templates'' field of the cache
+session. This field is actually a map where the key is a hash of the template's
+prototype, which allows keeping multiple codes for a same template, and where
+the value is a list of node describing each registered template. This list
+contains unique templates: there can not be two templates with the same
+configuration constraint node.
+
+Each registered template's node contains the following fields:
+\begin{itemize}
+    \item ``.with'': the configuration constraints node for the template
+    \item ``.rtype'': the full rathaxes type node of the template
+    \item ``.chunks'': a list of items describing the chunks contained by the
+            template.
+    \item ``.script\_file'': Optional, present only if the template describes
+            a type
+    \item ``.tree\_file'': Optional, present only if the template describes
+            a type
+\end{itemize}
+
+Each item in the ``.chunks'' field is actually a way to indicate where the
+chunk is stored inside the cache: the key is the fully qualified name of the
+pointcut associated, and the value is the index of the chunk inside the list of
+chunks associated to the given pointcut. More informations about it will be
+given in the description of the registered chunks.
+
+
+\subsection{Registered Chunk}
+
+The registered chunks are stored inside the ``.chunks'' field of the cache
+session. This field is actually a map where the key is the fully qualified name
+of the pointcut it is associated to (i.e. interface::name or ::name if not
+associated to any interface), and where the value is the list of the chunks
+associated to it. This list contains unique chunks : there can not be two
+chunks for the same template and the same configuration constraint node.
+
+Each registered chunk contains the following fields:
+\begin{itemize}
+    \item ``.with'': the configuration constraints node for the template
+    \item ``.name'': the fully qualified name of the pointcut
+    \item ``.tpl\_id'': the hash of the containing template
+    \item ``.script\_file'': Mandatory
+    \item ``.tree\_file'': Mandatory
+\end{itemize}
+
+
+\subsection{Differential session}
+
+What we call the ``Differential session'' is actually a sort of register of
+every modification applied over the cache during the compilation process. This
+allows rolling back the unwanted operations before saving the cache, in order
+to avoid any inconsistency. This also allow the "install" operation to take
+place.
+
+The differential session is stored inside the ``.temp'' field of the cache
+session, and it structured the same way the cache session is. Each one of its
+registered nodes are actually references to the nodes added to the cache
+session. This is how they can be easily removed.
+
+When the cache is validated, the compiler, depending on its command-line
+arguments may install the new compiled files into the persistent cache. The
+process of installing consists of three operations:
+\begin{itemize}
+    \item Computing a file name from informations about the registered item
+    \item Copying the pre-compiled files into the backend library
+    \item Updating the files paths into the cache
+\end{itemize}
+
+Thanks to the temporary session, those operations can be easily managed, and
+the cache can stay consistent.
+
+
+\subsection{Cache API}
+
+In this section, we will describe every ``public'' function of the cache, in
+order to make maintaining the cache's code easy. Each one of these functions is
+coded in the file rtxLink.inc.cws of the compiler's scripts.
+
+There are mainly two use cases for the cache. The first use-case is to fill it
+with a file being compiled. The second is to use it in order to load the script
+and tree file for a place holder resolution, meaning a code generation.
+
+\vspace{}
+
+The functions to be used in both of those use cases are the following.
+
+\begin{lstlisting}
+function rtxLink_LoadCache();
+\end{lstlisting}
+The function \emph{rtxLink\_LoadCache} is used to load the cache's information
+tree from the file located in the backend library directory. If this function
+is not called before calling another function of the cache, it will be
+considered as an empty cache, and may overwrite the old one if saved.
+
+\begin{lstlisting}
+function rtxLink_SaveCache();
+\end{lstlisting}
+The function \emph{rtxLink\_SaveCache} is used to save the cache's state into
+the backend library directory. If there was any change made to the cache, this
+function will automatically save the generated files into the backend library
+directory.
+
+\begin{lstlisting}
+function hashTemplatePrototype(theRType     : node,
+                               out_ref_hash : reference);
+\end{lstlisting}
+The function \emph{hashTemplatePrototype} takes a rtype node as a first
+argument.  This node describes a template's type (identified by its name and
+parameter types). The second argument is a reference used to return the hashed
+prototype.  This function is used throughout the code in order to get a string
+identifying a template.
+
+\vspace{}
+
+The following functions are used in order to fill the cache.
+
+\begin{lstlisting}
+function rtxLink_RegisterToCache(local_node : node);
+\end{lstlisting}
+The function \emph{rtxLink\_RegisterToCache} walks through a rathaxes AST and
+registers each of its with blocks, templates and chunks into the cache session.
+
+\vspace{}
+
+The following functions are used to manipulate the cache in order to resolve
+place holders and generate code. We can then identify three use cases:
+resolving a pointcut (meaning selecting AND instanciating every chunk
+associated to it), resolving a global code instanciation, resolving a chunk
+through the associated template and finally resolving a template type mapping.
+
+\begin{lstlisting}
+function rtxLink_findGlobalCode(with_values  : node,
+                                out_code_ref : reference);
+\end{lstlisting}
+The function \emph{rtxLink\_findGlobalCode} retrieves the global code node
+matching the configuration given through the with\_values argument, and returns
+it through the reference out\_code\_ref.
+
+\vspace{}
+
+Functions used to resolve a template (or one of its chunks):
+\begin{lstlisting}
+function rtxLink_findTemplates(theRtype : node,
+                               out_tpls : node);
+\end{lstlisting}
+The function \emph{rtxLink\_findTemplates} retrieves the full list of templates
+matching the type describing node theRtype. It then copies the whole list into
+the out\_tpls parameter.
+
+\begin{lstlisting}
+function rtxLink_selectUniqueTemplate(templates : reference,
+                                      config : node);
+\end{lstlisting}
+The function \emph{rtxLink\_selecteUniqueTemplate} selects one template (the
+one whose configuration constraints match the most the configuration given in
+the config parameter) from a list of templates. The argument templates must be
+a list of templates retrieved through the function
+\emph{rtxLink\_findTemplates}. The selected template is then set into the
+``templates'' parameter. In the case of a type mapping resolution, the node
+retrieved in the ``templates'' argument can be directly given to the
+\emph{rtxLink\_LoadScript} function.
+
+\begin{lstlisting}
+function rtxLink_selectChunkFromTemplate(theTemplate : node,
+                                         chunkName : value,
+                                         theChunk : reference);
+\end{lstlisting}
+The function \emph{rtxLink\_selectChunkFromTemplate} takes a template node
+retrieved through the \emph{rtxLink\_selectUniqueTemplate} function, and a
+chunk name (fully qualified name, i.e. "interface::name"). Then, it sets the
+reference ``theChunk'' to the chunk associated with the template if it could be
+found. In case of failure, the function returns false. This function is used
+when one wants to resolve a given chunk from a precise template. This is the
+case for internal functions of the compiler, and for some template type
+resolutions.
+
+\vspace{}
+
+Functions used to resolve a pointcut:
+\begin{lstlisting}
+function rtxLink_findChunks(pointcut_name : node,
+                            out_chunks : node);
+\end{lstlisting}
+The function \emph{rtxLink\_findChunks} retrieves a list of chunks associated
+to a given pointcut name. The list is copied into the ``out\_chunks''
+parameter.
+
+
+\begin{lstlisting}
+function rtxLink_selectCompatibleChunks(chunks : node,
+                                        config : node);
+\end{lstlisting} The function \emph{rtxLink\_selectCompatibleChunks}works on a
+list of chunks retrieved through the function \emph{rtxLink\_findChunks}, and
+keeps only the chunks matching the configuration given through the ``config''
+parameter. From here on, one can give each of the chunks to the function
+\emph{rtxLink\_LoadScript} for the code generation.
+
+
+\begin{lstlisting}
+function rtxLink_LoadScript(cache_node : node,
+                            out_ref_tree : reference);
+\end{lstlisting}
+The function rtxLink\_LoadScript loads the script and the tree (into the
+reference given) associated to the cache node. It prevents silently double
+loading of a script, and needs to be given a node from within the cache
+matching either a chunk, a template or a global code. The cache node can be
+obtained through the latter previously described functions.
+
+
+
+\section{Compilation and registration of a template}
+\subsection{Common process between all templates}
+\subsection{Specificities of the type templates}
+
+\section{Compilation and registration of an interface}
+
+
+\section{Compilation of a driver}
 
 
 
