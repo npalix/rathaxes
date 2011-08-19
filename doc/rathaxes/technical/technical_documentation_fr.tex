@@ -14,7 +14,8 @@
 \rtxdochistory{
 0.1 & 16/04/2011 & David Pineau & Traduction de la version anglaise \\
 0.2 & 18/08/2011 & David Pineau & Traduction de la description
-                                  d'implementation du cache         \\
+                                  d'implémentation du cache         \\
+0.3 & 19/08/2011 & David Pineau & Correction de typographies        \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -521,103 +522,106 @@ fichier. Voici un schéma illustrant ce processus général :
 
 
 
-\chapter{Details d'implementation}
+\chapter{Détails d'implémentation}
 
 
 
-\section{Cache de modeles pre-compiles}
+\section{Cache de modèles précompilés}
 
-Un des elements les plus importants du compilateur est le \emph{cache}. Au
-travers de celui-ci, le compilateur peut maintenir une liste complete de
-modeles de codes et d'interfaces pre-compilees, qui permettra de trouver
-rapidement les templates a utiliser pour la compilation et la generation d'un
-pilote.
+Un des éléments les plus importants du compilateur est le \emph{cache}. Au
+travers de celui-ci, le compilateur peut maintenir une liste complète de
+modèles de codes et d'interfaces précompilées, qui permettra de trouver
+rapidement les \emph{templates} à utiliser pour la compilation et la génération
+d'un pilote.
 
-CodeWorker utilise une variable globale appelee ``this'', ou l'on peut stocker
-n'importe quelle information. Elle est en realite utilisee par rathaxes afin de
+CodeWorker utilise une variable globale appelée ``this'', où l'on peut stocker
+n'importe quelle information. Elle est en réalité utilisée par rathaxes afin de
 stocker le \emph{cache} et de le rendre accessible durant toute la phase de
-compilation et de generation. Nous y stockons les informations suivantes :
+compilation et de génération. Nous y stockons les informations suivantes :
 \begin{enumerate}
-    \item Les ``codes globaux'' enregistres
-    \item Les templates enregistres
-    \item Les chunks enregistres
-    \item Un etat differentiel du cache
+    \item Les ``codes globaux'' enregistrés
+    \item Les \emph{templates} enregistrés
+    \item Les \emph{chunks} enregistrés
+    \item Un état différentiel du cache
 \end{enumerate}
 
-Chacune de ces categories se traduit par un noeud contenu dans le champ
+Chacune de ces catégories se traduit par un nœud contenu dans le champ
 ``session'' de la variable globale ``this'' de CodeWorker. Nous l'appelons la
 session de cache.
 
-Tout element enregistre est un bout de code pre-compile et verifie par le
-compilateur avant son enregistrement. Ainsi, chacun d'entre eux est associe a
-un fichier de script CodeWorker genere (qui a pour role la resolution de tous
-les placeholders du code associe) ainsi qu'un fichier \texttt{.tree} contenant
-l'AST correspondant. Ces deux elements peuvent etre optionnels pour certains
-elements enregistres dans le cache.
+Tout élément enregistré est un bout de code précompilé et vérifié par le
+compilateur avant son enregistrement. Ainsi, chacun d'entre eux est associé à
+un fichier de script CodeWorker généré (qui a pour rôle la résolution de tous
+les placeholders du code associé) ainsi qu'un fichier \texttt{.tree} contenant
+l'AST correspondant. Ces deux éléments peuvent être optionnels pour certains
+éléments enregistrés dans le cache.
 
-Maintenant, nous allons decrire chacune de ces categories de maniere plus
-detaillee, et expliquer leur role et leur utilisation.
+Maintenant, nous allons décrire chacune de ces catégories de manière plus
+détaillée, et expliquer leur rôle et leur utilisation.
 
 
-\subsection{Codes globaux enregistres}
+\subsection{Codes globaux enregistrés}
 
-Les codes globaux enregistres sont contenus dans le champ ``.global\_code'' de
+Les codes globaux enregistrés sont contenus dans le champ ``.global\_code'' de
 la session de cache.
 
-Un ``code global'' est un bout de code specifique au sein de rathaxes : c'est
-une sorte de \emph{chunk} hors d'un template, dont la selection est automatique
-des le moment ou l'interface qui le contient est utilisee pour la generation
-d'un pilote. c'est donc du code C instrumente contenu dans un bloc \emph{with}.
+Un ``code global'' est un bout de code spécifique au sein de rathaxes : c'est
+une sorte de \emph{chunk} hors d'un \emph{template}, dont la sélection est
+automatique dès le moment ou l'interface qui le contient est utilisée pour la
+génération d'un pilote. C'est donc du code C instrumenté contenu dans un bloc
+\emph{with}.
 
-Seul un element de cette categorie peut etre charge pour une interface donnee.
-Lors de la generation du pilote, chacun des codes globaux associes a chaque
-interface sera automatiquement charge, resolu et tisse dans l'AST final, des le
-moment ou leur interface est utilisee.
+Seul un élément de cette catégorie peut être chargé pour une interface donnée.
+Lors de la génération du pilote, chacun des codes globaux associés à chaque
+interface sera automatiquement chargé, résolu et tissé dans l'AST final, dès le
+moment où leur interface est utilisée.
 
-Lorsqu'un code global est enregistre dans le cache, il est insere en tant
-qu'element dans une liste, ou chaque element contient les champs suivants :
+Lorsqu'un code global est enregistré dans le cache, il est inséré en tant
+qu'élément dans une liste, ou chaque élément contient les champs suivants :
 \begin{itemize}
-    \item ``.with'': Noeud decrivant les contraintes de configuration
-        permettant la selection du morceau de code (C'est ausis l'element qui
-        indique a quelle interface est associee le code global)
+    \item ``.with'': Nœud décrivant les contraintes de configuration
+        permettant la sélection du morceau de code (C'est aussi l'élément qui
+        indique à quelle interface est associée le code global)
     \item ``.script\_file'': Champ obligatoire.
     \item ``.tree\_file'': Champ obligatoire.
 \end{itemize}
 
 
-\subsection{Template enregistres}
+\subsection{Template enregistrés}
 
-Les templates enregistres sont contenus dans le champ ``.templates'' de la
-session de cache.
+Les \emph{templates} enregistrés sont contenus dans le champ ``.templates'' de
+la session de cache.
 
-Ce champ est en realite un tableau associatif ou la clef est un hash du
-prtottypedu template, et la valeur une liste des templates enregistres associes
-a ce prototype. Cela permet de pouvoir conserver tous les templates, quelles
-que soient leurs contraintes de selection, puis de faire le tri afin de
-selectionner le bon template selon la configuration. Cela dit, deux templates
-enregistres ne peuvent avoir de contraintes identiques : Celles-ci doivent
-differer, et on permet ainsi d'eviter aussi bien des problematiques liees a la
-selection du bon template, ainsi que des problematiques liees au
-double-enregistrement d'un template.
+Ce champ est en réalité un tableau associatif où la clef est un hash du
+prototype du \emph{template}, et la valeur une liste des \emph{templates}
+enregistrés associés à ce prototype. Cela permet de pouvoir conserver tous les
+\emph{templates}, quelles que soient leurs contraintes de sélection, puis de
+faire le tri afin de sélectionner le bon \emph{template} selon la
+configuration. Cela dit, deux \emph{templates} enregistrés ne peuvent avoir de
+contraintes identiques : Celles-ci doivent différer, et l'on permet ainsi
+d'éviter aussi bien des problématiques liées a la sélection du bon
+\emph{template}, ainsi que des problématiques liées au double enregistrement
+d'un \emph{template}.
 
-Chaque template enregistre est un noeud contenant les champs suivants :
+Chaque \emph{template} enregistré est un nœud contenant les champs suivants :
 \begin{itemize}
-    \item ``.with'': Noeud contenant les contraintes de selection du template
-    \item ``.rtype'': Noeud contenant le prototype du template complet
-    \item ``.chunks'': Liste d'objets decrivant les chunks contenus par le
-        template.
-    \item ``.script\_file'': Champ optionnel. Il n'est present que dans le cas
-        ou le template est un template de type.
-    \item ``.tree\_file'': Champ optionnel. Il n'est present que dans le cas
-        ou le template est un template de type.
+    \item ``.with'': Nœud contenant les contraintes de sélection du
+        \emph{template}
+    \item ``.rtype'': Nœud contenant le prototype du \emph{template} complet
+    \item ``.chunks'': Liste d'objets décrivant les \emph{chunks} contenus par
+        le \emph{template}.
+    \item ``.script\_file'': Champ optionnel. Il n'est présent que dans le cas
+        où le \emph{template} est un \emph{template} de type.
+    \item ``.tree\_file'': Champ optionnel. Il n'est présent que dans le cas
+        où le \emph{template} est un \emph{template} de type.
 \end{itemize}
 
-Chaque objet stocke dans le champ ``.chunks'' est un moyen d'indiquer ou est
-stocke le \emph{chunk} dans le cache. Sa clef est le nom qualifie du pointcut
-auquel il est associe, et la valeur est l'index correspondant au chunk contenu
-par le template dans la list des chunks associes au pointcut donne. Plus
-d'informations au sujet de la maniere de stocker les chunks sont donnees dans
-la section suivante.
+Chaque objet stocké dans le champ ``.chunks'' est un moyen d'indiquer où est
+stocké le \emph{chunk} dans le cache. Sa clef est le nom qualifié du
+\emph{pointcut} auquel il est associé, et sa valeur est l'index correspondant
+au chunk contenu par le \emph{template} dans la liste des \emph{chunks}
+associés au \emph{pointcut} donné. Plus d'informations au sujet de la manière
+de stocker les \emph{chunks} sont données dans la section suivante.
 
 
 \subsection{Chunks enregistres}
@@ -625,217 +629,218 @@ la section suivante.
 Les chunks enregistres sont contenus par le champ ``.chunks'' de la session de
 cache.
 
-Ce champ est un tableau associatif, qui suit le meme modele que le tableau
-associatif qu'est le champ ``.templates''. La clef est le nom du pointcut
-qualifie (ex: ``interface::nom'' ou ``::nom'' s'il n'est associe a aucune
-interface), et la valeur est une liste des chunks qui y sont associes. De la
-meme maniere que pour les templates, les chunks contenus dans cette liste sont
-uniques.
+Ce champ est un tableau associatif, qui suit le même modèle que le tableau
+associatif qu'est le champ ``.templates''. La clef est le nom du
+\emph{pointcut} qualifie (ex: ``interface::nom'' ou ``::nom'' s'il n'est
+associe a aucune interface), et la valeur est une liste des \emph{chunks} qui y
+sont associes. De la même manière que pour les \emph{templates}, les
+\emph{chunks} contenus dans cette liste sont uniques.
 
-Chaque chunk enregistre contient lees champs suivants :
+Chaque chunk enregistré contient les champs suivants :
 \begin{itemize}
-    \item ``.with'': Noeud contenant les contraintes de selection du template
-        contenant le chunk
-    \item ``.name'': Nom qualifie du pointcut
-    \item ``.tpl\_id'': Hash du template contenant le chunk
+    \item ``.with'': Nœud contenant les contraintes de sélection du
+        \emph{template} contenant le \emph{chunk}
+    \item ``.name'': Nom qualifié du pointcut
+    \item ``.tpl\_id'': Hash du \emph{template} contenant le \emph{chunk}
     \item ``.script\_file'': Champ obligatoire.
     \item ``.tree\_file'': Champ obligatoire.
 \end{itemize}
 
 
-\subsection{Etat Differentiel du cache}
+\subsection{État Différentiel du cache}
 
-Ce que nous appelons un ``etat differentiel du cache'' est en realite une sorte
-de registre de toutes les modifications appliquees au cache durant le processus
+Ce que nous appelons un ``état différentiel du cache'' est en réalité une sorte
+de registre de toutes les modifications appliquées au cache durant le processus
 de compilation. Ceci permet de pouvoir valider ou non l'enregistrement d'un
-element au sein du cache, et de pouvoir retrouver quels sont els fichiers de
-script et d'AST a sauvegarder ou non. C'est ce qui permet l'operation dite
-"d'installation" d'un template ou d'une interface.
+élément au sein du cache, et de pouvoir retrouver quels sont les fichiers de
+script et d'AST à sauvegarder ou non. C'est ce qui permet l'opération dite
+"d'installation" d'un \emph{template} ou d'une interface.
 
-Le differentiel de cache est contenu dans le champ ``.temp'' de la session, et
-a une structure similaire àa sessiond e cache elle meme, a cela pres que chacun
-de ses elements enregistres est en realite  une reference sur l'element
-enregistre dans la session de cache. C'est ce qui permet de les supprimer
-facilement, et de les gerer comme n'importe quel element du cache durant un
-processus de generation de pilote.
+Le différentiel de cache est contenu dans le champ ``.temp'' de la session, et
+a une structure similaire à la session de cache elle-même, à cela près que chacun
+de ses éléments enregistres est en fait une référence sur l'élément
+enregistré dans la session de cache. C'est ce qui permet de les supprimer
+facilement, et de les gérer comme n'importe quel élément du cache durant le
+processus de génération de pilote.
 
-Lorsque le cache est valide, le compilateur, selon les argument qu'il a recus,
-peut installer les fichiers nouvellement pre-compiles au sein du cache
-persistant. Ce processus d'installation consiste en trois operations :
+Lorsque le cache est validé, le compilateur, selon les argument qu'il a reçus,
+peut installer les fichiers nouvellement précompilés au sein du cache
+persistant. Ce processus d'installation consiste en trois opérations :
 \begin{itemize}
-    \item Calculer un nom de fichier a partir d'informations associes a
-        l'element a enregistrer
-    \item Copier les fichiers pre-compiles dans la bibliotheque de backend sous
-        le nom calcule
-    \item Mettre a jour les chemins de fichiers au sein du cache
+    \item Calculer un nom de fichier à partir d'informations associes à
+        l'élément à enregistrer
+    \item Copier les fichiers précompilés dans la bibliothèque de backend sous
+        le nom calculé
+    \item Mettre à jour les chemins de fichiers au sein du cache
 \end{itemize}
 
-Grace au differentiel de session, ces operations sont facilement effectuees, et
-le cache peut rester coherent.
+Grâce au différentiel de session, ces opérations sont facilement effectuées, et
+le cache peut rester cohérent.
 
 
 \subsection{API de manipulation du cache}
 
-Dans cette section sont decrites toutes les fonctions ``publiques'' du cache,
-de maniere a permettre la maintenant de son code et son utilisation plus aisee.
-Chacune de ces fonctions se trouve dans le fichier rtxLink.inc.cws des scripts
-du compilateur.
+Dans cette section sont décrites toutes les fonctions ``publiques'' du cache,
+de faciliter la maintenance de son code et son utilisation.  Chacune de ces
+fonctions se trouve dans le fichier rtxLink.inc.cws des scripts du compilateur.
 
-Tout abord, il est necessaire de comprendre que le cache a deux possibles cas
-d'utilisation : le remplir avec des fichiers que l'on vient de pre-compiler, ou
-en tirer des informations necessaires a la generation d'un pilote.
+Tout abord, il est nécessaire de comprendre que le cache a deux possibles cas
+d'utilisation : le remplir avec des fichiers que l'on vient de précompiler, ou
+en tirer des informations nécessaires à la génération d'un pilote.
 
 \vspace{20pt}
 
-Les fonctions a utiliser pour les deux cas d'utilisation sont les suivantes :
+Les fonctions à utiliser pour les deux cas d'utilisation sont les suivantes :
 
 \begin{lstlisting}
 function rtxLink_LoadCache();
 \end{lstlisting}
-La fonction \emph{rtxLink\_LoadCache} est utilisee pour charger le cache en
-memoire depuis un fichier contenant sa description, qui se trouve dans la
-bibliotheque de backend. Si cette fonction n'est pas appelee avant un autre
-appel au cache, il sera considere comme vide, et effacera l'ancien cache si il
-devait par hasard etre sauvegarde.
+La fonction \emph{rtxLink\_LoadCache} est utilisée pour charger le cache en
+mémoire depuis un fichier contenant sa description, qui se trouve dans la
+bibliothèque de backend. Si cette fonction n'est pas appelée avant un autre
+appel au cache, il sera considéré comme vide, et effacera l'ancien cache si il
+devait par hasard être sauvegardé.
 
 \begin{lstlisting}
 function rtxLink_SaveCache();
 \end{lstlisting}
-La fonction \emph{rtxLink\_SaveCache} est utilisee pour sauvegarder le cache
-dans un fichier situe dans la bibliotheque de backend, afin de le rendre
-persistant. Si une quelconque modification a ete apportee au cache avant un
-appel a cette fonction, elle se chargera automatiquement de sauvegarder les
-fichiers temporaires correctement au sein de la bibliotheque du backend et de
-mettre a jour le cache persistant.
+La fonction \emph{rtxLink\_SaveCache} est utilisée pour sauvegarder le cache
+dans un fichier situé dans la bibliothèque de backend, afin de le rendre
+persistant. Si une quelconque modification a été apportée au cache avant un
+appel à cette fonction, elle se chargera automatiquement de sauvegarder les
+fichiers temporaires correctement au sein de la bibliothèque du backend et de
+mettre à jour le cache persistant.
 
 \begin{lstlisting}
 function hashTemplatePrototype(theRType     : node,
                                out_ref_hash : reference);
 \end{lstlisting}
 La fonction \emph{hashTemplatePrototype} prend en premier argument une node
-decrivant le prorotype du template et en second argument une reference
-permettant de renvoyer le hash du prototype. Cette fonction est utilisee de
-maniere eparse dans le code, afin de maintenir une coherence dans le hash
-utilise pour les templates.
+décrivant le prototype du \emph{template} et en second argument une référence
+permettant de renvoyer le hash du prototype. Cette fonction est utilisée de
+manière éparse dans le code, afin de maintenir une cohérence dans le hash
+utilise pour les \emph{templates}.
 
 \vspace{20pt}
 
-Les fonctions suivantes sont utilisees afin d'inserer des elements dans le
+Les fonctions suivantes sont utilisées afin d'insérer des éléments dans le
 cache.
 
 \begin{lstlisting}
 function rtxLink_RegisterToCache(local_node : node);
 \end{lstlisting}
 La fonction \emph{rtxLink\_RegisterToCache} traverse un AST rathaxes dans son
-ensemble, et enregistre chaque bloc au sein du cache (code global, template,
-chunks).
+ensemble, et enregistre chaque bloc au sein du cache (code global,
+\emph{template}, chunks).
 
 \vspace{20pt}
 
-Les fonctions suivantes sont utilisees pour manipuler le cache, afin de
-resoudre des placeholders et de generer du code. Nous pouvons alors identifier
-quatre cas d'utilisation : Resolution d'un \emph{pointcut} (instanciation de
-tous les chunks selectionnes associes), resolution d'un code global, resolution
-d'un chunk au travers du template associe (mecanisme interne tels que l'appel
-d'une sequence), et finallement la resolution d'un mapping de template de type.
+Les fonctions suivantes sont utilisées pour manipuler le cache, afin de
+résoudre des placeholders et de générer du code. Nous pouvons alors identifier
+quatre cas d'utilisation : Résolution d'un \emph{pointcut} (instanciation de
+tous les \emph{chunks} sélectionnés associés), résolution d'un code global,
+résolution d'un \emph{chunk} au travers du \emph{template} associé (mécanisme
+interne tels que l'appel d'une séquence), et finalement la résolution d'un
+mapping de \emph{template} de type.
 
 \begin{lstlisting}
 function rtxLink_findGlobalCode(with_values  : node,
                                 out_code_ref : reference);
 \end{lstlisting}
-La fonction \emph{rtxLink\_findGlobalCode} recupere le noeud d'un code global
-correspondang a la configuration ``with\_values'' et la retourne grace a la
-reference donnees en second parametre.
+La fonction \emph{rtxLink\_findGlobalCode} récupère le nœud d'un code global
+correspondant à la configuration ``with\_values'' et la retourne grâce à la
+référence donnée en second paramètre.
 
 \vspace{20pt}
 
-fonctions utilisees pour resoudre un template (ou un de ses chunks) :
+Fonctions utilisées pour résoudre un \emph{template} (ou un de ses \emph{chunks}) :
 \begin{lstlisting}
 function rtxLink_findTemplates(theRtype : node,
                                out_tpls : node);
 \end{lstlisting}
-La fonction \emph{rtxLink\_findTemplates} recupere la liste complete des
-templates associes a un prototype decrit par le parametre ``theRtype'' et la
-copie dans le parametre ``out\_tpls''.
+La fonction \emph{rtxLink\_findTemplates} récupère la liste complète des
+\emph{templates} associés à un prototype décrit par le paramètre ``theRtype''
+et la copie dans le paramètre ``out\_tpls''.
 
 \begin{lstlisting}
 function rtxLink_selectUniqueTemplate(templates : reference,
                                       config : node);
 \end{lstlisting}
-La fonction \emph{rtxLink\_selecteUniqueTemplate} selectionne un template
-unique dans la liste de templates donnes dans le parametre ``templates'',
-recuperee au travers de la fonction \emph{rtxLink\_findTemplates} en fonction
-de la configuration contenue par le parametre ``config''. Le template
-selectionne est alors reference dans le parametre ``templates'' pour le retour.
-En cas d'echec, la fonction renvoie ``false''.
+La fonction \emph{rtxLink\_selectUniqueTemplate} sélectionne un \emph{template}
+unique dans la liste de \emph{templates} donnée dans le paramètre ``templates'',
+récupérée au travers de la fonction \emph{rtxLink\_findTemplates} en fonction
+de la configuration contenue par le paramètre ``config''. Le \emph{template}
+sélectionné est alors référencé dans le paramètre ``templates'' pour le retour.
+En cas d'échec, la fonction renvoie ``false''.
 
-Dans le cas d'une resolution de mapping de template de type, la node ainsi
-recuperee peut etre directement envoyee a la fonction
-\emph{rtxLink\_LoadScript}, qui chargera l'arbre et le script associes.
+Dans le cas d'une résolution de mapping de \emph{template} de type, la node ainsi
+récupérée peut être directement envoyée à la fonction
+\emph{rtxLink\_LoadScript}, qui chargera l'arbre et le script associés.
 
 \begin{lstlisting}
 function rtxLink_selectChunkFromTemplate(theTemplate : node,
                                          chunkName : value,
                                          theChunk : reference);
 \end{lstlisting}
-La fonction \emph{rtxLink\_selectChunkFromTemplate} prend une node de template
-recuperee grace a la fonction \emph{rtxLink\_SelectUniqueTemplate} ainsi qu'un
-nom qualifie de \emph{pointcut} par le parametre ``chunkName''. Elle va alors
-aller chercher le chunk associe au template portant le nom demande. Si aucun
-chunk associe ne porte ce nom, elle renvoie ``false''. S'il existe un chunk
-associe mais qu'il n'est pas trouve, alors elle renvoie une exception (c'est un
-cas qui ne devrait cependant pas etre croise, ou bien votre cache pourrait etre
-corrompu). LE chunk ainsi selectionne est renvoye grace a la reference
-``theChunk''.
+La fonction \emph{rtxLink\_selectChunkFromTemplate} prend une node de
+\emph{template} récupérée grâce à la fonction
+\emph{rtxLink\_SelectUniqueTemplate} ainsi qu'un nom qualifié de
+\emph{pointcut} par le paramètre ``chunkName''. Elle va alors aller chercher le
+\emph{chunk} associé au \emph{template} portant le nom demandé. Si aucun
+\emph{chunk} associé ne porte ce nom, elle renvoie ``false''. S'il existe un
+\emph{chunk} associé mais qu'il n'est pas trouvé, alors elle renvoie une
+exception (c'est un cas qui ne devrait cependant pas être croisé, ou bien votre
+cache pourrait être corrompu). Le \emph{chunk} ainsi sélectionné est renvoyé
+grâce a la référence ``theChunk''.
 
-Cette fonction est utilisee afin de resoudre un chunk precis d'un template
-donne. Il est ainsi utilise pour des mecanismes internes et automatiques du
-langage (tels que l'appel a un template de sequence, debouchant sur
-l'instanciation du chunk "CALL" associe), ou pour mapper une fonction membre
-d'un template de type (instanciant ainsi le chunk portant le meme nom que la
-fonction dite ``membre'').
+Cette fonction est utilisée afin de résoudre un \emph{chunk} précis d'un
+\emph{template} donné. Il est ainsi utilisé pour des mécanismes internes et
+automatiques du langage (tels que l'appel à un \emph{template} de séquence,
+débouchant sur l'instanciation du \emph{chunk} ``::CALL'' associé), ou pour
+mapper une fonction membre d'un \emph{template} de type (instanciant ainsi le
+\emph{chunk} portant le même nom que la fonction dite ``membre'').
 
 \vspace{20pt}
 
-Fonctions utilisees pour resoudre un \emph{pointcut} :
+Fonctions utilisées pour résoudre un \emph{pointcut} :
 \begin{lstlisting}
 function rtxLink_findChunks(pointcut_name : node,
                             out_chunks : node);
 \end{lstlisting}
-La fonction \emph{rtxLink\_findChunks} recupere la liste de tous les chunks
-associe au pointcut ``pointcut\_name''. Cette liste est copiee dans le
-parametre ``out\_chunks''.
+La fonction \emph{rtxLink\_findChunks} récupère la liste de tous les
+\emph{chunks} associés au \emph{pointcut} ``pointcut\_name''. Cette liste est
+copiée dans le paramètre ``out\_chunks''.
 
 
 \begin{lstlisting}
 function rtxLink_selectCompatibleChunks(chunks : node,
                                         config : node);
 \end{lstlisting}
-La fonction \emph{rtxLink\_selectCompatibleChunks} selectionne les chunks
-compatibles avec la configuration ``config'' parmis les chunks contenus dans la
-liste ``chunks'', recuperee au travers de la fonction
-\emph{rtxLink\_findChunks}. La liste est alors filtree pour ne contenir plus
-que les chunks selectionnes.
+La fonction \emph{rtxLink\_selectCompatibleChunks} sélectionne les
+\emph{chunks} compatibles avec la configuration ``config'' parmi les
+\emph{chunks} contenus dans la liste ``chunks'', récupérée au travers de la
+fonction \emph{rtxLink\_findChunks}. La liste est alors filtrée pour ne
+contenir plus que les \emph{chunks} sélectionnés.
 
-Il est alors possible de transmettre chacun de ces chunks a la fonction
-\emph{rtxLink\_LoadScript} pour generer du code.
+Il est alors possible de transmettre chacun de ces \emph{chunks} à la fonction
+\emph{rtxLink\_LoadScript} pour générer du code.
 
 
 \begin{lstlisting}
 function rtxLink_LoadScript(cache_node : node,
                             out_ref_tree : reference);
 \end{lstlisting}
-La fonction \emph{rtxLink\_LoadScript} charge le script associe a la node, et
-l'AST associe dans le parametre ``out\_ref\_tree''. Elle empeche le
-double-chargement d'un meme script, et ne doit manipuler que des nodes
-provenant du cache (recuperee donc au travers des fonctions du cache
-precedemment decrites).
+La fonction \emph{rtxLink\_LoadScript} charge le script associé à la node, et
+l'AST associé dans le paramètre ``out\_ref\_tree''. Elle empêche le
+double chargement d'un même script, et ne doit manipuler que des nodes
+provenant du cache (donc récupérées au travers des fonctions du cache
+précédemment décrites).
 
 
 
-\section{Compilation et enregistrement d'un template}
-\subsection{Processus de compilation commun entre tous les templates}
-\subsection{Specificites des templates de type}
+\section{Compilation et enregistrement d'un \emph{template}}
+\subsection{Processus de compilation commun entre tous les \emph{templates}}
+\subsection{Spécificités des \emph{templates} de type}
 
 \section{Compilation et enregistrement des interfaces}
 
