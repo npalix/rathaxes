@@ -542,7 +542,7 @@ compilation et de generation. Nous y stockons les informations suivantes :
     \item Les templates enregistres
     \item Les chunks enregistres
     \item Un etat differentiel du cache
-\end{enurmerate}
+\end{enumerate}
 
 Chacune de ces categories se traduit par un noeud contenu dans le champ
 ``session'' de la variable globale ``this'' de CodeWorker. Nous l'appelons la
@@ -685,7 +685,7 @@ Tout abord, il est necessaire de comprendre que le cache a deux possibles cas
 d'utilisation : le remplir avec des fichiers que l'on vient de pre-compiler, ou
 en tirer des informations necessaires a la generation d'un pilote.
 
-\vspace{}
+\vspace{20pt}
 
 Les fonctions a utiliser pour les deux cas d'utilisation sont les suivantes :
 
@@ -718,7 +718,7 @@ permettant de renvoyer le hash du prototype. Cette fonction est utilisee de
 maniere eparse dans le code, afin de maintenir une coherence dans le hash
 utilise pour les templates.
 
-\vspace{}
+\vspace{20pt}
 
 Les fonctions suivantes sont utilisees afin d'inserer des elements dans le
 cache.
@@ -730,7 +730,7 @@ La fonction \emph{rtxLink\_RegisterToCache} traverse un AST rathaxes dans son
 ensemble, et enregistre chaque bloc au sein du cache (code global, template,
 chunks).
 
-\vspace{}
+\vspace{20pt}
 
 Les fonctions suivantes sont utilisees pour manipuler le cache, afin de
 resoudre des placeholders et de generer du code. Nous pouvons alors identifier
@@ -747,7 +747,7 @@ La fonction \emph{rtxLink\_findGlobalCode} recupere le noeud d'un code global
 correspondang a la configuration ``with\_values'' et la retourne grace a la
 reference donnees en second parametre.
 
-\vspace{}
+\vspace{20pt}
 
 fonctions utilisees pour resoudre un template (ou un de ses chunks) :
 \begin{lstlisting}
@@ -795,7 +795,7 @@ l'instanciation du chunk "CALL" associe), ou pour mapper une fonction membre
 d'un template de type (instanciant ainsi le chunk portant le meme nom que la
 fonction dite ``membre'').
 
-\vspace{}
+\vspace{20pt}
 
 Fonctions utilisees pour resoudre un \emph{pointcut} :
 \begin{lstlisting}

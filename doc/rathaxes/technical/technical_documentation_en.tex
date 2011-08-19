@@ -505,7 +505,7 @@ information one wants. It is actually used by rathaxes to host the
     \item Registered templates
     \item Registered chunks
     \item Differential session
-\end{enurmerate}
+\end{enumerate}
 
 Each one of those categories is translated as an item contained in the
 ``session'' node of the ``this'' tree of CodeWorker. We will call this the
@@ -538,7 +538,6 @@ in a list, containing three fields:
     \item ``.with'': the configuration constraint associated (incidentally also
             tells which interfaces it is associated with)
     \item ``.script\_file'': Mandatory
-            placeholders
     \item ``.tree\_file'': Mandatory
 \end{itemize}
 
@@ -626,7 +625,7 @@ There are mainly two use cases for the cache. The first use-case is to fill it
 with a file being compiled. The second is to use it in order to load the script
 and tree file for a place holder resolution, meaning a code generation.
 
-\vspace{}
+\vspace{20pt}
 
 The functions to be used in both of those use cases are the following.
 
@@ -656,7 +655,7 @@ parameter types). The second argument is a reference used to return the hashed
 prototype.  This function is used throughout the code in order to get a string
 identifying a template.
 
-\vspace{}
+\vspace{20pt}
 
 The following functions are used in order to fill the cache.
 
@@ -666,7 +665,7 @@ function rtxLink_RegisterToCache(local_node : node);
 The function \emph{rtxLink\_RegisterToCache} walks through a rathaxes AST and
 registers each of its with blocks, templates and chunks into the cache session.
 
-\vspace{}
+\vspace{20pt}
 
 The following functions are used to manipulate the cache in order to resolve
 place holders and generate code. We can then identify three use cases:
@@ -682,7 +681,7 @@ The function \emph{rtxLink\_findGlobalCode} retrieves the global code node
 matching the configuration given through the with\_values argument, and returns
 it through the reference out\_code\_ref.
 
-\vspace{}
+\vspace{20pt}
 
 Functions used to resolve a template (or one of its chunks):
 \begin{lstlisting}
@@ -720,7 +719,7 @@ when one wants to resolve a given chunk from a precise template. This is the
 case for internal functions of the compiler, and for some template type
 resolutions.
 
-\vspace{}
+\vspace{20pt}
 
 Functions used to resolve a pointcut:
 \begin{lstlisting}
@@ -754,14 +753,14 @@ obtained through the latter previously described functions.
 
 
 
-\section{Compilation and registration of a template}
-\subsection{Common process between all templates}
-\subsection{Specificities of the type templates}
+\section{Template compilation}
+\subsection{Common process}
+\subsection{Type templates'specificities}
 
-\section{Compilation and registration of an interface}
+\section{Interface compilation}
 
 
-\section{Compilation of a driver}
+\section{Driver compilation}
 
 
 
