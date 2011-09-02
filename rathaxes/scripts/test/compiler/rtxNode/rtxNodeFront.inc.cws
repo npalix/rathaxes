@@ -1,0 +1,116 @@
+#if !existFunction(rtxNodeFront_version)
+
+function rtxNodeFront_version()
+{return "1.0";}
+
+function rtxNodeConfig(local_node   : node,
+                       out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_config__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+function rtxNodeConfigField(local_node  : node,
+                            out_ref_id  : reference,
+                            out_ref_val : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_config_field__";
+
+    insert local_node.id;
+    insert local_node.val;
+
+    ref out_ref_id = local_node.id;
+    ref out_ref_val = local_node.val;
+
+    return true;
+}
+
+function rtxNodeConfig_BodyAddField(local_node      : node,
+                                    out_ref_field   : reference,
+                                    out_ref_id      : reference,
+                                    out_ref_val     : reference)
+{
+    if ((local_node#parent.type != "__rtx_config__"
+         && local_node#parent.type != "__rtx_config_field__")
+        || local_node.type != "__block__")
+        return false;
+    pushItem local_node.block;
+    
+    ref out_ref_field = local_node.block#back;
+    
+    if (rtxNodeConfigField(out_ref_field, out_ref_id, out_ref_val) == false)
+        return false;
+
+    return true;
+}
+
+function rtxNodeConfigField_Extend(local_node   : node,
+                                   out_ref_body : reference)
+{
+    if (local_node.type != "__rtx_config_field__")
+        return false;
+
+    insert local_node.extension;
+    cnormNodeBlock(local_node.extension);
+    ref out_ref_body = local_node.extension;
+
+    return true;
+}
+
+function rtxNodeDevice(local_node : node, name : value, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_device__";
+    insert local_node.name = name;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    return true; 
+}
+
+function rtxNodeDevice_AddUseInterface(local_node : node, name : value)
+{
+    if (!existVariable(local_node.use))
+    {	insert local_node.use;}
+    pushItem local_node.use = name;
+    return true;
+}
+
+function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_register__";
+	insert local_node.name;
+	insert local_node.regtype;
+	insert local_node.like;
+	insert local_node.body;
+	cnormNodeBlock(local_node.body);
+	ref regtype_ref = local_node.regtype;
+	ref like_ref = local_node.like;
+	ref body_ref = local_node.body;
+	return true;
+}
+
+function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_like__";
+	insert local_node.mode = mode;
+	insert local_node.pattern = pattern;
+	insert local_node.offset = offset;
+	return true;
+}
+
+function rtxNodeRegMap(local_node : node)
+{
+
+}
+
+#end

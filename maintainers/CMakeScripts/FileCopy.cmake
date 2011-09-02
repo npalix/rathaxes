@@ -1,0 +1,5 @@
+# An implementation of FILE(COPY source DESTINATION dest) compatible with cmake
+# < 2.8
+MACRO(FILE_COPY SOURCE DEST)
+    CONFIGURE_FILE(${SOURCE} ${DEST} COPYONLY)
+ENDMACRO(FILE_COPY SOURCE DEST)

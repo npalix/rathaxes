@@ -1,0 +1,7 @@
+with LKM
+values OS=Linux, version >= 2.6.24
+{
+    template sequence LKM::load()
+    {
+    }
+}

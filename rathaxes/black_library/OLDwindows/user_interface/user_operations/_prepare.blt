@@ -1,0 +1,54 @@
+<%
+
+/*
+**      _kernel_registration.blt in black_library/windows/user_interface
+**      for Rathaxes project
+**      made by Micka
+*/
+
+local sDeviceName = this["RKM"]["NAME"];
+%>
+
+ADVICE prepare PART_OF user_interface
+{
+    /*
+    ** This function contents depends on driver type
+    ** (e.g physical logical)
+    */
+    NTSTATUS
+    EvtPrepareHardware(
+            WDFDEVICE Device,
+            WDFCMRESLIST Resources,
+            WDFCMRESLIST ResourcesTranslated
+            )
+    {
+      //ULONG                                 i;
+      //PCM_PARTIAL_RESOURCE_DESCRIPTOR   descriptor;
+
+      KdPrint(("@sDeviceName@" "-->EvtPrepareHardware\n"));
+      //for (i = 0; i < WdfCmResourceListGetCount(ResourcesTranslated); i++)
+      //{
+      //  descriptor = WdfCmResourceListGetDescriptor(ResourcesTranslated, i);
+      //  if (!descriptor)
+      //      return STATUS_DEVICE_CONFIGURATION_ERROR;
+      //  switch (descriptor->Type)
+      //  {
+      //    case CmResourceTypePort:
+      //      KdPrint((DRIVER_NAME "I/O Port: (%x)"
+      //            "Length: (%d)\n",
+      //            descriptor->u.Port.Start.LowPart,
+      //            descriptor->u.Port.Length));
+      //            /* Here, keeps this informations somewhere */
+      //      break;
+      //      /* Here, check for other hardware resources */
+      //    default:
+      //      break;
+      //  }
+      //}
+      ///* Do some device initialization here, using retrieved informations */
+      KdPrint(("@sDeviceName@" "<--EvtPrepareHardware\n"));
+
+      return STATUS_SUCCESS;
+    }
+};
+

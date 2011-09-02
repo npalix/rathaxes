@@ -1,0 +1,783 @@
+\documentclass[french]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{David Pineau}
+
+\title{Documentation du Langage : Backend}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{Documentation}
+\rtxdocref{backend\_documentation}
+\rtxdocversion{0.2}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.1 & 07/04/2011 & David Pineau & Première version de la traduction depuis
+                                  la version anglaise \\
+\hline
+0.2 & 08/06/2011 & David Pineau & Ajout des notions d'aspectuel \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}
+{
+    morekeywords={},
+	sensitive=true,
+	morecomment=[l][\color{rRed}]{//},
+	morecomment=[s][\color{rRed}]{/*}{*/},
+	morestring=[b][\color{rGreen}]",
+	morestring=[b][\color{rGreen}]',
+	keywordstyle={\color{rBlue}},
+    commentstyle={\color{rRed}},
+    moredirectives={import}
+}[comments,strings,directives]
+
+\lstdefinelanguage[front]{rathaxes}
+{
+}[keywords,comments,strings]
+
+\lstdefinelanguage[middle]{rathaxes}
+{
+	morekeywords={interface, provided, required, optional, type, sequence,
+                  variable},
+    otherkeywords={::}
+}[keywords,comments,strings]
+
+\lstdefinelanguage[back]{rathaxes}
+{
+	morekeywords={with, template, type, sequence, decl, stmt, link, to, each},
+	morecomment=[s][\color{rBlue}]{\$\{}{\}}
+}[keywords,comments,strings]
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        language=rathaxes,
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\lstset{alsolanguage={[back]rathaxes}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{
+Rathaxes est un DSL (Domain Specific Language) ou langage dédié, ainsi qu'un
+compilateur permettant de décrire un périphérique dans l'objectif de générer
+le code C de son pilote, pour différents systèmes d'exploitation.
+
+Développer un pilote implique d'écrire du code spécifique au périphérique en
+plus d'écrire du code spécifique au système d'exploitation. La partie backend
+du langage \rtx a pour objectif de faciliter l'écriture de code spécifique au
+système d'exploitation.
+
+En permettant la séparation de ces deux types de codes spécifiques, \rtx peut
+générer de manière uniforme le code C du pilote pour chacun des systèmes
+d'exploitation supportés par le backend.
+}
+
+
+\chapter{Programmation orientée aspect}
+
+Tout d'abord, la partie backend du langage dédié de \rtx\ implémente un
+paradigme de programmation appelé ``Programmation Orientée Aspect''.
+
+\section{Concept général}
+
+La programmation orientée aspect implique de découper la logique d'un programme
+en plusieurs parties distinctes (appelées fonctionnalités). Presque tous les
+paradigmes de programmation supportent un certain niveau de regroupement et
+d'encapsulation de fonctionnalités en différentes entités indépendantes. Ceci
+est permis grâce à des abstractions (telles que les procédures, les modules,
+les classes, et les méthodes) qui peuvent être utilisées pour implémenter,
+abstraire et assembler ces fonctionnalités.
+
+Cependant, certaines de ces fonctionnalités résistent à ces formes
+d'implantation, et sont ce que l'on appelle des fonctionnalités transverses,
+puisqu'elles ``traversent'' de multiples couches d'abstraction d'un programme.
+
+La notion de traçage des actions (ou ``logging'' en anglais) est un très bon
+exemple de fonctionnalité transverse car une stratégie de traçage affect
+nécessairement toutes les parties du systèmes qui doivent fournir une trace. Le
+traçage traverse donc toutes les abstractions possibles, en s'immisçant un peu
+partout dans le programme.
+
+La POA (Programmation Orientée Aspect) répond donc à ce type de problèmes en
+permettant au programmeur d'exprimer les fonctionnalités transverses dans des
+modules indépendants appelés \emph{aspects}. Les aspects peuvent contenir des
+\emph{advice} (code inséré à des emplacements spécifiés dans le programme) et
+des déclaration \emph{inter-types} (ajout de membres structurels dans des types
+composés). Par exemple, un aspect pourrait définir plusieurs \emph{advices} pour
+effectuer le traçage n'importe où dans le programme. Le \emph{point de coupe}
+(emplacement d'injection des \emph{advices} associés) définit les endroits
+(point de jonction) où quelqu'un veut effectuer une trace et le code contenu
+dans les \emph{advices} associés implémente le traçage en lui-même. Ainsi, les
+fonctionnalités de traçage comme le code du programme peuvent être maintenus de
+manière indépendante.
+
+\section{Terminologie}
+Dans le contexte du projet, la terminologie utilisée pour la programmation
+orientée aspect inclue :
+
+\begin{itemize}
+    \item \textbf{Fonctionnalités transverses}: Bien que la plupart des classes
+        d'un modèle orienté objet va proposer une fonction unique et
+        spécifique, elles partagent souvent des éléments communs et secondaires
+        (en termes de code ``métier''). Par exemple, nous pourrions ajouter du
+        traçage dans des fonctions accédant à des données tout comme à des
+        fonctions abstrayant les appels systèmes quand un \emph{thread} entre
+        ou sort d'une fonction. Bien que chaque classe ait un rôle primaire
+        différent, le code nécessaire pour effectuer les actions secondaires
+        est souvent identique.
+    \item \textbf{Advice}: C'est l'habituel code additionel que l'on veut
+        ajouter au modèle existant. Dans notre exemple, ce serait le code qui
+        implante l'action de tracer des informations, lors de l'entrée dans une
+        fonction par un thread. Au sein de \rtx\ nous appelons cela un
+        ``chunk''.
+    \item \textbf{Point de coupe}: C'est le terme donné au point d'exécution
+        dans l'application où une fonctionnalité transverse doit être
+        appliquée.  Dans notre exemple, un point de coupe est atteint lorsqu'un
+        \emph{thread} entre ou sort d'une fonction.
+    \item \textbf{Aspect}: La combinaison du point de coupe et d'un advice est
+        appelé un aspect. Dans notre exemple, nous ajoutons un aspect à notre
+        application en définissant un point de coupe et en fournissant l'advice
+        approprié.
+\end{itemize}
+
+\section{Modèle de jonction}
+
+\subsection{Définir un point de coupe}
+
+\rtx\ propose un moyen simple de définir un point de coupe. Il définit en
+réalité un endroit dans le code où le contenu des \emph{advices} associés
+pourra être injecté. Plusieurs \emph{advices} peuvent être injectés dans un
+même point de coupe. Il peut être écrit soit dans un bloc ``with'' soit dans un
+chunk (l'\emph{advice} de \rtx).  Ceux-ci seront décrits plus tard dans ce
+document.
+
+Étant donné que ce mécanisme est utilisé pour la génération de code C, il est
+aussi possible de définir un comportement par défaut dans le cas où aucun point
+de jonction n'est créé par association d'un ou plusieurs chunks avec le point
+de coupe. Cette partie (expression ``default'') est optionnelle, et si aucun
+point de jonction n'a été crée, alors le point de coupe ne fournissant pas de
+comportement par défaut sera tout simplement supprimé. Dans le cas où elle est
+présente, alors le code de l'expression de défaut deviendra le contenu du point
+de jonction.
+
+Le point de coupe doit être écrit entre ``\${'' et ``}''. À l'intérieur des
+accolades, la première chose à écrire est le mot clef ``pointcut'' suivi d'un
+identifiant : le nom donné au point de coupe. Il est possible de donner des
+arguments aux points de coupe, selon le modèle du langage C : après le nom du
+point de coupe, on écrit alors les arguments à donner entre parenthèses,
+séparés par des virgules si il y a plusieurs paramètres à transmettre. Ces
+arguments doivent être des symboles tirés du C instrumenté du langage, qui sera
+décrit plus tard dans ce document.
+
+Ensuite vient l'expression ``default'' décrivant le comportement par défaut du
+point de coupe, si aucun point de jonction n'a pu être créé. Pour ce faire, il
+faut écrire le mot clef ``default'' suivi du caractère ``:'', et enfin d'une
+expression C.
+
+Voici quelques exemples pour illustrer les possibilités proposées :
+\begin{lstlisting}
+${pointcut thePointcut(aSymbol, anotherSymbol)};
+struct blob item =
+{
+    ${pointcut theInit default: .first = NULL; },
+};
+${pointcut anotherPointcut};
+\end{lstlisting}
+
+\subsubsection{Points de coupe builtins}
+
+Il existe quelques noms de points de coupe qui sont inutilisables car ils sont
+liés à des mécanismes implicites et internes au compilateur et au langage.
+Voici une liste de ces points de coupe builtins avec leur description ou effet
+:
+\begin{itemize}
+    \item call: pas de paramètre, le chunk remplace un appel du template qui le
+        contient par le frontend;
+    \item type\_decl: pas de paramètre, le chunk remplace le type dans la
+        déclaration d'une variable dont le type correspond au template le
+        contenant;
+    \item type\_def: pas de paramètres, le chunk est inclus dans la partie du
+        code généré où les types sont définis.
+\end{itemize}
+
+
+\subsection{Définir un chunk}
+
+Un chunk est l'équivalent \rtx\ d'un \emph{advice}. C'est ce qui va contenir le
+code à injecter à l'endroit du point de coupe. Il peut être écrit soit dans un
+bloc ``with'' soit dans un bloc ``template''. Ces deux types de blocs seront
+décrits dans les chapitres suivants.
+
+
+Un chunk est introduit par le mot clef ``chunk'', lui-même suivi par le nom du
+point de coupe quauel il est associé. Des parenthèses optionnelles permettent
+de nommer les paramètres reçus au travers du point de jonction. Ce sont de
+simples identifiants à utiliser dans le code comme des variables templates,
+tirées du C instrumenté de \rtx\ (Voir le chapitre au sujet de l'utilisation
+des variables templates).
+
+Ensuite vient le code C instrumenté contenu par ces chunks. Il doit être
+contenu dans un bloc identifié par des accolades. Ce code C instrumenté est en
+réalité une surcouche au langage C, afin d'y inclure des points de coupe et des
+variables templates (qui seront abordées plus tard dans ce document).
+
+Voici donc un rapide exemple avec des points de coupe sans paramètres, des
+chunks et du simple code C :
+
+\begin{lstlisting}
+chunk global
+{
+    int main()
+    {
+        int a;
+        printf("a = %i\n", a);
+        ${pointcut thePointcut default: printf("Hello World\n");};
+    }
+}
+
+chunk thePointcut
+{
+    printf("I am part of the chosen ones !\n");
+}
+\end{lstlisting}
+
+Dans le cas où le chunk est sélectionné et crée ainsi un point de jonction, le
+code qu'il contient aurait remplacé l'expression du point de coupe au sein du
+chunk associé au point de coupe nommé "global".
+
+
+\chapter{Le bloc “with”}
+
+L'expression “with” décrit les conditions à respecter dans le but de
+sélectionner le code spécifique écrit dans son bloc.
+
+Ces conditions permettront par exemple d'expliciter au compilateur que le code
+contenu dans le bloc “with” devra être utilisé seulement pour un système
+d'exploitation spécifique (ex: Linux), avec une limitation de version
+(ex: supérieure à 2.6.24).
+
+Le code contenu dans le bloc de cette expression sera abordé plus tard dans ce
+document, bien qu'il soit d'ores et déjà utile de savoir que le bloc “with” peut
+contenir du code que nous qualifierons de ``code global'' ainsi que des
+expressions ``template''.
+
+\section{Les variables de configuration}
+
+La partie intermédiaire du langage (middle-end), constituée d'interface, déclare
+différentes variables. Nous appellerons ces variables les \emph{variables de
+configuration}. Ces variables sont les éléments qui définissent quelles
+implantations spécifiques à des systèmes d'exploitation (OS) peuvent être
+utilisés lors de la génération ou non. En effet, puisque le contenu du bloc
+“with” implante du code OS spécifique, il ne peut pas être utilisé pour
+n'importe quel système d'exploitation. C'est pourquoi le processus de sélection
+est articulé autour des ces \emph{variables de configuration}.
+
+Le bloc “with” décrit pour quelles variables, et quelles valeurs de ces
+variables, son contenu doit être sélectionné et éventuellement utilisé.
+
+Lors de l'écriture d'une implantation spécifique à un système d'exploitation
+pour \rtx, il est nécessaire de considérer la cible du code. Est-il spécifique
+à un OS ? Spécifique à une version ? Quel sous-système ou bus implante-t-il ?
+Chacune des réponses à ces questions est une information importante qui sera
+contenue dans les \emph{variables de configuration} associées, et pourra
+grandement influencer le processus de génération du pilote.
+
+Maintenant, regardons comment écrire un bloc “with“. C'est en fait plutôt
+simple :
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // Put some templates here.
+}
+\end{lstlisting}
+
+Comme on peut le lire, le mot clef "with" doit être écrit en tout premier. Il
+est alors suivi par une liste de \emph{variables de configuration} avec la
+condition qu'elles doivent respecter. Chacune des conditions de cette liste est
+séparée par une virgule. Ces conditions respectent trois règles :
+\begin{itemize}
+    \item Le nom de la variable de configuration doit être \emph{identique}
+          au nom écrit dans l'interface que le bloc “with” implante, que ce
+          soit partiellement ou dans son ensemble.
+    \item La condition (ou comparaison) doit être une des 5 suivantes : 
+        \begin{itemize}
+            \item <: valide uniquement pour les nombres et les versions,
+            \item <=: valide uniquement pour les nombres et les versions,
+            \item =: valide pour les strings (chaînes de caractères),
+                     les nombres et les versions,
+            \item >=: valide uniquement pour les nombres et les versions,
+            \item >: valide uniquement pour les nombres et les versions.
+        \end{itemize}
+    \item Les valeurs peuvent être de l'un de ces trois types :
+        \begin{itemize}
+            \item string: Écrites sous la forme d'un identifiant, sans être
+                          encadrées de guillemets
+                           (ex: Linux, Windows et non pas "Linux", "Windows"),
+            \item nombre: un simple nombre (ex: 243, 7623, 1, 0),
+            \item version: une suite de nombres séparés par des points
+                           (ex: 2.6.24).
+        \end{itemize}
+\end{itemize}
+
+Avec cela, nous sommes maintenant capables d'écrire une expression “with”
+correcte qui permettra au compilateur de sélectionner notre code spécifique
+pour une bonne génération de code C.
+
+\section{Contenu}
+
+Le bloc ``with'' peut contenir trois types d'expressions. Il peut contenir des
+points de coupes (chacun doit être suivi par un point-virgule), des chunks, et
+des templates. Les templates seront décrits dans le chapitre suivant.
+
+Étant donné que les points de coupes et les chunks ont une signification
+particulière au sein d'un bloc ``with'', nous allons commencer par les décrire.
+
+\subsection{Point de coupe global}
+
+Les points de coupe situés à l'intérieur d'un bloc ``with'' sont appelés des
+``points de coupe globaux'' en référence à la manière dont ils sont utilisés
+lors de l'étape de génération du code C.
+
+En effet, un point de coupe contenu par un tel bloc sera automatiquement inséré
+dans le code généré au niveau du scope global (après les autres points de coupe
+globaux sélectionnés auparavant). La raison de ce mécanisme est que c'est la
+meilleure méthode qui pouvait permettre de définir comment organiser le code
+généré d'un point de vue global.
+
+Puisque la génération part de l'interface le plus haut niveau (le Module
+noyau) pour descendre a l'interface la plus précise (utilisée par le pilote en
+cours de génération), le premier bloc ``with'' à être sélectionné pourrait
+ressembler à ceci :
+
+\begin{lstlisting}
+ // Selectionne des que le sous-systeme Module noyau est utilise (toujours)
+with LKM
+{
+    // Includes first
+    ${pointcut include_dependencies};
+
+    // Next, the globals and prototypes...
+    ${pointcut global_data_declaration};
+    ${pointcut global_code_declaration};
+    // Followed by the functions...
+    ${pointcut global_code_definition};
+    // And finally the base for the lkm.
+    ${pointcut lkm_base_code_definition};
+};
+\end{lstlisting}
+
+Ainsi, il est possible de définir la structure globale du code à généré. Ce
+mécanisme, qui interfère dans l'étape de génération, devrait être utilisé avec
+beaucoup de précautions.
+
+
+\subsection{Chunk global}
+
+Les chunks situés au sein d'un bloc ``with'' sont appelés des ``chunks
+globaux'', pour la même raison que les points de coupe sont appelés points de
+coupe globaux.
+
+Les chunks globaux seront insérés à la place du point de coupe associé (si
+celui-ci a été sélectionné et inséré dans le code à générer), dès que le bloc
+sera sélectionné pour la génération grâce à ses variables de configuration. Par
+exemple, on peut utiliser ce mécanisme afin de résoudre la problématique des
+dépendances de fichiers à inclure. Voici une illustration de cet exemple :
+
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+}
+
+with LKM
+values OS=windows, version=7
+{
+    chunk include_dependencies
+    {
+        #include "windows.h"
+    }
+}
+\end{lstlisting}
+
+
+
+\chapter{Définir un template}
+
+Le contenu d'un template est le code qui fera partie (après résolution complète
+du template) du code C généré. Le template décrit soit un type, soit une
+séquence (l'équivalent \rtx de fonction), et quelle sera leur implémentation
+réelle en C. Nous n'allons pas décrire le code C instrumenté contenu par le
+template (donc dans son bloc de code), puisque celui-ci fait l'objet d'un autre
+chapitre. Sachez cependant que le bloc du mot clef template accueille du code
+C instrumenté pour les besoins du langage \rtx.
+
+
+\section{Le prototype d'un template}
+
+Pour écrire un template, il faut commencer par le mot clef "template". Il est
+suivi d'un second mot clef, identifiant le type de template (on différencie un
+template implantant un type d'un template implantant une séquence par ce second
+mot clef). Ensuite vient ce que nous appellerons le \emph{prototype de
+template}. Ce prototype inclue le nom de la séquence ou du type (ou nom du
+template), qui sera l'identifiant utilisé par le langage rathaxes pour le
+référencer, ainsi que des types et noms de paramètres, définissant les
+\emph{paramètres du template}.
+
+Le \emph{prototype de template} est donc la partie qui identifie l'élément
+implanté par le template. Faites cependant attention à ne pas confondre un
+template et son implantation : le template ne se transcrit pas nécessairement
+en fonction C, même s'il décrit une séquence.
+
+Le nom du template est un simple identifiant alphanumérique (comprenant aussi
+l'underscore). Les paramètres du template sont en réalité des variables dont
+les types proviennent du langage \rtx . Ces variables sont utilisables pour
+permettre, par interaction entre templates, de générer du code C valide et
+cohérent.
+
+Voici comment on peut écrire un template de séquence :
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // here we can identify the bnf structure: 
+//  pkeyword skeyword name(ParamType1 param1, ParamType2 param2)
+    template sequence foo(Context ctx, register reg)
+    {
+        // put the template's code here'
+    }
+}
+\end{lstlisting}
+
+\section{Surcharge de template}
+
+\rtx supporte la surcharge de template, signifiant qu'une séquence ou un type
+(identifié grâce au nom du template) peut être écrit pour différents types de
+paramètres. On pourrait donc écrire deux templates nommés "foo" qui recevraient
+des types de paramètres différents :
+
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // this one here manipulates a register
+    template sequence foo(Context ctx, register reg)
+    {
+        // put the template's code here'
+    }
+
+    // This one only uses context's informations
+    template sequence foo(Context ctx)
+    {
+        // put the template's code here'
+    }
+}
+\end{lstlisting}
+
+\section{Contenu}
+
+Un bloc template peut contenir un seul type d'expression : les chunks. À
+l'intérieur de ces chunks, il est possible d'utiliser les types des paramètres
+template.
+
+Le bloc du template peut contenir autant de chunks que désiré, incluant les
+chunks associés à des points de coupe builtins (on notera le point de coupe
+``call'' qui est utilisé lors de l'appel d'un template depuis le frontend).
+
+Seul le chunk associé à ``call'' peut utiliser le paramètre du template.
+
+
+\chapter{Variables templates}
+
+Nous pouvons donc écrire des templates. Super. Seulement, nous aimerions
+utiliser ces templates comme de vrais modèles de code, qui pourra engendrer la
+génération de codes différents selon les situations. C'est en effet le but des
+\emph{variables templates}. Elles peuvent être manipulées de trois manières
+différentes, encadrées par les balises "\$\{" et "\}". Penchons nous sur ces
+trois utilisations possibles.
+
+
+\section{Structure}
+
+Pour commencer, chaque \emph{variable template} est structurée d'une manière
+spécifique. Par exemple, le type register contient un nom, une adresse, et
+éventuellement une collection de champs. La structure de chaque type template
+est décrite dans le template de type associé. Il faut donc se référer au
+template en question afin d'obtenir plus d'informations au sujet de la
+structure de cette \emph{variable template}.
+
+
+\section{Concaténation d'identifiant}
+
+La première et plus simple façon d'utiliser une \emph{variable template} est de
+l'utiliser afin de générer des identifiants C contenant le nom associé à la
+variable, ou n'importe lequel de ses champs directement concaténé dans le code
+C généré.
+
+Prenons l'exemple du type buffer. Nous pourrions utiliser plusieurs buffers de
+types différents dans notre code de périphérique. Si nous utilisions alors une
+fonction générique, il serait possible d'obtenir un comportement indéfini et
+souvent indésirable sur au moins l'un d'entre eux. On pourrait donc utiliser
+une propriété du buffer manipulé pour générer des fonctions adaptées à chacun.
+
+C'est d'ailleurs la raison pour laquelle la syntaxe accepte des préfixes et des
+suffixes aux balises "\$\{"\ldots"\}". Ainsi, écrire le code suivant avec un
+registre nommé eeprm :
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // this one here manipulates a register
+    template sequence foo(Context ctx, register reg)
+    {
+        int     the_${reg.name}_flag;
+    }
+}
+\end{lstlisting}
+
+pourrait alors générer (pour les bonnes valeurs de \emph{variables de
+configuration}) :
+\lstset{language=C}
+\begin{lstlisting}
+int the_eeprm_flag;
+\end{lstlisting}
+\lstset{language={[back]rathaxes}}
+
+Cette technique peut bien évidemment être utilisée pour tout type de
+concaténation : identifiants, valeurs écrites en dur dans le code généré, etc...
+
+\section{Liaison de templates}
+
+Il arrive parfois que l'on ait besoin de faire appel à d'autres templates afin
+par exemple de générer un algorithme complet et cohérent. Cela peut notamment
+survenir dans le cas d'un découpage logique fin des différentes unités
+algorithmiques constituant le template. Nous avons donc besoin d'un moyen
+d'expliciter le lien vers un autre template. C'est une sorte d'appel entre
+templates.
+
+Pour ce faire, voici la syntaxe générale :
+\begin{lstlisting}
+${link template_variable_list to template_prototype};
+\end{lstlisting}
+
+La liste de variables templates, séparée par des virgules, doit être constituée
+de variables templates accessibles au sein du template actuel. Le prototype de
+template, lui, décrit quel template lier au notre. Attention, les variables
+templates et leur ordre doit correspondre aux types (et leur ordre) attendus
+par le template lié.
+
+L'effet de cette syntaxe est d'inclure le code généré du template lié au sein
+du code généré du template liant.
+
+On pourrait donc écrire :
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    template sequence foo(Context ctx, register reg)
+    {
+        ${link reg to bar(register)};
+    }
+
+    template sequence bar(register reg)
+    {
+        int     the_${reg.name}_flag;
+    }
+}
+\end{lstlisting}
+
+
+%% TODO FIXME
+%% The rest of the "EACH" syntax is to be defined and then
+%% the documentation written....
+TODO : syntaxe du EACH
+%%The “each” syntax is based on the same model as the “link” syntax, but allows to
+%%link each element of a collection to the same template. This prevents writing
+%%loops that would be error-prone. It would be written like this:
+
+%%\begin{lstlisting}
+%%${each template_variable as alias to template_prototype};
+%%\end{lstlisting}
+
+
+\subsection{Transmission de la configuration}
+
+Maintenant on sait manipuler les \emph{variables templates}, afin de générer du
+C à partir du C instrumenté de \rtx. Il y a cependant une limitation évidente :
+les \emph{variables de configuration}. En effet, puisqu'un template est
+sélectionné en fonction de leurs valeurs, le template lié doit être implanté
+pour les variables et valeurs qui correspondent au template liant.
+
+
+\chapter{Variables templates accessibles}
+
+
+\section{Limitations}
+
+On sait que l'on peut utiliser les paramètres du template en tant que variables
+templates. Malheureusement, il arrive parfois qu'on ai besoin de plus : par
+exemple, d'utiliser une variable déclarée en C correspondant à l'implantation 
+d'un type \rtx. C'est pourquoi le langage offre des variables templates
+contextuelles.
+
+
+\section{Variables templates contextuelles}
+
+Les variables templates contextuelles peuvent être séparées en deux catégories :
+\begin{enumerate}
+    \item Variables globales,
+    \item Variables locales.
+\end{enumerate}
+
+La variable "global" (pour les variables globales) contient toutes les variables
+de configuration. Chacun doit être accédée en tant que champ de la variable 
+template "global", le nom du champ étant le nom de la variable de configuration.
+
+La variable "local" (pour les variables locales) contient toutes les variables
+déclarées dans le code C du template. Ceci permet notamment l'utilisation
+d'algorithmes \rtx pour ces variables. De la même manière que pour les
+variables globales, on y accède au travers de la variable "local", avec leurs
+nom en tant que champ de cette dernière.
+
+Par exemple, afin de transmettre une variable C à un template lié, on écrit :
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    template sequence multiset(register reg)
+    {
+        {
+            // declare a tmp variable of the same type as "reg"
+            ${register}     tmp;
+            // Here we use "local.tmp" meaning we use the C variable tmp
+            tmp = ${link reg to get(register)};
+            tmp |= (val & mask);
+            ${link reg, local.tmp to set(register, register)};
+        }
+    }
+
+    template sequence get(register reg)
+    {
+        // read a byte
+        inb(${reg.addr})
+    }
+
+    template sequence set(register rreg, register lreg)
+    {
+        // Set the real register to the temporary one's value.
+        outb(${rreg.addr}, ${lreg.name})
+    }
+}
+\end{lstlisting}
+
+Ces fonctionnalités impliquent bien évidemment qu'il est interdit de nommer une
+variable de template "global" ou "local".
+
+
+\chapter{Annexe : BNF}
+
+Afin de résumer la syntaxe particulière de la partie backend du langage \rtx,
+voici la BNF associée :
+
+\lstset{}
+\begin{lstlisting}
+// This is the root entry point of the BNF
+
+with_block ::= "with" config_value_list
+                '{' [ "${" tpl_pointcut '}' ';' | chunk | template_block ]* '}'
+
+config_value_list ::= [ config_value ]*
+
+config_value ::= config_variable config_condition config_value
+
+config_variable ::= identifier
+
+config_condition ::= '<' | "<=" | '=' | "=>" | '>'
+
+config_value ::= identifier | version
+
+template_block ::= "template" type_key template_prototype
+                    '{' [ chunk ]* '}'
+
+chunk ::= "chunk" identifier [ '(' tpl_var_id ')']?
+            '{' [ C | template_placeholder ]* '}'
+
+C ::= // this is the whole C syntax that we wont define here...
+
+type_key ::= "type" | "sequence"
+
+template_prototype ::= identifier '(' [tpl_var_list]? ')'
+
+tpl_var_list ::= tpl_var_type tpl_var_id [ ',' tpl_var_type tpl_var_id ]*
+
+template_placeholder ::= [ prefix ]? [ template_braced_code ]+ [ postfix ]?
+
+template_braced_code ::= "${" tpl_each | tpl_link | tpl_var | tpl_pointcut '}'
+
+tpl_pointcut ::= "pointcut" identifier['(' tpl_var ')'] [ "default" ':' C ]?
+
+tpl_each ::= "each" tpl_var "as" alias "in" tpl_proto
+
+tpl_link ::= "link" tpl_var_list "to" tpl_proto
+
+tpl_var ::= identifier [ '.' tpl_var_field ]*
+
+tpl_var_field ::= identifier
+
+tpl_proto ::= identifier '(' [tpl_proto_var_list]? ')'
+
+tpl_proto_var_list ::= tpl_var_type [ ',' tpl_var_type ]*
+
+tpl_var_type ::= identifier
+
+tpl_var_id ::= identifier
+
+version ::= number [ '.' number ]*
+
+number ::= [ '0'..'9' ]*
+
+identifier ::= [ 'a'..'z' | 'A'..'Z' | '_' ]
+               [ '0'..'9' | 'a'..'z' | 'A'..'Z' | '_' ]*
+
+\end{lstlisting}
+
+
+
+
+
+\end{document}

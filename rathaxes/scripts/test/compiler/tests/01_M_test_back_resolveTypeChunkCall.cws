@@ -1,0 +1,77 @@
+/*
+	TEST for template codeworker generation
+*/
+
+#include  "01_G_test_back_registerToCache.cws"
+
+#include "rtxTpl/rtxResolve.inc.cws"
+
+// Load the template :
+// First, hash the prototype, then find every template matching it,
+// And finally reduce the selection to only one template before loading.
+
+// Build the rtype node for the template
+local theRtype;
+local name;
+local params;
+rtxNodeIdentifier(name, "test", "LKM");
+rtxNodeRType(theRtype, name, params);
+pushItem params;
+rtxNodeIdentifier(params#back, "Context");
+
+local theWith;
+local theTemplates;
+
+if (rtxLink_findTemplates(theRtype, theTemplates) == false)
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
+          +" The template could not be found by rtxLink.");
+traceLine("A list of " + getArraySize(theTemplates)
+          + " templates was found matching the prototype '"
+          + rtxRTypeName<theRtype.type>(theRtype) + "'");
+
+if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
+          +" rtxLink could not select an unique template :"+toString(theTemplates, true));
+traceLine("An Unique template could be identified for resolution.");
+
+local theChunk;
+if (rtxLink_selectChunkFromTemplate(theTemplates, "::type_call", theChunk) == false)
+    error("01_M_test_back_resolveTypeChunkCall.cws:"
+          +" rtxLink could not find a '::type_call' chunk in template "
+          +rtxRTypeName<theRtype.type>(theRtype));
+traceLine("The chunk '::type_call' was found for the template.");
+
+traceLine("Loading template : LKM::test(Context ctx)...");
+local c_tree;
+if (rtxLink_LoadScript(theChunk, c_tree) == false)
+    error("01_M_test_back_resolveTypeChunkCall.cws: Could not load script for chunk"
+          + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
+
+traceLine("====>Codeworker Script and tree Loaded with success.");
+
+
+// Now, try the C code generation out : simulate an input (the resVal node)
+// And start the resolution of the placeHolders.
+local resVals;
+local curvalue;
+rtxNodeResVal(resVals);
+insert resVals["config"];
+rtxNodeResVal(resVals["config"]);
+insert resVals["config"]["OS"];
+curvalue = "Linux";
+rtxNodeResValLeaf(resVals["config"]["OS"], curvalue);
+insert resVals["Buffer"];
+curvalue = "t_rtxBltinBuf";
+rtxNodeResValLeaf(resVals["Buffer"], curvalue);
+insert resVals["ctx"];
+rtxNodeResVal(resVals["ctx"]);
+insert resVals["ctx"]["name"];
+curvalue = "theContextValue";
+rtxNodeResValLeaf(resVals["ctx"]["name"], curvalue);
+
+instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
+traceLine("INSTANCIATING TEMPLATE[CALL]: LKM::test(Context ctx)");
+traceLine("Template resolved : The call will be replaced by :"
+          + cnorm2c(c_tree.body));
+
+
