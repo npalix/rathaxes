@@ -2,7 +2,7 @@ To generate the website read the following howto and then instal jekyll using:
 
    gem instal jekyll
 
-Finally, run "jekyll --server --base-url /2012/rathaxes" and point your browser
+Finally, run "jekyll --server --base-url /2012/rathaxes/" and point your browser
 to http://locahost:4000/2012/rathaxes to see the result.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

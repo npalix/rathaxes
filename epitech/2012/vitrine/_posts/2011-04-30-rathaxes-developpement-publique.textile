@@ -4,6 +4,7 @@ title: FR - Le développement de Rathaxes devient publique
 ---
 
 h1. {{ page.title }}
+
 Dévoilé en 2008 aux RMLL et au T-DOSE, Rathaxes est toujours actif. Une nouvelle équipe, née au LSE (Laboratoire Epita/Epitech système et sécurité) a repris le projet fin 2010.
 
 La nouvelle équipe, plus petite que la précédente, se compose de 5 personnes :
