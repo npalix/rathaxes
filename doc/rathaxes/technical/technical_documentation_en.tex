@@ -8,22 +8,24 @@
 
 \rtxdoctype{Technical Documentation}
 \rtxdocref{technical\_documentation}
-\rtxdocversion{0.3}
+\rtxdocversion{0.7}
 \rtxdocstatus{Release}
 
 \rtxdochistory{
-0.1 & 10/03/2011 & David Pineau& Plan of the Technical Documentation \\
+0.1 & 10/03/2011 & David Pineau & Plan of the Technical Documentation \\
 \hline
-0.2 & 11/03/2011 & David Pineau& Chapters 1 to 3 done Intro and Chapter
+0.2 & 11/03/2011 & David Pineau & Chapters 1 to 3 done Intro and Chapter
                                   4 still missing \\
 \hline
 0.3 & 11/03/2011 & Louis Opter & Cosmetic improvements \\
 \hline
-0.4 & 13/08/2011 & David Pineau& Added cache description section to chapter 4\\
+0.4 & 13/08/2011 & David Pineau & Added cache description section to chapter 4\\
 \hline
-0.5 & 13/08/2011 & David Pineau& Added compilation steps sections to chapter 4\\
+0.5 & 13/08/2011 & David Pineau & Added compilation steps sections to chapter 4\\
 \hline
-0.6 & 01/09/2011 & David Pineau& Finished template compilation steps of chap 4\\
+0.6 & 01/09/2011 & David Pineau & Finished template compilation steps in the chapter 4\\
+\hline
+0.7 & 11/09/2011 & Louis Opter & Minor improvements in ``Template Compilation'' \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -755,15 +757,13 @@ obtained through the latter previously described functions.
 
 
 
-\section{Interface compilation}
+%\section{Interface compilation}
 
 %
-% TODO XXX FIXME
+% TODO
 %
 
 \section{Template compilation}
-
-\subsection{Common process}
 
 In \rtx, two types of templates exist. Those are the sequence templates and the
 type templates. Both share common passes for their compilation, though there
@@ -773,18 +773,18 @@ Each pass of the templates compilation is coded inside the matching file in the
 directory named ``rtxTpl'' in the compiler's script directory. We can currently
 identify the following passes in order:
 \begin{enumerate}
-    \item Parse : rtxParse/rtxBack.inc.cws
-    \item Compile : rtxTpl/rtxCompile.inc.cws
-    \item Meta : rtxTpl/rtxMeta.inc.cws
-    \item TypeHash : rtxTpl/rtxTypeHash.inc.cws
-    \item Introspect : rtxTpl/rtxIntrospect.inc.cws
-    \item Gen : rtxTpl/rtxGen.inc.cws
+    \item Parse: \texttt{rtxParse/rtxBack.inc.cws};
+    \item Compile: \texttt{rtxTpl/rtxCompile.inc.cws};
+    \item Meta: \texttt{rtxTpl/rtxMeta.inc.cws};
+    \item TypeHash: \texttt{rtxTpl/rtxTypeHash.inc.cws};
+    \item Introspect: \texttt{rtxTpl/rtxIntrospect.inc.cws};
+    \item Gen: \texttt{rtxTpl/rtxGen.inc.cws}.
 \end{enumerate}
 
 Many of those passes could have been done in one walk through the AST, but for
 maintenance purposes, we chose to separate them. In terms of code, each pass in
 the compiler is made with a templated \emph{CodeWorker} function, which is
-specialized on the type of the node walked through. This allows specialisations
+specialized on the type of the node walked through. This allows specializations
 that help walking through the different types of nodes. For example, a node
 containing a list of elements could loop over the elements it contains, while a
 node containing two specific fields could only walk through those fields. By
@@ -792,18 +792,16 @@ the way, This allows a specific management of the meaningful nodes for each
 pass. Here is the description of the passes that are applied over the tree for
 a template's compilation process.
 
-\vspace{15pt}
-\emph{\it{Parse}}
+\subsection{Parse}
 
 This is the common pass for every compilation process throughout \rtx's
 compiler. Every parsing code can be found inside the directory rtxParse/ of the
 compiler's scripts. The common necessities can be found in the file
 rtxCommon.inc.cwp and the templates-only rules can be found inside the file
-rtxBack.inx.cwp. The parsing pass builds an AST standardized with the help of
+rtxBack.inc.cwp. The parsing pass builds an AST standardized with the help of
 the rtxNode module.
 
-\vspace{15pt}
-\emph{\it{Compile}}
+\subsection{Compile}
 
 This pass has for objective to identify every single bit of code that is
 instrumented code: the \emph{placeholders}. Each \emph{placeholder}
@@ -811,8 +809,7 @@ identified is then added into a field named ``.compile'' into the
 instrumented C root block. This field is a list of \emph{placeholders},
 associated with information to help find its real place inside the tree.
 
-\vspace{15pt}
-\emph{\it{Meta}}
+\subsection{Meta}
 
 This pass walks over every single \emph{placeholder} identified during the
 previous pass. Each placeholder is then parsed independently from its context,
@@ -820,8 +817,7 @@ and the resulting node is added into the current \emph{placeholder}'s node.
 This newly created node will be used later for the final code generation, to
 resolve the \emph{placeholder}.
 
-\vspace{15pt}
-\emph{\it{TypeHash}}
+\subsection{TypeHash}
 
 This pass tries to identify every \rtx\ variable declaration, in order to store
 both the variable name and its actual type inside a specific node named
@@ -829,17 +825,15 @@ both the variable name and its actual type inside a specific node named
 referring to the \rtx\ variables in the \emph{placeholder} syntax, and checking
 their validity. This is then used for the \emph{placeholder} resolution.
 
-\vspace{15pt}
-\emph{\it{Introspect}}
+\subsection{Introspect}
 
 After the \rtx\ types were all identified and extracted during the previous
 pass, this one tries to identify every instrumented code variable declaration
 to associate the types (be it a \rtx\ type or a base code type) with the
-variables. This helps the \emph{placeholder} resolution mecanism when we are
+variables. This helps the \emph{placeholder} resolution mechanism when we are
 trying to use a local variable.
 
-\vspace{15pt}
-\emph{\it{Gen}}
+\subsection{Gen}
 
 The last thing to do before registering a template into the compiler's cache is
 to generate the \emph{CodeWorker} script that will resolve every
@@ -855,22 +849,21 @@ one of its \emph{placeholders}.
 \subsection{Type templates specificities}
 
 The compilation process is the same for type templates and sequence templates.
-The only difference is that the type templates contain a \emph{map} block,
+The only difference is that type templates contain a \emph{map} block,
 which describes the mapping to be made available for use when using a variable
 of this type.
 
-The result of this difference is that a templated \emph{CodeWorker} function is
-generated for the template's mapping, in the same way a function is generated
-for each chunk it contains. This function manages every mapping associated to
-the template and resolves each one of them. See the code generating function in
-the file \texttt{rtxTpl/rtxGen.inc.cws}, called
-``gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">''.
+Therefore, a templated \emph{CodeWorker} function is generated for the
+template's mapping, in the same way a function is generated for each chunk it
+contains. This function manages every mapping associated to the template and
+resolves each one of them. See the code generating function in the file
+\texttt{rtxTpl/rtxGen.inc.cws}, called ``\texttt{gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">}''.
 
-\section{Driver compilation}
+%\section{Driver compilation}
 
 
 %
-% TODO XXX FIXME
+% TODO
 %
 
 
