@@ -8,14 +8,18 @@
 
 \rtxdoctype{Documentation Technique}
 \rtxdocref{technical\_documentation}
-\rtxdocversion{0.1}
+\rtxdocversion{0.4}
 \rtxdocstatus{Release}
 
 \rtxdochistory{
 0.1 & 16/04/2011 & David Pineau & Traduction de la version anglaise \\
+\hline
 0.2 & 18/08/2011 & David Pineau & Traduction de la description
                                   d'implémentation du cache         \\
+\hline
 0.3 & 19/08/2011 & David Pineau & Correction de typographies        \\
+\hline
+0.4 & 11/09/2011 & Louis Opter & Traduction de «~Compilation des Interfaces~» \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -838,17 +842,113 @@ précédemment décrites).
 
 
 
-\section{Compilation et enregistrement d'un \emph{template}}
-\subsection{Processus de compilation commun entre tous les \emph{templates}}
-\subsection{Spécificités des \emph{templates} de type}
+%\section{Compilation des Interfaces}
 
-\section{Compilation et enregistrement des interfaces}
+% TODO
 
+\section{Compilation des patrons de code}
 
-\section{Compilation d'un pilote}
+\rtx\ reconnait deux types de templates, les templates de \emph{séquences} et
+les templates de \emph{type}. Ils partagent les mêmes étapes de compilations:
+\begin{enumerate}
+    \item Parse : \texttt{rtxParse/rtxBack.inc.cws};
+    \item Compile : \texttt{rtxTpl/rtxCompile.inc.cws};
+    \item Meta : \texttt{rtxTpl/rtxMeta.inc.cws};
+    \item TypeHash : \texttt{rtxTpl/rtxTypeHash.inc.cws};
+    \item Introspect : \texttt{rtxTpl/rtxIntrospect.inc.cws};
+    \item Gen : \texttt{rtxTpl/rtxGen.inc.cws}.
+\end{enumerate}
+Cependant, l'étape ---finale--- de génération du code est légèrement différente
+pour les templates de type, nous y reviendrons.
 
+Les différentes étapes de compilations aurait pus être faites en une seule passe
+sur l'AST, mais pour garder un code facile à maintenir une passe par étape est
+réalisée. Le compilateur sépare donc chaque passe dans une fonction template
+CodeWorker spécialisée sur le type de nœud traversé. % Cela permet des
+% spécialisations utiles pour traverser des types de nœuds différents. Par
+% exemple, un nœud qui contient une liste peut parcourir chaque élément qu'elle
+% contient; tandis qu'un nœud qui contient deux champs spécifiques peut
+% seulement parcourir ces deux champs. Cela permet aussi une gestion spécifique
+% des nœuds utiles pour chaque passes.
 
+Voici une description de chacune des étapes appliquées sur l'AST.
 
+\subsection{Parse}
 
+L'étape de parsing construit un AST normalisé avec l'aide du module
+\texttt{rtxNode}.
+
+Cette étape est en réalité partagée avec tout ce que \rtx\ accepte en entré. Le
+code de parsing se situe dans le répertoire \texttt{rtxParse/}, les fonctions
+partagée avec le reste du code sont dans le fichier \texttt{rtxCompile.inc.cwp}
+et les règles de parsing spécifiques aux templates sont dans le fichier
+\texttt{rtxBack.inc.cwp}.
+
+\subsection{Compile}
+
+Cette étape identifie les parties de codes qui sont instrumentées avec des
+\emph{«~placeholders~»}. Chaque placeholder identifié est associé avec les
+informations nécessaire pour trouver sa place réelle dans l'AST, puis ajouté
+dans une liste nommé \texttt{.compile} dans le nœud racine de C instrumenté.
+
+\subsection{Meta}
+
+Cette étape traverse chaque placeholder identifié à l'étape de compilation.
+
+Chaque placeholder est parsé indépendamment de son contexte et le nœud qui en
+résulte est ajouté dans le nœud du même placeholder. Ce nouveau nœud sera
+utilisé dans l'étape de génération du code pour enfin résoudre le placeholder.
+
+\subsection{TypeHash}
+
+Cette étape identifie toutes les déclarations de variables \rtx\ et de récupérer
+leur nom et leur type.
+
+Ces information permettent de faire référence à des variables \rtx\ depuis des
+placeholders et de vérifier leur validité. Elle sont donc stockées dans un nœud
+appelé \texttt{.type\_map} pour chaque bloc de code instrumenté
+(\emph{«~chunk~»}) puis utilisées lors de résolution des placeholders.
+
+\subsection{Introspect}
+
+Cette étape identifie chaque déclaration de variable de code instrumenté pour
+associer les types ---que ce soit des types \rtx\ ou des types
+% “base code type” == « types définis dans le code » ?
+définis dans le code--- avec leurs variables. Ceci aide l'algorithme de
+résolution des placeholders lorsqu'une variable locale est utilisée. % ?
+
+\subsection{Gen}
+
+La dernière étape avant d'enregistrer un template dans le cache du compilateur
+est de générer le script CodeWorker qui résout chaque placeholder de chaque bloc
+de code instrumenté. Pour chaque bloc de code instrumenté le script contient une
+fonction template CodeWorker qui contient les appels pour résoudre chacun de ses
+placeholders. Le code généré sera différent selon si le placeholder est la
+déclaration d'un type de variable \rtx\ ou d'un \emph{«~pointcut~»}.
+
+Ce script sera utilisé pour obtenir un AST qui pourra être tissé dans le
+template appelant.
+
+\subsection{Particularités des templates de types}
+
+% Alors là j'ai eu beaucoup de mal a traduire les ”mapping association” qui se
+% traduisent plus ou moins par « association association ».
+
+Le processus de compilation est le même pour les templates de types et les
+templates de séquences à la différence près que les templates de type
+contiennent un bloc \emph{«~map~»} qui décrit l'association à exposer lors de
+l'utilisation de ce type.
+
+De la même manière qu'une fonction est générée pour chaque bloc de code
+instrumenté que le template de type contient; une seconde fonction template
+CodeWorker est généré pour le block «~map~» du template. Cette fonction gère
+chaque association du template et résout chacun d'eux.
+
+La fonction qui génère ce code se nomme «~\texttt{gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">}~»
+et se trouve dans le fichier \texttt{rtxTpl/rtxGen.inc.cws}.
+
+%\section{Compilation d'un pilote}
+
+% TODO
 
 \end{document}
