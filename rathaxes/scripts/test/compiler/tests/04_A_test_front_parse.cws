@@ -133,6 +133,7 @@ generateString({
 			}
 		}
 
+/*
 		public property word divisor
 		{
 			set
@@ -151,7 +152,7 @@ generateString({
 				SET(LCR.dlab, buffers);
 			}
 		}
-
+*/
 		User::read(User::Context ctx, User::Buffer output)
 		{
 			LOG("my RS232 [read]\n");
@@ -185,11 +186,6 @@ generateString({
 		}
 	}
 
-	driver Serial
-	{
-	}
-
-
 
 @}, dummy, input);
 
@@ -198,11 +194,13 @@ generateString({
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
+#include "rtxType/rtxType.inc.cws"
 
 traceLine("input:\n" + input);
 
 local source;
 cnormDialect<"__std__">(source);
+rtxType_Load(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
