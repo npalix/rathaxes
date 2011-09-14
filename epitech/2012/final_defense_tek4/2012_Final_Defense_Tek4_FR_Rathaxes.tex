@@ -1,0 +1,130 @@
+\documentclass{beamer}
+
+\usepackage[francais]{babel}
+\usepackage{rtxslides}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\title{\rtx, \emph{THE} device driver generator}
+\date{Soutenance Finale Tek4}
+\author{\rtx\ 2012 \\ \texttt{<team@rathaxes.org>}}
+
+\definecolor{lightred}{RGB}{147,36,33}
+\tikzset{componentarrow/.style={<-, >=latex, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
+
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{warrow/.style={->, >=stealth, color=white, ultra thick}}
+
+\begin{document}
+
+\begin{frame}
+% Ou caser le logo Epitech ?
+\titlepage
+\end{frame}
+
+\begin{frame}{Pilote de périphériques}
+\begin{center}
+\only<1>{
+\textit{\rmfamily{\Huge{Avez vous déjà eu\ldots}}}
+}
+
+\only<2>{
+\vspace{3mm}
+\Large{un} \emph{\Huge{BSOD ?}}
+
+\vspace{3mm}
+
+\includegraphics[width=80mm]{medias/bsod}
+}
+
+\only<3>{
+\vspace{3mm}
+\Large{ou un} \emph{\Huge{Kernel Panic ?}}
+
+\vspace{3mm}
+
+\includegraphics[width=80mm]{medias/panic}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{Quelques chiffres}
+\Large{
+\begin{itemize}
+\setlength{\itemsep}{1em}
+\item {\LARGE \emph{80 \%}} des rapports \cemph{d'erreurs} Windows \cemph{concernent les pilotes} de périphériques, selon Penny Orwick et Guy Smith ;
+\item {\LARGE \emph{70 \%}} des \cemph{changements concernent les pilotes} dans chaque nouvelle version du noyau Linux.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{Les raisons}
+\LARGE{
+\begin{itemize}
+\item Compétences requises ;
+\item Rôle du code dans la machine.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{\rtx}
+\LARGE{Le compilateur \rtx\ :}
+\Large{
+\vspace{1em}
+\begin{itemize}
+\item est la solution ;
+\item démarré par une équipe diplômée en 2009.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}[fragile]{Fonctionnement}
+\begin{tikzpicture}[overlay]
+\node (RTX) at (1,0) {\includegraphics[height=1.5cm]{icons/rtx}};
+
+\node[redbox] (COMPILER) at (5.5,0) {\LARGE{Rathaxes}};
+
+\draw[warrow] (RTX)--(COMPILER);
+
+\node (WDRV) at (10, 2.5) {\includegraphics[height=2cm]{medias/driverbox}};
+
+\node (LDRV) at (10, 0) {\includegraphics[height=2cm]{medias/driverbox}};
+
+\node (OTHER) at (10, -2.5) {\LARGE{\ldots}};
+
+\draw (LDRV.north east) node[below left] {\includegraphics[height=1.5cm]{medias/tux}};
+
+\draw (WDRV.north east) node[below left] {\includegraphics[height=1.3cm]{medias/windows_no_text}};
+
+\draw[warrow] (COMPILER.east)--(WDRV.south west);
+\draw[warrow] (COMPILER.east)--(LDRV);
+\draw[warrow] (COMPILER.east)--(OTHER.north west);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+\emph{\Huge{Démonstration}}
+\end{center}
+\end{frame}
+
+\begin{frame}{Promotion}
+\end{frame}
+
+\begin{frame}{Groupe}
+\end{frame}
+
+\begin{frame}{Merci}
+\begin{center}
+\Huge{\emph{Questions ?}}
+\end{center}
+
+\vspace{2em}
+\begin{itemize}
+\item \Large{\texttt{http://www.rathaxes.org/}}
+\end{itemize}
+\end{frame}
+
+\end{document}
