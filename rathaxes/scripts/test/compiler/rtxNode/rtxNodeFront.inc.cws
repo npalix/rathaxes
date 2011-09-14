@@ -108,9 +108,32 @@ function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : 
 	return true;
 }
 
-function rtxNodeRegMap(local_node : node)
+function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : reference)
 {
+        rtxNode(local_node);
+        local_node.type = "__rtx_map__";
+        insert local_node.name = name;
+        insert local_node.map;
+        setall local_node.map = map;
+        insert local_node.listmask;
+        ref listmask = local_node.listmask;
+        return true;
+}
 
+function rtxNodeSequence(local_node : node, seqname : node, seqparamname : node, seqparamtype : node, body : reference)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_sequence__";
+        insert local_node.name;
+        setall local_node.name = seqname;
+        insert local_node.seqParamType;
+        insert local_node.seqParamName;
+        setall local_node.seqParamType = seqparamtype;
+        setall local_node.seqParamName = seqparamname;
+        insert local_node.body;
+        cnormNodeBlock(local_node.body);
+        ref body = local_node.body;
+        return true;
 }
 
 #end

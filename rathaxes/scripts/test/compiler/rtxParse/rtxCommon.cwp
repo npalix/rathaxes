@@ -125,10 +125,7 @@ rtx_seq_param(theParams : node, theIdentifiers : node) ::=
     #pushItem(theIdentifiers)
     #pushItem(theParams)
     rtx_scoped_identifier(theParams#back)
-    [
-        #readIdentifier:sName
-/**/    => setall theIdentifiers#back = sName;
-    ]?
+    [    #readIdentifier:theIdentifiers#back ]?
 ;
 
 rtx_seq_parameter(theParams : node, theIdentifiers : node) ::=

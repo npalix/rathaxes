@@ -1,0 +1,12 @@
+function        rtxType_Parse<"symbol.inc.cws">(src : value)
+{
+        local   out;
+        parseStringAsBNF({
+                string ::= [#readIdentifier ['.' #readIdentifier]*]:str
+                        =>{this = str;}
+                ;
+        }, out, src);
+        if (out != "")
+        {       return true;}
+        return false;
+}
