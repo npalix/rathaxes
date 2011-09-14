@@ -1,0 +1,42 @@
+#if !existFunction(rtxType_version)
+
+function        rtxType_version()
+{return "1.0";}
+
+function        rtxType_Parse<T>(src : value)
+{
+        error("unknown type :" + src);
+        return false;
+}
+
+function        rtxType_Search(src : value, out : node)
+{
+        foreach it in this.rtxTypes
+        {       
+                traceLine(it.key() + "?" + src);
+                if (rtxType_Parse<it.key()>(src))
+                {       
+                        local sKey = it.key();
+                        truncateBeforeString(sKey, ".inc.cws");
+                        insert out.type = sKey;
+                        insert out.val = src;
+                        return true;
+                }
+        }
+        return false;
+}
+
+function        rtxType_Load(out : node)
+{
+        local   theDir;
+        if !scanDirectories(theDir, getEnv("RTX_PATH")+"/scripts/test/compiler/rtxType/rules_types/", "*.inc.cws") 
+        {       error("unable to load rules_types directory");}
+        foreach f in theDir.files
+        {
+                local content = loadFile(theDir + f);
+                extendExecutedScript(content);
+                insert out.rtxTypes[f];
+        }
+}
+
+#end

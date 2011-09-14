@@ -54,6 +54,7 @@ generateString({
                     ${TOTO} += 3;
                     return 0;
                 }
+                
             }
 
             chunk LKM::init_fptrs(symbol)
