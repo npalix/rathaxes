@@ -1,21 +1,21 @@
 \documentclass{beamer}
 
 \usepackage[francais]{babel}
-\usepackage{rtxslides}
+\usepackage[reverse]{rtxslides}
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
-\title{\rtx, \emph{THE} device driver generator}
-\date{Soutenance Finale Tek4}
-\author{\rtx\ 2012 \\ \texttt{<team@rathaxes.org>}}
+\title[\rtx, \emph{THE} device driver generator]{\rtx, \emph{THE} device driver generator \vspace{-20pt}}
+\date[Soutenance Finale Ept4]{Soutenance Finale Ept4 \\ \vspace{10pt} \includegraphics[height=15mm]{logo_eip}}
+\author[\rtx\ 2012 -- 16 juillet 2011]{\rtx\ 2012 -- 16 juillet 2011 \vspace{-20pt}}
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={<-, >=latex, color=rathaxesred, ultra thick}}
 
 \newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
 
-\newcommand{\bgcolor}{black}
-\newcommand{\fgcolor}{white}
+\newcommand{\bgcolor}{white}
+\newcommand{\fgcolor}{black}
 
 \tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=\fgcolor}}
 \tikzset{warrow/.style={->, >=stealth, color=\fgcolor, ultra thick}}
@@ -23,7 +23,6 @@
 \begin{document}
 
 \begin{frame}
-% Ou caser le logo Epitech ?
 \titlepage
 \end{frame}
 
@@ -86,6 +85,22 @@
 \begin{frame}[fragile]{Fonctionnement}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1,0) {\includegraphics[height=1.5cm]{icons/rtx}};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Fonctionnement}
+\begin{tikzpicture}[overlay]
+\node (RTX) at (1,0) {\includegraphics[height=1.5cm]{icons/rtx}};
+
+\node[redbox] (COMPILER) at (5.5,0) {\LARGE{Rathaxes}};
+
+\draw[warrow] (RTX)--(COMPILER);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Fonctionnement}
+\begin{tikzpicture}[overlay]
+\node (RTX) at (1,0) {\includegraphics[height=1.5cm]{icons/rtx}};
 
 \node[redbox] (COMPILER) at (5.5,0) {\LARGE{Rathaxes}};
 
@@ -95,11 +110,13 @@
 
 \node (LDRV) at (10, 0) {\includegraphics[height=2cm]{medias/driverbox}};
 
-\node (OTHER) at (10, -2.5) {\LARGE{\ldots}};
+\node (OTHER) at (10, -2.5) {\includegraphics[height=2cm]{medias/driverbox}};
 
 \draw (LDRV.north east) node[below left] {\includegraphics[height=1.5cm]{medias/tux}};
 
 \draw (WDRV.north east) node[below left] {\includegraphics[height=1.3cm]{medias/windows_no_text}};
+
+\draw (OTHER.north east) node[below left] {\Large{\ldots}};
 
 \draw[warrow] (COMPILER.east)--(WDRV.south west);
 \draw[warrow] (COMPILER.east)--(LDRV);
@@ -115,7 +132,11 @@
 
 \begin{frame}{Promotion}
 \begin{center}
-\emph{\Huge{Ce serait bien d'avoir des photos des RMLL.}}
+\begin{tikzpicture}
+\node (RMLL) at (0, 0) {\includegraphics[height=6cm]{medias/rmll_2011}};
+
+\draw (RMLL.east) node[right] {\Large{RMLL 2011 -- Strasbourg}};
+\end{tikzpicture}
 \end{center}
 \end{frame}
 
