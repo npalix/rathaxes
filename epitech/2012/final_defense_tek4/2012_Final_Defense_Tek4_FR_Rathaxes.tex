@@ -20,6 +20,8 @@
 \tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=\fgcolor}}
 \tikzset{warrow/.style={->, >=stealth, color=\fgcolor, ultra thick}}
 
+\setbeamertemplate{navigation symbols}{}
+
 \begin{document}
 
 \begin{frame}
@@ -124,20 +126,51 @@
 \end{tikzpicture}
 \end{frame}
 
+\begin{frame}{Fonctionnalités}
+\begin{center}
+\begin{tikzpicture}
+\draw[fill=rathaxesred,color=rathaxesred,opacity=0.7,line width=0pt] (0, 0) circle (2.5);
+
+\draw[fill=rathaxesred,color=rathaxesred,opacity=0.6,line width=0pt] (0, -1.5) circle (1);
+
+\draw[warrow] (3, 1) -- (1, 1);
+\draw[warrow] (3, -1.5) -- (1, -1.5);
+
+\draw (3, 1) node[right] {\LARGE{Rathaxes 2012}};
+\draw (3, -1.5) node[right] {\Large{Rathaxes 2009}};
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
 \begin{frame}
 \begin{center}
 \emph{\Huge{Démonstration}}
 \end{center}
 \end{frame}
 
-\begin{frame}{Promotion}
+\begin{frame}[fragile]{Promotion}
 \begin{center}
 \begin{tikzpicture}
 \node (RMLL) at (0, 0) {\includegraphics[height=6cm]{medias/rmll_2011}};
 
-\draw (RMLL.east) node[right] {\Large{RMLL 2011 -- Strasbourg}};
+\draw (RMLL.east) node[right] {\begin{minipage}{45mm}\begin{itemize}
+\item \Large{RMLL 2011} ;
+\item \Large{Youtube} ;
+\item \Large{Google Code} ;
+\item \Large{Canal IRC}.
+\end{itemize}\end{minipage}};
 \end{tikzpicture}
 \end{center}
+\end{frame}
+
+\begin{frame}{Objectifs}
+\Large{
+\begin{itemize}
+\setlength{\itemsep}{1em}
+\item Écriture du code pour chaque plateforme ;
+\item Intégration continue.
+\end{itemize}
+}
 \end{frame}
 
 \begin{frame}[fragile]{Groupe}
@@ -163,6 +196,22 @@
 \begin{itemize}
 \item \Large{\texttt{http://www.rathaxes.org/}}
 \end{itemize}
+\end{frame}
+
+\setbeamertemplate{footline}{}
+
+\begin{frame}[fragile]
+\begin{center}
+\begin{tikzpicture}[overlay]
+\node (RTX) at (-1,0.5) {\includegraphics[height=60mm]{logo_latex}};
+
+\draw (0, -3.3) node {\Huge{\cemph{Rathaxes}}};
+
+\draw (5.3, -4.6) node {\includegraphics[height=7mm]{logo_eip}};
+
+\draw (3.5, -4.6) node {\includegraphics[height=7mm]{logo_epitech}};
+\end{tikzpicture}
+\end{center}
 \end{frame}
 
 \end{document}
