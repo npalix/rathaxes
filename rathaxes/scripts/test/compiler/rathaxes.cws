@@ -22,22 +22,44 @@
 #include "rtxTpl/rtxMeta.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 
-insert this.rathaxes_path = _ARGS[0];
-insert this.backlib_path  = this.rathaxes_path + "/" + "backend_library" + "/";
-insert this.scripts_path  = this.rathaxes_path + "/" + "compiler"        + "/";
-insert this.cache_path    = this.rathaxes_path + "/" + "cache"           + "/";
 
-insert this.operation = _ARGS[1];
+function usage()
+{
+    traceLine(  "Usage: rathaxes generate (linux|openbsd|windows) file.rtx" + endl()
+                + "    or rathaxes blt-check (file.blt|file.rtx)" + endl()
+                + "    or rathaxes blt-register (file.blt|file.rtx)" + endl()
+                + "    or cache (install|clear)");
+}
+
+/*
+ * First, setup the paths 
+ */
+insert this.rathaxes_path = _ARGS[0];
+insert this.scripts_path  = this.rathaxes_path + "/" + "compiler"        + "/";
+insert this.backlib_path  = this.rathaxes_path + "/" + "backend_library" + "/";
+insert this.cache_path    = this.rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.rathaxes_path)){ createDirectory(this.rathaxes_path); }
+if (!existDirectory(this.backlib_path)) { createDirectory(this.backlib_path); }
+if (!existDirectory(this.cache_path))   { createDirectory(this.cache_path); }
+
+insert this.local_rathaxes_path = _ARGS[1];
+insert this.local_backlib_path  = this.local_rathaxes_path + "/" + "backend_library" + "/";
+insert this.local_cache_path    = this.local_rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.local_rathaxes_path))  { createDirectory(this.local_rathaxes_path); }
+if (!existDirectory(this.local_backlib_path))   { createDirectory(this.local_backlib_path); }
+if (!existDirectory(this.local_cache_path))     { createDirectory(this.local_cache_path); }
+
+insert this.operation = _ARGS[2];
 
 if (toLowerString(this.operation) == "generate")
 {
-    local target_os = toLowerString(_ARGS[2]);
+    local target_os = toLowerString(_ARGS[3]);
     traceLine("The driver generation is not implemented yet.");
 }
 else if (   toLowerString(this.operation) == "blt-check"
          || toLowerString(this.operation) == "blt-register")
 {
-    local inputFile = _ARGS[2];
+    local inputFile = _ARGS[3];
     local source;
 
     // Load cache first
@@ -99,10 +121,8 @@ else if (   toLowerString(this.operation) == "blt-check"
 }
 else
 {
-    traceLine(  "Usage: rathaxes generate (linux|openbsd|windows) file.rtx" + endl()
-              + "    or rathaxes blt-check (file.blt|file.rtx)" + endl()
-              + "    or rathaxes blt-register (file.blt|file.rtx)");
-    exit (-1);
+    usage();
+    exit(1);
 }
 
 exit (0);

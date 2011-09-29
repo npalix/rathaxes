@@ -2,8 +2,11 @@
 
 CNORM_PATH="@CNORM_PATH@"
 COMPILER_PATH="@COMPILER_PATH@"
+if [ $LOCAL_CACHE_PATH == "" ] then
+    LOCAL_CACHE_PATH="~/.rathaxes"
+fi
 
 INCLUDE_PATHS="-I $CNORM_PATH -I $COMPILER_PATH"
 
 exec @CODEWORKER_PATH@ --quiet $INCLUDE_PATHS \
-         -script $COMPILER_PATH/rathaxes.cws -args $COMPILER_PATH $*
+         -script $COMPILER_PATH/rathaxes.cws -args $COMPILER_PATH $LOCAL_CACHE_PATH $*
