@@ -119,6 +119,26 @@ else if (   toLowerString(this.operation) == "blt-check"
             error("Could not save cache !");
     }
 }
+else if (toLowerString(this.operation) == "cache")
+{
+    insert this.subop = _ARGS[3];
+    if (toLowerString(this.subop) == "clear")
+    {
+        rtxLink_LoadCache();
+        clearVariable(this.caches.local);
+        rtxLink_SaveCache();
+    }
+    else if (toLowerString(this.subop) == "install")
+    {
+        rtxLink_InstallLocalCache();
+    }
+    else
+    {
+        usage();
+        exit(1);
+    }
+
+}
 else
 {
     usage();
