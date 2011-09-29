@@ -308,6 +308,15 @@ function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
     return false;
 }
 
+function rtxLink_CheckTplConflict(tpl_list : node, tested : node)
+{
+    foreach tpl in tpl_list
+    {
+        if (rtxLink_CompareValues<"=">(tpl.with, tested.with))
+            return true;
+    }
+    return false;
+}
 
 /*
  * This function loads the tree and the script for a given cache node.
@@ -845,21 +854,28 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
         // For each template in the list
         foreach tpl in tpls
         {
-            tpl_id = getArraySize(dst.templates);
-            pushItem dst.templates[tpl_hash];
-            setall dst.templates[tpl_hash]#back = tpl;
-            // Then for each chunk of tpl, copy it and update tpl's copy...
-            foreach chunk in tpl.chunks
+            if (!rtxLink_CheckTplConflict(dst.templates[tpl_hash], tpl) || this.cache_conflicts == "ignore")
             {
-                chunk_name = key(chunk);
-                if (!existVariable(dst.chunks[chunk_name]))
-                    insert dst.chunks[chunk_name];
-                chunk_id = getArraySize(dst.chunks[chunk_name]);
-                pushItem dst.chunks[chunk_name];
-                // Copy the chunk
-                setall dst.chunks[chunk_name]#back = cache2.chunks[chunk_name][chunk];
-                // Update the chunk's id in the new template.. may have changed.
-                dst.templates[tpl_hash]#back.chunks[chunk_name] = chunk_id;
+                tpl_id = getArraySize(dst.templates);
+                pushItem dst.templates[tpl_hash];
+                setall dst.templates[tpl_hash]#back = tpl;
+                // Then for each chunk of tpl, copy it and update tpl's copy...
+                foreach chunk in tpl.chunks
+                {
+                    chunk_name = key(chunk);
+                    if (!existVariable(dst.chunks[chunk_name]))
+                        insert dst.chunks[chunk_name];
+                    chunk_id = getArraySize(dst.chunks[chunk_name]);
+                    pushItem dst.chunks[chunk_name];
+                    // Copy the chunk
+                    setall dst.chunks[chunk_name]#back = cache2.chunks[chunk_name][chunk];
+                    // Update the chunk's id in the new template.. may have changed.
+                    dst.templates[tpl_hash]#back.chunks[chunk_name] = chunk_id;
+                }
+            }
+            else
+            {
+                error("A conflict was detected during the merging of the global and local caches.");
             }
         }
     }
