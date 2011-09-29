@@ -127,12 +127,12 @@ createTemplateCacheItem(tmp, "3");
 createChunkCacheItem(tmp2, "3");
 addChunk(cache2, expected, tmp, tmp2);
 
-createTemplateCacheItem(tmp, "2");
-createChunkCacheItem(tmp2, "2");
+createTemplateCacheItem(tmp, "1");
+createChunkCacheItem(tmp2, "1");
 addChunk(cache2, expected, tmp, tmp2);
 
-createTemplateCacheItem(tmp, "4");
-createChunkCacheItem(tmp2, "4");
+createTemplateCacheItem(tmp, "2");
+createChunkCacheItem(tmp2, "2");
 addChunk(cache2, expected, tmp, tmp2);
 
 // And finally, merge the caches

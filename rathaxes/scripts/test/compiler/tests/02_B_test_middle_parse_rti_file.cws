@@ -26,6 +26,7 @@ local dummy;
 
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxInterfaces/rtxInterfaces.inc.cws"
+#include "rtxType/rtxType.inc.cws"
 
 traceLine("Input from file " + sourceFile + ":\n" + input + "\nEnd of input");
 
