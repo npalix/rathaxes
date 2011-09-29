@@ -714,8 +714,8 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
  *      "chunk_name1" : [       // pointcut to which the chunks are associated
  *          "0" : {             // This is a table of chunk entries
  *              .name = "string"
- *              .tpl_id = "hashed_template_prototype"
  *              .with = with_node
+ *              .tpl_id = "hashed_template_prototype"
  *              .script_file = "path_to_script"
  *              .tree_file = "path_to_tree"
  *          }
