@@ -168,6 +168,7 @@ generateString({
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
+#include "rtxType/rtxType.inc.cws"
 
 traceLine("input:\n" + input);
 
