@@ -68,14 +68,14 @@ Tests Backend :
 
  * Mettre en place la génération de code pour les templates de type     <= TODO
    * Definir les prototypes des fonctions à générer pour le mapping     <= DONE
-   * Mettre  en place un nouvel element dans le cache dedie au mapping  <= TODO
+   * Mettre  en place un nouvel element dans le cache dedie au mapping  <= DONE
    * Coder les fonctions de mapping pour les builtins (local, config)   <= TODO
      * local: symbole du bloc C                                         <= DONE
      * local: error_label() -> generation d'un label unique pour erreur <= TODO
      * local: tmp() -> generation d'un identifiant unique dans le bloc  <= TODO
      * local: lookup(symbol) -> analyse prototype func pour recup types
                                 a partir d'un index de parametre        <= TODO
-   * Implémenter l'appel à des fonctions appliquées à un type (chunks)  <= TODO
+   * Implémenter l'appel à des fonctions appliquées à un type (chunks)  <= DONE
 
  * Gestion d'erreur :                                                   <= TODO
    * implem le bloc on_error des chunks                                 <= TODO
@@ -95,6 +95,8 @@ Tests Backend :
  * Mettre à jour les fonctions de tissage pour empecher l'insertion
    multiple d'un meme code (fonction, type definition, etc...)
    + remonter correctement ces éléments au tissage (ordre, etc...)      <= TODO
+
+ * Ameliorer la comparaison "=" Des elements de config                  <= TODO
     
 
 
