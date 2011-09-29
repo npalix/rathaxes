@@ -22,9 +22,16 @@ ADD_RATHAXES_TEST(02_C_test_middle_check_inheritance.cws)
 FILE_COPY(full_lkm/simplified_lkm.rti full_lkm/simplified_lkm.rti)
 
 # Tests for configuration matching (against with blocks)
-ADD_RATHAXES_TEST(03_A_match_less_configs.cws)
-ADD_RATHAXES_TEST(03_B_match_less_or_equal_configs.cws)
-ADD_RATHAXES_TEST(03_C_match_equal_configs.cws)
-ADD_RATHAXES_TEST(03_D_match_greater_or_equal_configs.cws)
-ADD_RATHAXES_TEST(03_E_match_greater_configs.cws)
-#ADD_RATHAXES_TEST(03_F_match_configs.cws)
+ADD_RATHAXES_TEST(03_A_test_config_match_lesser.cws)
+ADD_RATHAXES_TEST(03_B_test_config_match_lesser_or_equal.cws)
+ADD_RATHAXES_TEST(03_C_test_config_match_equal.cws)
+ADD_RATHAXES_TEST(03_D_test_config_match_greater_or_equal.cws)
+ADD_RATHAXES_TEST(03_E_test_config_match_greater.cws)
+ADD_RATHAXES_TEST(03_F_test_config_match.cws)
+
+# Tests for the Front-end
+ADD_RATHAXES_TEST(04_A_test_front_parse.cws)
+
+# Tests for Link module
+ADD_RATHAXES_TEST(05_A_test_link_merge.cws)
+ADD_RATHAXES_TEST(05_B_test_link_merge_conflict.cws)
