@@ -4,6 +4,7 @@ echo -- Setting the Rathaxes environment
 
 set CNORM_PATH="%CD%@CNORM_PATH@"
 set COMPILER_PATH="%CD%@COMPILER_PATH@"
+set LOCAL_CACHE_PATH="%USER%\\rathaxes"
 
 set INCLUDE_PATHS=-I %CNORM_PATH% -I %COMPILER_PATH%
 
