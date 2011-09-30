@@ -31,7 +31,7 @@ if (rtxLink_findGlobalCode(theWith, theCacheNode) == false)
 
 traceLine("Loading global_code... cache_node : "+toString(theCacheNode, true));
 local c_tree;
-if (rtxLink_LoadScript(theCacheNode, c_tree) == false)
+if (rtxLink_LoadItem(theCacheNode, c_tree) == false)
     error("01_K_test_back_resolvePointcutDefault.cws:"
           +" Could not load either script or tree files");
 
