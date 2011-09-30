@@ -22,6 +22,10 @@ rtxNodeIdentifier(params#back, "Context");
 local theWith;
 local theTemplates;
 
+build_config(theWith);
+insert this.config;
+setall this.config = theWith;
+
 if (rtxLink_findTemplates(theRtype, theTemplates) == false)
     error("01_L_test_back_resolveTypeMapping.cws:"
           +" The template could not be found by rtxLink.");
@@ -29,10 +33,14 @@ traceLine("A list of " + getArraySize(theTemplates)
           + " templates was found matching the prototype '"
           + theProto + "'");
 
-if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
+try {
+    rtxLink_selectUniqueTemplate(theTemplates, theWith);
+}
+catch (sError) {
     error("01_L_test_back_resolveTypeMapping.cws:"
           +" rtxLink could not select an unique template :"+toString(theTemplates, true));
-traceLine("An Unique template could be identified for resolution.");
+}
+    traceLine("An Unique template could be identified for resolution.");
 
 local theChunk;
 if (rtxLink_selectChunkFromTemplate(theTemplates, "::CALL", theChunk) == false)

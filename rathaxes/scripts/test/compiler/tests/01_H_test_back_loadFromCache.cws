@@ -19,15 +19,17 @@ rtxNodeRType(theRtype, name, params);
 pushItem params;
 rtxNodeIdentifier(params#back, "Context");
 
-local theWith;
 local theTemplates;
+local theWith;
+
+build_config(theWith);
 
 if (rtxLink_findTemplates(theRtype, theTemplates) == false)
     error("01_H_test_back_loadFromCache.cws:"
           +" The template could not be found by rtxLink.");
 traceLine("A list of " + getArraySize(theTemplates)
           + " templates was found matching the prototype '"
-          + theProto + "'");
+          + rtxRTypeName<theRtype.type>(theRtype) + "'");
 
 if (rtxLink_selectUniqueTemplate(theTemplates, theWith) == false)
     error("01_H_test_back_loadFromCache.cws:"

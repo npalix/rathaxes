@@ -88,7 +88,7 @@ rtx_serial(theSerial : node) ::=
         #check(rtxNodeSerialUnit(theUnit, sElem))
         #check(rtxNodeSerial_AddUnit(theSerial, theSeparator))
         #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
-    ]*
+    ]+
 ;
 
 rtx_value(theValue : node) ::=
@@ -99,9 +99,8 @@ rtx_value(theValue : node) ::=
     |
         #readInteger:sInt
         // Prevent next char from being a serial sep. (or its a serial value)
-        [ #!ignore !rtx_serial_separator ]
-        // Prevent next char from being an alpha char. (or its a serial value)
-        [ #!ignore ![ [#noCase 'A'..'Z']* ] ]
+        // AND     next char from being an alpha char. (or its a serial value)
+        [ #!ignore ![ [#noCase 'A'..'Z'] | rtx_serial_separator ] ]
         #check(rtxNodeNumber(theValue, sInt))
     |
         #check(rtxNodeSerial(theValue))

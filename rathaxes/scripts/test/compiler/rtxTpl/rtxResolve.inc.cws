@@ -188,10 +188,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     //traceLine("Injecting into var : "+toString(local_node));
     local curCtxNode;
 
-    // TODO FIXME XXX FIXME TODO
-    local config;
-    // TODO FIXME XXX FIXME TODO
-
     traceLine("rtxResolve:<LOG> Injecting code into placeHolder "+local_node#parent.template_expr);
     /*
      *
@@ -233,7 +229,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                       + "associated to type "
                       + rtxRTypeName<theRtype.type>(theRtype));
             }
-            if (!rtxLink_selectUniqueTemplate(templates, config))
+            if (!rtxLink_selectUniqueTemplate(templates, this.config))
             {
                 error("inject<\"__rtx_var__\">: Could not select an unique template"
                       + " associated to type "
@@ -327,11 +323,6 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
                                        treeNode         : node,
                                        local_node       : node)
 {
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
-    local config;
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
     local   chunks;
 
     if (rtxLink_findChunks(local_node.body.name, chunks) == false)
@@ -348,7 +339,7 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
 
     // If we cannot find any chunk, let's use default behaviour
     if (isEmpty(chunks)
-        || rtxLink_selectCompatibleChunks(chunks, config) == false)
+        || rtxLink_selectCompatibleChunks(chunks, this.config) == false)
     {
         traceLine("inject<\"__rtx_pointcut__\">:<WARN> No valid chunk,"
                   +" falling back to default behaviour.");
@@ -406,12 +397,6 @@ function    type_call<T>(resolverValues : node,
                          chunkName : value,
                          placeHolder : node)
 {
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
-    local config;
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
-
     local   templates;
     local   theChunk;
     localref theRtype = placeHolder.body.rtype;
@@ -419,7 +404,7 @@ function    type_call<T>(resolverValues : node,
     {
         error("type_call<"+T+">: Could not find template.");
     }
-    if (!rtxLink_selectUniqueTemplate(templates, config))
+    if (!rtxLink_selectUniqueTemplate(templates, this.config))
     {
         error("type_call<"+T+">: Could not select an unique template.");
     }
@@ -485,14 +470,6 @@ function type_map<T>(resolverValues : node,
                      theRtype : node, mappedId : value,
                      placeHolder : node)
 {
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
-    local config;
-    //setall config = local_node.body.with;
-    // FIXME TODO XXX TODO FIXME
-    // FIXME TODO XXX TODO FIXME
-
-
     traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedId+"'");
     // First we must select an unique template matching the rtype and config
     local   templates;
@@ -501,7 +478,7 @@ function type_map<T>(resolverValues : node,
         error("type_map<"+T+">: Could not find template associated to type "
               + rtxRTypeName<theRtype.type>(theRtype));
     }
-    if (!rtxLink_selectUniqueTemplate(templates, config))
+    if (!rtxLink_selectUniqueTemplate(templates, this.config))
     {
         error("type_map<"+T+">: Could not select an unique template associated"
               " to type " + rtxRTypeName<theRtype.type>(theRtype));

@@ -17,7 +17,7 @@ local dummy;
 local input;
 generateString({
     with LKM, Userland
-    values LKM::OS=pigeonMouette, maj=0, min=1
+    values LKM::OS=pigeonMouette, LKM::maj=0, LKM::min=1
     {
         ${pointcut Userland::theTestPointcut(config.plop)
          default:

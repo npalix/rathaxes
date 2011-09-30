@@ -22,6 +22,11 @@ rtxNodeIdentifier(params#back, "Context");
 local theWith;
 local theTemplates;
 
+build_config(theWith);
+insert this.config;
+setall this.config = theWith;
+
+
 if (rtxLink_findTemplates(theRtype, theTemplates) == false)
     error("01_M_test_back_resolveTypeChunkCall.cws:"
           +" The template could not be found by rtxLink.");
