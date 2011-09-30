@@ -248,7 +248,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
 
             // Now that we have selected the decl chunk, load the tree & script
             local   subtree;
-            rtxLink_LoadScript(declChunk, subtree);
+            rtxLink_LoadItem(declChunk, subtree);
 
             rtxResolve_InsertType(theDecl, subtree.body);
 
@@ -368,7 +368,7 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
         foreach chunk in chunks
         {
             local c_tree;
-            if (rtxLink_LoadScript(chunk, c_tree) == true)
+            if (rtxLink_LoadItem(chunk, c_tree) == true)
             {
                 local resVals;
                 rtxResolve_BuildParameterResVals(resolverValues,
@@ -430,7 +430,7 @@ function    type_call<T>(resolverValues : node,
 
     // Now that we have selected the decl chunk, load the tree & script
     local   subtree;
-    rtxLink_LoadScript(theChunk, subtree);
+    rtxLink_LoadItem(theChunk, subtree);
 
     // To actually resolve this, we need : 
     //  * Current resolverValues (OK)
@@ -509,7 +509,7 @@ function type_map<T>(resolverValues : node,
 
     // Now that we have selected an unique template, load the tree+script
     local   subtree;
-    rtxLink_LoadScript(templates, subtree);
+    rtxLink_LoadItem(templates, subtree);
     localref theMapping = subtree.mapping.body.block[mappedId];
 
     // Call the right mapping function (based on hash + identifier mapped).

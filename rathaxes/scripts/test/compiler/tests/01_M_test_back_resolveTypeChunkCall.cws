@@ -43,7 +43,7 @@ traceLine("The chunk '::type_call' was found for the template.");
 
 traceLine("Loading template : LKM::test(Context ctx)...");
 local c_tree;
-if (rtxLink_LoadScript(theChunk, c_tree) == false)
+if (rtxLink_LoadItem(theChunk, c_tree) == false)
     error("01_M_test_back_resolveTypeChunkCall.cws: Could not load script for chunk"
           + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
 
