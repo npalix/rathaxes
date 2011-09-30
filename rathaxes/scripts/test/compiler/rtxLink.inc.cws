@@ -379,6 +379,30 @@ function rtxLink_findGlobalCode(with_values : node, out_code_ref : reference)
     return false;
 }
 
+function rtxLink_findInterface(itfName : value, out_itf_ref : reference)
+{
+    if (!findElement(itfName, this.session.interfaces))
+        return false;
+    ref out_itf_ref = this.session.interfaces[itfName];
+    return true;
+}
+
+function rtxLink_selectExtendedInterfaces(interface : node,
+                                          with_values : node,
+                                          out_ext_list : node)
+{
+    foreach ext in interface.extensions
+    {
+        if (rtxLink_IsWithNodeCompatible(ext.with, with_values))
+        {
+            pushItem out_ext_list;
+            setall out_ext_list#back = ext;
+        }
+    }
+    return true;
+}
+
+
 
 /*
  * This function takes an array of template cache nodes and a configuration
