@@ -1,0 +1,155 @@
+/*
+**      rathaxes_core.cws in script/core
+**      for Rathaxes project
+**      made by Thor
+*/
+
+
+#include "aspectSelector.cws"
+#include "headers_handler.cws"
+#include "cnormPatchLib.inc.cws"
+
+
+declare function createCurrentDeviceDriverContext(nDriver : node);
+//declare function handleBlackLibraryTemplates(nDriver : node);
+declare function generateDrivers(nDriver : node);
+//declare function iterAspects(theAdvice : node, tmp : node);
+declare function computeJoinPoint(nCurrentNode : node, sFilePath : value, sSemantic : value, sAdvice : value);
+
+
+/*
+**  This function creates the references context according
+**  to the current device and driver
+*/
+function createCurrentDeviceDriverContext(nDriver : node)
+{
+    // FIXME get from command line.
+    insert project.references.operatingSystem = TARGET_OPERATING_SYSTEM;
+
+    //FIXME we activate all semantic to restore our backend.
+    // Part of the old black library configuration.
+    insert nDriver.semantic["lib_bus"] = TRUE;
+    insert nDriver.semantic["callback"] = TRUE;
+    insert nDriver.semantic["io"] = TRUE;
+
+    // Current black library configuration
+    insert nDriver.semantic["driver"] = TRUE;
+    insert nDriver.semantic["RKM"] = TRUE;
+        insert nDriver.semantic["entry_point"] = TRUE;
+        insert nDriver.semantic["kernel_registration"] = TRUE;
+    insert nDriver.semantic["algorithms"] = TRUE;
+    insert nDriver.semantic["devices"] = TRUE;
+    insert nDriver.semantic["kernel_interfaces"] = TRUE;
+        insert nDriver.semantic["common_interfaces"] = TRUE;
+    insert nDriver.semantic["registers"] = TRUE;
+    insert nDriver.semantic["sequences"] = TRUE;
+
+    insert nDriver.semantic["global_declaration"] = TRUE;
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    ref project.references.driver = nDriver;
+
+    // Get current operating system configuration.
+    ref nDriver.configuration = project.configuration.osspecific[project.references.operatingSystem];
+    merge this.configuration = project.configuration.osspecific[project.references.operatingSystem];
+
+    insert project.references.entryPoint = NULL;
+
+    return;
+}
+
+/*
+**  This function handles the parsing of the black library
+**  templates files for the current operating system.
+*/
+//function handleBlackLibraryTemplates(nDriver : node)
+//{
+//
+//    local    sBLTFilePath;
+//    local    sCWGeneratedTemplate;
+//
+//    insert project.references.BLTFileList["/_driver.blt"] = FALSE;
+//    while (!isBLTFileListStabilized())
+//    {
+//        foreach file in project.references.BLTFileList
+//        {
+//            if (file == FALSE)
+//            {
+//                sBLTFilePath = RTX_BLACK_LIBRARY_PATH + project.references.operatingSystem + file.key();
+//                insert project.references.currentBLTFile = project.references.operatingSystem + file.key();
+//                insert project.references.currentAdvicePath = file.key();
+//                generateString(sBLTFilePath, nDriver, sCWGeneratedTemplate);
+//                parseStringAsBNF("bdsl.cwp", nDriver, sCWGeneratedTemplate);
+//                file = TRUE;
+//                insert project.references.currentBLTFile = FALSE;
+//            }
+//        }
+//    }
+//    return;
+//}
+
+function    computeJoinPoint(nCurrentNode : node, sFilePath : value, sSemantic : value, sAdvice : value)
+{
+    local   sBLTFilePath;
+    local   sCWGeneratedTemplate;
+
+    //if (project.references.driver.semantic[sSemantic] == TRUE)
+    //{
+        insert project.references.targetAdvice = sAdvice;
+        
+        sBLTFilePath = RTX_BLACK_LIBRARY_PATH + project.references.operatingSystem + sFilePath;
+        insert project.references.currentBLTFile = project.references.operatingSystem + sFilePath;
+        generateString(sBLTFilePath, project.references.driver, sCWGeneratedTemplate);
+        //traceLine("---------");
+        //traceLine(sCWGeneratedTemplate);
+        //traceLine("---------");
+        parseStringAsBNF("bdsl.cwp", nCurrentNode, sCWGeneratedTemplate);
+        //saveProject("arbredetest", nCurrentNode);
+    //}
+}
+
+/*
+**  This function is the main Rathaxes core loop.
+**  Read inner comments for more informations.
+*/
+function generateDrivers(nDriver : node)
+{
+    // referencing the different important informations
+    createCurrentDeviceDriverContext(nDriver);
+
+    // handling then generating the headers stuff         
+    headersHandler(nDriver);
+
+    // parsing of all involved black library template files
+    local nCTree;
+    ref nCTree.pctx = project.references.driver;
+    ref nCTree.gl_pctx = project.references.driver;
+    computeJoinPoint(nCTree, "/_driver.blt", "driver", "driver");
+    appendFile(project.references.outputFile, cnorm2c(nCTree));
+}
+
+//function    cnorm2cEtype<"_JOINPOINT_">(block : node)
+//{
+//    local tmp = "";
+//    if (existVariable(block.advice))
+//        iterAspects(block.advice, tmp);
+//    return tmp;
+//}
+
+/*
+**  This self recursive function encapsultates
+**  the C code PrettyPrinter in order to generate
+**  the final C code for activated joinpoints
+**  according to the semantics.
+*/
+//function iterAspects(theAdvice : node, tmp : node)
+//{
+//    foreach item in theAdvice
+//    {
+//        if (item == "_JOINPOINT_" && item.selected == TRUE)
+//            iterAspects(item.advice, tmp);
+//        else if (item == "_C_CODE_")
+//            tmp += cnorm2c(item.block);
+//    }
+//}

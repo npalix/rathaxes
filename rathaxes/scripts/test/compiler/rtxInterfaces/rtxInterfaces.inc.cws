@@ -1,0 +1,130 @@
+#if !existFunction(rtxInterfaces_version)
+
+#include "rtxLink.inc.cws"
+
+function        rtxInterfaces_version()
+{ return "1.0"; }
+
+function        rtxItfCheckInheritance_walk<T>(interface_node : node,
+                                       interfaces_list : node)
+{
+    traceLine("Unknown rtx_node :" + T);
+	error("Unknown rtx_node :" + T);
+}
+
+function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node,
+                                                           interfaces_list : node)
+{
+    foreach inherited_interface in interface_node.inheritance
+    {
+        local parentRef = false;
+        local parentName = key(inherited_interface);
+
+        if (interfaces_list.findElement(parentName) == false
+            && rtxLink_findInterface(parentName, parentRef) == false)
+        {
+            traceLine("Unable to find interface ``" + parentName
+                      + "'' required by ``" + interface_node.name + "''");
+            return false;
+        }
+        else
+        {
+            if (parentRef == false)
+                ref interface_node.inheritance[parentName] = interfaces_list[parentName];
+            else
+                rtxLink_LoadItem(parentRef, interface_node.inheritance[parentName]);
+        }
+    }
+
+    return true;
+}
+
+function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
+{
+    local dummy_out_ref;
+
+    rtxNodeRType(rtypeNode, idNode, dummy_out_ref);
+}
+
+function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+{
+    if (rtypeNode.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + rtypeNode.type);
+
+    /* Check current interface. */
+    local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+    if (findElement(name + "{}", interfaceNode.types) == true)
+        return true;
+
+    /* Recursive check in parents interfaces. */
+    foreach parentInterface in interfaceNode.inheritance
+    {
+        if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+            return true;
+    }
+
+    return false;
+}
+
+function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
+                                                currentInterface : node,
+                                                interfacesList : node)
+{
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local ret = false;
+
+    if (scope == "")
+    {
+        traceLine("Type should be define in the global namespace");
+        ret = true;
+    }
+    else
+    {
+        ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
+    }
+
+    return ret;
+}
+
+function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local ret = isEmpty(currentDeclaration.rtype.params) ? true : false;
+
+    foreach entry in currentDeclaration.rtype.params
+    {
+        local rtypeNode;
+        rtxItfIdNodeToRType(entry, rtypeNode);
+        ret = rtxInterfaceHasType(rtypeNode, currentInterface);
+    }
+    return ret;
+}
+
+function        rtxItfCheckTypesDeclarations_walk(currentInterface : node,
+                                                  interfacesList : node)
+{
+    foreach item in currentInterface.body.block
+    {
+        if (item.type == "__rtx_itf_decl__")
+        {
+            if (rtxItfCheckTypesDeclarations<item.specifier>(item, currentInterface, interfacesList) == false)
+                return false;
+        }
+    }
+    return true;
+}
+
+#end    /* !existFunction(rtxInterfaces_version) */

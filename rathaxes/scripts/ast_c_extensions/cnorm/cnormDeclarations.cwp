@@ -1,0 +1,771 @@
+/*
+** cnormDeclarations.cwp for
+** "C normalise"
+** Version 2.0
+** 
+** Authors:
+**	Lionel Auroux
+** Contributors:
+**	Cedric Lemaire
+**	David Giron
+**	David Amsallem	
+**
+** Features:
+** - Standard C 89 syntax
+** - GnuC asm expression
+** - GnuC __thread storage class specifier
+** - GnuC parameter forward declaration
+** - GnuC __extension__ evite les warnings sur l'utilisation d'extention GnuC
+** - GnuC subscript
+** - GnuC designated initializer
+** - GnuC __builtin_offsetof
+** - GnuC __builtin_va_list
+** - c99 static in direct absolute declarator
+** - c99 block as single expression ({ })
+** - c99 typeof
+** - c99 designation
+** - c99 __alignof
+** - c99 complex,__real & __imag operator
+** - c99 range expression
+** - c99 attributes
+**
+** This grammar was adapted from the one in section A13 of 
+** The C programming language, second edition, 
+** by Brian W. Kernighan and Dennis M. Ritchie 
+** (Englewood Cliffs, New Jersey: Prentice Hall PTR, 1988; ISBN
+** 0-13-110362-8), 
+** pages 234 - 238. 
+** 
+** This file is based on the original document:
+** http://www.cs.grinnell.edu/~stone/courses/languages/C-syntax.xhtml
+** 
+** A lot of change was done after reading:
+** - ISO/IEC 9899:TC2
+** - ISO/IEC 9899:1999
+**
+** V2.0 improvements are a totaly normalized AST and
+** the corresponding generation templates.
+*/
+
+//----------------------------------------------------------------------------
+//                           D E C L A R A T I O N S
+//----------------------------------------------------------------------------
+
+
+/*
+  Base des declarations
+*/
+declaration(theBlock : node) ::=
+
+	/* On cree un nouvel element dans la liste des blocks*/
+	#pushItem(theBlock)
+
+	/* On cree un element ctype pour stocker les infos de la declaration */
+	=> local ctype;
+	/* On cree un reference sur le contexte parent pour la recherche de type */
+	=> insert ctype.pctx;
+	=> ref ctype.pctx = theBlock;
+	=> cnormCreateCtypeNode(ctype);
+
+	/* pour cause d'ambiguite on oblige un type pour les fonctions donc C ansi uniquement */
+	/* recuperation du type de la declaration*/
+	[ declaration_specifier(ctype) ]+
+	/* on normalize les types - {un}sign{ed} et int manquant */
+	=> normalizeCType(ctype);
+	/* on copie les types C dans le noeud de l'arbre */
+	=> cnormFillDeclarationNode(theBlock#back, "__CTYPE__", ctype);
+	/* par defaut c'est une declaration*/
+	=> cnormCreateDeclarationNode(theBlock#back, "__VARIABLE__");
+	/* pour les typedefs on fait un test de coherence */
+	=> cnormCheckTypeDeclaration(theBlock#back);
+	/* 
+	   apres un type il peut y avoir 1 ou n symbole de ce type.
+	   un symbole peut etre variable, fonction ou pointeur de fonction.
+	*/
+	init_declarator(theBlock#back)
+	/* On fait une copie de toutes les infos de type pour 
+	   la liste de variable de meme type */
+	=> local aType;
+	=> {
+	  setall aType.type = theBlock#back.type; 
+	  setall aType.ctype = theBlock#back.ctype;
+	}
+
+[ // uniquement si on est pas une declaration de fonction
+	#check(!(theBlock#back.type == "__FUNCTION__" 
+	  && existVariable(theBlock#back.block)))
+	[ ',' 
+		#pushItem(theBlock)/* on ajoute un element du meme type */
+		=> setall theBlock#back = aType;
+		init_declarator(theBlock#back) 
+	]*
+	/* fin d'une declaration */
+	  ';'
+| // dans le cas d'une fonction, on a rien apres
+ => local empty;
+]
+;
+
+/*
+  ici tous ce qu'on peut mettre a gauche d'une declaration en C
+*/
+declaration_specifier(theType : node) ::= 
+	[storage_class_specifier
+	 | type_qualifier 
+	 | function_specifiers]:sKey
+	=> cnormFillCtypeNode(theType, "__INFOTYPE__", sKey);
+	| type_specifier(theType)
+     /// TODO: a mettre qq part
+	| /* GnuC extensions */ #readIdentifier:{"__extension__"} 
+	| /* c99 */ attribute_decl
+;
+
+/*
+  les classes de stockages permette de savoir ou sont stocke les symboles.
+  -auto: sur la pile (par defaut)
+  -register: dans un registre
+  -static: le symbole est local
+  -extern: le symbole est dans un autre fichier objet
+  -__thread: extension GnuC pour stocker une variable dans la TLS 
+  (Thread Local Storage)
+*/
+storage_class_specifier ::= 
+	#readIdentifier:{"auto", "register", "typedef", "static", "extern",
+			 /* GnuC */ "__thread"
+	}
+;
+
+/*
+  pour etre plus rigoureux on extrait le mot clef inline juste pour la 
+  declaration de fonction.
+  -inline: la fonction peut ne pas etre presente dans le fichier final
+  mais 'inliner' au niveau de son appel
+*/
+function_specifiers ::= 
+	#readIdentifier:{"inline",
+	 /*gnuC*/ "__inline"}
+;
+
+/*
+  base de la declaration des types
+*/
+type_specifier(theType : node) ::=
+	prime_type(theType)
+	| struct_or_union_specifier(theType)
+	| enum_specifier(theType)
+	| /* c99 */ typeof_expr(theType)
+	| typedef_name(theType)
+;
+
+/*
+  type primitif du C
+*/
+prime_type(theType : node) ::=
+[
+ /* ici on match les signes */
+	#readIdentifier:{
+	  "signed", 
+	  "unsigned"
+	}:sKey
+	=> cnormFillCtypeNode(theType, "__SIGN__", sKey);
+]
+| [
+ /* ici on match les specifiers et les types primitifs */
+	#readIdentifier:{
+	  "short",
+	  "long",
+	  "void",
+	  "char",
+	  "int", 
+	  "float",
+	  "double",
+	  /* c99 */ "__complex", "__complex__", "_Complex",
+	  "_Imaginary",
+	  "_Bool",
+	  "__label__",
+	  /* gnuC */
+	  "__builtin_va_list"
+	}:sKey
+	=> cnormFillCtypeNode(theType, "__TYPEID__", sKey);
+]
+;
+
+/*
+  c99 : on l'utilise a l'emplacement d'un type dans une
+  declaration. le type retourner depend du type passer en parametre ou 
+  d'une expression passer en paremetre.
+*/
+typeof_expr(theType : node) ::=
+	#readIdentifier:{"typeof","__typeof","__typeof__"}
+	'(' #continue
+	[
+	 type_name(theType)
+	 | expression(theType)
+	]
+	')'
+;
+
+/*
+  un qualificatif de type est juste un petit mot ayant une influence sur
+  le comportement du compilateur face au symbole.
+  - const: ne peut etre modifier, le symbole est dans une section particuliere
+  dans le fichier objet
+  - volatile: le compilateur va optimiser d'une certaine maniere les objets
+  volatile.
+*/
+type_qualifier ::= #readIdentifier:{"const", "volatile",
+				    /* c99 */ "restrict",
+				    "__const",
+				    "__restrict"}
+;
+
+/*
+  construction classique d'une structure ou d'une union
+*/
+struct_or_union_specifier(theType : node) ::=
+	#readIdentifier:{"struct", "union"}:sKey
+	=> cnormFillCtypeNode(theType, "__TYPEID__", sKey);
+[ 
+	identifier:sId
+	=> cnormFillCtypeNode(theType, "__TYPEID__", sId);
+]?
+[ 
+	 => local theList;
+	struct_fields(theList)
+	=> cnormFillDeclarationNode(theType, "__LIST__", theList);
+]?
+;
+
+/*
+  les champs de la structure
+*/
+struct_fields(theList : node) ::= '{' [ struct_declaration(theList) ]* '}'
+;
+
+/*
+  ensuite le type peut contenir une valeur par defaut.
+*/
+init_declarator(theType : node) ::=
+=> local bComposed = "notcomposed";
+=> 
+{
+  // il n'y a pas forcement de declarator pour les structs et les enums
+  if (theType.ctype.type == "__COMPOSED__" && 
+      (theType.ctype.specifier == "enum" 
+       || theType.ctype.specifier == "struct" 
+       || theType.ctype.specifier == "union")
+      )
+  {	bComposed = "composed";}
+  else 
+  {	bComposed = "notcomposed";}
+}
+[
+      // pour ce qui n'est pas struct/union/enum il y a forcement un declarator
+      #check(bComposed == "composed") [declarator(theType)]?:sDecl
+      => 
+	{//s'il n'y a pas eu de declarator, la struct/union/enum est promo au role de type
+	  if (sDecl == "")
+	  {	theType.type = "__TYPE__";}
+	}
+      // pour le reste c'est obligatoire
+      | declarator(theType)
+]
+
+	/* c99 attribut */
+	[ attribute_decl ]*
+
+	/* valeur par defaut? */
+	['=' #continue initializer(theType.init) ]?
+
+	=> // on reference toujours les variables 
+	{
+	  if (theType.type == "__VARIABLE__" && existVariable(theType.name))
+	  {	ref theType#parent.variables[theType.name] = theType;}
+	}
+
+[ 	// est-ce un typedef
+	#check(findElement("typedef", theType.ctype.infoType) == true)
+	=> {
+	  // cas des typedefs de pointeur de fonction
+	  //if (theType.type == "pfunction")
+	  //{	ref theType#parent.types[theType.pfunc.name] = theType;}
+	  //else
+	  {	ref theType#parent.types[theType.name] = theType; }
+	}
+	// est-ce un enum
+	| #check(theType.ctype.type == "__COMPOSED__" 
+		 && theType.ctype.specifier == "enum")
+	=> ref theType#parent.enums[theType.ctype.identifier] = theType;
+
+	// est-ce une structure 
+	| #check(theType.ctype.type == "__COMPOSED__" 
+		 && theType.ctype.specifier == "struct")
+	=> ref theType#parent.structs[theType.ctype.identifier] = theType;
+
+	// est-ce une union
+	| #check(theType.ctype.type == "__COMPOSED__" 
+		 && theType.ctype.specifier == "union")
+	=> ref theType#parent.unions[theType.ctype.identifier] = theType;
+	
+	// est-ce un pointeur de fonction
+	| #check(theType.ctype.type == "__PFUNCTION__")
+	=> ref theType#parent.pfunctions[theType.name] = theType;
+
+	// est-ce une fonction
+	| #check(theType.type == "__PROTOTYPE__")
+	[
+	 /* 
+	    on verifie en faisant un lookahead (lecture sans deplacement)
+	    si on est bien dans le cas d'une declaration de fonction
+	    ou dans le cas de son implementation.
+	 */
+	 !![',' | ';'] // declaration
+	 => ref theType#parent.prototypes[theType.name] = theType;
+	 | #continue 
+	  [ // implementation
+	   compound_statement(theType.block)
+	   => theType.type = "__FUNCTION__";
+	   => ref theType#parent.functions[theType.name] = theType;
+	  ]
+	]
+
+	// variable simple
+	| #check(theType.type == "__VARIABLE__")
+]
+;
+
+/*
+  c99 : les attributs permettent d'activer certain mecanisme du compilo C.
+*/
+attribute_decl ::=
+	#readIdentifier:{"attribute", "__attribute", "__attribute__"}
+	'(' '(' => local dummy;
+	attribute_call_parameter_list(dummy)
+	')' ')' 
+	| #readIdentifier:{"asm", "__asm","__asm__"} '(' #readCString ')'
+;
+
+attribute_call_parameter_list(expr : node) ::= #pushItem(expr)
+     [ assignment_expression(expr#back) | type_name(expr#back) ]
+     [ ',' #continue
+       => pushItem expr;
+     [ assignment_expression(expr#back) | type_name(expr#back) ]
+     ]*
+;
+
+
+/*
+  comme declaration_specifier mais sans classe de stockage car uniquement
+  dans les champs d'une structure, dans les typedefs, dans les casts.
+*/
+specifier_qualifier(theType : node) ::= 
+	type_qualifier:sKey
+	=> cnormFillCtypeNode(theType, "__INFOTYPE__", sKey);
+	| type_specifier(theType)
+     /// TODO: a mettre qq part
+	| /* GnuC extensions */ #readIdentifier:{"__extension__"} 
+	| /* c99 */ attribute_decl
+;
+
+/*
+  contient une declaration dans une structure.
+  cas particulier d'une declaration.
+*/
+struct_declaration(theFields : node) ::=
+	#pushItem(theFields)
+	// meme algo qu'une declaration
+	=> local ctype;
+	=> cnormCreateCtypeNode(ctype);
+	[ specifier_qualifier(ctype) ]+
+	=> normalizeCType(ctype);
+	=> cnormFillDeclarationNode(theFields#back, "__CTYPE__", ctype);
+	=> cnormCreateDeclarationNode(theFields#back, "__VARIABLE__");
+	[ struct_declarator_list(theFields, ctype) ]
+	';'
+;
+
+/*
+  semblable a init_declarator pour une structure.
+  liste separer par ',' entre les symboles.
+*/
+struct_declarator_list(theFields : node, ctype : node) ::=
+	struct_declarator(theFields#back)
+	[',' // recopie le type et le storage de la premiere declaration 
+	 // pour chaque champs
+		#pushItem(theFields)
+		=> cnormFillDeclarationNode(theFields#back, "__CTYPE__", ctype);
+		=> cnormCreateDeclarationNode(theFields#back, "__VARIABLE__");
+		struct_declarator(theFields#back)
+	]*
+;
+
+/*
+  symboles dans une structure et gestion des champs de bits
+*/
+struct_declarator(theType : node) ::=
+	declarator(theType)
+	[ ':' #continue constant_expression(theType.bits) 
+	   => theType.ctype.type = "bitfield";// switch to bitfield
+	]?
+	/* c99 attribut */
+	[attribute_decl]*
+;
+
+/*
+  construction d'un enum.
+*/
+enum_specifier(theType : node) ::= 
+	#readIdentifier:{"enum"}:sKey
+	=> cnormFillCtypeNode(theType, "__TYPEID__", sKey);
+[ 
+	identifier:sId
+	=> cnormFillCtypeNode(theType, "__TYPEID__", sId);
+]?
+[ 
+	'{' #continue 
+	=> local theList;
+	enumerator_list(theList)
+	=> cnormFillDeclarationNode(theType, "__LIST__", theList);
+	'}' 
+]?
+;
+
+/*
+  construction de la liste d'identifiant de l'enum.
+*/
+enumerator_list(theHash : node) ::=
+	enumerator(theHash) 
+     [ ',' #continue [ enumerator(theHash) ]? ]*
+;
+
+/*
+  un identifiant de l'enum peut avoir une valeur par defaut.
+*/
+enumerator(theHash : node) ::= 
+	identifier:sKey
+	=> insert theHash[sKey];
+	[ '=' #continue constant_expression(theHash[sKey]) ]?
+;
+
+/*
+  point central des declarations a la fois normal,typedef,struct,fonction.
+*/
+declarator(theType : node) ::=  [ pointer(theType) ]? absolute_declarator(theType)
+;
+
+/*
+  absolute_declarator est une construction complexe permettant d'exprimer
+  tous les cas d'expressions d'une declaration C.
+  principalement pointeur de fonction, tableau etc...
+*/
+absolute_declarator(theType : node) ::= 
+[
+ => local sKey;
+ [ 
+  [// identifiant variable/fonction normale
+   function_or_variable_identifier(theType, sKey)
+   => cnormFillDeclarationNode(theType, "__NAME__", sKey);
+  ]
+  | [// pointeur de fonction     
+   '(' 
+	[// on fabrique une reference pour le cas
+	 // du pointer optionel
+	 => local option_ref;
+	 => ref option_ref = theType;
+	 [
+	  // on copie tout dans la variable locale
+	 => local nodecopy;
+	 pointer(nodecopy)
+	 =>
+	    {
+	      // c'est bien un pointer de fonction
+	      foreach indirection in nodecopy.ctype.pointer
+	      {
+		// on recopie les niveaux de pointeurs comme des niveaux
+		// de pointeurs de fonctions. le reste est inchange...
+		pushItem theType.ctype.pointer;
+		if (existVariable(indirection.level))
+		{	insert theType.ctype.pointer#back.function;}
+		else
+		{	setall theType.ctype.pointer#back = indirection;}
+	      }
+	      // la reference local pointe maintenant dans le pointer de fonction
+	      ref option_ref = theType.ctype.pointer#back.function;
+	    }
+	 ]?
+	 declarator(option_ref)
+	 ]
+   ')'
+   ]
+ ]
+[
+ /* ce qui suis est soit la definition du tableau, soit les parametres
+    du pointeur de fonction, ou une fonction si l'identifiant n'est pas
+    un pfunction
+ */
+  [ direct_absolute_declarator(theType) ]?
+  => {
+    // cas du pointer de fonction
+    if (existVariable(theType.ctype.pointer#back.function))
+    {
+      insert theType.ctype.type = "__PFUNCTION__";
+      insert theType.name = theType.ctype.pointer#back.function.name;
+      insert theType.type = "__VARIABLE__";
+    }
+  }
+ ]
+]
+;
+
+function_or_variable_identifier(theType : node, theIdent : node) ::=
+	/* symbole simple */
+	identifier:theIdent
+;
+
+/*
+  definition d'un tableau ou parametre de fonction
+*/
+direct_absolute_declarator(theType : node) ::=
+[
+	 /* tableau */
+	'[' #continue
+
+	/* c99 static in direct absolute declarator */
+	  ["static"]?
+	  [
+	   type_qualifier:sKey
+	   //=> cnormFillCtypeNode(theType, "__INFOTYPE__", sKey);
+	  ]*
+	  ["static"]?
+	/* c99 end */
+	=> local subExpr;
+	 [
+	  assignment_expression(subExpr)
+	  | '*' // parse mais non gere
+	 ]?:subExpr
+	']'
+	  => cnormFillCtypeNode(theType.ctype, "__ARRAY__", subExpr);
+]+
+| [ /* parametre de fonction */
+   '(' 
+	#insert(theType.list)
+	=> cnormCreateDeclarationNode(theType, "__PROTOTYPE__");
+	[ /* style ANSI */ parameter_type_list(theType.list) ]?
+   ')'
+]
+;
+
+/*
+  sequence de symbole pointer separer par des qualificatifs de type 
+  (const,volatile).
+*/
+pointer(theType : node) ::= 
+	"*" => cnormFillCtypeNode(theType.ctype, "__POINTER__", "*");
+	[ // intercalage d'un "const" ou "volatile" dans un niveau de pointeur
+		type_qualifier:sKey
+		=> cnormFillCtypeNode(theType.ctype, "__POINTER__", sKey);
+	| // ou plusieurs niveau d'etoile	
+		"*" => cnormFillCtypeNode(theType.ctype, "__POINTER__", "*");
+	]*
+;
+
+/*
+  definition d'une liste de parametre d'une fonction
+*/
+parameter_type_list(theFunction : node) ::= 	
+	parameter_list(theFunction)
+     /* gestion de l'ellipse a part */
+     [ 
+	[',' 
+	| ';' /* GnuC : parameter forward declaration */
+	]
+       "..."
+       => insert theFunction.ellipsis = true;
+     ]?
+;
+
+/*
+  liste de parametre
+*/
+parameter_list(theFunction : node) ::=
+	=> pushItem theFunction;
+     	parameter_declaration(theFunction#back)
+	[ 
+	 [','
+	  | ';' /* GnuC : parameter forward declaration */
+	  ]
+	 #pushItem(theFunction)
+	  parameter_declaration(theFunction#back)
+	]*
+;
+
+/*
+  definition d'un parametre de fonction
+*/
+parameter_declaration(theParam : node) ::=
+	/* au minimum un type */
+	=> local ctype;
+	=> cnormCreateCtypeNode(ctype);
+	[ declaration_specifier(ctype) ]+
+	=> normalizeCType(ctype);
+	=> cnormFillDeclarationNode(theParam, "__CTYPE__", ctype);
+	=> cnormCreateDeclarationNode(theParam, "__VARIABLE__");
+	/* description du nom du parametre 
+	   cas complique: on est oblige de faire une copie
+	   du node pour matcher soit declarator, soit abstract_declarator
+	*/
+	=> local nodecopy;
+	=> setall nodecopy = theParam;
+	[
+	 declarator(nodecopy)
+	 | 
+	 => setall nodecopy = theParam;
+	 [ abstract_declarator(nodecopy) ]?:sK
+	]
+	=> setall theParam = nodecopy;
+;
+
+/*
+  initialisation des structures et des variables
+*/
+initializer(theValue : node) ::= 
+	'{' #continue [initializer_list(theValue)]? [',']? '}'
+	| assignment_expression(theValue)
+;
+
+/*
+  liste des valeurs par defaut
+*/
+initializer_list(theValue : node) ::= 
+     #pushItem(theValue) 
+     /* c99 */ [designation(theValue#back)]?  
+     initializer(theValue#back)
+     [ ',' !'}' #continue // lookahead et continue car on peut terminer sur ,
+       #pushItem(theValue) //l'element est detruit si initializer match pas
+       /* c99 */ [designation(theValue#back)]?
+       initializer(theValue#back)
+     ]*
+;
+
+/*
+  c99: designation est une nouvelle construction permettant dans
+  la liste des valeurs par defaut de specifier le champs de la structure
+  ou l'indice dans le tableau
+*/
+designation(theType : node) ::= 
+	[ '[' constant_expression(theType) 
+	  [ "..." constant_expression(theType) ]?// GnuC designated initializer
+	  ']'
+	 | '.' identifier:sKey
+	 | identifier:sKey ':'
+	]+ ['=']?
+;
+
+/*
+  expression d'un type dans une struct et dans un cast
+*/
+type_name(theType : node) ::= 
+=> local ctype;
+=> insert ctype.pctx;
+=> ref ctype.pctx = theType;
+=> cnormCreateCtypeNode(ctype);
+[ specifier_qualifier(ctype) ]+
+=> normalizeCType(theType);
+=> cnormFillDeclarationNode(theType, "__CTYPE__", ctype);
+[ abstract_declarator(theType)]?
+;
+
+/*
+  l'abstract_declarator et declarator sont semblable
+  a qq difference pres mais l'un est pour les type_names (sizeof, cast)
+  et l'autre pour les declarators (declaration).
+*/
+abstract_declarator(theType : node) ::= 
+	=> local nodecopy;
+	=> setall nodecopy = theType;
+[
+     [ pointer(nodecopy) ]? direct_abstract_declarator(nodecopy)
+     | => setall nodecopy = theType; 
+	pointer(nodecopy)
+]
+	=> setall theType = nodecopy;
+;
+
+/*
+  pointeur de fonction et tableau au sein d'un typedef.
+*/
+direct_abstract_declarator(theType : node) ::=
+	[ /* pointeur de fonction */
+	 '(' 
+	 #continue
+	 [	 
+	 => local nodecopy;
+	 pointer(nodecopy)
+	 =>
+	    {
+	      // c'est bien un pointer de fonction
+	      foreach indirection in nodecopy.ctype.pointer
+	      {
+		// on recopie les niveaux de pointeurs comme des niveaux
+		// de pointeurs de fonctions. le reste est inchange...
+		pushItem theType.ctype.pointer;
+		if (existVariable(indirection.level))
+		{	insert theType.ctype.pointer#back.function;}
+		else
+		{	setall theType.ctype.pointer#back = indirection;}
+	      }
+	    }
+	 [abstract_declarator(theType.ctype.pointer#back.function)]?
+	 ]
+	 ')'
+	 ]?:sP1
+	[
+	 [ => local subExpr; 
+	  /* tableau */
+	   '[' #continue
+	     [assignment_expression(subExpr) | '*']?:subExpr
+	  ']'
+	   => cnormFillCtypeNode(theType.ctype, "__ARRAY__", subExpr);
+	  ]+
+	  | [ /* parametre de fonction */
+	     '(' #continue
+		#insert(theType.ctype.list)
+		=> cnormCreateDeclarationNode(theType, "__PROTOTYPE__");
+		[ parameter_type_list(theType.ctype.list) ]? 
+	     ')'
+	  ]
+	 ]?:sP2
+	// une ou l'autre partie de la regle a du matcher
+	#check(sP1 != "" || sP2 != "")
+=> {
+  // cas du pointer de fonction
+  if (existVariable(theType.ctype.pointer#back.function))
+  {
+    insert theType.ctype.type = "__PFUNCTION__";
+      insert theType.name = theType.ctype.pointer#back.function.name;
+    insert theType.type = "__VARIABLE__";
+  }
+}
+;
+
+/*
+  typedef_name match les identifiants qui ont ete insere par un typedef
+  dans la liste de type
+*/
+typedef_name(theType : node) ::= 
+	identifier:sKey
+	=> local bPrecond = false;
+	=> {
+	  if (existVariable(theType.identifier)
+	      && theType.identifier == "__UNDEF__")
+	  {	bPrecond = true; }
+	  if (!existVariable(theType.identifier))
+	  {	bPrecond = true; }
+	}
+	#check(bPrecond && searchInTypes(sKey, theType))
+	=>
+	{
+	  insert theType.type = "__COMPOSED__";
+	  insert theType.identifier = sKey;
+	}
+;

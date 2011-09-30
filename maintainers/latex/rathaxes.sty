@@ -1,0 +1,142 @@
+% Load additional packages
+\RequirePackage{array}
+\RequirePackage[usenames,svgnames]{xcolor}
+\RequirePackage{lmodern}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc} % babel warns with french if it's not here.
+\RequirePackage{libertine}
+\RequirePackage{inconsolata}
+\RequirePackage{tabularx}
+\RequirePackage[fixlanguage]{babelbib}
+\expandafter\RequirePackage[\@rtxlanguage]{babel}
+
+% Needed to use the libertine font package
+\renewcommand*\oldstylenums[1]{{\fontfamily{fxlj}\selectfont #1}}
+
+% Localize our bibliography
+\expandafter\selectbiblanguage{\@rtxlanguage}
+
+\definecolor{rathaxesred}{RGB}{190,36,31}
+
+% Hook the \title{} command to generate the pdf meta-datas
+\renewcommand{\title}[1]{
+\gdef\@title{#1}
+\RequirePackage[pdftex,
+                colorlinks=true,
+                linkcolor=blue,
+                pdftitle={Rathaxes - #1},
+                pdfauthor={Rathaxes},
+                pdfkeywords={epitech rathaxes driver}]{hyperref}
+}
+
+\graphicspath{{@RATHAXES_SOURCE_DIR@/com/images/}}
+
+% Use fancyheader with default values
+\pagestyle{fancy}
+
+% Tweak the fonts: use the sans-serif fonts for titles, captions and page
+% numbers (the goal is to use the serif font only for text blocks).
+\setkomafont{disposition}{\sffamily}
+\setkomafont{caption}{\sffamily}
+\setkomafont{captionlabel}{\sffamily}
+\setkomafont{pagenumber}{\sffamily}
+% \itshape doesn't exist for Biolinum at least in TexLive 2009, it certainly
+% exists in TexLive 2010.
+\setkomafont{subject}{\sffamily\Huge\color{rathaxesred}}
+\setkomafont{title}{\sffamily}
+
+% Defines commands used to generated the title block
+\global\let\@doctype\@empty
+\newcommand{\rtxdoctype}[1]{\def\@doctype{#1}}
+\global\let\@docversion\@empty
+\newcommand{\rtxdocversion}[1]{\def\@docversion{#1}}
+\global\let\@docref\@empty
+\newcommand{\rtxdocref}[1]{\def\@docref{#1}}
+\global\let\@docstatus\@empty
+\newcommand{\rtxdocstatus}[1]{\def\@docstatus{#1}}
+\global\let\@dochistory\@empty
+\newcommand{\rtxdochistory}[1]{\def\@dochistory{#1}}
+
+% Define macros to compare to \@rtxlanguage
+\def\@americanlanguage{american}
+\def\@frenchlanguage{francais}
+
+% Define the title of the `documentation control' section
+%
+% « Contrôle de la documentation » is too long to fit on one
+% line as a chapter title, so use something smaller.
+\def\@titleblocksectiontitle{\ifx\@rtxlanguage\@americanlanguage Documentation control\else Contrôle du document\fi}
+
+% Fix captions in french
+\ifx\@rtxlanguage\@frenchlanguage\renewcommand*{\captionformat}{~--~}\fi
+\PackageWarning{rathaxes.sty}%
+{Ignore the warning on captions in frenchb.ldf,\MessageBreak
+this is a bug in the french babel implementation\MessageBreak and a workaround is in place.\MessageBreak reported}
+
+% This is black magic to do \ifx in a array:
+% http://newsgroups.derkeiler.com/Archive/Comp/comp.text.tex/2010-04/msg00701.html
+\long\def\firstofone#1{#1}
+
+% Define a command to generate the title block
+\def\@titleblock{
+  \begin{table}[h]\small
+  \textsf{
+  \begin{tabularx}{\textwidth}{|X|X|}
+  \hline
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Group}: \else \textbf{Groupe} :\fi & Rathaxes \\
+  \hline
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Project name}: \else \textbf{Nom du projet} :\fi & Rathaxes \\
+  \hline
+  \ifx\@doctype\@empty\else
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Document type}: \else \textbf{Type de document} :\fi & \@doctype \\
+  \hline
+  \fi
+  \ifx\@docversion\@empty\else
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Version}: \else \textbf{Version} : \fi & \@docversion \\
+  \hline
+  \fi
+  \ifx\@docref\@empty\else
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Reference}: \else \textbf{Référence} : \fi & \@docref \\
+  \hline
+  \fi
+  \ifx\@docstatus\@empty\else
+  \ifx\@rtxlanguage\@americanlanguage \textbf{Document status}: \else \textbf{Statut du document} : \fi & \@docstatus \\
+  \hline
+  \fi
+  \end{tabularx}}
+  \caption{\ifx\@rtxlanguage\@americanlanguage Document informations\else Informations sur le document\fi}
+  \end{table}
+
+  \ifx\@dochistory\@empty\else
+  \begin{table}[h]\small
+  \textsf{
+  \begin{tabularx}{\textwidth}{|l|l|l|X|}
+  \hline
+  \textbf{Version} & \textbf{Date} & \ifx\@rtxlanguage\@americanlanguage \textbf{Author} \firstofone{&} \textbf{Summary}\else \textbf{Auteur} \firstofone{&} \textbf{Résumé}\fi \\
+  \hline
+  \@dochistory
+  \hline
+  \end{tabularx}}
+  \caption{\ifx\@rtxlanguage\@americanlanguage Versions history\else Historique des versions\fi}
+  \end{table}
+  \fi
+}
+
+\def\@contact{
+\begin{description}
+\ifx\@rtxlanguage\@americanlanguage\item[\textsf{Code:}] \else\item[\textsf{Code :}] \fi\url{http://code.google.com/p/rathaxes/}
+\ifx\@rtxlanguage\@americanlanguage\item[Mailing list:] \else\item[Liste de diffusion :] \fi\url{rathaxespublic@googlegroups.com}
+\end{description}
+}
+
+% Command to insert our bibliography
+\newcommand{\rtxbibliography}{%
+\bibliographystyle{plain}
+\bibliography{@RATHAXES_SOURCE_DIR@/doc/bibliography}
+}
+
+% Defines
+\newcommand{\rtx}{Rathaxes}
+\newcommand{\BL}{Backend Library}
