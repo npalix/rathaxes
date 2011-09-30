@@ -97,7 +97,9 @@ Tests Backend :
    + remonter correctement ces éléments au tissage (ordre, etc...)      <= TODO
 
  * Ameliorer la comparaison "=" Des elements de config                  <= TODO
-    
+
+ * Coder les extend interface                                           <= TODO
+ * Enregistrement des extensions d'itf: mieux gerer les conflits        <= TODO
 
 
 
@@ -150,3 +152,21 @@ Tests Backend :
       * Descente récursive dans les chunks liés pour résoudre les pointcuts
         (ils ont acces aux types donnés en parametres au template associé)
     * Generation des séquences provided appellées depuis le front-end
+
+
+    ====================================================
+
+ * Coder des passes dans le middle end:
+   1) Valider les prerequis front-end (required/optional/etc...)
+   2) Routines pour valider les typages des appels de sequence
+   3) Valider les pre-requis back-end (chunks, pointcut)
+   4) Validation de l'implem backend # aux besoins du front.
+
+
+ * Main routine:
+   1) Parse front
+   2) Chargement des interfaces utilisées par le front.
+   3) Validation du front
+
+   4) Instanciation de la configuration -> Start resolve
+

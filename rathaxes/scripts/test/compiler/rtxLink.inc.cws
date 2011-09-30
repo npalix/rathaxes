@@ -541,6 +541,13 @@ function rtxLink_ValidateFiles(backend_path : value,
 }
 
 
+function rtxLink_getItfCachePath(isLocal : value)
+{
+    if (isLocal == true)
+        return this.local_backlib_path+"/interfaces/";
+    return this.backlib_path+"/interfaces/";
+}
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -766,6 +773,64 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node    : node,
     insert tmpChunk.script_file = local_node.script_file;
     insert tmpChunk.tree_file = local_node.tree_file;
 }
+
+/*
+ *
+ * This function caches the interfaces as follows :
+ * session.interfaces = {[
+ *      "interface_name" : {       // name of the interface
+ *              .name = "interface_name"
+ *              .tree_file = "path_to_tree"
+ *              .extensions = {[
+ *                  "0" : {
+ *                      .with
+ *                      .tree_file = "path_to_extend_tree"
+ *                  }
+ *              ]}
+ *      }
+ * ]}
+ *
+ */
+function rtxLink_SessionRegister<"__rtx_itf__">(local_node : node,
+                                                with_values : node,
+                                                out_ref_id : reference)
+{
+    local itfName = local_node.name;
+    localref itfs = this.session.interfaces;
+
+    if (findElement(itfName, itfs))
+    {
+        if (this.cache_conflicts != "ignore")
+            error("The interface "+itfName+" is already registered within the cache !");
+        return ;
+    }
+    insert itfs[itfName];
+    insert itfs[itfName].name = itfName;
+    insert itfs[itfName].tree_file = itfName + ".tree";
+    saveProject(itfs[itfName].tree_file, local_node);
+    insert itfs[itfName].extensions;
+}
+
+function rtxLink_SessionRegister<"__rtx_itf_extension__">(local_node : node,
+                                                          with_values : node,
+                                                          out_ref_id : reference)
+{
+    local itfName = local_node.name;
+    localref itfs = this.session.interfaces;
+
+    if (!findElement(itfName, itfs))
+        error("The interface "+itfName+" must be registered already to be extended !");
+
+    // Add extension anyway...
+    local ext_id = getArraySize(itfs[itfName].extensions);
+    pushItem itfs[itfName].extensions;
+    localref ext = itfs[itfName].extensions#back;
+    insert ext.with;
+    setall ext.with = with_values;
+    insert ext.tree_file = itfName + "_ext_" + ext_id + ".tree";
+    saveProject(ext.tree_file, local_node);
+}
+
 
 // This function should be called with a root_block as local_node.
 function rtxLink_SessionRegister<"__root_block__">(local_node : node,
