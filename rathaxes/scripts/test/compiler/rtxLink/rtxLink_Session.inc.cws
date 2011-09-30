@@ -1,619 +1,33 @@
-#if !existFunction(rtxLink_version)
+#if !existFunction(rtxLink_Register_version)
 
-function rtxLink_version()
-{return "1.0";}
-
-
-
-
-/******************************************************************************/
-/*                                                                            */
-/*                      TOOL FUNCTIONS TO MANIPULATE THE CACHE                */
-/*                                                                            */
-/******************************************************************************/
-
-// wrapper/faker for the template prototype hashing function (future)
-function hashTemplatePrototype(theRType : node, out_ref_hash : reference)
-{
-    local dummyIds;
-    out_ref_hash = rtxRTypeFullQualifiedName<"sequence">(theRType, dummyIds);
-}
-
-declare function rtxLink_CompareValues<T>(ref : node, val : node);
-/*
- * This function checks the conditions of the with block against a configuration
- * block. It returns true if the with block is in the definition domain of the
- * configuration
- *
- *
- * The matching is done by trying to match the constraints (with) over the
- * configuration block. This way, if any value is undefined, that would
- * prevent any match validation.
- * Otherwise, there's only a need to check whether the constraints are valid or
- * not.
- */
-function rtxLink_IsWithNodeCompatible(with : node, config : node)
-{
-    foreach interface in with
-    {
-        local itf_key = key(interface);
-        // Is the interface defined in the config ?
-        if (findElement(itf_key, config) == false)
-        {
-            traceLine("Interface '"+itf_key+"' not defined in config.");
-            return false;
-        }
-        foreach constraint in interface
-        {
-            local cst_key = key(constraint);
-            // Is the variable defined in the config ?
-            if (!findElement(cst_key, config[itf_key]))
-            {
-                traceLine("Variable '"+cst_key+"' not defined in config.");
-                return false;
-            }
-            // Then let's match the values :
-            // Only the identifier type does not support other comparisons
-            // than equality
-            if (rtxLink_CompareValues<constraint.op>(constraint.val,
-                        config[itf_key][cst_key].val) == false)
-            {
-                traceLine("Values for variable '"+cst_key+"' do not match.");
-                return false;
-            }
-        }
-    }
-    // For now, let's assume the with nodes are compatible
-    return true;
-}
-
-function rtxLink_CompareValues<"<">(ref : node, val : node)
-{
-    if (ref.type == "__rtx_nb__")
-    {
-        if (val.val < ref.val)
-            return true;
-    }
-    else if (ref.type == "__rtx_serial__")
-    {
-        local idx = 0;
-        // Loop as long as items are equal.
-        foreach ref_unit in ref.list
-        {
-            // Check we arent out of bounds in val.list. If we are, val<ref.
-            if (idx >= getArraySize(val.list))
-                return true;
-
-            localref val_unit = val.list#[idx];
-            // Check both units are of the same type
-            if (val_unit.type != ref_unit.type)
-                return false;
-            // Simple comparison on unit value types.
-            if (ref_unit.type == "__rtx_serial_unit__")
-            {
-                if (val_unit.val < ref_unit.val)
-                    return true;
-                else if (val_unit.val > ref_unit.val)
-                    return false;
-            }
-            // The separators must be identical.
-            else if (ref_unit.type == "__rtx_serial_sep__")
-            {
-                if (val_unit.val != ref_unit.val)
-                    return false;
-            }
-            else
-                return false; // Serial unit type unknown
-            increment(idx);
-        }
-        // Either val is longer than ref (equal up till now) -> !(val < ref)
-        if (getArraySize(val.list) > getArraySize(ref.list))
-            return false;
-        // Either both were equal (not <) => default case = false
-    }
-    else
-        error ("rtxLink_CompareValues<\"<\">:<ERROR> type "
-               + ref.type + " not supported.");
-    return false;
-}
-
-function rtxLink_CompareValues<"<=">(ref : node, val : node)
-{
-    if (ref.type == "__rtx_nb__")
-    {
-        if (val.val <= ref.val)
-            return true;
-    }
-    else if (ref.type == "__rtx_serial__")
-    {
-        local idx = 0;
-        // Loop as long as items are equal.
-        foreach ref_unit in ref.list
-        {
-            // Check we arent out of bounds in val.list. If we are, val<ref
-            if (idx >= getArraySize(val.list))
-                return true;
-
-            localref val_unit = val.list#[idx];
-            // Check both units are of the same type
-            if (val_unit.type != ref_unit.type)
-                return false;
-            // Simple comparison on unit value types.
-            if (ref_unit.type == "__rtx_serial_unit__")
-            {
-                // if < then <= true too. Then return true.
-                if (val_unit.val < ref_unit.val)
-                    return true;
-                else if (val_unit.val > ref_unit.val)
-                    return false;
-            }
-            // The separators must be identical.
-            else if (ref_unit.type == "__rtx_serial_sep__")
-            {
-                if (val_unit.val != ref_unit.val)
-                    return false;
-            }
-            else
-                return false; // Serial unit type unknown
-            increment(idx);
-        }
-        // Either val is longer than ref : equal up to ref's length : val > ref
-        if (getArraySize(val.list) > getArraySize(ref.list))
-            return false;
-        // Either both were wholly equal : =
-        return true;
-    }
-    else
-        error ("rtxLink_CompareValues<\"<=\">:<ERROR> type "
-               + ref.type + " not supported.");
-    return false;
-}
-
-function rtxLink_CompareValues<"=">(ref : node, val : node)
-{
-    if (equalTrees(ref, val))
-        return true;
-    return false;
-}
-
-function rtxLink_CompareValues<">=">(ref : node, val : node)
-{
-    if (ref.type == "__rtx_nb__")
-    {
-        if (val.val >= ref.val)
-            return true;
-    }
-    else if (ref.type == "__rtx_serial__")
-    {
-        local idx = 0;
-        // Loop as long as items are equal.
-        foreach ref_unit in ref.list
-        {
-            // Check we arent out of bounds in val.list. If we are, val<ref
-            if (idx >= getArraySize(val.list))
-                return false;
-
-            localref val_unit = val.list#[idx];
-            // Check both units are of the same type
-            if (val_unit.type != ref_unit.type)
-                return false;
-            // Simple comparison on unit value types.
-            if (ref_unit.type == "__rtx_serial_unit__")
-            {
-                // if > then >= true too. Then return true.
-                if (val_unit.val > ref_unit.val)
-                    return true;
-                else if (val_unit.val < ref_unit.val)
-                    return false;
-            }
-            // The separators must be identical.
-            else if (ref_unit.type == "__rtx_serial_sep__")
-            {
-                if (val_unit.val != ref_unit.val)
-                    return false;
-            }
-            else
-                return false; // Serial unit type unknown
-            increment(idx);
-        }
-        // Either val is longer than ref : equal up to ref's length : val > ref
-        // Either both were wholly equal : =
-        return true;
-    }
-    else
-        error ("rtxLink_CompareValues<\"=>\">:<ERROR> type "
-               + ref.type + " not supported.");
-    return false;
-}
-
-function rtxLink_CompareValues<">">(ref : node, val : node)
-{
-    if (ref.type == "__rtx_nb__")
-    {
-        if (val.val > ref.val)
-            return true;
-    }
-    else if (ref.type == "__rtx_serial__")
-    {
-        local idx = 0;
-        // Loop as long as items are equal.
-        foreach ref_unit in ref.list
-        {
-            // Check we arent out of bounds in val.list. If we are, val<ref
-            if (idx >= getArraySize(val.list))
-                return false;
-
-            localref val_unit = val.list#[idx];
-            // Check both units are of the same type
-            if (val_unit.type != ref_unit.type)
-                return false;
-            // Simple comparison on unit value types.
-            if (ref_unit.type == "__rtx_serial_unit__")
-            {
-                // if > then >= true too. Then return true.
-                if (val_unit.val > ref_unit.val)
-                    return true;
-                else if (val_unit.val < ref_unit.val)
-                    return false;
-            }
-            // The separators must be identical.
-            else if (ref_unit.type == "__rtx_serial_sep__")
-            {
-                if (val_unit.val != ref_unit.val)
-                    return false;
-            }
-            else
-                return false; // Serial unit type unknown
-            increment(idx);
-        }
-        // Either val is longer than ref : equal up to ref's length : val > ref
-        if (getArraySize(val.list) > getArraySize(ref.list))
-            return true;
-        // Either both were wholly equal : = : default case = false
-    }
-    else
-        error ("rtxLink_CompareValues<\">\">:<ERROR> type "
-               + ref.type + " not supported.");
-    return false;
-}
-
- 
-
-/*
- * This function checks if at least one template exists within the cache
- * for a given template prototype and with/config block.
- */
-function rtxLink_HasCompatibleTpl(proto_hash : value, with_values : node)
-{
-    if (findElement(proto_hash, this.session.templates))
-    {
-        foreach tpl in this.session.templates[proto_hash]
-        {
-            if (rtxLink_IsWithNodeCompatible(tpl.with, with_values))
-                return true;
-        }
-        return false;
-    }
-    return false;
-}
-
-
-/*
- * This function checks if the template already exists within the cache
- * by EXACTLY matching the two with block
- */
-function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
-{
-    if (findElement(proto_hash, this.session.templates))
-    {
-        foreach tpl in this.session.templates[proto_hash]
-        {
-            // XXX FIXME Improve this comparison when flatten will be ready.
-            if (equalTrees(tpl.with, with_values))
-                return true;
-        }
-        return false;
-    }
-    return false;
-}
-
-function rtxLink_CheckTplConflict(tpl_list : node, tested : node)
-{
-    foreach tpl in tpl_list
-    {
-        if (rtxLink_CompareValues<"=">(tpl.with, tested.with))
-            return true;
-    }
-    return false;
-}
-
-/*
- * This function loads the tree and the script for a given cache node.
- * and next loads the tree file into a tree ref.
- *
- * In order to load only the tree and not the script
- * (This is the case for the interface nodes), the third parameter must
- * be set to false.
- */
-function rtxLink_LoadItem(cache_node : node,
-                          out_ref_tree : reference,
-                          load_script : value = true)
-{
-    if ((load_script == true && !existVariable(cache_node.script_file))
-        || !existVariable(cache_node.tree_file))
-        error("rtxLink:<ERROR> The node does not contain any script or tree to load!");
-
-    // Test if the node has already been loaded or not ?
-    if (load_script == false || !existVariable(cache_node.load))
-    {
-        traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script_file + "'");
-        try {
-            extendExecutedScript(loadFile(cache_node.script_file));
-        }
-        catch (sError) {
-            traceLine("rtxLink:<ERROR> Could not load resolution script : "+sError);
-            return false;
-        }
-        insert cache_node.load = true;
-    }
-    else if (load_script == true)
-    {
-        traceLine("rtxLink:<LOG> Script Already loaded !");
-    }
-
-    cwLoadProject(cache_node.tree_file, out_ref_tree);
-
-    traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
-    return true;
-}
-
-
-/*
- * This function returns the first global_code cache node found matching the
- * configuration block.
- */
-function rtxLink_findGlobalCode(with_values : node, out_code_ref : reference)
-{
-    if (!existVariable(this.session))
-        error("rtxLink:<ERROR> The cache was not loaded before use !");
-
-    foreach item in this.session.global_code
-    {
-        if (rtxLink_IsWithNodeCompatible(item.with, with_values))
-        {
-            ref out_code_ref = item;
-            return true;
-        }
-    }
-    return false;
-}
-
-function rtxLink_findInterface(itfName : value, out_itf_ref : reference)
-{
-    if (!findElement(itfName, this.session.interfaces))
-        return false;
-    ref out_itf_ref = this.session.interfaces[itfName];
-    return true;
-}
-
-function rtxLink_selectExtendedInterfaces(interface : node,
-                                          with_values : node,
-                                          out_ext_list : node)
-{
-    foreach ext in interface.extensions
-    {
-        if (rtxLink_IsWithNodeCompatible(ext.with, with_values))
-        {
-            pushItem out_ext_list;
-            setall out_ext_list#back = ext;
-        }
-    }
-    return true;
-}
-
-
-
-/*
- * This function takes an array of template cache nodes and a configuration
- * block and tries to select only one template for the future resolution.
- */
-function rtxLink_selectUniqueTemplate(templates : reference, config : node)
-{
-    local keys_to_remove;
-    // First find every non-compatible template.
-    foreach tpl in templates
-    {
-        if (rtxLink_IsWithNodeCompatible(tpl.with, config) == false)
-        {
-            pushItem keys_to_remove;
-            keys_to_remove#back = key(tpl);
-        }
-        else
-        {
-            insert tpl.cache_idx = key(tpl);
-            insert tpl.hash;
-            hashTemplatePrototype(tpl.rtype, tpl.hash);
-        }
-    }
-    // Keep only the matching template(s) in the user's array
-    foreach tpl in keys_to_remove
-        removeElement(templates, tpl);
-
-    // Check the number of results. 1 mean that only one template matches
-    // the search : We're good, and change the array into a template node.
-    // Otherwise, it's an error.
-    if (getArraySize(templates) != 1)
-        error("rtxLink:<ERROR> No unique template matching the configuration.");
-
-    // Here, we find the associated chunk in order to set the script_file
-    // And the tree_file, and set them into the tpl node in order to allow
-    // A generic script function loading.
-
-    // A little trick is necessary to reference correctly the selected template in
-    // the node instead of the list.
-    local temp;
-    setall temp = templates[0];
-    ref templates = this.session.templates[temp.hash][temp.cache_idx];
-
-    return true;
-}
+function rtxLink_Register_version()
+{ return "1.0"; }
 
 
 /*
  *
- * This function selects a chunk from an unique template cache node.
+ *
+ * This file contains the functions necessary to the compiler in order
+ * to manipulate the cache session:
+ *  - registering
+ *  - saving
+ *  - merging caches
+ *  - installing
+ *  - ...
+ *
  *
  */
-function rtxLink_selectChunkFromTemplate(theTemplate : node,
-                                         chunkName : value,
-                                         theChunk : reference)
-{
-    foreach chunk in theTemplate.chunks
-    {
-        if (key(chunk) == chunkName)
-        {
-            if (!findElement(chunkName, this.session.chunks)
-                || !findElement(chunk, this.session.chunks[chunkName]))
-                error("rtxLink:<ERROR> The chunk '"+chunkName+"' associated to"
-                      + " the template "
-                      + rtxRTypeName<theTemplate.rtype.type>(theTemplate.rtype)
-                      + " could not be found within the cache.");
 
-            ref theChunk = this.session.chunks[chunkName][chunk];
-            return true;
-        }
-    }
-    return false;
-}
+declare function rtxLink_SessionRegister<T>(local_node : node, with_values : node, out_ref_id : reference);
+declare function rtxLink_RegisterToCache(local_node : node);
 
 
-/*
- * This functino returns a collection of template cache nodes for a given
- * template prototype (hashed).
- */
-function rtxLink_findTemplates(theRtype : node, out_tpls : node)
-{
-    if (!existVariable(this.session))
-        error("rtxLink:<ERROR> The cache was not loaded before use !");
+/******************************************************************************\
+*                                                                              *
+*    REGISTRATION OF INTERFACE/WITH/TEMPLATES/CHUNKS INTO THE CACHE            *
+*                                                                              *
+\******************************************************************************/
 
-    local hash;
-    hashTemplatePrototype(theRtype, hash);
-    if (!findElement(hash, this.session.templates))
-        return false;
-
-    setall out_tpls = this.session.templates[hash];
-    return true;
-}
-
-
-/*
- * This function reduces an array of chunk cache nodes by filtering them
- * with a given configuration block.
- */
-function rtxLink_selectCompatibleChunks(chunks : node, config : node)
-{
-    local keys_to_remove;
-    // First find every non-compatible template.
-    foreach chunk in chunks
-    {
-        if (rtxLink_IsWithNodeCompatible(chunk.with, config) == false)
-        {
-            pushItem keys_to_remove;
-            keys_to_remove#back = key(chunk);
-        }
-    }
-    // Keep only the matching chunks in the user's array
-    foreach chunk in keys_to_remove
-        removeElement(chunks, chunk);
-
-    // Check if there's any compatible chunk in the end...
-    if (isEmpty(chunks) == false)
-        return true;
-    // Otherwise, it's an error (no compatible chunk).
-    return false;
-}
-
-/*
- * This function returns an array of chunk cache nodes that are associated to
- * a given pointcut.
- */
-function rtxLink_findChunks(pointcut_name : node, out_chunks : node)
-{
-    if (!existVariable(this.session))
-        error("rtxLink:<ERROR> The cache was not loaded before use !");
-
-    if (findElement(pointcut_name.scope + "::" + pointcut_name.name,
-                    this.session.chunks))
-    {
-        setall out_chunks = this.session.chunks[pointcut_name.scope
-                                                + "::" + pointcut_name.name];
-        return true;
-    }
-    return false;
-}
-
-
-/*
- *
- * The functions rtxLink_Validate{Files,Itf} move the temporary
- * files of a registered node into the path given as backend_path arg.
- *
- * This is used mostly when registering an item into the local cache.
- *
- */
-function rtxLink_ValidateFiles(backend_path : value,
-                              theKey : value, tmpWith : node,
-                              tree_file : node, script_file : node)
-{
-    local filename = computeMD5(theKey + "_" + toString(tmpWith));
-
-    try {
-        copyFile(tree_file,   backend_path + filename + ".tree");
-        copyFile(script_file, backend_path + filename + ".cws");
-    } catch(sError) {
-        traceLine("rtxLink_ValidateFiles: Could not copy files"
-                  + " to backend directory : " + sError);
-        return false;
-    }
-    tree_file =   filename + ".tree";
-    script_file = filename + ".cws";
-
-    return true;
-}
-function rtxLink_ValidateItf(backend_path : value, tree_file : node)
-{
-    try {
-        copyFile(tree_file, backend_path + tree_file);
-    } catch(sError) {
-        traceLine("rtxLink_ValidateFiles: Could not copy interface's tree file"
-                  + " to backend directory : " + sError);
-        return false;
-    }
-    return true;
-}
-
-
-/*
- * Tool function to get the specific storage path of files concerning
- * the registered interfaces
- */
-function rtxLink_getItfCachePath(isLocal : value)
-{
-    if (isLocal == true)
-        return this.local_backlib_path+"interfaces/";
-    return this.backlib_path+"interfaces/";
-}
-
-
-/******************************************************************************/
-/*                                                                            */
-/*   FUNCTIONS FOR THE REGISTRATION OF WITH/TEMPLATES/CHUNKS INTO THE CACHE   */
-/*                                                                            */
-/******************************************************************************/
-
-declare function rtxLink_SessionRegister<T>(local_node : node,
-                                            with_values : node,
-                                            out_ref_id : reference);
 function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
                                     out_ref_id : reference)
 {
@@ -955,11 +369,17 @@ function rtxLink_RegisterToCache(local_node : node)
 }
 
 
+
+
+/******************************************************************************\
+*                                                                              *
+*               MERGING TWO CACHES TOGETHER WITH CONFLICT MANAGEMENT           *
+*                                                                              *
+\******************************************************************************/
+
 /*
- *
  * This function has for goal to merge two cache trees into one
  * while managing the conflicts as told by this.cache_conflicts variable.
- *
  */
 function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
 {
@@ -1045,6 +465,14 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
 }
 
 
+
+/******************************************************************************\
+*                                                                              *
+*                     LOADING, SAVING, AND INSTALLING THE CACHES               *
+*                                                                              *
+\******************************************************************************/
+
+
 function rtxLink_LoadCache()
 {
     if (!existVariable(this.caches))
@@ -1078,6 +506,60 @@ function rtxLink_LoadCache()
     return true;
 }
 
+/*
+ *
+ * The functions rtxLink_Validate{Files,Itf} move the temporary
+ * files of a registered node into the path given as backend_path arg.
+ *
+ * This is used mostly when registering an item into the local cache.
+ *
+ */
+function rtxLink_ValidateFiles(backend_path : value,
+                              theKey : value, tmpWith : node,
+                              tree_file : node, script_file : node)
+{
+    local filename = computeMD5(theKey + "_" + toString(tmpWith));
+
+    try {
+        copyFile(tree_file,   backend_path + filename + ".tree");
+        copyFile(script_file, backend_path + filename + ".cws");
+    } catch(sError) {
+        traceLine("rtxLink_ValidateFiles: Could not copy files"
+                  + " to backend directory : " + sError);
+        return false;
+    }
+    tree_file =   filename + ".tree";
+    script_file = filename + ".cws";
+
+    return true;
+}
+
+/*
+ * Same as the precedent function, but directed at interface management.
+ */
+function rtxLink_ValidateItf(backend_path : value, tree_file : node)
+{
+    try {
+        copyFile(tree_file, backend_path + tree_file);
+    } catch(sError) {
+        traceLine("rtxLink_ValidateFiles: Could not copy interface's tree file"
+                  + " to backend directory : " + sError);
+        return false;
+    }
+    return true;
+}
+
+
+
+/*
+ *
+ * This function is used to save the temporary session into the local cache.
+ * In order for this to work, we need to move/copy the temporary files
+ * in the Current Working Directory to the local backend path.
+ *
+ * This function iterates over the temp session to do that.
+ *
+ */
 function rtxLink_ValidateDiff()
 {
     // Each one of these differencial elements are references on the real
@@ -1133,11 +615,18 @@ function rtxLink_ValidateDiff()
     return true;
 }
 
+
+/*
+ * This function saves the local cache and, if the flag is set to false,
+ * also saves the global cache. This operation is done after calling the
+ * function ValidateDiff in order to keep the generated files inside the
+ * local backend path.
+ */
 function rtxLink_SaveCache(local_only_flag : value = true)
 {
     if (rtxLink_ValidateDiff() == false)
     {
-        traceLine("Could not move compiled templates to the templates library.");
+        traceLine("Could not move compiled files to the backend library.");
         return false;
     }
     if (existVariable(this.session.temp))
@@ -1155,7 +644,16 @@ function rtxLink_SaveCache(local_only_flag : value = true)
     return true;
 }
 
+/******************************************************************************\
+*                                                                              *
+*               LOCAL CACHE INTO GLOBAL CACHE INSTALLATION                     *
+*                                                                              *
+\******************************************************************************/
 
+/*
+ * This function moves an item from the local cache to the global cache.
+ * This is used when merging the local cache into the global cache.
+ */
 function rtxLink_InstallItem(item : node, itf_flag : value = false)
 {
     local local_path = this.local_backlib_path;
@@ -1179,6 +677,15 @@ function rtxLink_InstallItem(item : node, itf_flag : value = false)
     }
 }
 
+
+/*
+ * This function merges the local cache into the global cache,
+ * and saves the global cache while clearing the local backend data.
+ *
+ * This allows to work over some files in a separate (the local) cache,
+ * before validating them and saving them into the global one (should be
+ * then done with admin rights, depending on the install schema).
+ */
 function rtxLink_InstallLocalCache()
 {
     if (!existVariable(this.session))

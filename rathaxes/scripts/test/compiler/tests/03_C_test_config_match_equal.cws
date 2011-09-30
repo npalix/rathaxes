@@ -1,6 +1,6 @@
 #include "cnorm.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
-#include "rtxLink.inc.cws"
+#include "rtxLink/rtxLink_ConfigMatcher.inc.cws"
 
 // Used to build things bit by bit
 local config;
