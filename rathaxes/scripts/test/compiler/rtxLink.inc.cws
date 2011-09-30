@@ -39,19 +39,28 @@ function rtxLink_IsWithNodeCompatible(with : node, config : node)
         local itf_key = key(interface);
         // Is the interface defined in the config ?
         if (findElement(itf_key, config) == false)
+        {
+            traceLine("Interface '"+itf_key+"' not defined in config.");
             return false;
+        }
         foreach constraint in interface
         {
             local cst_key = key(constraint);
             // Is the variable defined in the config ?
             if (!findElement(cst_key, config[itf_key]))
+            {
+                traceLine("Variable '"+cst_key+"' not defined in config.");
                 return false;
+            }
             // Then let's match the values :
             // Only the identifier type does not support other comparisons
             // than equality
             if (rtxLink_CompareValues<constraint.op>(constraint.val,
                         config[itf_key][cst_key].val) == false)
+            {
+                traceLine("Values for variable '"+cst_key+"' do not match.");
                 return false;
+            }
         }
     }
     // For now, let's assume the with nodes are compatible
@@ -280,7 +289,7 @@ function rtxLink_HasCompatibleTpl(proto_hash : value, with_values : node)
     {
         foreach tpl in this.session.templates[proto_hash]
         {
-            if (rtxLink_IsWithNodeCompatible(tpl, with_values))
+            if (rtxLink_IsWithNodeCompatible(tpl.with, with_values))
                 return true;
         }
         return false;
@@ -370,7 +379,7 @@ function rtxLink_findGlobalCode(with_values : node, out_code_ref : reference)
 
     foreach item in this.session.global_code
     {
-        if (rtxLink_IsWithNodeCompatible(item, with_values))
+        if (rtxLink_IsWithNodeCompatible(item.with, with_values))
         {
             ref out_code_ref = item;
             return true;
@@ -414,7 +423,7 @@ function rtxLink_selectUniqueTemplate(templates : reference, config : node)
     // First find every non-compatible template.
     foreach tpl in templates
     {
-        if (rtxLink_IsWithNodeCompatible(tpl, config) == false)
+        if (rtxLink_IsWithNodeCompatible(tpl.with, config) == false)
         {
             pushItem keys_to_remove;
             keys_to_remove#back = key(tpl);
@@ -507,7 +516,7 @@ function rtxLink_selectCompatibleChunks(chunks : node, config : node)
     // First find every non-compatible template.
     foreach chunk in chunks
     {
-        if (rtxLink_IsWithNodeCompatible(chunk, config) == false)
+        if (rtxLink_IsWithNodeCompatible(chunk.with, config) == false)
         {
             pushItem keys_to_remove;
             keys_to_remove#back = key(chunk);

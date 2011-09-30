@@ -25,6 +25,8 @@
 local theWith;
 local theCacheNode;
 
+build_config(theWith);
+
 if (rtxLink_findGlobalCode(theWith, theCacheNode) == false)
     error("01_K_test_back_resolvePointcutDefault.cws:"
           +" The global code could not be found by rtxLink.");

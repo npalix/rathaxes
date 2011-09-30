@@ -17,6 +17,48 @@
 //createDirectory(working_directory);
 //changeDirectory(working_directory);
 
+function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
+{
+    local unit;
+    rtxNodeSerial(local_node);
+    rtxNodeSerialUnit(unit, v1);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v2);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v3);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+}
+
+function build_config(theWith : node)
+{
+    local id;
+    local val;
+    insert theWith["LKM"];
+    insert theWith["LKM"]["OS"];
+    rtxNodeWithConstraint(theWith["LKM"]["OS"], id, "", val);
+    rtxNodeIdentifier(val, "pigeonMouette");
+    clearVariable(id);
+    insert theWith["LKM"]["version"];
+    rtxNodeWithConstraint(theWith["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert theWith["LKM"]["maj"];
+    rtxNodeWithConstraint(theWith["LKM"]["maj"], id, "", val);
+    rtxNodeNumber(val, "0");
+    clearVariable(id);
+    insert theWith["LKM"]["min"];
+    rtxNodeWithConstraint(theWith["LKM"]["min"], id, "", val);
+    rtxNodeNumber(val, "1");
+}
 
 // Now that we have compiled and generated the code for each one of
 // our placeHolders, let's register them all into the cache :
