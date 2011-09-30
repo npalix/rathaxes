@@ -2,6 +2,43 @@
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxLink.inc.cws"
 
+function addItf(cache1 : node, cache2 : node, item : node)
+{
+    if (!findElement(item.name, cache2.interfaces))
+    {
+        insert cache1.interfaces[item.name];
+        insert cache2.interfaces[item.name];
+        setall cache1.interfaces[item.name] = item;
+        setall cache2.interfaces[item.name] = item;
+    }
+    else
+    {
+        insert cache1.interfaces[item.name];
+        setall cache1.interfaces[item.name] = item;
+        foreach ext in item.extensions
+        {
+            pushItem cache2.interfaces[item.name].extensions;
+            setall cache2.interfaces[item.name].extensions#back = ext;
+        }
+    }
+}
+
+function createInterface(tmp : node, name : value, tree_flag : value = false)
+{
+    clearVariable(tmp);
+    insert tmp.name = name;
+    if (tree_flag == true)
+        insert tmp.tree_file = name + ".tree";
+    insert tmp.extensions;
+}
+
+function addExtension(itf : node, id : value)
+{
+    pushItem itf.extensions;
+    insert itf.extensions#back.with;
+    insert itf.extensions#back.tree_file = "trololofile"+id+".tree";
+}
+
 function addGlobal(cache1 : node, cache2 : node, item : node)
 {
     pushItem cache1.global_code;
@@ -92,20 +129,34 @@ local expected;
 local tmp;
 local tmp2;
 
+/*
+ * First create two global_code items into each cache.
+ */
+insert cache1.interfaces;
 insert cache1.global_code;
 insert cache1.templates;
 insert cache1.chunks;
+insert cache2.interfaces;
 insert cache2.global_code;
 insert cache2.templates;
 insert cache2.chunks;
+insert expected.interfaces;
 insert expected.global_code;
 insert expected.templates;
 insert expected.chunks;
 
 
-/*
- * First create two global_code items into each cache.
- */
+createInterface(tmp, "LKM", true);
+addExtension(tmp, "1");
+addItf(cache1, expected, tmp);
+
+createInterface(tmp, "Userland", true);
+addItf(cache1, expected, tmp);
+
+createInterface(tmp, "LKM", false);
+addExtension(tmp, "2");
+addItf(cache2, expected, tmp);
+
 createGlobalCacheItem(tmp, "1");
 addGlobal(cache1, expected, tmp);
 createGlobalCacheItem(tmp, "3");
