@@ -1,5 +1,7 @@
 #if !existFunction(rtxInterfaces_version)
 
+#include "rtxLink.inc.cws"
+
 function        rtxInterfaces_version()
 { return "1.0"; }
 
@@ -15,16 +17,23 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node
 {
     foreach inherited_interface in interface_node.inheritance
     {
+        local parentRef = false;
         local parentName = key(inherited_interface);
 
-        if (interfaces_list.findElement(parentName) == false)
+        if (interfaces_list.findElement(parentName) == false
+            && rtxLink_findInterface(parentName, parentRef) == false)
         {
             traceLine("Unable to find interface ``" + parentName
                       + "'' required by ``" + interface_node.name + "''");
             return false;
         }
         else
-            ref interface_node.inheritance[parentName] = interfaces_list[parentName];
+        {
+            if (parentRef == false)
+                ref interface_node.inheritance[parentName] = interfaces_list[parentName];
+            else
+                rtxLink_LoadItem(parentRef, interface_node.inheritance[parentName]);
+        }
     }
 
     return true;
