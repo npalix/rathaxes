@@ -550,10 +550,9 @@ function rtxLink_ValidateFiles(backend_path : value,
 
 declare function rtxLink_SessionRegister<T>(local_node : node,
                                             with_values : node,
-                                            script_file : value,
                                             out_ref_id : reference);
 function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
-                                    script_file : value, out_ref_id : reference)
+                                    out_ref_id : reference)
 {
     error("rtxLink:<ERROR> Registration not implemented for node type "+T);
 }
@@ -572,7 +571,6 @@ function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
  */
 function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
                                                  with_values : node,
-                                                 script_file : value,
                                                  out_ref_id : reference)
 {
     // First, build a fine comparable with node from the constraints
@@ -621,8 +619,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
     // Then recurse to register every template.
     foreach item in local_node.body.block
     {
-        rtxLink_SessionRegister<item.type>(item, theWith,
-                                           script_file, out_ref_id);
+        rtxLink_SessionRegister<item.type>(item, theWith, out_ref_id);
     }
 }
 
@@ -645,7 +642,6 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
  */
 function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
                                                 with_values : node,
-                                                script_file : value,
                                                 out_ref_id : reference)
 {
     local   hash;
@@ -705,8 +701,7 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
             insert chunk_ids.session = 0;
             insert chunk_ids.tmp = 0;
 
-            rtxLink_SessionRegister<chunk.type>(chunk, with_values,
-                                                key(chunk), chunk_ids);
+            rtxLink_SessionRegister<chunk.type>(chunk, with_values, chunk_ids);
             insert cachedTpl.chunks[pointcut_name] = chunk_ids.session;
             insert tmpTpl.chunks[pointcut_name] = chunk_ids.tmp;
         }
@@ -734,7 +729,6 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
  */
 function rtxLink_SessionRegister<"__rtx_chunk__">(local_node    : node,
                                                   with_values   : node,
-                                                  script_file   : value,
                                                   out_ref_id    : reference)
 {
     local   prevSize;
@@ -776,7 +770,6 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node    : node,
 // This function should be called with a root_block as local_node.
 function rtxLink_SessionRegister<"__root_block__">(local_node : node,
                                                    with_values : node,
-                                                   script_file : value,
                                                    out_ref_id : reference)
 {
     if (!existVariable(this.session))
@@ -802,8 +795,7 @@ function rtxLink_SessionRegister<"__root_block__">(local_node : node,
     {
         foreach item in local_node.block
         {
-            rtxLink_SessionRegister<item.type>(item, with_values,
-                                               script_file, out_ref_id);
+            rtxLink_SessionRegister<item.type>(item, with_values, out_ref_id);
         }
     }
     catch(sError)
@@ -821,8 +813,7 @@ function rtxLink_RegisterToCache(local_node : node)
     local dummy;
     // The three last arguments are only used when registering
     // specific elements.
-    if (rtxLink_SessionRegister<local_node.type>(local_node, dummy,
-                                                 dummy, dummy) == false)
+    if (rtxLink_SessionRegister<local_node.type>(local_node, dummy, dummy) == false)
         return false;
     return true;
 }
@@ -854,7 +845,8 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
         // For each template in the list
         foreach tpl in tpls
         {
-            if (!rtxLink_CheckTplConflict(dst.templates[tpl_hash], tpl) || this.cache_conflicts == "ignore")
+            if (!rtxLink_CheckTplConflict(dst.templates[tpl_hash], tpl)
+                || this.cache_conflicts == "ignore")
             {
                 tpl_id = getArraySize(dst.templates);
                 pushItem dst.templates[tpl_hash];
@@ -868,14 +860,16 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
                     chunk_id = getArraySize(dst.chunks[chunk_name]);
                     pushItem dst.chunks[chunk_name];
                     // Copy the chunk
-                    setall dst.chunks[chunk_name]#back = cache2.chunks[chunk_name][chunk];
-                    // Update the chunk's id in the new template.. may have changed.
+                    setall dst.chunks[chunk_name]#back =
+                                            cache2.chunks[chunk_name][chunk];
+                    // Update the chunk's id in the new template..
                     dst.templates[tpl_hash]#back.chunks[chunk_name] = chunk_id;
                 }
             }
             else
             {
-                error("A conflict was detected during the merging of the global and local caches.");
+                error("A conflict was detected during the merging of"
+                      +" the global and local caches.");
             }
         }
     }
