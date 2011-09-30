@@ -555,16 +555,16 @@ function rtxLink_findChunks(pointcut_name : node, out_chunks : node)
 
 /*
  *
- * This function works on the cache diff, and modifies the diff node
- * That will be added into the local cache.
+ * The functions rtxLink_Validate{Files,Itf} move the temporary
+ * files of a registered node into the path given as backend_path arg.
+ *
+ * This is used mostly when registering an item into the local cache.
  *
  */
 function rtxLink_ValidateFiles(backend_path : value,
-                              theKey : value, theWith : node,
+                              theKey : value, tmpWith : node,
                               tree_file : node, script_file : node)
 {
-    local tmpWith;
-    setall tmpWith = theWith;
     local filename = computeMD5(theKey + "_" + toString(tmpWith));
 
     try {
@@ -580,13 +580,28 @@ function rtxLink_ValidateFiles(backend_path : value,
 
     return true;
 }
+function rtxLink_ValidateItf(backend_path : value, tree_file : node)
+{
+    try {
+        copyFile(tree_file, backend_path + tree_file);
+    } catch(sError) {
+        traceLine("rtxLink_ValidateFiles: Could not copy interface's tree file"
+                  + " to backend directory : " + sError);
+        return false;
+    }
+    return true;
+}
 
 
+/*
+ * Tool function to get the specific storage path of files concerning
+ * the registered interfaces
+ */
 function rtxLink_getItfCachePath(isLocal : value)
 {
     if (isLocal == true)
-        return this.local_backlib_path+"/interfaces/";
-    return this.backlib_path+"/interfaces/";
+        return this.local_backlib_path+"interfaces/";
+    return this.backlib_path+"interfaces/";
 }
 
 
@@ -838,6 +853,7 @@ function rtxLink_SessionRegister<"__rtx_itf__">(local_node : node,
 {
     local itfName = local_node.name;
     localref itfs = this.session.interfaces;
+    localref tmp_itfs = this.session.temp.interfaces;
 
     if (findElement(itfName, itfs))
     {
@@ -848,8 +864,14 @@ function rtxLink_SessionRegister<"__rtx_itf__">(local_node : node,
     insert itfs[itfName];
     insert itfs[itfName].name = itfName;
     insert itfs[itfName].tree_file = itfName + ".tree";
-    saveProject(itfs[itfName].tree_file, local_node);
     insert itfs[itfName].extensions;
+    saveProject(itfs[itfName].tree_file, local_node);
+
+    // Add itf in temp...
+    insert tmp_itfs[itfName];
+    insert tmp_itfs[itfName].name = itfName;
+    insert tmp_itfs[itfName].tree_file = itfName + ".tree";
+    insert tmp_itfs[itfName].extensions;
 }
 
 function rtxLink_SessionRegister<"__rtx_itf_extension__">(local_node : node,
@@ -858,6 +880,7 @@ function rtxLink_SessionRegister<"__rtx_itf_extension__">(local_node : node,
 {
     local itfName = local_node.name;
     localref itfs = this.session.interfaces;
+    localref tmp_itfs = this.session.temp.interfaces;
 
     if (!findElement(itfName, itfs))
         error("The interface "+itfName+" must be registered already to be extended !");
@@ -870,6 +893,13 @@ function rtxLink_SessionRegister<"__rtx_itf_extension__">(local_node : node,
     setall ext.with = with_values;
     insert ext.tree_file = itfName + "_ext_" + ext_id + ".tree";
     saveProject(ext.tree_file, local_node);
+
+    // Add extension in temp...
+    pushItem tmp_itfs[itfName].extensions;
+    localref tmp_ext = tmp_itfs[itfName].extensions#back;
+    insert tmp_ext.with;
+    setall tmp_ext.with = with_values;
+    insert tmp_ext.tree_file = itfName + "_ext_" + ext_id + ".tree";
 }
 
 
@@ -924,6 +954,13 @@ function rtxLink_RegisterToCache(local_node : node)
     return true;
 }
 
+
+/*
+ *
+ * This function has for goal to merge two cache trees into one
+ * while managing the conflicts as told by this.cache_conflicts variable.
+ *
+ */
 function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
 {
     local tpl_hash;
@@ -933,6 +970,32 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
 
     // First copy cache1 into dst
     setall dst = cache1;
+
+    foreach itf in cache2.interfaces
+    {
+        if (!findElement(key(itf), dst.interfaces))
+        {
+            insert dst.interfaces[key(itf)];
+            setall dst.interfaces[key(itf)] = itf;
+        }
+        else
+        {
+            // The interface is defined in global cache :
+            // We have to check wether the local cache defines only
+            // extensions (not a conflict) or if it also defines an interface
+            // (conflict)
+            if (existVariable(itf.tree_file))
+                error("Cache merging error: The interface "
+                      + key(itf) + " exists in both caches !");
+            // FIXME XXX TODO 
+            // Here one day we will have to check more precisely about conflicts over itf extensions.
+            foreach ext in itf.extensions
+            {
+                pushItem dst.interfaces[key(itf)].extensions;
+                setall dst.interfaces[key(itf)].extensions#back = ext;
+            }
+        }
+    }
 
     // Next copy cache2's global codes into dst..
     foreach glob in cache2.global_code
@@ -993,6 +1056,7 @@ function rtxLink_LoadCache()
     if (!existVariable(this.session))
     {
         insert this.session;
+        insert this.session.interfaces;
         insert this.session.global_code;
         insert this.session.templates;
         insert this.session.chunks;
@@ -1020,6 +1084,18 @@ function rtxLink_ValidateDiff()
     // elements of the session.
     // That way, this is enough to use the references in order to change the
     // paths of the files in the session.
+    foreach itf in this.session.temp.interfaces
+    {
+        // Get local interface cache storage path.
+        local path = rtxLink_getItfCachePath(true);
+        if (rtxLink_ValidateItf(path, itf.tree_file) == false)
+            return false;
+        foreach ext in itf.extensions
+        {
+            if (rtxLink_ValidateItf(path, ext.tree_file) == false)
+                return false;
+        }
+    }
     foreach glob in this.session.temp.global_code
     {
         if (rtxLink_ValidateFiles(this.local_backlib_path,
@@ -1057,7 +1133,7 @@ function rtxLink_ValidateDiff()
     return true;
 }
 
-function rtxLink_SaveCache()
+function rtxLink_SaveCache(local_only_flag : value = true)
 {
     if (rtxLink_ValidateDiff() == false)
     {
@@ -1067,26 +1143,39 @@ function rtxLink_SaveCache()
     if (existVariable(this.session.temp))
         removeVariable(this.session.temp);
 
-    removeRecursive(this.caches.global, "load");
     removeRecursive(this.caches.local, "load");
-    
     saveProject(this.local_cache_path+"rtxLink_Cache.tree", this.caches.local);
-    saveProject(this.cache_path+"rtxLink_Cache.tree", this.caches.global);
+
+    if (local_only_flag == false)
+    {
+        removeRecursive(this.caches.global, "load");
+        saveProject(this.cache_path+"rtxLink_Cache.tree", this.caches.global);
+    }
+
     return true;
 }
 
 
-function rtxLink_InstallItem(item : node)
+function rtxLink_InstallItem(item : node, itf_flag : value = false)
 {
+    local local_path = this.local_backlib_path;
+    local glob_path = this.backlib_path;
+
+    if (itf_flag == true)
+    {
+        local_path = local_path + "interfaces/";
+        glob_path = glob_path + "interfaces/";
+    }
+
     if (existVariable(item.script_file))
     {
-        copyFile(this.local_backlib_path + item.script_file, this.backlib_path + item.script_file);
-        deleteFile(this.local_backlib_path + item.script_file);
+        copyFile(local_path + item.script_file, glob_path + item.script_file);
+        deleteFile(local_path + item.script_file);
     }
     if (existVariable(item.tree_file))
     {
-        copyFile(this.local_backlib_path + item.script_file, this.backlib_path + item.script_file);
-        deleteFile(this.local_backlib_path + item.script_file);
+        copyFile(local_path + item.script_file, glob_path + item.script_file);
+        deleteFile(local_path + item.script_file);
     }
 }
 
@@ -1095,6 +1184,14 @@ function rtxLink_InstallLocalCache()
     if (!existVariable(this.session))
         rtxLink_LoadCache();
 
+    foreach itf in this.caches.local.interfaces
+    {
+        rtxLink_InstallItem(itf, true);
+        foreach ext in itf.extensions
+        {
+            rtxLink_InstallItem(ext, true);
+        }
+    }
     foreach glob in this.caches.local.glob
     {
         rtxLink_InstallItem(glob);
@@ -1114,7 +1211,7 @@ function rtxLink_InstallLocalCache()
     rtxLink_MergeCaches(this.caches.global, this.caches.local, new_cache);
     setall this.caches.global = new_cache;
     clearVariable(this.caches.local);
-    rtxLink_SaveCache();
+    rtxLink_SaveCache(false);
 }
 
 #end

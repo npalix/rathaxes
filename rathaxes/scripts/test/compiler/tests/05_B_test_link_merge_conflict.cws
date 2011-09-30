@@ -2,6 +2,30 @@
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxLink.inc.cws"
 
+function addItf(cache1 : node, cache2 : node, item : node)
+{
+    insert cache1.interfaces[item.name];
+    insert cache2.interfaces[item.name];
+    setall cache1.interfaces[item.name] = item;
+    setall cache2.interfaces[item.name] = item;
+}
+
+function createInterface(tmp : node, name : value, tree_flag : value = false)
+{
+    clearVariable(tmp);
+    insert tmp.name = name;
+    if (tree_flag == true)
+        insert tmp.tree_file = name + ".tree";
+    insert tmp.extensions;
+}
+
+function addExtension(itf : node, id : value)
+{
+    pushItem itf.extensions;
+    insert itf.extensions#back.with;
+    insert itf.extensions#back.tree_file = "trololofile"+id+".tree";
+}
+
 function addGlobal(cache1 : node, cache2 : node, item : node)
 {
     pushItem cache1.global_code;
@@ -92,33 +116,100 @@ local expected;
 local tmp;
 local tmp2;
 
+
+local ret = 0;
+
+// Test conflict for itfs
+insert cache1.interfaces;
 insert cache1.global_code;
 insert cache1.templates;
 insert cache1.chunks;
+insert cache2.interfaces;
 insert cache2.global_code;
 insert cache2.templates;
 insert cache2.chunks;
+
+createInterface(tmp, "LKM", true);
+addExtension(tmp, "1");
+addExtension(tmp, "2");
+addExtension(tmp, "3");
+addItf(cache1, cache2, tmp);
+
+try
+{
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw an itf conflict error.");
+} catch (sError) {
+    traceLine("Error thrown by the merge cache function: The simple itf conflict was detected.");
+}
+
+
+
+
+
+// For now, do not test the conflicts over the global codes.
+/*
+ * Create two global_code items into each cache.
+clearVariable(expected);
+clearVariable(cache1);
+clearVariable(cache2);
+insert cache1.interfaces;
+insert cache1.global_code;
+insert cache1.templates;
+insert cache1.chunks;
+insert cache2.interfaces;
+insert cache2.global_code;
+insert cache2.templates;
+insert cache2.chunks;
+insert expected.interfaces;
 insert expected.global_code;
 insert expected.templates;
 insert expected.chunks;
 
-
-/*
- * First create two global_code items into each cache.
- */
 createGlobalCacheItem(tmp, "1");
 addGlobal(cache1, expected, tmp);
 createGlobalCacheItem(tmp, "3");
 addGlobal(cache1, expected, tmp);
 
-createGlobalCacheItem(tmp, "2");
+createGlobalCacheItem(tmp, "1");
 addGlobal(cache2, expected, tmp);
 createGlobalCacheItem(tmp, "4");
 addGlobal(cache2, expected, tmp);
 
+
+// Test conflict for glob
+try {
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw a glob conflict error.");
+} catch (sError) {
+    traceLine("Error thrown by the merge cache function: The simple glob conflict was detected.");
+}
+
+ */
+
+
+
 /*
  * Then create two templates items into each cache, with their associated chunk.
  */
+clearVariable(expected);
+clearVariable(cache1);
+clearVariable(cache2);
+insert cache1.interfaces;
+insert cache1.global_code;
+insert cache1.templates;
+insert cache1.chunks;
+insert cache2.interfaces;
+insert cache2.global_code;
+insert cache2.templates;
+insert cache2.chunks;
+insert expected.interfaces;
+insert expected.global_code;
+insert expected.templates;
+insert expected.chunks;
+
 createTemplateCacheItem(tmp, "1");
 createChunkCacheItem(tmp2, "1");
 addChunk(cache2, expected, tmp, tmp2);
@@ -135,13 +226,14 @@ createTemplateCacheItem(tmp, "2");
 createChunkCacheItem(tmp2, "2");
 addChunk(cache2, expected, tmp, tmp2);
 
-// And finally, merge the caches
+
+// Test conflict for tpls
 try {
-rtxLink_MergeCaches(cache1, cache2, result);
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw a tpl conflict error.");
 } catch (sError) {
-    traceLine("Error thrown by the merge cache function: The simple conflict was detected.");
-    exit (0);
+    traceLine("Error thrown by the merge cache function: The simple tpl conflict was detected.");
 }
 
-traceLine("Merge cache function did not throw a conflict error.");
-exit(1);
+exit(ret);
