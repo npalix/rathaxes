@@ -1,6 +1,6 @@
 #include "cnormNode.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
-#include "rtxLink.inc.cws"
+#include "rtxLink/rtxLink_ConfigMatcher.inc.cws"
 
 function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
 {
