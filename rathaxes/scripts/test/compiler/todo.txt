@@ -50,9 +50,9 @@ Tests Backend :
    * Inserer les full qualified names lors du type-checking             <= DONE
    * Gerer le cache uniquement avec du fully qualified                  <= DONE
 
- * Coder la fonction de match de configuration/with dans rtxLink        <= TODO
+ * Coder la fonction de match de configuration/with dans rtxLink        <= DONE
    * Coder les fonctions de normalisation de la config                  <= DONE
-   * Le with doit être formaté lors du type-checking avec middle-end    <= TODO
+   * Le with doit être formaté lors du type-checking avec middle-end    <= DONE
    * Coder la fonction de comparaison config/with                       <= DONE
    * Ajouter un test de validation                                      <= DONE
 
@@ -60,9 +60,9 @@ Tests Backend :
  
  * Gestion multi-placeholder (X en 1)                                   <= TODO 
 
- * Introspection du c_tree  : resolverValues "local".                   <= TODO
+ * Introspection du c_tree  : resolverValues "local".                   <= DONE
 
- * Empecher le cache de charger plusieurs fois le meme script           <= TODO
+ * Empecher le cache de charger plusieurs fois le meme script           <= DONE
 
  * Ajouter la vérification des items utilisés dans les placeHolders     <= TODO
 
@@ -87,7 +87,7 @@ Tests Backend :
        * Inserer le on_error avant les on_error precedents              <= TODO
        * Inserer le label généré avant le on_error                      <= TODO
 
- * Mettre à jour les fonctions d'inject pour filer la  VRAIE config     <= TODO
+ * Mettre à jour les fonctions d'inject pour filer la  VRAIE config     <= DONE
 
  * Faire une passe de validation apres rtxMeta pour valider  le mapping
    ou non (placeHolders == "${self}" ?)                                 <= TODO

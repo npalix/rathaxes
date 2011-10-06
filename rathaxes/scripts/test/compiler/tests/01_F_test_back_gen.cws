@@ -18,7 +18,7 @@ createDirectory(working_directory);
 changeDirectory(working_directory);
 
 
-#include "rtxLink.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 
 // The generated code will need this :
