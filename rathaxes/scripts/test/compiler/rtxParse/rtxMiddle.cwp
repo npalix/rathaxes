@@ -104,6 +104,7 @@ rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=
     rtx_scoped_identifier(sName) ';'
     => setall theDecl.identifiers = sName;
     #check(rtxNodeRType(rtypeNode, typeNode, params))
+    => setall theDecl.rtype = rtypeNode;
 ;
 
 rtx_itf_stmt<"sequence">(theDecl : node, nameList : node, theQualif : value) ::=
