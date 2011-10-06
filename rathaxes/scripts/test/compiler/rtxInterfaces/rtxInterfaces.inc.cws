@@ -1,5 +1,6 @@
 #if !existFunction(rtxInterfaces_version)
 
+#include "misc/colors.cws"
 #include "rtxLink/rtxLink.inc.cws"
 
 function        rtxInterfaces_version()
@@ -80,6 +81,7 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     local scope = currentDeclaration.rtype.name.scope;
     local name = currentDeclaration.rtype.name.name;
     local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local varname = currentDeclaration.identifiers.scope + "::" + currentDeclaration.identifiers.name;
     local ret = false;
 
     if (scope == "")
@@ -90,6 +92,9 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     else
     {
         ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
+        if (ret == false)
+            traceLine(RED + "[Error] Type variable ``" + typeName + "''"
+                      + " could not be found for variable ``" + varname + "''." + DEFAULT_COLOR);
     }
 
     return ret;
@@ -109,6 +114,14 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
         local rtypeNode;
         rtxItfIdNodeToRType(entry, rtypeNode);
         ret = rtxInterfaceHasType(rtypeNode, currentInterface);
+        if (ret == false)
+        {
+            traceLine(RED + "[Error] Parameter type ``"
+                      + rtypeNode.name.scope + "::" + rtypeNode.name.name + "''"
+                      + " could not be found for sequence ``"
+                      + typeName + "''." + DEFAULT_COLOR);
+            break;
+        }
     }
     return ret;
 }
@@ -120,8 +133,12 @@ function        rtxItfCheckTypesDeclarations_walk(currentInterface : node,
     {
         if (item.type == "__rtx_itf_decl__")
         {
-            if (rtxItfCheckTypesDeclarations<item.specifier>(item, currentInterface, interfacesList) == false)
+            if (rtxItfCheckTypesDeclarations<item.specifier>(item,
+                                                             currentInterface,
+                                                             interfacesList) == false)
+            {
                 return false;
+            }
         }
     }
     return true;
