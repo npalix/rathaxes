@@ -1,6 +1,6 @@
 #if !existFunction(rtxInterfaces_version)
 
-#include "rtxLink.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
 
 function        rtxInterfaces_version()
 { return "1.0"; }
