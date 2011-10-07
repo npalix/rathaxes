@@ -57,8 +57,8 @@ function        rtxItfAddTypeToList(theNode : node, nameList : reference)
 {
     if (theNode.specifier == "variable")
     {
-        traceLine("A variable souldn't be in the types list.");
-        error("A variable souldn't be in the types list.");
+        traceLine("A variable shouldn't be in the types list.");
+        error("A variable shouldn't be in the types list.");
     }
 
     local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
