@@ -101,6 +101,16 @@ Tests Backend :
  * Coder les extend interface                                           <= TODO
  * Enregistrement des extensions d'itf: mieux gerer les conflits        <= TODO
 
+ * Type Checking
+    * Checker les tpl vs itf (tout existe bien ?)                       <= DONE
+    * Checker les itf vs tpl (valide ?)                                 <= DONE
+    * Ajouter l'appel au check BACK dans la compilation du backend      <= TODO
+    * Checker l'existence des variables de config dans le with          <= TODO
+    * Ajouter l'appel au check WITH dans la compilation                 <= TODO
+    * Checker le front-end vs itf (tout existe ?)                       <= TODO
+    * Checker l'itf vs le frontend (req/opt valides ?)                  <= TODO
+    * Ajouter l'appel au check FRONT dans la compilation                <= TODO
+
 
 
  MANAGEMENT OF THE AST WEAVING :
