@@ -11,15 +11,24 @@
 #include "rtxNode/rtxNode.inc.cws"
 
 /*
+ * Include the type-checking scripts
+ */
+#include "rtxType/rtxType.inc.cws"
+#include "rtxInterfaces/rtxInterfaces.inc.cws"
+
+/*
  * Include the cache-managing script
  */
-#include "rtxLink.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
 
 /*
  * Include the backend annotation passes for the AST.
  */
 #include "rtxTpl/rtxCompile.inc.cws"
 #include "rtxTpl/rtxMeta.inc.cws"
+#include "rtxTpl/rtxTypeHash.inc.cws"
+#include "rtxTpl/rtxIntrospect.inc.cws"
+#include "rtxTpl/rtxTypeCheck.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
 
 
@@ -97,6 +106,20 @@ else if (   toLowerString(this.operation) == "blt-check"
     if (has_error)
     {
         exit(-1);
+    }
+
+    // Now, use the two passes to annotate the types and 
+    traceLine("Hashing types in instrumented C code...");
+    rtxTypeHash(source);
+    traceLine("Introspecting Instrumented C code...");
+    rtxIntrospect(source);
+
+    // After annotating the knowledge tree, We can now
+    // check each template against the associated interfaces
+    if (rtxTpl_TypeCheck(source) == false)
+    {
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
     }
 
     // Now generate the trees and codeworker files

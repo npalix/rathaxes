@@ -251,7 +251,7 @@ function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
             if (body.type == "__rtx_pointcut__")
             {
                 local fullTplPointcut = rtxRTypeName<body.name.type>(body.name);
-                if (fullTplPoincut == fullPointcut)
+                if (fullTplPointcut == fullPointcut)
                     return true;
             }
         }
@@ -377,7 +377,6 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
 
     // Next, we need to check that every non-mandatory chunk actually exists.
     // But... What about non-mandatory pointcuts ?
-    
     foreach chunk in tplTree.body.block
     {
         if (rtxTypeCheck_ItfDefinesPointcut(chunk.pointcut,
@@ -430,7 +429,7 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
         return false;
     }
 
-    // Check that the template respects the interface's contract.
+    // For each template in interface, check it.
     foreach item in itfTree.body
     {
         // Then it's either : a type, a sequence or a builtintype
