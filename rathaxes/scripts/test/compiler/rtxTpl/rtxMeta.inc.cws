@@ -75,6 +75,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             #check(rtxNodeIdentifier(theVar, var_name))
             '.'
             rtx_scoped_identifier(theChunk)
+            // For later resolution, we need to force it as an explicit global name
+/**/        => theChunk.global = true;
             // Create the node from
             #check(rtxNodeCall(theCall, theVar, theChunk, parameters))
             '('
