@@ -72,13 +72,14 @@ function rtxNodeSerial(local_node : node)
     return true;
 }
 
-function rtxNodeIdentifier(local_node : node, id : value, scope : value = "")
+function rtxNodeIdentifier(local_node : node, id : value, scope : value = "", global : value = false)
 {
     rtxNode(local_node);
     insert local_node.type = "__rtx_id__";
 
     insert local_node.scope = scope;
     insert local_node.name = id;
+    insert local_node.global = global;
 
     return true;
 }
@@ -238,12 +239,21 @@ function        rtxRTypeName<T>(theNode : node)
 
 function        rtxRTypeName<"__rtx_rtype__">(rTypeNode : node)
 {
-    return rTypeNode.name.scope + "::" + rTypeNode.name.name;
+    return rtxRTypeName<rTypeNode.name.type>(rTypeNode.name);
 }
 
 function        rtxRTypeName<"__rtx_id__">(theNode : node)
 {
-    return theNode.scope + "::" + theNode.name;
+    if (theNode.global == false && theNode.scope == "")
+    {
+        return theNode.name;
+    }
+    else if (theNode.global == true)
+    {
+        return "::" + theNode.name;
+    }
+    else
+        return theNode.scope + "::" + theNode.name;
 }
 
 function        rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node)
