@@ -17,12 +17,16 @@
 rtx_scoped_identifier(theNode : node) ::=
     #!ignore
 /**/=> local sScope = "";
+/**/=> local globally_defined = false;
     [
-    	#readIdentifier:sScope "::"
-	| => sScope = ""; "::"
+        #readIdentifier:sScope "::"
+    |
+        => sScope = "";
+        "::"
+        => globally_defined = true;
     ]?
     #readIdentifier:sIdentifier
-    #check(rtxNodeIdentifier(theNode, sIdentifier, sScope))
+    #check(rtxNodeIdentifier(theNode, sIdentifier, sScope, globally_defined))
 ;
 
 // This rule dissects an identifier in parts separated by dots.

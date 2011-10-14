@@ -96,10 +96,14 @@ function        rtxNodeItfChunkDeclaration(local_node : node,
     local dummy_body;
     local id_out_ref;
 
-    rtxNodeChunk(local_node, id_out_ref, dummy_param, dummy_body);
+    insert local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "chunk";
+
+    insert local_node.body;
+    rtxNodeChunk(local_node.body, id_out_ref, dummy_param, dummy_body);
     clearVariable(dummy_body);
 
-    insert local_node.qualifier = qualifier;
     setall id_out_ref = identifier;
 
     return true;
