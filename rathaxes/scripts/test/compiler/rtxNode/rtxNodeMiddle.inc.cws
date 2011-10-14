@@ -76,9 +76,13 @@ function        rtxNodeItfPointcutDeclaration(local_node : node,
     local dummy_default;
     local id_out_ref;
 
-    rtxNodePointcut(local_node, id_out_ref, out_ref_params, dummy_default);
-
+    insert local_node.type = "__rtx_itf_decl__";
     insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "pointcut";
+
+    insert local_node.body;
+    rtxNodePointcut(local_node.body, id_out_ref, out_ref_params, dummy_default);
+
     setall id_out_ref = identifier;
 
     return true;
