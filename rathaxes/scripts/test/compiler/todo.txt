@@ -104,9 +104,9 @@ Tests Backend :
  * Type Checking
     * Checker les tpl vs itf (tout existe bien ?)                       <= DONE
     * Checker les itf vs tpl (valide ?)                                 <= DONE
-    * Ajouter l'appel au check BACK dans la compilation du backend      <= TODO
+    * Ajouter l'appel au check BACK dans la compilation du backend      <= DONE
     * Checker l'existence des variables de config dans le with          <= TODO
-    * Ajouter l'appel au check WITH dans la compilation                 <= TODO
+    * Ajouter l'appel au check WITH dans la compilation                 <= DONE
     * Checker le front-end vs itf (tout existe ?)                       <= TODO
     * Checker l'itf vs le frontend (req/opt valides ?)                  <= TODO
     * Ajouter l'appel au check FRONT dans la compilation                <= TODO
