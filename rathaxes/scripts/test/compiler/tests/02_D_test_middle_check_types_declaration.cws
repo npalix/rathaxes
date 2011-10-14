@@ -20,11 +20,8 @@ changeDirectory(working_directory);
 #include "rtxInterfaces/rtxInterfaces.inc.cws"
 traceLine("Checking types declarations");
 
-foreach itf_node in source.block
+if (rtxItfCheckTypesDeclarations_walk(source, source.interfaces) == false)
 {
-    if (rtxItfCheckTypesDeclarations_walk(itf_node, source.interfaces) == false)
-    {
-        traceLine("Error while checking types.");
-        error("Error while checking types.");
-    }
+    traceLine("Error while checking types.");
+    error("Error while checking types.");
 }

@@ -135,6 +135,7 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
                         return true;
                 }
                 traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree.");
+                return false;
             }
 
             if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
@@ -219,6 +220,11 @@ function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode :
         {
             if (!findElement(pointcutId.scope, interfaceNode.inheritance))
             {  
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxTypeCheck_ItfCheckPointcut(pointcutId, parentInterface) == true)
+                        return true;
+                }
                 traceLine(RED + "[Error] The interface "+interfaceNode.name
                           +" does not depend on interface '"+pointcutId.scope
                           +"': The pointcut cannot be declared.");
