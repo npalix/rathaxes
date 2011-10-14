@@ -172,7 +172,7 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
         foreach chunk in local_node.body.block
         {
             //local pointcut_name = chunk.pointcut.name;
-            local pointcut_name = chunk.pointcut.scope+"::"+chunk.pointcut.name;
+            local pointcut_name = rtxRTypeName<chunk.pointcut.type>(chunk.pointcut);
             local chunk_ids;
             insert chunk_ids.hash = hash;
             insert chunk_ids.session = 0;
@@ -209,10 +209,8 @@ function rtxLink_SessionRegister<"__rtx_chunk__">(local_node    : node,
                                                   out_ref_id    : reference)
 {
     local   prevSize;
-    local   full_pointcut_name = local_node.pointcut.scope
-                                    + "::"
-                                    + local_node.pointcut.name;
-//full_name = local_node.pointcut.scope + "::" + local_node.pointcut.name;
+    local   full_pointcut_name =
+        rtxRTypeName<local_node.pointcut.type>(local_node.pointcut);
 
     if (!findElement(full_pointcut_name, this.session.chunks))
     {
