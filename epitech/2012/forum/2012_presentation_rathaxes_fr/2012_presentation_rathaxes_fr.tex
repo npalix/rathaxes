@@ -1,0 +1,116 @@
+\documentclass[xcolor={usenames,svgnames}]{beamer}
+
+\usepackage[francais]{babel}
+\usepackage{rtxslides}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={
+        interface, extend,                      % interfaces : decl
+        device, configuration, driver,          % devices
+        with, values,                           % backend+interface
+        builtin, provided, required, optional,  % interfaces: implem
+        type, sequence, variable,               % general: element type
+        pointcut, chunk,                        % for aspectual concepts
+        template                                % backend
+    },%
+	morecomment=[l][\color{Gainsboro}]{//},%
+ 	morecomment=[l][\color{Gainsboro}]{\#},%
+	morecomment=[s][\color{Gainsboro}]{/*}{*/},%
+	morestring=[b][\color{Gold}]",%
+	morestring=[b][\color{Gold}]',%
+	keywordstyle={\color{Tomato}}%
+}[keywords,comments,strings]
+
+\lstset{
+    language=rathaxes,
+    tabsize=4,
+    captionpos=b,
+    emptylines=0,
+    breaklines=false,
+    breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+    extendedchars=false,
+    showstringspaces=false,
+    showspaces=false,
+    numbersep=1ex,
+    showtabs=false,
+    basicstyle=\color{white}\scriptsize\ttfamily,
+    numberstyle=\color{Gainsboro}\scriptsize\ttfamily,
+    stepnumber=1,                   % the step between two line-numbers. If it's 1, each line
+    keywordstyle=\color{Tomato},
+    commentstyle=\color{Gainsboro},
+    stringstyle=\color{white},
+    backgroundcolor=\color{black},
+    escapeinside={\%*}{*)},         % if you want to add a comment within your code
+    morekeywords={*,...}            % if you want to add more keywords to the set
+}
+
+\title{\rtx\ -- Forum EIP 2012}
+\date{18 - 19 Novembre 2012}
+\author{T.Luquet \\ \texttt{www.rathaxes.org}}
+
+\definecolor{lightred}{RGB}{147,36,33}
+\tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
+
+\newcommand{\tred}[1]{\textcolor{rathaxesred}{#1}}
+
+\tikzset{warrow/.style={->, >=stealth, color=white, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=white}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Drivers instables - Drivers bancals}
+%% \begin{center}
+%% \Large{%
+  \begin{itemize}
+    \item test ;
+
+  %%\item Code critique (\emph{ Kernel Panic}, BSoD}) ;
+  %%\item  «30 % of Windows Vista crashes caused by Nvidia drivers » ;
+  \end{itemize}
+%% }
+%% \end{center}
+\end{frame}
+
+
+%% \begin{frame}{Pilotes de périphériques}
+%% \begin{center}
+%% \only<1>{\LARGE{Souvent \cemph{\Huge{instables}} et \cemph{\Huge{bancals}}}}
+%% \only<2>{%
+%% \large{\itshape{\rmfamily{«~\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}~»}}}
+
+%% \vspace{1cm}
+%% \raggedleft\large{2.6.39: \itshape{\rmfamily{«~les pilotes (\tred{65 \% des patchs})~»}} (patrick\_g)}
+
+%% \vspace{1cm}
+%% \large{2.6.35: \itshape{\rmfamily{«~les \tred{deux tiers des changements} dans les pilotes~»}}}
+%% }
+%% \end{center}
+%% \end{frame}
+
+
+
+\begin{frame}{Questions}
+\begin{center}
+\Huge{Merci}
+\end{center}
+\vspace{2em}
+\begin{itemize}
+\item \Large{\texttt{http://www.rathaxes.org/}}
+\item \Large{\texttt{\#rathaxes} sur \texttt{irc.freenode.net}}
+\end{itemize}
+\end{frame}
+
+\end{document}

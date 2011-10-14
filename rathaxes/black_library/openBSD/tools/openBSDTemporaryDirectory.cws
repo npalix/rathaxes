@@ -1,0 +1,6 @@
+declare function	getTempDir<"openBSD">();
+
+function	getTempDir<"openBSD">()
+{
+	return "/tmp/";
+}

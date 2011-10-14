@@ -1,0 +1,8 @@
+<%
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+#include "cnorm2c/cnorm2c.inc.cws"
+%>@cnorm2c(this.block)@

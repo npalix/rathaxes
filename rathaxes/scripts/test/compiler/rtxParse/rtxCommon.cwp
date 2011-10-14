@@ -1,0 +1,145 @@
+/*
+ *
+ * This file requires the following rules to be defined :
+ * - identifier
+ *
+ */
+
+
+/*
+ *
+ * Here are the rules for the base builtin types parsing
+ *  - scoped_identifier
+ *  - serial value
+ *  - numeric value
+ *  - string value
+ */
+rtx_scoped_identifier(theNode : node) ::=
+    #!ignore
+/**/=> local sScope = "";
+    [
+    	#readIdentifier:sScope "::"
+	| => sScope = ""; "::"
+    ]?
+    #readIdentifier:sIdentifier
+    #check(rtxNodeIdentifier(theNode, sIdentifier, sScope))
+;
+
+// This rule dissects an identifier in parts separated by dots.
+rtx_composed_identifier(theNode : node) ::=
+/**/=>local theVar;
+    rtx_scoped_identifier(theVar)
+    // Create the node from
+    #check(rtxNodeVar(theNode, theVar))
+    [
+        '.' identifier:curField
+        // add the field into the block
+        #check(rtxNodeVar_AddIdentifier(theNode, curField))
+    ]*
+;
+
+rtx_numeric(theNumber : node) ::=
+    #readInteger:number
+    #check(rtxNodeNumber(theNumber, number))
+;
+
+// A variable/parameter for a list of variable/parameters
+rtx_var(theVar : node) ::=
+    [
+        rtx_composed_identifier(theVar)
+    |
+        rtx_numeric(theVar)
+    ]
+;
+
+
+// Here we can identify a list of template variables
+rtx_var_list(theBlock : node) ::=
+/**/=> local lastNode;
+    rtx_var(lastNode)
+    #check(rtxNodeVarList_AddNode(theBlock, lastNode))
+    [
+        ','
+/**/    => local lastVar;
+        rtx_var(lastVar)
+        #check(rtxNodeVarList_AddNode(theBlock, lastVar))
+    ]*
+;
+
+rtx_serial_separator ::=
+    #!ignore  ['.' | '_' | '-']
+;
+rtx_serial_unit ::=
+ #!ignore [ #noCase 'A'..'Z' | '0'..'9' ]+
+;
+
+rtx_serial(theSerial : node) ::=
+    #!ignore
+    rtx_serial_unit:sElement
+/**/=> local unit;
+    #check(rtxNodeSerialUnit(unit, sElement))
+    #check(rtxNodeSerial_AddUnit(theSerial, unit))
+    [
+        rtx_serial_separator:sSep
+/**/    => local theSeparator;
+        #check(rtxNodeSerialSep(theSeparator, sSep))
+        rtx_serial_unit:sElem
+/**/    => local theUnit;
+        #check(rtxNodeSerialUnit(theUnit, sElem))
+        #check(rtxNodeSerial_AddUnit(theSerial, theSeparator))
+        #check(rtxNodeSerial_AddUnit(theSerial, theUnit))
+    ]+
+;
+
+rtx_value(theValue : node) ::=
+        #readIdentifier:sId
+        // Prevent next char from being a serial sep. (or its a serial value)
+        [ #!ignore !rtx_serial_separator ]
+        #check(rtxNodeIdentifier(theValue, sId))
+    |
+        #readInteger:sInt
+        // Prevent next char from being a serial sep. (or its a serial value)
+        // AND     next char from being an alpha char. (or its a serial value)
+        [ #!ignore ![ [#noCase 'A'..'Z'] | rtx_serial_separator ] ]
+        #check(rtxNodeNumber(theValue, sInt))
+    |
+        #check(rtxNodeSerial(theValue))
+        rtx_serial(theValue)
+    |
+/**/    => local sString;
+        string_constant(sString)
+        #check(rtxNodeString(theValue, sString))
+;
+
+
+
+/*
+ *
+ * Here are the rules for the parsing of the template sequence prototypes
+ * It is used both in the backend and in the middle-end
+ *
+ */
+
+rtx_seq_param(theParams : node, theIdentifiers : node) ::=
+    #pushItem(theIdentifiers)
+    #pushItem(theParams)
+    rtx_scoped_identifier(theParams#back)
+    [    #readIdentifier:theIdentifiers#back ]?
+;
+
+rtx_seq_parameter(theParams : node, theIdentifiers : node) ::=
+    '('
+    [
+        rtx_seq_param(theParams, theIdentifiers)
+        [ ',' rtx_seq_param(theParams, theIdentifiers) ]*
+    ]?
+    ')'
+;
+
+rtx_template_prototype(theRtype : node, theIdentifiers : node) ::=
+/**/=> local nameNode;
+/**/=> local params;
+    rtx_scoped_identifier(nameNode)
+    #check(rtxNodeRType(theRtype, nameNode, params))
+    rtx_seq_parameter(params, theIdentifiers)
+;

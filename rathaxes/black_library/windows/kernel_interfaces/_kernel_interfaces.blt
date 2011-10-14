@@ -1,0 +1,12 @@
+<%
+/*
+**  _kernel_interfaces.blt in black_library/windows/kernel_interfaces
+**  for Rathaxes project
+**  made by Micka
+*/
+%>
+
+ADVICE kernel_interfaces PART_OF kernel_interfaces
+{
+  	JOINPOINT common_interface IN kernel_interfaces.common_interface;
+};

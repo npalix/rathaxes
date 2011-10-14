@@ -1,0 +1,14 @@
+/*
+**  rdsl_single_statement.cwh in scripts/parsing
+**  for Rathaxes project
+**  made by Christophe Fajardo
+**
+**  ---------------------------------------------------------------------------
+*/
+
+#include "rdsl_algorithms.cwh"
+
+rdsl_single_statement(nScope : node) ::=
+    rdsl_algorithms(nScope)
+    //| rdsl_sequence_call(nScope);
+;

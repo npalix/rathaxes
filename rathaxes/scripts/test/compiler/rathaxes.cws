@@ -1,0 +1,148 @@
+// Define some color if available
+#include "misc/colors.cws"
+
+/*
+ * Include Parsing dependencies.
+ */
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "rtxNode/rtxNode.inc.cws"
+
+/*
+ * Include the cache-managing script
+ */
+#include "rtxLink.inc.cws"
+
+/*
+ * Include the backend annotation passes for the AST.
+ */
+#include "rtxTpl/rtxCompile.inc.cws"
+#include "rtxTpl/rtxMeta.inc.cws"
+#include "rtxTpl/rtxGen.inc.cws"
+
+
+function usage()
+{
+    traceLine(  "Usage: rathaxes generate (linux|openbsd|windows) file.rtx" + endl()
+                + "    or rathaxes blt-check (file.blt|file.rtx)" + endl()
+                + "    or rathaxes blt-register (file.blt|file.rtx)" + endl()
+                + "    or cache (install|clear)");
+}
+
+/*
+ * First, setup the paths 
+ */
+insert this.rathaxes_path = _ARGS[0];
+insert this.scripts_path  = this.rathaxes_path + "/" + "compiler"        + "/";
+insert this.backlib_path  = this.rathaxes_path + "/" + "backend_library" + "/";
+insert this.cache_path    = this.rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.rathaxes_path)){ createDirectory(this.rathaxes_path); }
+if (!existDirectory(this.backlib_path)) { createDirectory(this.backlib_path); }
+if (!existDirectory(this.cache_path))   { createDirectory(this.cache_path); }
+
+insert this.local_rathaxes_path = _ARGS[1];
+insert this.local_backlib_path  = this.local_rathaxes_path + "/" + "backend_library" + "/";
+insert this.local_cache_path    = this.local_rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.local_rathaxes_path))  { createDirectory(this.local_rathaxes_path); }
+if (!existDirectory(this.local_backlib_path))   { createDirectory(this.local_backlib_path); }
+if (!existDirectory(this.local_cache_path))     { createDirectory(this.local_cache_path); }
+
+insert this.operation = _ARGS[2];
+
+if (toLowerString(this.operation) == "generate")
+{
+    local target_os = toLowerString(_ARGS[3]);
+    traceLine("The driver generation is not implemented yet.");
+}
+else if (   toLowerString(this.operation) == "blt-check"
+         || toLowerString(this.operation) == "blt-register")
+{
+    local inputFile = _ARGS[3];
+    local source;
+
+    // Load cache first
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
+
+    // Parse the file
+    cnormDialect<"__std__">(source);
+    parseAsBNF("rtxParse/rtx.cwp", source, inputFile);
+    removeVariable(source.dialect);
+    if (!isEmpty(source.error))
+    {
+        local out = endl() + "An error Occured while parsing :" + endl() + "Trace:" + endl();
+        foreach stack_line in source.error[0].trace
+            out += stack_line;
+        out += endl() + "Error: " + source.error[0].msg;
+        traceLine(out);
+        exit(-1);
+    }
+
+    // Compile the placeHolders
+    foreach item in source.block
+        rtxTpl_walk<item.type>(item);
+    local has_error = false;
+    foreach item in source.block
+    {
+        rtxMeta_walk<item.type>(item);
+        if (!isEmpty(item.error))
+        {
+            traceLine("Item of type '"+item.type+"' could not be parsed :"
+                      + endl() + item.error);
+            has_error = true;
+        }
+    }
+    if (has_error)
+    {
+        exit(-1);
+    }
+
+    // Now generate the trees and codeworker files
+    foreach item in source.block
+    {
+        local uid = 0;
+        rtxGen<item.type>(item, uid);
+        uid = $uid + 1$;
+    }
+
+    // And register the whole thing into the cache session.
+    if (rtxLink_RegisterToCache(source) == false)
+    {
+        error("01_test_back.cws: Could not register blt into the cache !");
+    }
+
+    if (toLowerString(this.operation) == "blt-register")
+    {
+        if (rtxLink_SaveCache() == false)
+            error("Could not save cache !");
+    }
+}
+else if (toLowerString(this.operation) == "cache")
+{
+    insert this.subop = _ARGS[3];
+    if (toLowerString(this.subop) == "clear")
+    {
+        rtxLink_LoadCache();
+        clearVariable(this.caches.local);
+        rtxLink_SaveCache();
+    }
+    else if (toLowerString(this.subop) == "install")
+    {
+        rtxLink_InstallLocalCache();
+    }
+    else
+    {
+        usage();
+        exit(1);
+    }
+
+}
+else
+{
+    usage();
+    exit(1);
+}
+
+exit (0);

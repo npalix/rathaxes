@@ -1,0 +1,388 @@
+/*
+ * Copyright (c) 2007 Amsallem David <filth@evilkittens.org>
+ *
+ * Relecteur :  Gallon Sylvestre <syl@evilkittens.org>
+ *              Chehade Gilles <veins@evilkittens.org>
+ *              Marchese Emilie <grizzlee.888@gmail.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+FreeBSD-LKM
+
+FreeBSD Loadable Kernel Module
+
+Le but de ce document est d'introduire les bases de la programmation de LKM
+sous FreeBSD.
+
+Il est fort possible que vous entendiez parler de "KLD". Il s'agit du Dynamic
+Kernel Linker facility, qui n'est rien d'autre que le systeme de LKM. C'est
+juste que depuis FreeBSD 3.0, ce nom de KLD a ete adopte pour faire comprendre
+que des changements avaient ete apportes au systeme de LKM existant. Par
+convention et soucis de comprehension nous utiliserons le terme LKM.
+
+Trois sujets seront traites ici :
+
+        - Partie commune a tous les LKM.
+        - Syscall module.
+        - Device driver module.
+
+Cet article suppose que vous connaissez un minimum l'interface KLD et
+particulierement ces trois commandes :
+
+        - kldload       : Permet de charger un module kernel.
+        - kldunload     : Permet de decharger un module kernel.
+        - kldstat       : Permet de lister les modules kernel charges.
+
+Si vous n'avez aucune idee de quoi je parle, reportez vous aux pages de man
+(man (8) [kldload | kldunload | kldstat]).
+
+
+Partie commune a tous les LKM :
+
+Tout LKM se doit d'avoir au minimum :
+
+        - Des fichiers a inclure indispensables pour un LKM :
+
+#include <sys/types.h> /* Types used in module.h */
+#include <sys/module.h> /* DECLARE_MODULE and structures used for macros */
+#include <sys/param.h>  /* Defines used in kernel.h */
+#include <sys/kernel.h> /* Types used in module initialization */
+
+        - Une fonction qui est le point d'entree de votre module lors d'un
+load, unload, shutdown, ou quiesce (ce sont les differents events possibles
+d'un module kernel), son prototype se trouve dans "/usr/include/sys/module.h".
+Nous appellerons cette fonction "event handler", elle est prototypee de la
+sorte :
+
+static int
+event_handler(module_t *mod, int event, void *arg);
+
+Le parametre 'mod' est un pointeur sur une structure module_t qui correspond
+a un element d'une liste chainee dont chacun des elements est associe a
+un module charge dans le kernel. Par consequent, 'mod' est donc un pointeur
+sur votre module courant.
+
+Le parametre 'event' correspond a l'event provenant de l'enum modeventtype_t
+(cf. "/usr/include/sys/module.h"). Il peut s'agir des elements
+suivants :
+
+MOD_LOAD      : Definit lors du chargement du module.
+MOD_UNLOAD    : Definit lors du dechargement du module.
+MOD_SHUTDOWN  : Definit pendant l'arret du systeme.
+MOD_QUIESCE   : Unknown. /* FIXME */
+
+Le parametre 'arg' est un argument pouvant etre passe au 'event handler' au
+moment ou on declare le module a l'aide des macros prevues a cet effet.
+
+Voici un exemple de base d'implementation de cette fonction :
+
+static int
+event_handler(module_t *mod, int event, void *arg)
+{
+  int  err = 0;
+
+  switch (event)
+  {
+    case (MOD_LOAD):
+      printf("LKM loaded\n");
+      break;
+    case (MOD_UNLOAD):
+      printf("LKM unloaded\n");
+      break;
+    default:
+      /* Value not supported (cf. "/usr/include/sys/errno.h") */
+      err = EOPNOTSUPP;
+      break;
+  }
+  return (err);
+}
+
+        - Une macro *_MODULE permettant de declarer le module aupres du
+kernel. La macro principale est DECLARE_MODULE qui est elle meme un wrapper a
+la macro SYSINIT. DECLARE_MODULE permet de declarer n'importe quel type de
+module, mais pour faciliter l'implementation de certains types de modules, des
+macros servant de wrapper a DECLARE_MODULE ont ete crees. Il s'agit de
+SYSCALL_MODULE (pour les syscalls) et de DEV_MODULE (pour les device drivers) :
+
+  - DECLARE_MODULE(name, data, sub, order) (cf. "/usr/include/sys/module.h")
+
+Le parametre 'name' est tout simplement le nom que vous voulez donner a votre
+module.
+
+Le parametre 'data' est un pointeur sur une structure de type moduledata_t 
+(cf. "/usr/include/sys/module.h") que vous devez definir. Cette structure
+contient deux champs principaux :
+
+        - char *name            : Le nom de votre module
+        - modeventhand_t evhand : Un pointeur sur votre 'event handler', ce qui
+permet de definir le point d'entree de votre module.
+
+Le parametre 'sub' est une valeur provenant de l'enum sysinit_sub_id (cf.
+"/usr/include/sys/kernel.h") utile pour le SYSINIT. Cet enum contient la
+liste de tous les types de modules connus par le systeme. Par exemple la
+valeur SI_SUB_DRIVERS sera utilisee dans le cas d'un 'device driver module'.
+Vous voyez maintenant pouquoi cette macro peut etre utilisee pour declarer
+tous les types de modules ;).
+
+Le parametre 'order' est une valeur provenant de l'enum sysinit_elem_order
+(cf. "/usr/include/sys/kernel.h") utile pour le SYSINIT. Cette valeur definit
+l'ordre d'initialisation de votre module par rapport aux autres dans le
+systeme qui gere les LKM. Si vous voulez qu'il soit initialise en premier,
+vous mettrez la valeur SI_ORDER_FIRST, en second SI_ORDER_SECOND, au milieu
+SI_ORDER_MIDDLE, en dernier SI_ORDER_LAST...
+
+  - SYSCALL_MODULE(name, offset, new_sysent, evh, arg)
+    (cf. "/usr/include/sys/sysent.h")
+
+Le parametre 'name' est tout simplement le nom que vous voulez donner a votre
+module.
+
+Le parametre 'offset' est le numero de notre syscall. Dans le cas de LKM,
+cette valeur sera toujours NO_SYSCALL (cf. "/usr/include/sys/sysent.h") etant
+donne qu'il n'y a pas de numero reserve a un LKM qui definit un nouveau
+syscall. La valeur NO_SYSCALL permet de laisser le systeme definir lui meme
+le premier numero disponible pour ce nouveau syscall.
+
+Le parametre 'new_sysent' est un pointeur sur une struct sysent (cf.
+"/usr/include/sys/sysent.h") qui definit votre syscall. Cette structure
+contient les champs suivants :
+
+        - int sy_narg        : Nombre d'arguments que prends votre syscall.
+        - sy_call_t *sy_call : Pointeur sur votre fonction qui definit votre
+syscall.
+        - au_event_t sy_auevent : unknown /* FIXME */
+
+Le parametre 'evh' n'est rien de plus qu'un pointeur sur votre fonction
+'event handler' qui est le point d'entree de votre module.
+
+Le parametre 'arg' est utilise dans la structure moduledata_t et 
+la valeur NULL est generalement passee. Il s'agit de l'argument de votre
+'event handler'.
+
+  - DEV_MODULE(name, evh, arg) (cf. "/usr/include/sys/conf.h")
+
+Le parametre 'name' est le meme que dans les deux macros precedentes...c'est
+le nom de votre module.
+
+Le parametre 'evh' est toujours et encore le pointeur sur votre fonction
+'event handler' qui est le point d'entree de votre module.
+
+Le parametre 'arg' est egalement le meme que precedemment, la valeur NULL est
+generalement passee. Il s'agit de l'argument de votre 'event handler'.
+
+Nous venons de finir l'etude du minimum requit pour pouvoir faire un LKM sous
+FreeBSD, ce minimum requis etant la partie commune a tout LKM. Recapitulons :
+
+        - Une serie d'include necessaire pour votre module.
+        - Une fonction qui est le point d'entree de votre module.
+        - Une macro qui permet de declarer le type de votre module au sein
+du systeme.
+
+Exemple typique d'un LKM minimaliste :
+
+/*
+ *  Amsallem David - filth@evilkittens.org
+ *    Skeleton for lkm on freeBSD
+ */
+
+#include <sys/types.h> /* NECESSARY for all basic types */
+#include <sys/module.h> /* NECESSARY for DECLARE_MODULE macro and others */
+#include <sys/systm.h> /* Used for uprintf(); */
+#include <sys/errno.h> /* Used for EOPNOTSUPP error code or others */
+#include <sys/param.h> /* NECESSARY for defines used by sys/kernel.h */
+#include <sys/kernel.h> /* NECESSARY for types used in module initialization */
+
+/*
+ *  Handler for loading and unloading lkm
+ */
+
+static int  skeleton_loader(struct module *mod, int event, void *arg)
+{
+  int  error; /* Return value, 0 if no error */
+
+  error = 0;
+  if (event == MOD_LOAD) /* Load event */
+    uprintf("skeleton module loaded.\n");
+  else if (event == MOD_UNLOAD) /* Unload event */
+    uprintf("skeleton module unloaded.\n");
+  else /* Event not supported */
+    error = EOPNOTSUPP; /* EOPNOTSUPP (sys/errno.h) : Operation not supported */
+  return (error);
+}
+
+/*
+ *  Structure which describe the module 
+ */
+
+static moduledata_t skeleton_mod =
+{
+  "skeleton", /* Module name */
+  skeleton_loader, /* Handler for loading and unloading event */
+  NULL /* Arguments passed to the handler */
+};
+
+/* 
+ *  Macro to declare the module to the kernel
+ */
+
+DECLARE_MODULE(skeleton, skeleton_mod, SI_SUB_KLD, SI_ORDER_ANY);
+
+
+Et voici le Makefile qui vous permet de le tester (d'ailleur vos Makefile pour
+vos modules ressemblerons generalemenent a celui-ci) :
+
+SRCS=skeleton.c
+KMOD=skeleton
+
+.include <bsd.kmod.mk>
+
+Ensuite il ne vous reste plus qu'a charger votre module dans le kernel :
+
+kldload -v ./skeleton.ko
+
+
+Syscall module :
+
+En dehors du fait qu'un module syscall contient la partie commune decrite
+plus haut, il est evident que des elements viendront s'ajouter :
+
+        - La definition de votre fonction representant votre syscall. Son
+prototype est le suivant : int my_syscall(struct thread *td, void *arg); .
+Par exemple :
+
+static int
+my_syscall(struct thread *td, void *arg)
+{
+  printf("my_syscall called !\n");
+  return (0);
+}
+
+        - La definition de votre struct sysent qui va permettre de renseigner
+le systeme sur votre syscall (grace a la macro SYSCALL_MODULE). Nous l'avons
+explique plus haut dans la partie commune. Par exemple, reprenons le syscall
+juste au dessus : 
+
+static struct sysent my_syscall_sysent =
+{
+  0,
+  my_syscall
+};
+
+        - La definition de votre numero de syscall. Etant explique plus haut,
+je ne reviendrai pas dessus. Nous pouvons pour notre exemple le definir de la
+sorte :
+
+static  int     my_syscall_num = NO_SYSCALL;
+
+        - Utilisez la macro SYSCALL_MODULE prevue a cet effet plutot que
+DECLARE_MODULE pour declarer votre module au sein du kernel, comme par
+exemple :
+
+SYSCALL_MODULE( my_syscall,
+                &my_syscall_num, 
+                &my_syscall_sysent,
+                event_handler,
+                NULL);
+
+Exemple d'implementation d'un syscall :
+
+/*
+ *  Amsallem David - filth@evilkittens.org
+ *    Skeleton for sycall on freeBSD
+ */
+
+#include <sys/types.h>
+#include <sys/module.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+#include <sys/sysent.h> /* NECESSARY for types used for syscall */
+#include <sys/param.h>
+#include <sys/kernel.h>
+
+/*
+ * Function that defines the syscall
+ */
+
+static int
+my_syscall(struct thread *td, void *arg)
+{
+  printf("my_syscall called !\n");
+  return (0);
+}
+
+/*
+ * Struct sysent which declares the syscall to the system.
+ */
+
+static struct sysent my_syscall_sysent =
+{
+  0,
+  my_syscall
+};
+
+/*
+ * The offset in sysent where the syscall is allocated.
+ */
+
+static int my_syscall_num = NO_SYSCALL;
+
+/* 
+ *  Event handler that deals with the loading and unloading of a KLD.
+ */
+
+static int
+my_syscall_event_handler(struct module *mod, int event, void *arg)
+{
+  int err = 0;
+
+  switch (event)
+  {
+    case MOD_LOAD:
+      uprintf("Syscall KLD loaded from slot : %d\n", my_syscall_num);
+      break;
+    case MOD_UNLOAD:
+      uprintf("Syscall KLD unloaded from slot : %d\n", my_syscall_num);
+      break;
+    default:
+      err = EOPNOTSUPP;
+      break;
+   }
+  return(err);
+}
+
+SYSCALL_MODULE( my_syscall,
+                &my_syscall_num,
+                &my_syscall_sysent,
+                my_syscall_event_handler,
+                NULL);
+
+
+Voici le minimum pour pouvoir creer votre syscall, ce qui fait que peu de
+choses interessantes peuvent etre fait.
+Le Makefile reste le meme que precedemment et idem pour la facon de charger
+le module, ce sont deux constantes qui ne bougeront pas jusqu'a la fin de cet
+article.
+L'implementation d'un syscall plus pousse sera l'objet d'un prochain article,
+ici ce n'est pas le but (qui est d'apprendre a faire un LKM selon les
+differentes possiblites : LKM simple, syscall, device driver) :).
+
+Device Driver Module
+
+Malheureusement, par manque de temps je n'ai pas pu terminer cette partie
+concernant les devices drivers, et je n'y reviendrai pas avant Novembre.
+
+
+N'hesitez pas a relever toutes erreurs ou incoherences concernant cet article.
+N'hesitez pas non plus a le reutiliser selon les termes de la license ou a le
+modifier.

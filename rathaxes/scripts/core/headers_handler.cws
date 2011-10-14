@@ -1,0 +1,115 @@
+/*
+**  headers_handler.cws in script/core
+**  for Rathaxes project
+**  made by Thor
+*/
+
+declare function generateHeadersString(theHeaders : node, sOutputList : reference);
+declare function resolveHeadersDependencies(nDevice : node, sHeadersList : reference);
+declare function headersHandler(nDevice : node);
+
+
+/*
+**  This self recursive function is used generate 
+**  #include list according to the "require" node given in
+**  parameter and the involved semantics. The list is
+**  generated in the sOutputList parameter.
+*/
+function generateHeadersString(theHeaders : node, sOutputList : reference)
+{
+    foreach header in theHeaders
+    {
+        if (header == TRUE)
+        {
+            generateHeadersString(header, sOutputList);
+            pushItem sOutputList = header.key();
+        }
+    }
+    return;
+}
+
+
+/*
+**  This function resolves the dependencies between
+**  required headers and activates the linked semantics
+**  according to the .rtx file in entry. The headers
+**  tree is then refactored to optimize its size and
+**  inner exploration.
+*/
+function resolveHeadersDependencies(nDevice : node, sHeadersList : reference)
+{
+    foreach semantic in nDevice.require
+    {
+        if (nDevice.semantic[semantic.key()] == TRUE)
+        {
+            set semantic = TRUE;
+            foreach header in semantic
+            {
+                foreach depend in header
+                {
+                    if (existVariable(semantic[depend.key()]))
+                    {
+                        setall depend = semantic[depend.key()];
+                        set semantic[depend.key()] = FALSE;
+                    }
+                }
+            }
+            generateHeadersString(semantic, sHeadersList);
+        }
+        else
+        {
+            removeAllElements(semantic);
+            set semantic = FALSE;
+        }
+    }
+    return;
+}
+
+
+/*
+**  This function handles the following features:
+**
+**    - Testing the existence of the dependencies
+**      file description "dependencies.blt" in the
+**      root folder of an operating system's black
+**      librairy.
+**
+**    - Parsing this file to the driver.require node.
+**
+**    - Resolving the headers inter-dependencies to
+**      get a string containing to required #includes.
+**
+**    - Preprocessing these headers, then parsing
+**      the output and finally copying the C types
+**      encountered in driver.types node.
+**
+**    - generating the corresponding C code in the
+**      output file.
+*/
+function headersHandler(nDevice : node)
+{
+    local sDependenciesFilePath;
+    local sHeadersList;
+    local nTemp;
+
+    sDependenciesFilePath = RTX_BLACK_LIBRARY_PATH + project.references.operatingSystem + getOperatingSystemPathSeparator() + "dependencies.blt";
+    traceLine("loading dependencies:" + sDependenciesFilePath);
+    if(existFile(sDependenciesFilePath))
+    {   
+        insert nDevice.require;
+
+        parseAsBNF("bdsl_dependencies.cwp", nDevice.require, sDependenciesFilePath);
+        resolveHeadersDependencies(nDevice, sHeadersList);        
+        parseHeaderFile(nTemp, sHeadersList, project.references.operatingSystem);
+
+        if(existFile(project.references.outputFile))
+            deleteFile(project.references.outputFile);      
+        foreach item in sHeadersList
+        {
+            appendFile(project.references.outputFile, "#include <" + item + ">\n");
+        }
+        return;
+    }
+    rtxError("Headers dependencies description file [dependencies.blt] not found in " + project.references.operatingSystem + " Black Library folder.");
+    return;
+}

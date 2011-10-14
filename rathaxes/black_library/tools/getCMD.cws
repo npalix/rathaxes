@@ -1,0 +1,8 @@
+// Default function for unimplemented getCMD OS.
+
+declare function	getCMD<T>(file : value, outputFile : value);
+
+function	getCMD<T>(file : value, outputFile : value)
+{
+	return null;
+}
