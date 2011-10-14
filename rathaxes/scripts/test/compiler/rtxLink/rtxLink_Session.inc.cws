@@ -334,11 +334,13 @@ function rtxLink_SessionRegister<"__root_block__">(local_node : node,
         // the chunks field contains information about chunks themselves :
         // template's ID, index in the template, associated with node.
         insert this.session.chunks;
+        insert this.session.interfaces;
         // Add temporary for differencial session/cache.
         insert this.session.temp;
         insert this.session.temp.global_code;
         insert this.session.temp.templates;
         insert this.session.temp.chunks;
+        insert this.session.temp.interfaces;
     }
 
     try
@@ -492,6 +494,7 @@ function rtxLink_LoadCache()
         insert this.session.temp.global_code;
         insert this.session.temp.templates;
         insert this.session.temp.chunks;
+        insert this.session.temp.interfaces;
     }
 
     try {

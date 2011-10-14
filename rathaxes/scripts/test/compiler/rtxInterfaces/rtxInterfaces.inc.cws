@@ -6,17 +6,17 @@
 function        rtxInterfaces_version()
 { return "1.0"; }
 
-function        rtxItfCheckInheritance_walk<T>(interface_node : node,
+function        rtxItfCheckInheritance_walk<T>(local_node : node,
                                        interfaces_list : node)
 {
     traceLine("Unknown rtx_node :" + T);
-	error("Unknown rtx_node :" + T);
+    return true;
 }
 
-function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node,
+function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
                                                            interfaces_list : node)
 {
-    foreach inherited_interface in interface_node.inheritance
+    foreach inherited_interface in local_node.inheritance
     {
         local parentRef = false;
         local parentName = key(inherited_interface);
@@ -25,20 +25,47 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(interface_node : node
             && rtxLink_findInterface(parentName, parentRef) == false)
         {
             traceLine("Unable to find interface ``" + parentName
-                      + "'' required by ``" + interface_node.name + "''");
+                      + "'' required by ``" + local_node.name + "''");
             return false;
         }
         else
         {
             if (parentRef == false)
-                ref interface_node.inheritance[parentName] = interfaces_list[parentName];
+                ref local_node.inheritance[parentName] = interfaces_list[parentName];
             else
-                rtxLink_LoadItem(parentRef, interface_node.inheritance[parentName]);
+                rtxLink_LoadItem(parentRef, local_node.inheritance[parentName]);
         }
     }
 
     return true;
 }
+
+function        rtxItfCheckInheritance_walk<"__block__">(local_node : node,
+                                                         interfaces_list : node)
+{
+    local err_count = 0;
+    foreach item in local_node.block
+    {
+        if (rtxItfCheckInheritance_walk<item.type>(item, interfaces_list) == false)
+            increment(err_count);
+    }
+    if (err_count != 0)
+        return false;
+    return true;
+}
+function rtxItfCheckInheritance_walk<"__rtx_with__">(local_node : node,
+                                                     interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node.body, interfaces_list);
+}
+
+function        rtxItfCheckInheritance_walk<"__root_block__">(local_node : node,
+                                                              interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node, interfaces_list);
+}
+
+
 
 function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
 {
@@ -86,7 +113,7 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
 
     if (scope == "")
     {
-        traceLine("Type should be define in the global namespace");
+        traceLine("Type '"+name+"' should be defined in the global namespace.");
         ret = true;
     }
     else
@@ -126,22 +153,54 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
     return ret;
 }
 
-function        rtxItfCheckTypesDeclarations_walk(currentInterface : node,
+function        rtxItfCheckTypesDeclarations<"__rtx_itf__">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    local errcount = 0;
+    foreach decl in currentDeclaration.body.block
+    {
+        if (rtxItfCheckTypesDeclarations<decl.specifier>(decl, currentDeclaration, interfacesList) == false)
+            increment(errcount);
+    }
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration : node,
+                                                          currentInterface : node,
+                                                          interfacesList : node)
+{
+    local errcount = 0;
+    foreach item in currentDeclaration.block
+    {
+        if (rtxItfCheckTypesDeclarations<item.type>(item,
+                                                    currentInterface,
+                                                    interfacesList) == false)
+            increment(errcount);
+    }
+    if(errcount != 0)
+        return false;
+    return true;
+}
+function        rtxItfCheckTypesDeclarations<"__rtx_with__">(currentDeclaration : node,
+                                                             currentInterface : node,
+                                                             interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+function        rtxItfCheckTypesDeclarations<"__root_block__">(currentDeclaration : node,
+                                                               currentInterface : node,
+                                                               interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+
+function        rtxItfCheckTypesDeclarations_walk(local_node : node,
                                                   interfacesList : node)
 {
-    foreach item in currentInterface.body.block
-    {
-        if (item.type == "__rtx_itf_decl__")
-        {
-            if (rtxItfCheckTypesDeclarations<item.specifier>(item,
-                                                             currentInterface,
-                                                             interfacesList) == false)
-            {
-                return false;
-            }
-        }
-    }
-    return true;
+    return rtxItfCheckTypesDeclarations<local_node.type>(local_node, local_node, interfacesList);
 }
 
 
