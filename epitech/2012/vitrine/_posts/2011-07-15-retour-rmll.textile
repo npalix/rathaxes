@@ -13,6 +13,10 @@ C’était une expérience très valorisante dans le sens ou cela nous a permis 
 
 Nous espérons, par le biais d’événement de ce genre, commencer à susciter la curiosité des gens pour notre projet et de ce fait recevoir un support de la part de contributeur autour de la toile.
 
+Voici l'interview de David par Intelli'N TV :
+
+<iframe width="587" height="328" src="http://www.youtube.com/embed/P4C3w_XG2wg?rel=0" frameborder="0" allowfullscreen></iframe>
+
 À bientôt !
 
 -- Thomas Sanchez
