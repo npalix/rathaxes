@@ -43,7 +43,7 @@ function rtxLink_LoadItem(cache_node : node,
         error("rtxLink:<ERROR> The node does not contain any script or tree to load!");
 
     // Test if the node has already been loaded or not ?
-    if (load_script == false || !existVariable(cache_node.load))
+    if (load_script != false && !existVariable(cache_node.load))
     {
         traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script_file + "'");
         try {
@@ -55,7 +55,7 @@ function rtxLink_LoadItem(cache_node : node,
         }
         insert cache_node.load = true;
     }
-    else if (load_script == true)
+    else if (load_script != false)
     {
         traceLine("rtxLink:<LOG> Script Already loaded !");
     }

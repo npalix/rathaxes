@@ -139,6 +139,7 @@ else if (   toLowerString(this.operation) == "blt-check"
         traceLine("Template Type Checking failed. Stopping template compilation.");
         exit(1);
     }
+    traceLine("Template type checking suceeded");
 
     // Now generate the trees and codeworker files
     foreach item in source.block

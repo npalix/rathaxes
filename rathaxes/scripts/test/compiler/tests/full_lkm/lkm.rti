@@ -1,47 +1,46 @@
-interface LKM
+interface LKM : Algorithms
 {
-    builtin  type               Device_list;//??
-    builtin  type		Symbol;
+    provided builtintype        LKM::Device_list;
+    provided builtintype		LKM::Symbol;
 
     provided pointcut           LKM::INCLUDE_DEPENDENCIES;
     provided pointcut           LKM::GLOBAL_DATA_DECLARATION;
     provided pointcut           LKM::GLOBAL_CODE_DEFINITION;
 
-    provided sequence           load()
+    provided sequence           LKM::load()
     {
         provided pointcut       LKM::INIT_LKM_FPTRS(Symbol); // Symbol is the type of the joinpoint
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
     }
 
-    provided sequence           unload()
+    provided sequence           LKM::unload()
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
     }
 
-    required variable Device_list       Devices;
-    required variable string            OS;
-    optional variable numser            version;
-    optional variable numser            arch;
+    required variable LKM::Device_list      LKM::Devices;
+    required variable Algorithms::string    LKM::OS;
+    optional variable Algorithms::numser    LKM::version;
+    optional variable Algorithms::numser    LKM::arch;
 }
 
-interface Algorithms : LKM
+interface Algorithms
 {
-    builtin  type       string;
-    builtin  type       number;
-    builtin  type       numser;
-    builtin  type       register[ register_field [ number ] ]; //collection?
-    provided type       Buffer;
+    provided builtintype        Algorithms::string;
+    provided builtintype        Algorithms::number;
+    provided builtintype        Algorithms::numser;
+    provided builtintype        Algorithms::register; //[ register_field [ number ] ];
+    provided builtintype        Algorithms::register_field; //[ register_field [ number ] ];
+    provided type               Algorithms::Buffer;
 
-    provided sequence   log(string)
+    provided sequence   Algorithms::log(Algorithms::string)
     {
-        provided chunk   LKM::GLOBAL_CODE_DEFINITION;
         provided chunk   ::CALLS; // use current namespace/template from frontend
     }
 
-    provided sequence   set(register, register_field) // should be in subsystem BUS
+    provided sequence   Algorithms::set(Algorithms::register, Algorithms::register_field) // should be in subsystem BUS
     {
-    	provided chunk  LKM::GLOBAL_CODE_DEFINITION;
-	provided chunk  ::CALLS; // use current namespace/template from frontend
+        provided chunk  ::CALLS; // use current namespace/template from frontend
     }
     //...
 }
@@ -51,35 +50,34 @@ interface User : LKM
     provided type               Context;//why not device?
 
 
-    required sequence           open(Context)
+    required sequence           User::open(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
-        provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut	::CALLS;
+        provided pointcut	    ::CALLS;
     }
 
-    required sequence           close(Context)
-    {
-        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
-        provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
-    }
-
-    required sequence           read(Context, Buffer)
+    required sequence           User::close(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
         provided pointcut       ::CALLS;
     }
 
-    required sequence           write(Context, Buffer)
+    required sequence           User::read(Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
         provided pointcut       ::CALLS;
     }
 
-    required sequence           on_plug(Context)
+    required sequence           User::write(Context, Algorithms::Buffer)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       ::CALLS;
+    }
+
+    required sequence           User::on_plug(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
@@ -87,38 +85,38 @@ interface User : LKM
     }
 }
 
-with LKM
-values OS=Linux
-{
-    extend interface
-    {
-        required variable string    type;
-        required variable number    MAJOR;
-        optional variable number    minor;
-    }
-}
+//with LKM
+//values OS=Linux
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
 
-with LKM
-values OS=OpenBSD
-{
-    extend interface
-    {
-        required variable string    type;
-        required variable number    MAJOR;
-        optional variable number    minor;
-    }
-}
+//with LKM
+//values OS=OpenBSD
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
 
-with LKM
-values OS=Windows
-{
-    extend interface
-    {
-        required variable numser    UUID;
-        required variable string    device_name;
-        required variable string    device_guid;
-        required variable string    class_name;
-        required variable string    class_guid;
-        required variable string    dispatch_mode;
-    }
-}
+//with LKM
+//values OS=Windows
+//{
+//    extend interface
+//    {
+//        required variable numser    UUID;
+//        required variable string    device_name;
+//        required variable string    device_guid;
+//        required variable string    class_name;
+//        required variable string    class_guid;
+//        required variable string    dispatch_mode;
+//    }
+//}
