@@ -38,8 +38,8 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
         if (interfaces_list.findElement(parentName) == false
             && rtxLink_findInterface(parentName, parentRef) == false)
         {
-            traceLine("Unable to find interface ``" + parentName
-                      + "'' required by ``" + local_node.name + "''");
+            traceLine(RED + "[Error] Unable to find interface ``" + parentName
+                      + "'' required by ``" + local_node.name + "''" + DEFAULT_COLOR);
             return false;
         }
         // If any of the two attemps succeededm then retrieve the node.
@@ -134,7 +134,7 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
                     if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
                         return true;
                 }
-                traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree.");
+                traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -227,7 +227,7 @@ function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode :
                 }
                 traceLine(RED + "[Error] The interface "+interfaceNode.name
                           +" does not depend on interface '"+pointcutId.scope
-                          +"': The pointcut cannot be declared.");
+                          +"': The pointcut cannot be declared." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -276,7 +276,7 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
 
     if (scope == "")
     {
-        traceLine("Type '"+name+"' should be defined in the global namespace.");
+        traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace." + DEFAULT_COLOR);
         ret = true;
     }
     else
@@ -328,7 +328,7 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
             {
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeName<decl.body.pointcut.type>(decl.body.pointcut)
-                          +"' is not declared.");
+                          +"' is not declared." + DEFAULT_COLOR);
                 increment(errcount);
             }
             // In the case of success, the scoped identifier is already updated.
@@ -411,21 +411,40 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
     local itfNode;
     local itfTree;
 
+    // If there is no explicit interface, we must check each interface in the dependencies.
     // First, load the interface's tree...
     if (rtxLink_findInterface(itfName, itfNode) == false)
     {
-        traceLine("Interface '" + itfName + "' containing the template"
-                  + " could not be found within the cache.");
+        traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
         return false;
     }
     if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
     {
-        traceLine("Could not load interface's '" + itfName
-                  + "' tree.");
+        traceLine(RED + "[Error] Could not load interface's '" + itfName
+                  + "' tree." + DEFAULT_COLOR);
         return false;
     }
+    if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree) != false)
+    {
+        pointcutId.scope = itfName;
+        return true;
+    }
 
-    rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree);
+    // If test did not succeed  AND the interface is not explicitly given:
+    if (pointcutId.scope == "")
+    {
+        // Then, check for the parent interfaces.
+        foreach parent in itfTree.inheritance
+        {
+            local name = key(parent);
+            if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutId, name) != false)
+            {
+                pointcutId.scope = name;
+                return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -434,14 +453,26 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
 /*
  * This function takes a Rtype node for a chunk and a template tree,
  * and checks whether the chunk was implemented within the template.
+ *
+ * XXX TODO FIXME
+ * The function does not check if the statement is ambiguous:
+ * if two interfaces define "PLOP", then defining the chunk "PLOP" will
+ * not result in an ambiguous statement, but resolve as the first pointcut
+ * encountered.
  */
 function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
 {
     local fullPointcut = rtxRTypeName<chunkId.type>(chunkId);
     foreach item in tpl.body.block
     {
-        if (fullPointcut == rtxRTypeName<item.pointcut.type>(item.pointcut))
+        // If Fully-qulified equals, or if only name matches and not fully qualified
+        if (fullPointcut == rtxRTypeName<item.pointcut.type>(item.pointcut)
+            || (chunkId.name == item.pointcut.name && item.pointcut.scope == ""))
+        {
+            // Then qualify it.
+            item.pointcut.scope = chunkId.scope;
             return true;
+        }
     }
     return false;
 }
@@ -449,6 +480,12 @@ function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
 /*
  * This function takes a Rtype node for a pointcut and a template tree,
  * and checks whether the pointcut was defined within the template.
+ *
+ * XXX TODO FIXME
+ * The function does not check if the statement is ambiguous:
+ * if the interface declare two "PLOP" for a same template but different scopes,
+ * then defining the pointcut "PLOP" will not result in an ambiguous statement,
+ * but resolve as the first pointcut encountered.
  */
 function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
 {
@@ -461,8 +498,13 @@ function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
             if (body.type == "__rtx_pointcut__")
             {
                 local fullTplPointcut = rtxRTypeName<body.name.type>(body.name);
-                if (fullTplPointcut == fullPointcut)
+                if (fullTplPointcut == fullPointcut
+                    || (body.name.name == pointcutId.name && body.name.scope == ""))
+                {
+                    // Then qualify it
+                    body.name.scope = pointcutId.scope;
                     return true;
+                }
             }
         }
     }
@@ -508,9 +550,9 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
         // The mapping ids are the keys in tpl.mapping.body.block
         if (!findElement(mapId, tpl_mapping))
         {
-            traceLine("Type template " + tplName
+            traceLine(RED + "[Error] Type template " + tplName
                       +" does not implement the required mapping: '"
-                      + mapId + "'.");
+                      + mapId + "'." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -528,9 +570,9 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
         }
         if (check != true)
         {
-            traceLine("Type template " + tplName
+            traceLine(RED + "[Error] Type template " + tplName
                       + " implements an unknown mapping: '"
-                      + key(mapping) + "'.");
+                      + key(mapping) + "'." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -565,23 +607,26 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
     // First, check that the template respects what's imposed by the interface
     foreach item in itfTplNode.body.block
     {
-        if (item.type == "__rtx_chunk__"
-            && rtxTypeCheck_TemplateHasChunk(item.pointcut, tplTree) == false
-            && item.qualifier == "provided")
+        if (item.type == "__rtx_itf_decl__")
         {
-            traceLine("Sequence template '" + tplName
-                      + "' does not provide the chunk '"
-                      + rtxRTypeName<item.pointcut.type>(item.pointcut) + "'");
-            increment(errcount);
-        }
-        if (item.type == "__rtx_pointcut__"
-            && rtxTypeCheck_TemplateHasPointcut(item.name, tplTree) == false
-            && item.qualifier == "provided")
-        {
-            traceLine("Sequence template '" + tplName
-                      + "' does not provide the pointcut '"
-                      + rtxRTypeName<item.name.type>(item.name) + "'");
+            if (item.specifier == "chunk"
+                && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
+                && item.qualifier == "provided")
+            {
+                traceLine(RED + "[Error] Sequence template '" + tplName
+                          + "' does not provide the chunk '"
+                          + rtxRTypeName<item.body.pointcut.type>(item.body.pointcut) + "'" + DEFAULT_COLOR);
                 increment(errcount);
+            }
+            if (item.specifier == "pointcut"
+                && rtxTypeCheck_TemplateHasPointcut(item.body.name, tplTree) == false
+                && item.qualifier == "provided")
+            {
+                traceLine(RED + "[Error] Sequence template '" + tplName
+                          + "' does not provide the pointcut '"
+                          + rtxRTypeName<item.body.name.type>(item.body.name) + "'" + DEFAULT_COLOR);
+                    increment(errcount);
+            }
         }
     }
 
@@ -589,12 +634,15 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
     // But... What about non-mandatory pointcuts ?
     foreach chunk in tplTree.body.block
     {
+        local name = chunk.pointcut.scope;
+        if (name == "")
+            name = tplTree.prototype.rtype.name.scope;
         if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut,
-                                                chunk.pointcut.scope) == false)
+                                                name) == false)
         {
-            traceLine("Pointcut '"
+            traceLine(RED + "[Error] Pointcut '"
                       + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
-                      + "' not found within interface '" + chunk.pointcut.scope + "'.");
+                      + "' has never been defined." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -629,18 +677,18 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
     // Load the itf's tree...
     if (rtxLink_findInterface(itfName, itfNode) == false)
     {
-        traceLine("Interface '" + itfName + "' containing the template"
-                  + " could not be found within the cache.");
+        traceLine(RED + "[Error] Interface '" + itfName + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
         return false;
     }
     if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
     {
-        traceLine("Could not load interface's '"+itfName+"' tree.");
+        traceLine(RED + "[Error] Could not load interface's '"+itfName+"' tree." + DEFAULT_COLOR);
         return false;
     }
 
     // For each template in interface, check it.
-    foreach item in itfTree.body
+    foreach item in itfTree.body.block
     {
         // Then it's either : a type, a sequence or a builtintype
         if (existVariable(item.rtype))
@@ -648,8 +696,8 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
             local fullItfProto = rtxRTypeName<item.rtype.type>(item.rtype);
             if (fullTplProto == fullItfProto)
             {
-                return rtxTypeCheck_TemplateSpec<item.dtype>(tplRtype, tplTree,
-                                                             item);
+                return rtxTypeCheck_TemplateSpec<item.specifier>(tplRtype, tplTree,
+                                                                 item);
             }
         }
     }

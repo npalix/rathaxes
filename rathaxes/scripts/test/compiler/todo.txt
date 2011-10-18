@@ -111,6 +111,12 @@ Tests Backend :
     * Checker l'itf vs le frontend (req/opt valides ?)                  <= TODO
     * Ajouter l'appel au check FRONT dans la compilation                <= TODO
 
+ * Improve Type Checking
+    * Faire une premiere passe de qualification complete des elements   <= TODO
+    * Separer la qualification complete du type-checking                <= TODO
+    * Detecter correctement les cas ambigus (XXX dans le code) plutot
+      que les resoudre silencieusement en acceptant la premiere soluce  <= TODO
+
 
 
  MANAGEMENT OF THE AST WEAVING :

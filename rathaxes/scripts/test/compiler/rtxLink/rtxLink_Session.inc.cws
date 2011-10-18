@@ -496,7 +496,11 @@ function rtxLink_LoadCache()
     }
 
     try {
+        try {
         cwLoadProject(this.cache_path+"rtxLink_Cache.tree", this.caches.global);
+        } catch (sError) { 
+            traceLine("No global cache found.");
+        }
         cwLoadProject(this.local_cache_path+"rtxLink_Cache.tree", this.caches.local);
     } catch (sError) {
         return false;

@@ -8,17 +8,13 @@ declare function rtxTpl_TypeCheckFor<T>(local_node : node);
 function rtxTpl_TypeCheckFor<T>(local_node : node)
 {
     // Silent if not implemented...
+    traceLine("unmanaged type "+T);
     return true;
 }
 
 function    rtxTpl_TypeCheckFor<"__rtx_tpl__">(local_node : node)
 {
     return rtxTypeCheck_Template(local_node.prototype.rtype, local_node);
-}
-
-function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node)
-{
-    return rtxTpl_TypeCheckFor<"__block__">(local_node.body);
 }
 
 function rtxTpl_TypeCheckFor<"__block__">(local_node : node)
@@ -30,6 +26,11 @@ function rtxTpl_TypeCheckFor<"__block__">(local_node : node)
             increment(count);
     }
     return count;
+}
+
+function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node)
+{
+    return rtxTpl_TypeCheckFor<"__block__">(local_node.body);
 }
 
 function rtxTpl_TypeCheckFor<"__root_block__">(local_node : node)
