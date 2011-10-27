@@ -120,15 +120,13 @@ function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : r
         return true;
 }
 
-function rtxNodeSequence(local_node : node, seqname : node, seqparamname : node, seqparamtype : node, body : reference)
+function rtxNodeSequence(local_node : node, rtype : node, seqparamname : node, body : reference)
 {
         rtxNode(local_node);
         local_node.type = "__rtx_sequence__";
-        insert local_node.name;
-        setall local_node.name = seqname;
-        insert local_node.seqParamType;
+        insert local_node.rtype;
+        setall local_node.rtype = rtype;
         insert local_node.seqParamName;
-        setall local_node.seqParamType = seqparamtype;
         setall local_node.seqParamName = seqparamname;
         insert local_node.body;
         cnormNodeBlock(local_node.body);

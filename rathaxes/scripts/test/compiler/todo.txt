@@ -107,15 +107,17 @@ Tests Backend :
     * Ajouter l'appel au check BACK dans la compilation du backend      <= DONE
     * Checker l'existence des variables de config dans le with          <= TODO
     * Ajouter l'appel au check WITH dans la compilation                 <= DONE
-    * Checker le front-end vs itf (tout existe ?)                       <= TODO
-    * Checker l'itf vs le frontend (req/opt valides ?)                  <= TODO
-    * Ajouter l'appel au check FRONT dans la compilation                <= TODO
+    * Checker le front-end vs itf (tout existe ?)                       <= DONE
+    * Checker l'itf vs le frontend (req/opt valides ?)                  <= DONE
+    * Ajouter l'appel au check FRONT dans la compilation                <= DONE
 
  * Improve Type Checking
     * Faire une premiere passe de qualification complete des elements   <= TODO
     * Separer la qualification complete du type-checking                <= TODO
     * Detecter correctement les cas ambigus (XXX dans le code) plutot
       que les resoudre silencieusement en acceptant la premiere soluce  <= TODO
+    * Front-end: Faire en sorte de checker le contenu des blocks de
+      chaque sequence appellée
 
 
 

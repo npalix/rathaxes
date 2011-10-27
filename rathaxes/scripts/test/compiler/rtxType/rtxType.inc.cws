@@ -12,10 +12,10 @@ function        rtxType_Parse<T>(src : value)
 function        rtxType_Search(src : value, out : node)
 {
         foreach it in this.rtxTypes
-        {       
-                traceLine(it.key() + "?" + src);
+        {
+                //traceLine(it.key() + "?" + src);
                 if (rtxType_Parse<it.key()>(src))
-                {       
+                {
                         local sKey = it.key();
                         truncateBeforeString(sKey, ".inc.cws");
                         insert out.type = sKey;
@@ -29,8 +29,8 @@ function        rtxType_Search(src : value, out : node)
 function        rtxType_Load(out : node)
 {
         local   theDir;
-        if !scanDirectories(theDir, getEnv("RTX_PATH")+"/scripts/test/compiler/rtxType/rules_types/", "*.inc.cws") 
-        {       error("unable to load rules_types directory");}
+        if !scanDirectories(theDir, getEnv("RTX_PATH")+"/scripts/test/compiler/rtxType/rules_types/", "*.inc.cws")
+        { error("unable to load rules_types directory"); }
         foreach f in theDir.files
         {
                 local content = loadFile(theDir + f);
