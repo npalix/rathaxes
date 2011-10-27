@@ -337,6 +337,123 @@ function rtxNodeChunk(local_node        : node,
     return true;
 }
 
+declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
+
+function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node)
+{
+    error("rtxNodeCall_paramType<"+T+"> not implemented.");
+}
+
+function rtxNodeCall_paramType<"string">(theParam : node, theSequence : node, out_param : node)
+{
+    return rtxNodeIdentifier(out_param, "string", "", true);
+}
+
+function rtxNodeCall_paramType<"number">(theParam : node, theSequence : node, out_param : node)
+{
+    return rtxNodeIdentifier(out_param, "number", "", true);
+}
+
+function rtxNodeCall_paramType<"symbol">(theParam : node, theSequence : node, out_param : node)
+{
+    // Since it's a symbol, we truncate at the first '.'
+    local varParts;
+    cutString(theParam.val, '.', varParts);
+
+    // First, search inside the parameters of the implemented sequence.
+    foreach item in theSequence.seqParamName
+    {
+        if (item == varParts[0])
+        {
+            setall out_param = theSequence.rtype.params[index(item)];
+            // Now that the variable is identified, we must check the mappings if there's some
+            if (getArraySize(varParts) > 1)
+            {
+                // Then we're using a mapping
+                traceLine(YELLOW + "[Warning] Mapping checking not implemented."+ DEFAULT_COLOR);
+                return false;
+            }
+            // Success.
+            return true;
+        }
+    }
+
+    // If it's not a parameter of the implemented sequence, is it a register ?
+    localref theDevice = theSequence#parent#parent#parent;
+    foreach decl in theDevice.body.block
+    {
+        // The variable was actually a register... Let's check it thoroughly
+        if (decl.type == "__rtx_register__" && decl.name == varParts[0]
+            && getArraySize(varParts) == 1)
+        {
+            // Set the id as a '::register'
+            rtxNodeIdentifier(out_param, "register", "", true);
+            return true;
+        }
+        else if (decl.type == "__rtx_register__" && decl.name == varParts[0])
+        {
+            foreach field in decl.body.block
+            {
+                if (field.name == varParts[1] && getArraySize(varParts) == 2)
+                {
+                    // Set the id as a '::register_field'
+                    rtxNodeIdentifier(out_param, "register_field", "", true);
+                    return true;
+                }
+                else if (field.name == varParts[1])
+                {
+                    foreach val in field.listmask
+                    {
+                        if (val.name == varParts[2])
+                        {
+                            if (getArraySize(varParts) > 3)
+                            {
+                                traceLine(RED + "[Error] A register value cannot contain elements: '"
+                                  + theParam.val + "'." + DEFAULT_COLOR);
+                                return false;
+                            }
+                            // Set the id as a '::register_value'
+                            rtxNodeIdentifier(out_param, "register_value", "", true);
+                            return true;
+                        }
+                    }
+                    traceLine(RED + "[Error] Value '" + varParts[2] + "' not defined for field '"
+                              + varParts[1] + "' of register '" + varParts[0] + "'." + DEFAULT_COLOR);
+                    return false;
+                }
+            }
+            traceLine(RED + "[Error] Field '" + varParts[1] + "' not defined for register '"
+                      + varParts[0] + "'." + DEFAULT_COLOR);
+            return false;
+        }
+    }
+
+    traceLine(RED + "[Error] Variable '" + varParts[0] + "' is not defined in the sequence '"
+              + rtxRTypeName<theSequence.rtype.type>(theSequence.rtype) + "'.");
+    return false;
+}
+
+function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node)
+{
+    local errcount = 0;
+    local params; // ref to fill in later.
+    rtxNodeRType(theRtype, theCall.sequence, params);
+    foreach param in theCall.args
+    {
+        pushItem params;
+        if (rtxNodeCall_paramType<param.type>(param, theSequence, params#back) == false)
+        {
+            traceLine(RED + "[Error] Could not identify type of " + param.val
+                      + "(parameter index: " + index(param) + ") to sequence "
+                      + rtxRTypeName<theCall.sequence.type>(theCall.sequence)
+                      + "." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+    if (errcount != 0)
+        return false;
+    return true;
+}
 
 #include "rtxNodeFront.inc.cws"
 #include "rtxNodeMiddle.inc.cws"

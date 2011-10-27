@@ -15,6 +15,7 @@
  */
 #include "rtxType/rtxType.inc.cws"
 #include "rtxInterfaces/rtxInterfaces.inc.cws"
+#include "rtxFront/rtxTypeCheck.inc.cws"
 
 /*
  * Include the cache-managing script
@@ -93,6 +94,24 @@ insert this.operation = _ARGS[2];
 if (toLowerString(this.operation) == "generate")
 {
     local target_os = toLowerString(_ARGS[3]);
+    local inputFile = _ARGS[4];
+
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
+
+    insert this.front;
+
+    cnormDialect<"__std__">(this.front);
+    rtxType_Load(this.front);
+    rtxParse(inputFile, this.front);
+
+    if (rtxFront_TypeCheck(this.front) == false)
+    {
+        traceLine(RED + "[Error] Front-end implementation type"
+                  + " checking failed. Stopping compilation." + DEFAULT_COLOR);
+        exit (1);
+    }
+
     traceLine("The driver generation is not implemented yet.");
 }
 else if (   toLowerString(this.operation) == "blt-check"

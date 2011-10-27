@@ -62,15 +62,16 @@ rtx_stmt<"device">(theBlock : node) ::=
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
 /**/    => local deviceBody;
 /**/    #check(rtxNodeDevice(lastNode, device_name, deviceBody))
-        ["use" 
-                #readIdentifier:itf 
+        ["use"
+            #readIdentifier:itf
+/**/        #check(rtxNodeDevice_AddUseInterface(lastNode, itf))
+		    [
+                ','
+/**/            #continue(sError, "ITF FUCK")
+			    #readIdentifier:itf
 /**/            #check(rtxNodeDevice_AddUseInterface(lastNode, itf))
-		[',' 
-/**/                    #continue(sError, "ITF FUCK")
-			#readIdentifier:itf
-/**/                    #check(rtxNodeDevice_AddUseInterface(lastNode, itf))
-		]*
-	]?
+		    ]*
+	    ]?
 /**/    #continue(sError, "Expected block after device statement.")
         '{'
                 [rtx_stmt_device_block(deviceBody)]*
@@ -78,7 +79,7 @@ rtx_stmt<"device">(theBlock : node) ::=
         '}'
 ;
 
-rtx_stmt_device_block(theBlock : node) ::= 
+rtx_stmt_device_block(theBlock : node) ::=
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
@@ -154,7 +155,7 @@ rtx_property(theNode : node) ::=
         '}'
 ;
 
-rtx_qualified_name ::= #!ignore [#readIdentifier:itf =>traceLine("i:" + itf); "::"]? #readIdentifier:seq_name =>traceLine("o:" + seq_name);
+rtx_qualified_name ::= #!ignore [#readIdentifier:itf =>traceLine("i:" + itf); "::"]? #readIdentifier:seq_name
 ;
 
 /*
@@ -201,15 +202,15 @@ rtx_sequence_call(theBlock : node) ::=
  */
 
 rtx_sequence(theNode : node) ::=
-/**/    => local seqName;
-/**/    => local seqParamType;
+/**/    => local seqRtype;
 /**/    => local seqParamName;
 /**/    => local body;
-        rtx_scoped_identifier(seqName)
-        rtx_seq_parameter(seqParamType, seqParamName)
-/**/    #check(rtxNodeSequence(theNode, seqName, seqParamName, seqParamType, body))
+        rtx_template_prototype(seqRtype, seqParamName)
+/**/    #check(rtxNodeSequence(theNode, seqRtype, seqParamName, body))
+        #continue(sError, "Expected sequence implementation block.")
         '{'
                 [ rtx_sequence_call(body) ]*
+/**/            #continue(sError, "Expected '}' closing sequence implementation block.")
         '}'
 ;
 

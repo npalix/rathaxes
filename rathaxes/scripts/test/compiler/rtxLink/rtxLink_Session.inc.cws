@@ -320,7 +320,7 @@ function rtxLink_SessionRegister<"__root_block__">(local_node : node,
                                                    with_values : node,
                                                    out_ref_id : reference)
 {
-    if (!existVariable(this.session))
+    if (!existVariable(this.session) || isEmpty(this.session))
     {
         insert this.session;
         
