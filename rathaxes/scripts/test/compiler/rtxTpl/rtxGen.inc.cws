@@ -60,9 +60,10 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ : @this.template_expr@"
                       +" (@this.node.body.type@)");
-            inject<c_tree.compile["@this.key@"].node.type>(resVals,
+            if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
-                                            c_tree.compile["@this.key@"].node);
+                                            c_tree.compile["@this.key@"].node) == false)
+                increment(errcount);
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -74,9 +75,10 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
     generateString({
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ : (@this.node.body.type@)");
-            inject<c_tree.compile["@this.key@"].node.type>(resVals,
+            if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
-                                            c_tree.compile["@this.key@"].node);
+                                            c_tree.compile["@this.key@"].node) == false)
+                increment(errcount);
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -91,10 +93,11 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : @this.template_expr@"
                           +" (@this.node.body.type@)");
-                type_call<"@this.tpl_hash@">(
+                if (type_call<"@this.tpl_hash@">(
                             resVals,
                             "@this.chunkName@",
-                            c_tree.compile["@this.key@"].node);
+                            c_tree.compile["@this.key@"].node) == false)
+                    increment(errcount);
     @}, item, item.cws_expr);
     removeVariable(item.key);
     removeVariable(item.tpl_hash);
@@ -115,11 +118,12 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
     insert item.key = theKey;
     generateString({
             traceLine("Generated Script : inject for key @this.key@ in mapping for @this.id@");
-            inject<c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node.type>(
+            if (inject<c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node.type>(
                 resVals,
                 c_tree,
                 c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node
-            );
+                ) == false)
+                increment(errcount);
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -143,6 +147,8 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 		function	instanceChunk<"@this.instanceKey@">(resVals : node,
                                                       c_tree : node)
 		{
+            local errcount = 0;
+
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@2", c_tree);
 	
@@ -154,6 +160,10 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@3", c_tree);
+
+            if (errcount != 0)
+                return false;
+            return true;
 		}
 	@}, local_node, source_codeworker);
 
@@ -173,6 +183,8 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 		function	instanceChunk<"@this.instanceKey@">(resVals : node,
                                                                  c_tree : node)
 		{
+            local errcount = 0;
+
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@2", c_tree);
 	
@@ -184,6 +196,10 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
 
 			// save again for comparison out of the process
 			saveProject("@this.tree_file@3", c_tree);
+
+            if (errcount != 0)
+                return false;
+            return true;
 		}
 	@}, local_node, source_codeworker);
 
@@ -204,6 +220,8 @@ function    generateCodeWorker<"__rtx_tpl_type_id_map__">(local_node : node,
         // Resolving Mapping placeHolder for identifier @this.id@
         function instanceMapping<"@this.instanceKey@">(resVals : node, c_tree : node)
         {
+            local errcount = 0;
+
             // save again for comparison out of the process
             saveProject("@this.tree_file@-@this.key@1", c_tree);
             
@@ -214,6 +232,10 @@ function    generateCodeWorker<"__rtx_tpl_type_id_map__">(local_node : node,
 
             // save again for comparison out of the process
             saveProject("@this.tree_file@-@this.key@2", c_tree);
+
+            if (errcount != 0)
+                return false;
+            return true;
         }
     @}, local_node, local_node.cws_expr);
 }

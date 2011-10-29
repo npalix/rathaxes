@@ -35,12 +35,12 @@ interface Algorithms
 
     provided sequence   Algorithms::log(Algorithms::string)
     {
-        provided chunk   ::CALLS; // use current namespace/template from frontend
+        provided chunk   ::CALL; // use current namespace/template from frontend
     }
 
     provided sequence   Algorithms::set(Algorithms::register, Algorithms::register_field) // should be in subsystem BUS
     {
-        provided chunk  ::CALLS; // use current namespace/template from frontend
+        provided chunk  ::CALL; // use current namespace/template from frontend
     }
     //...
 }
@@ -53,35 +53,35 @@ interface User : LKM
     required sequence           User::open(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
-        provided pointcut	    ::CALLS;
+        provided pointcut	    ::CALL;
     }
 
     required sequence           User::close(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           User::read(Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           User::write(Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           User::on_plug(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 }
 

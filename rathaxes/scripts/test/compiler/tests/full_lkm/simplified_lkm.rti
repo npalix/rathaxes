@@ -37,14 +37,14 @@ interface Algorithms : LKM
     provided sequence   log(LKM::string)
     {
         provided chunk   LKM::GLOBAL_CODE_DEFINITION;
-        provided chunk   ::CALLS; // use current namespace/template from frontend
+        provided chunk   ::CALL; // use current namespace/template from frontend
     }
 
     provided sequence   set(Algorithms::register,
                             Algorithms::register_field) // should be in subsystem BUS
     {
         provided chunk  LKM::GLOBAL_CODE_DEFINITION;
-        provided chunk  ::CALLS; // use current namespace/template from frontend
+        provided chunk  ::CALL; // use current namespace/template from frontend
     }
     //...
 }
@@ -59,34 +59,34 @@ interface User : Algorithms
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           close(User::Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           read(User::Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           write(User::Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 
     required sequence           on_plug(User::Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALLS;
+        provided pointcut       ::CALL;
     }
 }
