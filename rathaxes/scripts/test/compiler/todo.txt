@@ -105,7 +105,6 @@ Tests Backend :
     * Checker les tpl vs itf (tout existe bien ?)                       <= DONE
     * Checker les itf vs tpl (valide ?)                                 <= DONE
     * Ajouter l'appel au check BACK dans la compilation du backend      <= DONE
-    * Checker l'existence des variables de config dans le with          <= TODO
     * Ajouter l'appel au check WITH dans la compilation                 <= DONE
     * Checker le front-end vs itf (tout existe ?)                       <= DONE
     * Checker l'itf vs le frontend (req/opt valides ?)                  <= DONE
@@ -118,6 +117,10 @@ Tests Backend :
       que les resoudre silencieusement en acceptant la premiere soluce  <= TODO
     * Front-end: Faire en sorte de checker le contenu des blocks de
       chaque sequence appellée
+    * Backend: Ajouter la verification qu'une sequence implemente
+      le pointcut CALL si provided ou IMPLEMENTATION si optional/req    <= TODO
+    * Checker l'existence des variables de config dans le with          <= TODO
+    * Checker la coherence des registres                                <= TODO
 
 
 
