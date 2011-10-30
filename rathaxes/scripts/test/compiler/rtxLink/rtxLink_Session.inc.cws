@@ -389,7 +389,8 @@ function rtxLink_MergeCaches(cache1 : node, cache2 : node, dst : node)
     local chunk_name;
 
     // First copy cache1 into dst
-    setall dst = cache1;
+    if (!equalTrees(dst, cache1)) // This allwos avoiding 'setall item = item' which empties it.
+        setall dst = cache1;
 
     foreach itf in cache2.interfaces
     {

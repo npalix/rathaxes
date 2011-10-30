@@ -1,3 +1,4 @@
+#include "misc/colors.cws"
 #include "cnorm.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxLink/rtxLink.inc.cws"
@@ -188,14 +189,14 @@ addChunk(cache2, expected, tmp, tmp2);
 
 // And finally, merge the caches
 insert this.cache_conflicts = "ignore"; // Ignore the conflicts, only insert non-conflicting elements.
-rtxLink_MergeCaches(cache1, cache2, result);
+rtxLink_MergeCaches(cache1, cache2, cache1);
 
 
-if (!equalTrees(expected, result))
+if (!equalTrees(expected, cache1))
 {
     traceLine("Expected result and actual result differ !");
     //traceLine("Expected:\n"+toString(expected, true));
-    //traceLine("Obtained:\n"+toString(result, true));
+    //traceLine("Obtained:\n"+toString(cache1, true));
     exit(1);
 }
 
