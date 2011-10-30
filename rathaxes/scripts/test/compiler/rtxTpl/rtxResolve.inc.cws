@@ -421,7 +421,14 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         // If there's a default block inside the poincut, then insert it
         // instead of the resolved chunks : one setall is enough
         // to both remove the pointcut and insert the code.
-        setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
+        if (existVariable(local_node.body.default.body))
+        {
+            setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
+        }
+        else
+        {
+            removeElement(theBlock, thePointcut.block_idx);
+        }
     }
     // There are some chunks left, so it's up to us to resolve them
     // and then insert them in-place of the pointcut.
