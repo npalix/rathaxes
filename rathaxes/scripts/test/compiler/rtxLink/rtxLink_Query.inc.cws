@@ -46,12 +46,19 @@ function rtxLink_LoadItem(cache_node : node,
     if (load_script != false && !existVariable(cache_node.load))
     {
         traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script_file + "'");
+        // Try/catch and load first from global cache, and try out local after it failed.
         try {
-            extendExecutedScript(loadFile(cache_node.script_file));
+            extendExecutedScript(loadFile(this.backlib_path+cache_node.script_file));
         }
         catch (sError) {
-            traceLine("rtxLink:<ERROR> Could not load resolution script : "+sError);
-            return false;
+            local err = sError;
+            try { extendExecutedScript(loadFile(this.local_backlib_path+cache_node.script_file)); }
+            catch (sError) {
+                // If double error, then display both errors.
+                traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+err+DEFAULT_COLOR);
+                traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+sError+DEFAULT_COLOR);
+                return false;
+            }
         }
         insert cache_node.load = true;
     }
@@ -60,7 +67,12 @@ function rtxLink_LoadItem(cache_node : node,
         traceLine("rtxLink:<LOG> Script Already loaded !");
     }
 
-    cwLoadProject(cache_node.tree_file, out_ref_tree);
+    // Try/catch and load first from global cache, and try out local after it failed.
+    try{
+        cwLoadProject(this.backlib_path+cache_node.tree_file, out_ref_tree);
+    } catch (sError) {
+        cwLoadProject(this.local_backlib_path+cache_node.tree_file, out_ref_tree);
+    }
 
     traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;
