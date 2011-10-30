@@ -180,6 +180,7 @@ rtx_stmt_chunk_params(theParams : node) ::=
 
 rtx_stmt<"chunk">(theBlock : node) ::=
 /**/=>traceLine("CHUNK");
+    #continue(sError, "Expected pointcut associated to chunk declaration.")
     // Create an item in the Block list to host the chunk
     #pushItem(theBlock.block)
 /**/=> local lastNode;

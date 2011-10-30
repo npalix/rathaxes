@@ -93,9 +93,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
          */
         // TODO FIXME XXX : check that the partial C code is valid.
         tpl_pointcut_default(theNode : node) ::=
-            "default" ':' // originally '{'
+            "default" #continue(sError, "Expected ':' after poinctut's default statement.") ':' // originally '{'
 /**/        => local body;
             #check(rtxNodePointcut_Default(theNode, body))
+            #continue(sError, "Expected body for pointcut's default statement.")
             single_statement(body)
             // originally '}' identified the end of the block
         ;
