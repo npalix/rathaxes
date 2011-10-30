@@ -31,7 +31,9 @@
 #include "rtxTpl/rtxIntrospect.inc.cws"
 #include "rtxTpl/rtxTypeCheck.inc.cws"
 #include "rtxTpl/rtxGen.inc.cws"
+#include "rtxTpl/rtxResolve.inc.cws"
 
+#include "rtxFront/rtxGenerate.inc.cws"
 
 function usage()
 {
@@ -109,8 +111,17 @@ if (toLowerString(this.operation) == "generate")
     {
         traceLine(RED + "[Error] Front-end implementation type"
                   + " checking failed. Stopping compilation." + DEFAULT_COLOR);
-        exit (1);
+        exit (3);
     }
+
+    if (rtxFrontGen_iterate<this.front.type>(this.front) == false)
+    {
+        traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
+        exit(4);
+    }
+    
+    traceLine("Resulting code:"+cnorm2c(this.c_tree.c_block));
+
 
     traceLine("The driver generation is not implemented yet.");
 }
