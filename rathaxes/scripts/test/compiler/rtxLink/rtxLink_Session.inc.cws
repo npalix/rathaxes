@@ -546,7 +546,9 @@ function rtxLink_ValidateFiles(backend_path : value,
 function rtxLink_ValidateItf(backend_path : value, tree_file : node)
 {
     try {
-        copyFile(tree_file, backend_path + tree_file);
+        local oldFile = tree_file;
+        tree_file = "interfaces/"+tree_file;
+        copyFile(oldFile, backend_path + tree_file);
     } catch(sError) {
         traceLine("rtxLink_ValidateFiles: Could not copy interface's tree file"
                   + " to backend directory : " + sError);
@@ -575,12 +577,13 @@ function rtxLink_ValidateDiff()
     foreach itf in this.session.temp.interfaces
     {
         // Get local interface cache storage path.
-        local path = rtxLink_getItfCachePath(true);
-        if (rtxLink_ValidateItf(path, itf.tree_file) == false)
+        if (rtxLink_ValidateItf(this.local_backlib_path,
+                                itf.tree_file) == false)
             return false;
         foreach ext in itf.extensions
         {
-            if (rtxLink_ValidateItf(path, ext.tree_file) == false)
+            if (rtxLink_ValidateItf(this.local_backlib_path,
+                                    ext.tree_file) == false)
                 return false;
         }
     }
