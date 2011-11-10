@@ -97,7 +97,12 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/        => local body;
             #check(rtxNodePointcut_Default(theNode, body))
             #continue(sError, "Expected body for pointcut's default statement.")
-            single_statement(body)
+            [
+                single_statement(body)
+                |
+                #check(cnormNodeDecl_Init(body))
+                initializer_list(body)
+            ]
             // originally '}' identified the end of the block
         ;
 
