@@ -121,9 +121,6 @@ if (toLowerString(this.operation) == "generate")
     }
     
     traceLine("Resulting code:"+cnorm2c(this.c_tree.c_block));
-
-
-    traceLine("The driver generation is not implemented yet.");
 }
 else if (   toLowerString(this.operation) == "blt-check"
          || toLowerString(this.operation) == "blt-register")
