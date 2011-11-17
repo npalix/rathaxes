@@ -1,11 +1,13 @@
 \documentclass[francais]{rtxreport}
 
 \rtxdoctype{COPIL}
-\rtxdocstatus{Brouillon}
-\rtxdocversion{0.1}
+\rtxdocstatus{Final}
+\rtxdocversion{0.2}
 
 \rtxdochistory{
 0.1 & 12/11/2011 & Louis Opter & Import du précédent COPIL \\
+\hline
+0.2 & 17/11/2011 & Louis Opter & Mise à jour du document \\
 }
 
 \author{Louis Opter}
@@ -121,11 +123,9 @@ souple, efficace et maintenable. Depuis cette réécriture nous sommes capables 
 valider point par point chaque étape de la génération du pilote final: cela nous
 permet de valider nos ajouts de fonctionnalité et éviter les régressions.
 
-Nous estimons à 70\% la progression de l’écriture du compilateur. Niveau
-fonctionnalités pures du compilateur, nous en sommes au niveau de l'équipe 2009.
-
-Il nous reste à écrire les interfaces systèmes (c.-à-d. les fonctions systèmes
-appelées réellement) pour chaque système d’exploitation.
+Nous avons une version alpha du compilateur qui permet de tester la chaîne
+complète de génération. Il nous reste à écrire les interfaces systèmes (c.-à-d.
+les fonctions systèmes appelées réellement) pour chaque système d’exploitation.
 
 \section{Architecture}
 \rtx\ se divise en trois parties:
@@ -154,7 +154,7 @@ et \emph{middle} \emph{-end}.
 	\item Le \emph{middle-end} est la partie qui traite l’arbre généré par
           le \emph{front end}, et qui vérifie la cohérence sémantique.
         \item Le \emph{back-end} est toute la partie faisant l'interface avec le
-          code des bibliothèques afin d'intrumenter l'arbre pour générer un code
+          code des bibliothèques afin d'instrumenter l'arbre pour générer un code
           C.
 \end{itemize}
 
@@ -163,10 +163,14 @@ et \emph{middle} \emph{-end}.
 Le retour d'expérience de l'équipe 2009 nous aide beaucoup et nous empêche de
 répéter des erreurs déjà commises.
 
-Nous prévoyons une preuve de concept avec un pilote d’une carte PCI d’ici l'été
-2011 pour les soutenances finales. Il nous est très difficile de nous avancer à
-plus long terme, mais nous prévoyons d’être concentrés sur l’écriture des
-fichiers de la bibliothèque pendant notre 5\textsuperscript{ème} année.
+Nous avons une version alpha complètement fonctionnelle du compilateur qui nous
+permet de travailler sur l'implémentation de pilotes écrits en \rtx.
+
+Nous prévoyons de présenter un pilote de pilote d’une carte PCI pour les
+soutenances finales. La 5\textsuperscript{ème} année sera donc concentrée sur
+l'écriture des fichiers de la bibliothèque. Ils contiendront aussi bien les
+interfaces spécifiques à chaque système d'exploitation que les algorithmes
+utilisées pour notre carte PCI.
 
 \section{Problèmes rencontrés et résolus}
 
@@ -199,8 +203,13 @@ fournissions.
 Gardant en tête tout cela, nous faisons notre possible pour que tout se passe
 mieux et que notre travail soit justement mis en valeur.
 
-Nous espérons que LabEIP et ses correcteurs pourront noter les améliorations et
-nous aideront à surmonter les erreurs restantes.
+Nous espérons que le LabEIP et ses correcteurs ont notés les efforts faits
+durant l'été 2011 ---malgré deux membres du groupe en Californie--- et nous
+aideront à surmonter les erreurs restantes.
+
+Enfin, nous sommes satisfait du travail fournis pour la soutenance finale de
+4\textsuperscript{ème} année et nous sommes confiants pour la
+5\textsuperscript{ème} année.
 
 \chapter{Conduite de projet}
 
@@ -278,8 +287,8 @@ AGILE.
 
 \section{Organisation des réunions}
 
-Les réunions sont organisées chaque Samedi à 19 heures CEST en visio-conférence
-sur Skype. Nos réunions suivent toutes le même planning :
+Les réunions sont organisées chaque Jeudi à 16 heures en visio-conférence sur
+Skype ou à l'école. Nos réunions suivent toutes le même planning :
 \begin{itemize}
 \item Thomas L. fait le tour sur les points administratifs à voir (tickets avec
   le LabEIP, date butoirs des candidatures aux conférences\ldots) et nous rappel
@@ -294,8 +303,7 @@ diffusion interne.
 
 L'utilisation de moyens de communications électroniques est justifiée par :
 \begin{itemize}
-\item Le fait que deux des membres du groupe se trouvent en Californie avec
-  neuf heures de décalage horaire par rapport à la France ;
+\item Les membres du groupes ne sont pas nécessairement présents sur Paris ;
 \item La volonté d'avoir un modèle de développement qui laisse la possibilité à
   des développeurs extérieurs à Epitech de pouvoir facilement suivre notre
   avancement et contribuer au projet.
@@ -328,10 +336,14 @@ découpées en deux parties :
 \item Une partie technique qui couvre les aspects \emph{front}, \emph{middle} et
   \emph{back~-end} du langage.
 \end{itemize}
+
 Ce découpage de la documentation technique a été choisi car elle s'adresse à des
 personnes potentiellement différentes avec des compétences différentes :
 fabricant de matériel, développeur de système d'exploitations, développeur de
 pilotes.
+
+Enfin, la documentation est mise en ligne sur notre Google Code, là encore afin
+d'encourager les contributions externes.
 
 \section{Avancement}
 
@@ -341,7 +353,7 @@ documentation rédigée jusqu'ici décrit déjà l'ensemble du projet de son
 installation à son utilisation. Seul un travail de mise à jour sur les parties
 qui sont encore en développement est prévue.
 
-\chapter{Communication}
+%\chapter{Communication}
 
 % - Quels cours suivez-vous
 
@@ -352,22 +364,21 @@ qui sont encore en développement est prévue.
 
 % @TS : j'ai recommencé et simplifié ce chapitre
 
-Notre projet à pour but de faciliter le travail des constructeurs de
+Notre projet a pour but de faciliter le travail des constructeurs de
 périphérique et l'intégration de nouveaux périphériques dans des systèmes
 d'exploitation. Notre communication vise donc en priorité ces groupes de
 personnes. Dans cette optique, nous avons construit un discours qui met en avant
 les gains de productivités qu'ils obtiendrons grâce à \rtx.
 
 Pour élargir notre base d'utilisateurs et de contributeurs, l'équipe \rtx\ a
-aussi souhaité s'adresser à un public moins technique. C'est pourquoi nous
-avons élaboré un discours alternatif plus adapté.
+aussi souhaité s'adresser à un public moins technique. C'est pourquoi nous avons
+élaboré un discours alternatif plus adapté.
 
-Pour la conférence que nous donnerons aux \emph{Rencontres Mondiales du Logiciel
- Libre} (RMLL), nous parlerons plus du projet en termes de résultats qu'en
-termes techniques car le public est moins «~spécialisé~». À l'inverse, pour les
-conférences que nous donnerons au LSE et pour le
-T-Dose\footnote{\url{http://www.t-dose.org/}}, au vu du public averti, nous
-axerons nos présentations sur les aspects techniques du projet.
+Pour la conférence que nous avons donnée aux RMLL (Rencontres Mondiales du
+Logiciel Libre), nous avons parlé du projet en terme de résultats et de
+fonctionnalités plus qu'en termes techniques. À l'inverse pour les conférences
+que nous donnons au LSE, au vu du public averti, nous acons nos présentations
+sur les aspects techniques du projet.
 
 \chapter{Promotion extérieure}
 
@@ -381,8 +392,8 @@ Logiciel Libre. Cette conférence aura lieu à Strasbourg entre le 9 et le 14
 juillet. Par ailleurs, nous avons postulé pour l'obtention d'un stand afin de
 rencontrer d'autres développeurs et d'agrandir notre communauté.
 
-Enfin, nous projetons de participer à d'autres rencontres internationales telles
-que le T-Dose et le FOSDEM\footnote{\url{http://fosdem.org/}}.
+Enfin, nous projetons de participer à d'autres rencontres internationales en
+particulier le FOSDEM 2012\footnote{\url{http://fosdem.org/}}.
 
 Des présentations régulières sont prévues au sein de l'école afin de nous
 permettre d'améliorer notre discours.
@@ -404,10 +415,11 @@ de communications :
 % - Quels suivis faites-vous
 % - Apports
 
-\section{Flyers et goodies}
+\section{Flyers et Goodies}
 
-Des polos aux couleurs de \rtx ont été commandés. Nous prévoyons aussi des
-prospectus à distribuer lors de nos différentes interventions.
+Nous avons des polos au couleurs de \rtx. Avec l'aide de l'école nous avons
+aussi des flyers que nous pouvons distribuer lors de nos différentes
+interventions.
 
 \chapter{Conclusion}
 
@@ -423,19 +435,17 @@ communication et d’organisation, nous pensons enfin avoir acquis un rythme de
 croisière qui va nous permettre de mener à bien ce projet. Nous arrivons enfin
 à communiquer avec le LabEIP et à expliquer notre travail.
 
-Même si nous sommes moins nombreux que l’équipe initiale (cinq contre onze),
-nous sommes plus versatiles et donc plus prompts à prendre des décisions sur les
+Même si nous sommes moins nombreux que l’équipe initiale (5 contre 11), nous
+sommes plus versatiles et donc plus prompts à prendre des décisions sur les
 choix techniques, les erreurs, etc. Nous avançons donc plus vite et nous sommes
 confiants sur l’avenir du projet. Le retour de l'équipe précédente est aussi
 une aide précieuse. Nous sommes plutôt dans les temps et avons bon espoir
-d'atteindre nos objectifs intermédiaires fixés pour les RMLL se déroulant
-mi-juillet. Ainsi, nous comptons avoir un langage et un compilateur
-fonctionnels, souples et évolutifs du même niveau que la preuve de concept
-réalisée par l'équipe 2009.
+d'atteindre nos objectifs finaux pour Mars 2012. Ainsi, nous comptons avoir un
+langage et un compilateur fonctionnels ainsi que des exemples concrets de
+pilotes de périphériques.
 
-Les dates clés pour \rtx\ d'ici la fin de l'année 2011 sont les RMLL en juillet
-et le forum EIP en novembre 2011. Nous prévoyons, pour le forum EIP, d'avoir
-implémenté la gestion des bus PCI qui est le bus le plus répandu. Ce sera un
-véritable atout pour la communication et la notoriété du projet.
+Les dates clés pour \rtx\ d'ici la fin du projet sont le forum EIP et le Fosdem
+en Février. Nous nous rendrons sans doutes une nouvelle fois aux prochaines
+RMLL.
 
 \end{document}
