@@ -1,0 +1,6 @@
+TARGETNAME	= wdf_hello
+TARGETTYPE	= DRIVER
+KMDF_VERSION	= 1
+
+INCLUDES 	= $(INCLUDES); .
+SOURCES		= wdf_hello.c

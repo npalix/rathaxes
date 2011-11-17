@@ -1,0 +1,231 @@
+\documentclass[a4paper,11pt]{report}
+
+\usepackage{rathaxesmmix}
+
+%---------------------------------------------------------
+
+
+\title{Rathaxes' DSL and Compiler documentation`}
+\author{David GIRON - Rathaxes}
+\date{Lundi 17 Decembre 2007}
+
+
+\begin{document}
+  \maketitle
+
+
+%---------------------------------------------------------
+
+
+  \section*{License}
+  \addcontentsline{toc}{section}{License}
+  Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+  \\\\
+  Permission to use, copy, modify, and distribute this software for any
+  purpose with or without fee is hereby granted, provided that the above
+  copyright notice and this permission notice appear in all copies.
+  \\\\
+  THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+  WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  \newpage
+
+
+%---------------------------------------------------------
+
+
+  \section*{Introduction}
+  \addcontentsline{toc}{section}{Introduction}
+
+  \textit{As stated many times from the begining of this adventure, the Rathaxes project
+    is a powerfull device drivers generator. So, one migth point a relevant question:
+    ``Why would we need to generate drivers ?''\dots}\\
+  
+  Other people/teams raised this question and producted different solutions
+  more or less effectives (see the state of the art paper for more details),
+  but none of them went deep enough. Here are three answers our team pointed
+  to answer the question in our way:
+  
+  \begin{itemize}
+    \item First, coding a driver for any hardware implies a dual aptitude: Being
+     able to handle kernel programming and having a suffisant knowledge on
+     hardwares devices. This tends to make drivers very difficult to code for
+     common programmers. If it could possible to generate the C code from a
+     simple description of the device, such difficulties whould almost be
+     completly avoided.
+    \item Something seems very relevant to point from current operating systems:
+    About 70\% of the code is dedicated to drivers, which, given the complexity
+    of a device driver stated above, tend to make them 7 times more error-prone
+    than a commom software. Code generated from a robust and natively error-safe
+    source would completly correct this problem.
+    \item Last but not least, when a manufacturer provides a new device, he has
+    to provide several drivers too, generaly one for each operating system the
+    manufacturer wants the device to work on. This implies a large loose of time,
+    because the driver must be coded one time for each operating system given
+    their differences. Describing once and for all the driver's ``shape'' would
+    allow to use this same source to ``instanciate'' the description for an
+    operating system or another without having to describe it each time.
+  \end{itemize}
+
+  In summary, Rathaxes had to be a simple, secure way to describe device drivers
+  from which it may be possible to generate C code for an operating system or
+  another. In regard of those constraints, Rathaxes was designed as follow:
+
+  \begin{itemize}
+    \item A language specific to the device drivers domain. This language had
+    to have two different aspects:
+      \begin{itemize}
+        \item Allow a static description of the device, its compoments, the
+	interactions between them, etc in an easy and reliable way.
+	\item Allow to instanciate the device for a given operating system.
+      \end{itemize}
+    \item A compiler to translate the source Rathaxes DSL to the target C code.
+    \item A librairy of C code templates from which the compiler can generate
+    the driver C code for a given operating system present in the librairy.
+  \end{itemize}
+
+  \textbf{NOTE: The following of this document is structured and filled
+   according to our present advancement and will be heavily updated each time
+   new features are added to one or another part of the Rathaxes project.}
+
+
+%---------------------------------------------------------
+
+
+   \chapter{The Rathaxes DSL}
+   
+   Rathaxes DSL is a new descriptive language restricted to the description and
+   instanciation of devices. It has two parts symbolized by two key words around
+   which everything turns:
+
+  \begin{itemize}
+    \item ``DEVICE''
+    \item ``DRIVER''
+  \end{itemize}
+
+  \section{Genarating an empty Rathaxes Kernel Module}
+
+  The first step to code a device driver is to specify the ``shell'' which the
+  driver's algorithm will take place into. Exemples of this ``shell'' are linux
+  kernel modules or MacOS kernel extensions... Almost each operating system has
+  its own way to name it. For efficiency purposes, we'll define it as 
+  ``Rathaxes Kernel Modules'' or shortly ``RKM''.
+
+  Describing an empty RKM is very simple with \rtx. The following code describes
+  a new device named ``my\_device'':
+
+
+%---------------------------------------------------------
+
+
+\lstset{language=rathaxes}
+\begin{lstlisting}
+/* This sample describes a new device containing only headers */
+
+DEVICE
+{
+        NAME = my_device;
+};
+\end{lstlisting}
+
+
+%---------------------------------------------------------
+
+
+  The ``DEVICE'' keyword uses the following syntax:
+
+
+%---------------------------------------------------------
+
+\lstset{language=BNF}
+\begin{lstlisting}
+device ::=
+        "DEVICE"
+        '{'
+                [header]+
+                [semantic_block]*
+        '}' ';'
+;
+\end{lstlisting}
+
+
+%---------------------------------------------------------
+
+
+  This sample is the smallest part of code one must write to describe a new
+  device \rtx can handle. Only the header ``NAME'' is compulsory. This header
+  is used to label the device for a future instanciation in order to generate
+  the C code.
+
+  To instanciate a device, the ``DRIVER'' keyword must be used.
+  
+  The following \rtx code will instanciate the device ``my\_device'' described
+  above for macOS for instance:
+
+
+%---------------------------------------------------------
+
+
+\lstset{language=rathaxes}
+\begin{lstlisting}
+/* This sample instanciates a driver for the device ``my\_device'' */
+
+DRIVER
+{
+        NAME = my_device;
+        ARCH = macOS;
+};
+\end{lstlisting}
+
+
+%---------------------------------------------------------
+
+
+  The ``DRIVER'' keyword uses the following syntax:
+
+
+%---------------------------------------------------------
+
+\lstset{language=BNF}
+\begin{lstlisting}
+driver ::=
+        "DRIVER"
+        '{'
+                [header]{2, n}
+        '}' ';'
+;
+\end{lstlisting}
+
+
+%---------------------------------------------------------
+
+
+  According to the work of the hardware team, we extracted some strong semantics
+  from the structure of a driver, true for every supported operating systems.
+  Thus, we were able to describe separates parts of the driver independantly of
+  any operating system. This is the list of paper producted by the hardware
+  team:
+
+    \begin{itemize}
+      \item Rathaxes Kernel Modules, describing how to create an empty ``kernel
+      module'' for OpenBSD, Linux 2.6, Windows XP and MacOS 10.5.
+      \item \textit{More to come...}
+    \end{itemize}
+
+    \subsection{Semantic block ``ON\_LOAD''}
+
+This block is used to describe the initialization of the driver automaticaly
+impliing Defining the entry point, registering it, etc. In short anything
+that must be done when begining to code a driver. Here is the syntax:\\
+
+     \emph{load ::= ``ON\_LOAD'' '\{' sub\_routine '\}' ';' ;}\\
+
+Our exemple becomes:\\
+
+\emph{DEVICE my\_first\_device\\\{\\ON\_LOAD\\\{\\\\\}\\\};\\}
+
+\end{document}

@@ -1,0 +1,73 @@
+/*
+	TEST for template codeworker generation
+*/
+
+#include  "01_F_test_back_gen.cws"
+
+
+// The previous test's code uses the same directory, so no
+// change about it : We need the asvec files !
+//working_directory = "../__01_test_back_cache";
+//if (existDirectory(working_directory))
+//{
+//    traceLine("Directory " + working_directory + " already exists");
+//    traceLine("Removing directory: " + working_directory);
+//}
+//traceLine("Creating directory: " + working_directory);
+//createDirectory(working_directory);
+//changeDirectory(working_directory);
+
+function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
+{
+    local unit;
+    rtxNodeSerial(local_node);
+    rtxNodeSerialUnit(unit, v1);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v2);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v3);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+}
+
+function build_config(theWith : node)
+{
+    local id;
+    local val;
+    insert theWith["LKM"];
+    insert theWith["LKM"]["OS"];
+    rtxNodeWithConstraint(theWith["LKM"]["OS"], id, "", val);
+    rtxNodeIdentifier(val, "pigeonMouette");
+    clearVariable(id);
+    insert theWith["LKM"]["version"];
+    rtxNodeWithConstraint(theWith["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert theWith["LKM"]["maj"];
+    rtxNodeWithConstraint(theWith["LKM"]["maj"], id, "", val);
+    rtxNodeNumber(val, "0");
+    clearVariable(id);
+    insert theWith["LKM"]["min"];
+    rtxNodeWithConstraint(theWith["LKM"]["min"], id, "", val);
+    rtxNodeNumber(val, "1");
+}
+
+// Now that we have compiled and generated the code for each one of
+// our placeHolders, let's register them all into the cache :
+traceLine("====>Registering template code to CACHE");
+if (rtxLink_RegisterToCache(source) == false)
+{
+    traceLine("01_G_test_back_registerToCache.cws: Could not register blt into the cache !");
+    exit (1);
+}
+saveProject("__session_cache.tree", this.session);
+
+traceLine("====>Registration Done with success: __session_cache.tree");

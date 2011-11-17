@@ -1,0 +1,99 @@
+%
+% Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+% 
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+% 
+% THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+%
+
+\documentclass[11pt]{report}
+\usepackage{listings}
+\lstset{language=C}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+  showspaces=false, showstringspaces=false}
+\usepackage{color}
+\usepackage[english]{babel}
+\usepackage{listings}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+\author{Amsallem David\\Dumont Mickael\\Gallon Sylvestre\\Suarez Tomas}
+\title{IO Access}
+\maketitle
+
+\section*{Licence}
+\addcontentsline{toc}{section}{Licence}
+Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Rathaxes Team is divided into three work teams:\\
+\begin{description}
+  \item{The Transverse Team, in charge of the logistic part of the project and
+    relaying informations between the two other teams.}
+  \item{The Hardware Team, in charge of the system and low level aspects of the
+    project and providing the Language Team with informations they need.}
+  \item{The Language Team, in charge of designing and implementing the Rathaxes
+    DSL, according to informations provided by the Hardware Team.\\}
+\end{description}
+
+As agreed within the Rathaxes teams, Rathaxes will be able to generate drivers
+for the four following operating systems:
+\begin{description}
+    \item{OpenBSD}
+    \item{Linux 2.6}
+    \item{MacOS X 10.5}
+    \item{Windows XP}
+\end{description}
+
+This paper deals with the concept of IO Access. It provides
+an abstraction layer to describe the API of the different kernel
+to access on device registers.
+
+% distinction des differentes familles
+
+\tableofcontents
+
+\chapter{IO Access}
+
+\section{IO ports}
+Polling stuff;
+
+\section{Mapped Memory}
+Queue stuff.
+
+\section{others}
+Other stuff.
+
+\section{others}
+Other stuff.
+
+\section{others}
+Other stuff.
+
+\end{document}

@@ -1,0 +1,302 @@
+/*
+**	cnorm advanced generation templates
+**	made by Lionel Auroux for cnorm >= 2.6
+**
+*/
+
+global		cnorm2cConf;
+insert		cnorm2cConf.increment = 0;
+
+function _joinString(theList : node, theSep : value)
+{
+  local	val = "";
+  local item;  
+  if (createIterator(item, theList))
+    do
+      {
+	if ($lengthString(item) > 0$)
+	  {
+	    if ($lengthString(val) > 0$)
+	      val += theSep;
+	    val += item;
+	  }
+      }
+    while (item.next());
+  return val;
+}
+
+function	_incrIndent()
+{
+  cnorm2cConf.increment = $cnorm2cConf.increment + 1$;
+}
+
+function	_decrIndent()
+{
+  cnorm2cConf.increment = $cnorm2cConf.increment - 1$;
+}
+
+function	_getSpace()
+{
+  local		space = "";
+  local		i = 0;
+  while ($i < cnorm2cConf.increment$)
+    {
+      space += "\t";
+      i = $i + 1$;
+    }
+  return space;
+}
+
+function	_newLine(incr : value = 0)
+{
+  local		eol = "\n";
+  if ($incr == 1$)
+    {_incrIndent();}
+  if ($incr == -1$)
+    {_decrIndent();}
+  eol += _getSpace();
+  return eol;
+}
+
+// dispatch sur le type de l'expression
+function	cnorm2cStmt(block : node)
+{
+  return cnorm2cEtype<block.etype>(block);
+}
+
+// cas particulier du premier parametre du for
+function	cnorm2cForStmt(block : node)
+{
+  if (block.etype == "declaration")
+    return cnorm2cType<block.type>(block) + " ";
+  if (block.etype == "expression")
+    return cnorm2cExprStmt(block) + "; ";
+  traceLine("bad etype in for statement");
+  exit(1);
+}
+
+// sous-expression qu'on retrouve dans tous les statements
+function	cnorm2cExprStmt(block : node)
+{
+  if (existVariable(block.otype))
+    {return cnorm2cOtype<block.otype>(block);}
+  return "";
+}
+
+// block de code generale
+function	cnorm2cCompoundStmt(block : node)
+{
+  local sContent = "";
+  if (existVariable(block.block))
+    {
+      sContent += "{";
+      if (!isEmpty(block.block)) _incrIndent();
+      sContent += _newLine();
+      foreach entry in block.block
+	{
+	  sContent += cnorm2cStmt(entry);
+	  if (last(entry)) _decrIndent();
+	  sContent += _newLine();
+	}
+      sContent += "}" + _newLine();
+      return sContent;
+    }
+  else if (existVariable(block[0]))
+    {// cas du statement sous le if .... voir pour faire differement
+      sContent = _getSpace() + cnorm2cStmt(block[0]);
+      return sContent;
+    }
+  else
+    return ";" + _newLine();
+}
+
+// affiche correctement le nom d'un symbol
+function	cnorm2cName(block : node)
+{
+  if (existVariable(block.pfname))
+    {
+      local sContent = "("; 
+      foreach item in block.pfname
+	{
+	  if (existVariable(item.qualifier))
+	    {sContent += item.qualifier;}
+	  if (existVariable(item.function))
+	    {sContent += "*";}
+	  if (existVariable(item.function.name))
+	    {sContent += item.function.name;}
+	  if (existVariable(item.function.ctype))
+	    {
+	      foreach subitem in item.function.ctype.array
+		{
+		  sContent += "[" + subitem + "]";
+		}
+	    }
+	}
+      sContent += ")";
+      return sContent;
+    }
+  else
+    {	return block.name;}
+}
+
+// information complementarire autour du type
+function	cnorm2cInfoAndSign(ctype : node)
+{
+  local list;
+  if (existVariable(ctype.comment_prefix))
+    {pushItem list = _joinString(ctype.comment_prefix, " ");}
+  if (existVariable(ctype.infoType))
+    {	
+      foreach item in ctype.infoType
+	pushItem list = item.key();
+    }
+  if (existVariable(ctype.sign))    
+    pushItem list = ctype.sign;   
+  return _joinString(list, " ");
+}
+
+// les N niveaux de pointer
+function	cnorm2cPointer(ctype : node)
+{
+  local sContent = "";
+  if (existVariable(ctype.pointer))
+    {
+      sContent += "\t"; 
+      foreach item in ctype.pointer
+	{
+	  if (existVariable(item.level))
+	    {sContent += item.level;}
+	  if (existVariable(item.qualifier))
+	    {sContent += item.qualifier;}
+	  if (existVariable(item.function))
+	    {sContent += "(*" + item.function.name + ")";}
+	}
+    }
+  return sContent;
+}
+
+// tableau simple et multi-dimension
+function	cnorm2cArray(ctype : node)
+{
+  local sContent = "";
+  if (existVariable(ctype.array))
+    {
+      foreach item in ctype.array
+	{
+	  sContent += "[";
+	  sContent += item;
+	  sContent += "]";
+	}
+    }
+  return sContent;
+}
+
+// enum, union, struct
+function	cnorm2cListEnumUnionStruct(ctype : node)
+{
+  local sContent = "";
+  if (existVariable(ctype.list))
+    {
+      sContent = _newLine() + "{";
+      if (!isEmpty(ctype.list)) _incrIndent();
+      sContent += _newLine();
+      foreach item in ctype.list
+	{
+	  if (last(item)) _decrIndent();
+	  // si item.name n'existe pas (CAS de l'enum)
+	  if (!existVariable(item.ctype))
+	    {	
+	      // constante expression
+	      if (existVariable(item.init))
+		{	sContent += item.key() + " = " + cnorm2cExprStmt(item.init);}
+	      else // valeur direct
+		{	sContent += item.key();}
+	      // separateur virgule
+	      if (!last(item))
+		{	sContent += ",";}
+	      sContent += _newLine();
+	    }
+	  else // autre cas struct/union/typedef ...
+	    {	sContent += cnorm2cType<item.type>(item) + _newLine();}
+	}
+      sContent += "}";
+    }
+  return sContent;
+}
+
+// decode les parametres d'une fonction
+function	cnorm2cListParameters(block : node)
+{
+  local sContent = "";
+  if (existVariable(block.list))
+    {
+      sContent = "(";
+      foreach item in block.list
+	{
+	  // parametre de fonction
+	  sContent += cnorm2cCtype<item.ctype.type>(item.ctype) + " " + item.name + cnorm2cArray(item.ctype);
+	  // separateur virgule
+	  if (!last(item))
+	    {	sContent += ", ";}
+	}
+      sContent += ")";
+    }
+  return sContent;
+}
+
+// les bitfields dans une struct
+function	cnorm2cBitfield(block : node)
+{
+  local sContent = "";
+  if (existVariable(block.bits))
+    {
+      sContent += " : " + cnorm2cExprStmt(block.bits);
+    }
+  return sContent;
+}
+
+// designation dans l'initialisation constante
+function	cnorm2cInit_designation(block : node) 
+{
+  local sContent = "";
+  if (existVariable(block.designation))
+    {
+      if (block.designation.design == "indexed")
+	{sContent += "[" + cnorm2cExprStmt(block.designation) + "] = ";}
+      if (block.designation.design == "fieldname")
+	{sContent += "." + block.designation.name + " = ";}
+    }
+  return sContent;
+}
+
+// fonction recursive pour l'initialisation constante
+function	cnorm2cInit_recurs(block : node)
+{
+  local sContent = "";
+  if (existVariable(block.init))
+    {
+      if (block.init.etype == "expression")
+	{sContent += cnorm2cExprStmt(block.init);}
+      if (block.init.etype == "init")
+	{
+	  sContent += "{";
+	  foreach item in block.init.block
+	    {
+	      sContent += cnorm2cInit_designation(item) + cnorm2cInit_recurs(item);
+	      if (!last(item))
+		{sContent += ", ";}
+	    }
+	  sContent += "}";
+	}
+    }
+  return sContent;
+}
+
+// point d'entree pour l'initialisation constante
+function	cnorm2cInit(block : node)
+{
+  local sContent = cnorm2cInit_recurs(block);
+  if (sContent != "")
+    {sContent = " = " + sContent;}
+  return sContent;
+}

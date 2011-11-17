@@ -1,0 +1,26 @@
+<%
+/*
+**  _driver.blt in black_library/linux/
+**  for Rathaxes project
+**  made by Thor
+**  modified by Christophe Fajardo Y Romera
+*/
+
+%>
+
+ADVICE driver PART_OF driver
+{
+    // Types
+    JOINPOINT types IN RKM.types;
+
+    // Device specific.
+    JOINPOINT device IN devices.devices;
+
+    // These are implemented by the driver
+    JOINPOINT sequences IN sequences.sequences;
+    JOINPOINT kernel_interfaces IN kernel_interfaces.kernel_interfaces;
+
+    // LKM specific.
+    JOINPOINT entry_point IN RKM.entry_point;
+    JOINPOINT kernel_registration IN RKM.kernel_registration;
+};

@@ -1,0 +1,181 @@
+/*
+ *
+ * First, let's code the kernel's template.
+ *
+ */
+with
+    os = linux,
+    version >= 2.6,
+    system = kernel
+{
+    template open(context) decl ctx
+    {
+    }
+
+    template read(context, buffer) decl ctx, buf
+    {
+    }
+
+    template write(context, buffer) decl ctx, buf
+    {
+    }
+
+    template close(context) decl ctx
+    {
+    }
+
+    template on_plug(context) decl ctx
+    {
+    }
+}
+
+
+/*
+ *
+ * The template code for the register.
+ *
+ */
+with
+    os = linux,
+    version >= 2.6,
+    system = ioport
+{
+    template register decl reg
+    {
+        typedef ${reg.basetype}     t_reg_${reg.name};
+    }
+
+    template register stmt reg
+    {
+        t_reg_${reg.name}*  ${reg.name} = ${reg.addr}
+    }
+
+    template set(register, register) stmt reg, tmp
+    {
+        out${reg.basetype.initial}(${reg.addr}, ${tmp.name})
+    }
+
+    template set(register, value) stmt reg, value
+    {
+        out${reg.basetype.initial}($reg.addr), ${value})
+    }
+
+    template get(register) stmt reg
+    {
+        in${reg.basetype.initial}(${reg.name})
+    }
+
+    template set(register_field, register_field_value) decl rf, rval
+    {
+        #define SET_IOPORT_REG_${rf.parent.name}_${rf.name}(mask, val) \
+            do\
+            {\
+                t_reg_${rf.parent.name}     tmp;\
+                tmp = ${link rf.parent to get(register)};\
+                tmp |= (val & mask);\
+                ${link rf.parent, local.tmp to set(register, register)};\
+            } while (0)
+    }
+
+    template set(register_field, register_field_value) stmt rf, rval
+    {
+        SET_IOPORT_REG_${rf.parent.name}_${rf.name}(${rf.mask},
+                                                    ${rval.value})
+    }
+
+    template get(register_field) stmt rf
+    {
+        ${link rf.parent to get(register)} & ${rf.mask}
+    }
+
+}
+
+/*
+ *
+ * The template code for the buffer
+ *
+ */
+with
+{
+    template buffer decl buf
+    {
+    }
+
+    template buffer stmt buf
+    {
+    }
+}
+
+
+/*
+ *
+ * The template code for the algorithms
+ *
+ */
+with
+{
+    template log(string) decl str
+    {
+        void log(const char* msg)
+        {
+            printk("%s: %s.\n", ${this.driver.name}, msg);
+        }
+    }
+    template log(string) stmt str
+    {
+        log(${str.value})
+    }
+
+    template wait(register, value) decl reg, val
+    {
+        void wait_${reg.name}(${reg.basetype} value)
+        {
+            while (${link reg to get(register)} != ${val.value})
+                ;
+        }
+    }
+    template wait(register, value) stmt reg, val
+    {
+        wait_${reg.name}(${val.value})
+    }
+
+    template wait(register_field, register_field_value) decl rf, rval
+    {
+        void wait_${rf.parent.name}_${rf.name}(${rf.parent.basetype} value)
+        {
+            while (${link rf to get(register_field)} != ${rval.value})
+                ;
+        }
+    }
+    template wait(register_field, register_field_value) stmt rf, rval
+    {
+        wait_${rf.parent.name}_${rf.name}(${rf.name}, ${rval.value});
+    }
+
+    template concat(buffer, register):pre,post stmt buf, reg
+    {
+        ${link.each(algo) pre.blocks to algo.type}
+        int concat_len = 0;
+        while (concat_len < ${buf.len})
+        {
+            ((${reg.basetype})${buf.ptr})[concat_len/${reg.basetype.size}]
+                = ${link reg to get(register)};
+            concat_len += ${reg.basetype.size};
+        }
+        ${link.each(algo) post.blocks to algo.type}
+    }
+
+    template copy(register, buffer):pre,post stmt reg, buf
+    {
+        ${link.each(algo) pre.blocks to algo.type}
+        int copy_len = 0;
+        while (copy_len < ${buf.len})
+        {
+            t_reg_${reg.name} val =
+                ( (${reg.basetype}) ${buf.ptr}) [copy_len / ${reg.basetype.size}];
+            ${link reg,local.val to set(register, value)};
+            copy_len += ${reg.basetype.size};
+        }
+        ${link.each(algo) post.blocks to algo.type}
+    }
+}

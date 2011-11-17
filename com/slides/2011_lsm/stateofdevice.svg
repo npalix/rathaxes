@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1052.3622"
+   height="744.09448"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.1 r9760"
+   sodipodi:docname="stateofdevice.pdf">
+  <defs
+     id="defs4">
+    <filter
+       id="filter4097"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4099"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4101"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4103"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4105"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4107"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4109"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4111"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4113"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4115"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4117"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4119"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4121"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4123"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4125"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4127"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4129"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4131"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4133"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4135"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4137"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4139"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4141"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4143"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4145"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4147"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4149"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4151"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4153"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4155"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4157"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4159"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4161"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4163"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4165"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4167"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+    <filter
+       id="filter4169"
+       inkscape:label="Invert"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       inkscape:menu="Color"
+       inkscape:menu-tooltip="Invert colors"
+       color-interpolation-filters="sRGB">
+      <feColorMatrix
+         id="feColorMatrix4171"
+         type="saturate"
+         values="1"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="feColorMatrix4173"
+         in="fbSourceGraphic"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 " />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.78484657"
+     inkscape:cx="598.51183"
+     inkscape:cy="442.91525"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     objecttolerance="20"
+     inkscape:window-width="1280"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2985"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-308.2677)">
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect4177"
+       width="1173.2073"
+       height="757.95355"
+       x="-80"
+       y="-55.905518"
+       transform="translate(0,308.2677)" />
+    <g
+       id="g3818"
+       style="filter:url(#filter4097)">
+      <rect
+         y="392.36218"
+         x="20"
+         height="540"
+         width="80"
+         id="rect2987"
+         style="fill:#e6e6e6;fill-opacity:1;stroke:#e6e6e6;stroke-width:5.27200000000000024;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="50%"
+         id="text3776"
+         y="412.36218"
+         x="60"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:50%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+         xml:space="preserve"><tspan
+           style="font-size:18px"
+           y="-1.9531262e-07"
+           x="472.36218"
+           id="tspan3778"
+           sodipodi:role="line">Programmes utilisateurs</tspan></text>
+    </g>
+    <rect
+       style="fill:#ffaaaa;fill-opacity:1;stroke:#ffaaaa;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter4103)"
+       id="rect3782"
+       width="140"
+       height="540"
+       x="620"
+       y="392.36218" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter4109)"
+       x="645.98615"
+       y="438.2294"
+       id="text3845"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3847"
+         x="645.98615"
+         y="438.2294">BUS</tspan></text>
+    <rect
+       style="fill:#9dd4fa;fill-opacity:0.65201467000000002;stroke:#9dd4fa;stroke-width:6.45699978000000030;stroke-miterlimit:4;stroke-opacity:0.65098040999999995;stroke-dasharray:none;filter:url(#filter4115)"
+       id="rect3780"
+       width="420"
+       height="540"
+       x="140"
+       y="84.094482"
+       transform="translate(0,308.2677)" />
+    <g
+       id="g3916"
+       transform="translate(-480,-60)"
+       style="filter:url(#filter4121)">
+      <g
+         transform="translate(20,220)"
+         id="g3860">
+        <rect
+           style="fill:#9dd4fa;fill-opacity:0.6520147;stroke:#9dd4fa;stroke-width:4.06743622;stroke-miterlimit:4;stroke-opacity:0.65098039;stroke-dasharray:none"
+           id="rect3854"
+           width="100"
+           height="100"
+           x="1100"
+           y="472.36218" />
+        <text
+           xml:space="preserve"
+           style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+           x="1120"
+           y="532.36218"
+           id="text3856"
+           sodipodi:linespacing="125%"><tspan
+             sodipodi:role="line"
+             id="tspan3858"
+             x="1120"
+             y="532.36218">PCI</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g3931"
+       transform="translate(-460.00002,100)"
+       style="filter:url(#filter4127)">
+      <g
+         transform="translate(1.8e-5,-80)"
+         id="g3911">
+        <rect
+           style="fill:#9dd4fa;fill-opacity:0.6520147;stroke:#9dd4fa;stroke-width:4.06743622;stroke-miterlimit:4;stroke-opacity:0.65098039;stroke-dasharray:none"
+           id="rect3854-1"
+           width="100"
+           height="100"
+           x="1100"
+           y="472.36218" />
+        <text
+           xml:space="preserve"
+           style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+           x="1120"
+           y="532.36218"
+           id="text3856-9"
+           sodipodi:linespacing="125%"><tspan
+             sodipodi:role="line"
+             id="tspan3858-8"
+             x="1120"
+             y="532.36218">USB</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g3937"
+       transform="translate(-560,240)"
+       style="filter:url(#filter4133)">
+      <g
+         transform="translate(1.8e-5,-80)"
+         id="g3905">
+        <g
+           id="g3860-5"
+           transform="translate(99.999982,140)">
+          <rect
+             style="fill:#9dd4fa;fill-opacity:0.6520147;stroke:#9dd4fa;stroke-width:4.06743622;stroke-miterlimit:4;stroke-opacity:0.65098039;stroke-dasharray:none"
+             id="rect3854-4"
+             width="100"
+             height="100"
+             x="1100"
+             y="472.36218" />
+          <text
+             xml:space="preserve"
+             style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+             x="1120"
+             y="532.36218"
+             id="text3856-98"
+             sodipodi:linespacing="125%"><tspan
+               sodipodi:role="line"
+               id="tspan3858-4"
+               x="1120"
+               y="532.36218">I2C</tspan></text>
+        </g>
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter4139)"
+       x="160"
+       y="372.36218"
+       id="text3944"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3946"
+         x="160"
+         y="372.36218">Noyau du système</tspan></text>
+    <g
+       id="g4009"
+       style="filter:url(#filter4145)">
+      <g
+         id="g3954">
+        <g
+           id="g4052"
+           transform="translate(-988.01062,26.325867)">
+          <rect
+             y="392.36218"
+             x="1140"
+             height="480"
+             width="60"
+             id="rect3948"
+             style="fill:#9dd4fa;fill-opacity:1;stroke:#9dd4fa;stroke-width:5.27199984;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3950"
+             y="406.03632"
+             x="1168.0106"
+             style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+             xml:space="preserve"><tspan
+               style="font-size:48px"
+               y="1168.0106"
+               x="406.03632"
+               id="tspan3952"
+               sodipodi:role="line">userland</tspan></text>
+        </g>
+      </g>
+    </g>
+    <g
+       transform="translate(-680,220)"
+       id="g3954-4"
+       style="filter:url(#filter4151)">
+      <g
+         id="g4004">
+        <rect
+           style="fill:#9dd4fa;fill-opacity:1;stroke:#9dd4fa;stroke-width:3.72786689;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           id="rect3948-7"
+           width="60"
+           height="240"
+           x="1140"
+           y="392.36218" />
+        <text
+           xml:space="preserve"
+           style="font-size:56px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+           x="1168.0106"
+           y="420.03632"
+           id="text3950-6"
+           sodipodi:linespacing="125%"><tspan
+             sodipodi:role="line"
+             id="tspan3952-7"
+             x="420.03632"
+             y="1168.0106">NET</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g4045"
+       transform="translate(-1100,500)"
+       style="filter:url(#filter4157)">
+      <g
+         id="g3954-4-7"
+         transform="translate(240.00004,-260)">
+        <g
+           id="g4004-3">
+          <rect
+             y="392.36218"
+             x="1140"
+             height="240"
+             width="60"
+             id="rect3948-7-0"
+             style="fill:#9dd4fa;fill-opacity:1;stroke:#9dd4fa;stroke-width:3.72786689;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+          <text
+             sodipodi:linespacing="125%"
+             id="text3950-6-7"
+             y="412.03632"
+             x="1170.0106"
+             style="font-size:56px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+             xml:space="preserve"><tspan
+               y="1170.0106"
+               x="412.03632"
+               id="tspan3952-7-7"
+               sodipodi:role="line">VFS</tspan></text>
+        </g>
+      </g>
+    </g>
+    <g
+       id="g4067"
+       transform="translate(475.62199,85.824005)"
+       style="filter:url(#filter4163)">
+      <rect
+         y="332.36218"
+         x="-180"
+         height="180"
+         width="180"
+         id="rect4057"
+         style="fill:#ffaaaa;fill-opacity:1;stroke:#ffaaaa;stroke-width:6.45699978;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text4059"
+         y="386.53818"
+         x="-95.621986"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+         xml:space="preserve"><tspan
+           y="386.53818"
+           x="-95.621986"
+           id="tspan4061"
+           sodipodi:role="line">Algo</tspan><tspan
+           id="tspan4063"
+           y="436.53818"
+           x="-95.621986"
+           sodipodi:role="line">du</tspan><tspan
+           id="tspan4065"
+           y="486.53818"
+           x="-95.621986"
+           sodipodi:role="line">Module</tspan></text>
+    </g>
+    <g
+       id="g4089"
+       transform="translate(-40,-1.9531262e-7)"
+       style="filter:url(#filter4169)">
+      <rect
+         y="392.36218"
+         x="920"
+         height="540"
+         width="100"
+         id="rect3784"
+         style="fill:#00ffff;fill-opacity:1;stroke:#00ffff;stroke-width:5.10470676;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <text
+         sodipodi:linespacing="125%"
+         id="text3788"
+         y="412.36218"
+         x="980"
+         style="font-size:36px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+         xml:space="preserve"><tspan
+           y="980"
+           x="412.36218"
+           id="tspan3790"
+           sodipodi:role="line">Péripherique</tspan></text>
+      <text
+         sodipodi:linespacing="125%"
+         id="text3823"
+         y="432.36218"
+         x="900"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:tb-rl;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+         xml:space="preserve"><tspan
+           y="900"
+           x="432.36218"
+           id="tspan3825"
+           sodipodi:role="line">Registres</tspan></text>
+      <rect
+         y="432.36218"
+         x="880"
+         height="440"
+         width="40"
+         id="rect3811"
+         style="fill:#ffaaaa;fill-opacity:0.6520147;stroke:#9dd4fa;stroke-width:4.63195467;stroke-miterlimit:4;stroke-opacity:0.65098039;stroke-dasharray:none" />
+    </g>
+  </g>
+</svg>

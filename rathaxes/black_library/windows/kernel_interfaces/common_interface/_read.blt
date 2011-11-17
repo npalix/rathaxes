@@ -1,0 +1,42 @@
+<%
+
+/*
+**  _read.blt in black_library/linux/user_interface
+**  for Rathaxes project
+**  made by StuFF
+*/
+
+local	sDriverName = this.name;
+localref nSelf = project.references.currentContext;
+
+%>
+
+ADVICE read PART_OF kernel_interfaces
+{
+	void @sDriverName@IoRead(WDFQUEUE Queue, WDFREQUEST Request, size_t size)
+	{
+		WDFMEMORY						memory;
+		NTSTATUS						status;
+		PUCHAR							output;
+		int								current_size = 0;
+	    <% local sToken = getContextToken(nSelf.block); %>
+        JOINPOINT registers_declaration(@sToken@) IN registers.registers_declaration;
+
+		status = WdfRequestRetrieveOutputMemory(Request, &memory);
+		if(NT_SUCCESS(status))
+		{
+			output = MmAllocateNonCachedMemory(size);
+			memset(output, 0, size);
+			
+			JOINPOINT algorithms(@sToken@) IN algorithms.algorithms;
+			
+			status = WdfMemoryCopyFromBuffer(memory, 0, output, current_size);	
+			WdfRequestCompleteWithInformation(Request, status, current_size);
+			MmFreeNonCachedMemory(output, size);
+		}
+		else
+		{
+			WdfRequestComplete(Request, status);
+		}
+	}
+};

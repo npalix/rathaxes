@@ -1,0 +1,13 @@
+function        rtxType_Parse<"string.inc.cws">(src : value)
+{
+        local   out;
+        parseStringAsBNF({
+                string ::= ['"' ->[~'\\' '"']]:str
+                        //=>traceLine("parse:" + str);
+                        =>{this = str;}
+                ;
+        }, out, src);
+        if (out != "")
+        {       return true;}
+        return false;
+}
