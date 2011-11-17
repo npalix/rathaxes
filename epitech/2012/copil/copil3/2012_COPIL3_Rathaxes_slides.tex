@@ -30,6 +30,60 @@
 \titlepage
 \end{frame}
 
+\begin{frame}{Rappel du Projet}
+\rmfamily{\itshape{«~\rtx\ est un \textcolor{rathaxesred}{langage dédié} qui
+permet de \textcolor{rathaxesred}{décrire des pilotes} de périphériques. \rtx\
+compile vers des modules noyaux écrits en C pour \textcolor{rathaxesred}{Linux},
+\textcolor{rathaxesred}{Windows} et \textcolor{rathaxesred}{OpenBSD}.~»}}
+\end{frame}
+
+\begin{frame}[fragile]{Rappel du Projet}
+\begin{center}
+\begin{tikzpicture}[overlay]
+\draw (0, 2.7) node{\Large{S'adresse à deux types d'utilisateurs :}} ;
+
+\draw (-2.5, 1.2) node[text width=2cm, text centered]{\small{Fabricants de Matériel}} ;
+\draw (-2.5, -1.3) node[below]{\includegraphics[width=2cm]{logos/nvidia_white}} ;
+\draw (-2.5, -0.3) node[below]{\includegraphics[width=2cm]{logos/intel}} ;
+\draw (-2.5, 0.2) node[below]{\includegraphics[width=2cm]{logos/broadcom_white}} ;
+\draw (-2.5, -3.3) node{\ldots} ;
+
+\draw (2.5, 1.2) node[text width=2cm, text centered]{\small{Éditeurs de SE}} ;
+\draw (2.5, 0.2) node[below]{\includegraphics[width=2cm]{logos/tux}} ;
+\draw (2.5, -2.8) node[above]{\includegraphics[width=2cm]{logos/windows_7_white}} ;
+\draw (2.5, -3.3) node{\ldots} ;
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Avancement}
+
+\large{
+\begin{itemize}
+\item Version complète et utilisable du compilateur ;
+\item Soutenances finales de 4\textsuperscript{ème} année positives ;
+\item Supporte les trois parties du langage:
+\end{itemize}
+}
+
+\begin{center}
+\begin{tikzpicture}[overlay]
+\draw (-3, -0.5) node{\includegraphics[width=1.5cm]{icons/rtx}} ;
+\draw (0, -0.5) node{\includegraphics[width=1.5cm]{icons/rti}} ;
+\draw (3, -0.5) node{\includegraphics[width=1.5cm]{icons/blt}} ;
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Documentation}
+\large{
+\begin{itemize}
+\item Mise à jour de la documentation technique ;
+\item Mise à jour de la documentation utilisateur prévue.
+\end{itemize}
+}
+\end{frame}
+
 \begin{frame}[fragile]{Promotion}
 \begin{center}
 \begin{tikzpicture}
@@ -39,10 +93,26 @@
 \item \Large{RMLL 2011} ;
 \item \Large{Youtube} ;
 \item \Large{Google Code} ;
+\item \Large{\emph{Forum EIP}} ;
 \item \Large{\emph{Fosdem 2012}}.
 \end{itemize}\end{minipage}};
 \end{tikzpicture}
 \end{center}
+\end{frame}
+
+\begin{frame}{Planning}
+\Large{
+\begin{itemize}
+\item Pas de changements sur le CDC ;
+\item Retard sur le compilateur ;
+\item Soutenance technique finale :
+\begin{itemize}
+\Large{
+\item Driver réseau PCI en \rtx.
+}
+\end{itemize}
+\end{itemize}
+}
 \end{frame}
 
 \begin{frame}{Merci}
