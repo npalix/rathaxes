@@ -1,0 +1,15 @@
+function        rtxType_Parse<"number.inc.cws">(src : value)
+{
+        local   out;
+        parseStringAsBNF({
+                string ::= [hexa|#readInteger]:str
+                        =>{this = str;}
+                ;
+                hexa ::= #!ignore #noCase
+                        "0x" ['0'..'9'|'a'..'f']+
+                ;
+        }, out, src);
+        if (out != "")
+        {       return true;}
+        return false;
+}

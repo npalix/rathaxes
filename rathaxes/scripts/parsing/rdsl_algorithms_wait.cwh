@@ -1,0 +1,17 @@
+/*
+**	rdsl_algorithms_wait.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**	---------------------------------------------------------------------------
+*/
+
+rdsl_algorithms_wait ( nAlgorithm : node ) ::=
+	#readIdentifier:{"WAIT"}
+	=> insert nAlgorithm.algorithm = "wait";
+	'('
+		rdsl_algorithms_paramerter(nAlgorithm.first_parameter)
+		','
+		rdsl_algorithms_paramerter(nAlgorithm.second_parameter)
+	')' ';'
+    => setAlgoritmLocalDeclaration(nAlgorithm);
+;

@@ -1,0 +1,127 @@
+interface LKM : Algorithms
+{
+    provided builtintype        LKM::Device_list;
+    provided builtintype		LKM::Symbol;
+
+    provided pointcut           LKM::INCLUDE_DEPENDENCIES;
+    provided pointcut           LKM::GLOBAL_DATA_DECLARATION;
+    provided pointcut           LKM::GLOBAL_CODE_DEFINITION;
+
+    provided sequence           LKM::load()
+    {
+        provided pointcut       LKM::INIT_LKM_FPTRS(Symbol); // Symbol is the type of the joinpoint
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+    }
+
+    provided sequence           LKM::unload()
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+    }
+
+    required variable LKM::Device_list      LKM::Devices;
+    required variable ::string              LKM::OS;
+    optional variable ::numser              LKM::version;
+    optional variable ::numser              LKM::arch;
+}
+
+interface Algorithms
+{
+    provided builtintype        ::string;
+    provided builtintype        ::number;
+    provided builtintype        ::numser;
+    provided builtintype        ::register;
+    provided builtintype        ::register_field;
+    provided builtintype        ::register_value;
+    provided type               Algorithms::Buffer;
+
+    provided sequence   Algorithms::log(::string)
+    {
+        provided chunk   ::CALL; // use current namespace/template from frontend
+    }
+
+    provided sequence   set(::register_value)
+    {
+        provided chunk  ::CALL; // use current namespace/template from frontend
+    }
+    provided sequence   set(::register, ::number)
+    {
+        provided chunk  ::CALL; // use current namespace/template from frontend
+    }
+    //...
+}
+
+interface User : LKM
+{
+    provided type               Context;//why not device?
+
+
+    required sequence           User::open(Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided pointcut	    ::CALL;
+    }
+
+    required sequence           User::close(Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       ::CALL;
+    }
+
+    required sequence           User::read(Context, Algorithms::Buffer)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       ::CALL;
+    }
+
+    required sequence           User::write(Context, Algorithms::Buffer)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       ::CALL;
+    }
+
+    required sequence           User::on_plug(Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION;
+        provided chunk          LKM::INIT_LKM_FPTRS;
+        provided pointcut       ::CALL;
+    }
+}
+
+//with LKM
+//values OS=Linux
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
+
+//with LKM
+//values OS=OpenBSD
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
+
+//with LKM
+//values OS=Windows
+//{
+//    extend interface
+//    {
+//        required variable numser    UUID;
+//        required variable string    device_name;
+//        required variable string    device_guid;
+//        required variable string    class_name;
+//        required variable string    class_guid;
+//        required variable string    dispatch_mode;
+//    }
+//}

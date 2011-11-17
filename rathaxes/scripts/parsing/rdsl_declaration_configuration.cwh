@@ -1,0 +1,34 @@
+/*
+**	rdsl_declaration_configuration.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Papy
+**	modified Papy
+** -----------------------------------------------------------------------------
+** This is a work in progress version of the configuration block
+** -----------------------------------------------------------------------------
+** TODO: ??
+*/
+
+#include "rdsl_declaration_configuration.cwf"
+
+configuration_definition(aDefinition : node) ::=
+	#readIdentifier:{"CONFIGURATION"}
+	=> checkConfigurationExists();
+	configuration_block(this.configuration)
+;
+
+configuration_block(theConfiguration : node) ::=
+	'{'
+		[
+			os_specific_variables(theConfiguration)
+			| semantic_block<"misc">(theConfiguration)
+		]*
+	'}' [';']?
+;
+
+os_specific_variables(theConfiguration : node) ::=
+	#readIdentifier:{"OS"} #readIdentifier:sOs
+	'{'
+		[semantic_block<"misc">(theConfiguration.osspecific[sOs])]*
+	'}' [';']?
+;
