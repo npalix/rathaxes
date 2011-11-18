@@ -255,9 +255,8 @@ function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode :
     {
         // XXX TODO FIXME
         // builtin item management.
-        if (pointcutId.name == "CALL")
-            return true;
-        if (pointcutId.name == "IMPLEMENTATION")
+        if (pointcutId.name == "CALL"
+            || pointcutId.name == "IMPLEMENTATION")
             return true;
     }
     return false;
@@ -437,36 +436,48 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
 
     // If there is no explicit interface, we must check each interface in the dependencies.
     // First, load the interface's tree...
-    if (rtxLink_findInterface(itfName, itfNode) == false)
+    if (pointcutId.scope != "")
     {
-        traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
-                  + " could not be found within the cache." + DEFAULT_COLOR);
-        return false;
-    }
-    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
-    {
-        traceLine(RED + "[Error] Could not load interface's '" + itfName
-                  + "' tree." + DEFAULT_COLOR);
-        return false;
-    }
-    if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree) != false)
-    {
-        pointcutId.scope = itfName;
-        return true;
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree) != false)
+        {
+            pointcutId.scope = itfName;
+            return true;
+        }
     }
 
     // If test did not succeed  AND the interface is not explicitly given:
     if (pointcutId.scope == "")
     {
-        // Then, check for the parent interfaces.
-        foreach parent in itfTree.inheritance
+        if (pointcutId.global == false)
         {
-            local name = key(parent);
-            if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutId, name) != false)
+            // Then, check for the parent interfaces.
+            foreach parent in itfTree.inheritance
             {
-                pointcutId.scope = name;
-                return true;
+                local name = key(parent);
+                if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutId, name) != false)
+                {
+                    pointcutId.scope = name;
+                    return true;
+                }
             }
+        }
+        else
+        {
+            if (pointcutId.name == "CALL"
+                || pointcutId.name == "IMPLEMENTATION")
+                return true;
         }
     }
 
@@ -659,7 +670,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
     foreach chunk in tplTree.body.block
     {
         local name = chunk.pointcut.scope;
-        if (name == "")
+        if (name == "" && chunk.pointcut.global == false)
             name = tplTree.prototype.rtype.name.scope;
         if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut,
                                                 name) == false)

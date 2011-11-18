@@ -58,35 +58,30 @@ interface User : LKM
     required sequence           User::open(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
-        provided pointcut	    ::CALL;
     }
 
     required sequence           User::close(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALL;
     }
 
     required sequence           User::read(Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALL;
     }
 
     required sequence           User::write(Context, Algorithms::Buffer)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALL;
     }
 
     required sequence           User::on_plug(Context)
     {
         provided chunk          LKM::GLOBAL_CODE_DEFINITION;
         provided chunk          LKM::INIT_LKM_FPTRS;
-        provided pointcut       ::CALL;
     }
 }
 
