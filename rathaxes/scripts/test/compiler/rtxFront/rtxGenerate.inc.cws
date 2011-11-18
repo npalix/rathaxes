@@ -123,6 +123,9 @@ function rtxFrontGen_iterate<"__rtx_device__">(local_node : node)
     return rtxFrontGen_Device(local_node);
 }
 
+function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
+{ return true; }
+
 function rtxFrontGen_iterate<"__block__">(local_node : node)
 {
     local errcount = 0;

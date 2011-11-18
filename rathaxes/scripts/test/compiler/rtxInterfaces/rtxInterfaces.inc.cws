@@ -1006,6 +1006,9 @@ function rtxTypeCheck_Config(theConfig : node)
 //           interfaces#back = ###;
 //       }
     }
+
+    // FIXME For now, return true to avoid error because not implemented.
+    return true;
 }
 
 
