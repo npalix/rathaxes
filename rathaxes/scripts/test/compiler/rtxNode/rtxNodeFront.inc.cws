@@ -32,22 +32,17 @@ function rtxNodeConfigField(local_node  : node,
     return true;
 }
 
-function rtxNodeConfig_BodyAddField(local_node      : node,
-                                    out_ref_field   : reference,
-                                    out_ref_id      : reference,
-                                    out_ref_val     : reference)
+function rtxNodeConfig_BodyAddField(local_node  : node,
+                                    field       : node)
 {
     if ((local_node#parent.type != "__rtx_config__"
          && local_node#parent.type != "__rtx_config_field__")
         || local_node.type != "__block__")
         return false;
-    pushItem local_node.block;
-    
-    ref out_ref_field = local_node.block#back;
-    
-    if (rtxNodeConfigField(out_ref_field, out_ref_id, out_ref_val) == false)
-        return false;
 
+    pushItem local_node.block;
+    setall local_node.block#back = field;
+    
     return true;
 }
 
