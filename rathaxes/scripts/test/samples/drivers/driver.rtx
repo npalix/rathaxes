@@ -3,7 +3,7 @@ use Algorithms, LKM, User
 {
     register byte rcv_buf mode R like (........) at 0;
     register byte snd_buf mode R like (........) at 0;
-    
+
     register byte IER mode RW like (.........) at 1
     {
         [0] as data_available;
@@ -165,7 +165,6 @@ use Algorithms, LKM, User
         set(LCR.word_lengh._8bits);
         //set();
     }
-
 }
 
 configuration
