@@ -186,7 +186,22 @@ generateString({
 		}
 	}
 
+    configuration
+    {
+        devices = RS232;
+        arch = x86;
+        OS = Linux
+        {
+            major = 2;
+            minor = 6;
+            patch = 24;
+        }
 
+        OS = Windows
+        {
+            version = XP;
+        }
+    }
 @}, dummy, input);
 
 #include "cwTool.inc.cws"
