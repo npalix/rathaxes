@@ -9,8 +9,7 @@ rtx_stmt_config_block(theBlock : node) ::=
 /**/    => local configField;
 /**/    => local theIdentifier;
 /**/    => local theValue;
-/**/        #check(rtxNodeConfig_BodyAddField(theBlock,
-/**/                                          configField, theIdentifier, theValue))
+        #check(rtxNodeConfigField(configField, theIdentifier, theValue))
         rtx_scoped_identifier(theIdentifier)
 /**/    #continue(sError, "Expected assignment operator '=' after"
 /**/                    + " configuration variable declaration.")
@@ -19,7 +18,6 @@ rtx_stmt_config_block(theBlock : node) ::=
 /**/                    + "assignment.")
         rtx_value(theValue)
 /**/    #continue(sError, "Expected extension block or "
-
 /**/                    + "';' after configuration variable assignment.")
         [
             /* Supports extension on this variable : block*/
@@ -33,6 +31,7 @@ rtx_stmt_config_block(theBlock : node) ::=
             /* Does not support extension */
             ';'
         ]
+/**/    #check(rtxNodeConfig_BodyAddField(theBlock, configField))
     ]*
 ;
 

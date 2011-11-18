@@ -170,18 +170,19 @@ use Algorithms, LKM, User
 
 configuration
 {
-    devices = RS232;
-    arch = x86;
-    OS = Linux
+    LKM::devices = RS232;
+    LKM::arch = x86;
+    LKM::OS = Linux
     {
-        major = 2;
-        minor = 6;
-        patch = 24;
-        version = 2.6.24;
+        LKM::major = 2;
+        LKM::minor = 6;
+        LKM::patch = 24;
+        LKM::version = 2.6.24;
     }
 
-    OS = Windows
-    {
-        version = XP;
-    }
+    // Currently, defining a variable twice creates an error.
+    //LKM::OS = Windows
+    //{
+    //    LKM::version = XP;
+    //}
 }

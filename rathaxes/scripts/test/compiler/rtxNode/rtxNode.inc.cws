@@ -253,7 +253,7 @@ function rtxNodeWith_BuildFromConfigVar(local_node : node, config : node)
  * This function transforms a config node (from the front end parsing)
  * into a with node (for constraint comparisons)
  */
-function rtxNodeWith_BuildFromConfig(local_node : node)
+function rtxNodeWith_BuildFromConfig(local_node : node, out_config : node)
 {
     local errcount = 0;
 
@@ -266,7 +266,7 @@ function rtxNodeWith_BuildFromConfig(local_node : node)
 
     foreach var in local_node.body.block
     {
-        if (rtxNodeWith_BuildFromConfigVar(local_node, local_node.config) == false)
+        if (rtxNodeWith_BuildFromConfigVar(var, out_config) == false)
             increment(errcount);
     }
     if (errcount != 0)
