@@ -4,7 +4,7 @@ values OS=Linux, version >= 2.6.24
     template sequence LKM::load()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
-        chunk GLOBAL_DATA_DEFINITION
+        chunk GLOBAL_DATA_DECLARATION
         {
             struct module myModule = {
                 ${ pointcut INIT_LKM_FPTRS default: .open = NULL }
@@ -24,7 +24,7 @@ values OS=Linux, version >= 2.6.24
     template sequence LKM::unload()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
-        chunk GLOBAL_DATA_DEFINITION
+        chunk GLOBAL_DATA_DECLARATION
         {
             int rtxModuleExit(void)
             {
