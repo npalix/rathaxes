@@ -34,6 +34,7 @@
 #include "rtxTpl/rtxResolve.inc.cws"
 
 #include "rtxFront/rtxGenerate.inc.cws"
+#include "rtxFront/rtxTools.inc.cws"
 
 function usage()
 {
@@ -114,10 +115,17 @@ if (toLowerString(this.operation) == "generate")
         exit (3);
     }
 
+    if (rtxFront_RetrieveConfig(this.front, this.config_block) == false)
+    {
+        traceLine(RED + "[Error] Front-end configuration could not be"
+                  + " transformed for use in generation." + DEFAULT_COLOR);
+        exit(4);
+    }
+
     if (rtxFrontGen_iterate<this.front.type>(this.front) == false)
     {
         traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
-        exit(4);
+        exit(5);
     }
     
     traceLine("Resulting code:"+cnorm2c(this.c_tree.c_block));

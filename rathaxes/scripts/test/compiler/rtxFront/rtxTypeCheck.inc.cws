@@ -38,6 +38,11 @@ function rtxFront_TypeCheckNode<"__rtx_device__">(local_node : node, itf_list : 
     return true;
 }
 
+function rtxFront_TypeCheckNode<"__rtx_config__">(local_node : node, itf_list : node)
+{
+    return rtxTypeCheck_Config(local_node);
+}
+
 
 function rtxFront_TypeCheckNode<"__block__">(local_node : node, itf_list : node)
 {

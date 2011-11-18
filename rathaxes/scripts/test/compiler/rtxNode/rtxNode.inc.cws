@@ -209,6 +209,74 @@ function rtxNodeWith_BuildFromConstraints(local_node : node)
 
 
 /*
+ * This function transforms (Recursively, depending on the extensions) a
+ * variable configuration (from the front end) into a with node for easy
+ * comparison.
+ *
+ * Here, we should already have resolved the variables'interfaces.
+ */
+function rtxNodeWith_BuildFromConfigVar(local_node : node, config : node)
+{
+    local errcount = 0;
+    local itfName = local_node.id.scope;
+    local varName = local_node.id.name;
+
+    if (!findElement(itfName, config))
+        insert config[itfName];
+
+    // Check that the variable is not defined twice.
+    if (findElement(varName, config[itfName]))
+    {
+        traceLine(RED + "[Error] Configuration variable "
+                  + itfName + "::" + varName + " is defined multiple times."
+                  + DEFAULT_COLOR);
+        return false;
+    }
+    insert config[itfName][varName];
+    setall config[itfName][varName] = local_node.val;
+
+    if (existVariable(local_node.extension))
+    {
+        foreach var in local_node.extension.block
+        {
+            if (rtxNodeWith_BuildFromConfigVar(var, config) == false)
+                increment(errcount);
+        }
+    }
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+/*
+ * This function transforms a config node (from the front end parsing)
+ * into a with node (for constraint comparisons)
+ */
+function rtxNodeWith_BuildFromConfig(local_node : node)
+{
+    local errcount = 0;
+
+    if (local_node.type != "__rtx_config__")
+    {
+        traceLine(RED + "[Error] Wrong node type given to function"
+                  + " rtxNodeWith_BuildFromConfig." + DEFAULT_COLOR);
+        return false;
+    }
+
+    foreach var in local_node.body.block
+    {
+        if (rtxNodeWith_BuildFromConfigVar(local_node, local_node.config) == false)
+            increment(errcount);
+    }
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+
+/*
  *
  * Common nodes  for the middle-end/backend typechecking
  * And coherence.
