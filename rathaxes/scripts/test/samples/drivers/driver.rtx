@@ -165,4 +165,23 @@ use Algorithms, LKM, User
         set(LCR.word_lengh._8bits);
         //set();
     }
+
+}
+
+configuration
+{
+    devices = RS232;
+    arch = x86;
+    OS = Linux
+    {
+        major = 2;
+        minor = 6;
+        patch = 24;
+        version = 2.6.24;
+    }
+
+    OS = Windows
+    {
+        version = XP;
+    }
 }
