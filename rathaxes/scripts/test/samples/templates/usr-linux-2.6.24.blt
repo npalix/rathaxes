@@ -17,7 +17,7 @@ values OS=linux, version >= 2.6.24
         chunk ::CALL
         {}
 
-        chunk LKM::INIT_LKM_FPTRS(init)
+        chunk LKM::INIT_LKM_FPTRS
         {}
     }
 
@@ -26,15 +26,15 @@ values OS=linux, version >= 2.6.24
         chunk LKM::GLOBAL_CODE_DEFINITION
         {
             typedef void dev_t;
-            int ${config.device_name}_read(dev_t *)
+            int ${config.devices}_read(dev_t *)
             {
                 return (0);
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS(init)
+        chunk LKM::INIT_LKM_FPTRS
         {
-		    ${init}.read      = &${config.device_name}_read;
+		    .read      = &${config.devices}_read,
         }
 
         chunk ::CALL
@@ -47,15 +47,15 @@ values OS=linux, version >= 2.6.24
         chunk LKM::GLOBAL_CODE_DEFINITION
         {
             typedef void dev_t;
-            int ${config.device_name}_write(dev_t *)
+            int ${config.devices}_write(dev_t *)
             {
                 return (0);
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS(init)
+        chunk LKM::INIT_LKM_FPTRS
         {
-		    ${init}.write      = &${config.device_name}_write;
+		    .write      = &${config.devices}_write,
         }
     }
 }
