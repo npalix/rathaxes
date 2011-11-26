@@ -12,6 +12,10 @@ declare function type_call<T>(resolverValues : node,
                               chunkName : value,
                               placeHolder : node);
 
+function isBuiltinVariable(varname : value)
+{
+    return (varname == "local" || varname == "config");
+}
 /*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
@@ -331,8 +335,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             // Create the resolvervalues for the type resolution:
             // This should not need any more than config and var's identifier.
             local resVal;
-            insert resVal["config"];
-            setall resVal["config"] = resolverValues["config"];
             insert resVal["self"];
             rtxNodeResValLeaf(resVal["self"], varName);
             
@@ -340,19 +342,19 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                                     theChunk.type_map[varName]
                                 );
 
-            type_map<qTypeName>(resVal, theChunk.type_map[varName],
-                                local_node.body.identifiers[1].name,
-                                local_node);
+            return type_map<qTypeName>(resVal, theChunk.type_map[varName],
+                                       local_node.body.identifiers[1].name,
+                                       local_node);
 
-            return true;
         }
-        // NOT IMPLEMENTED YET
-        //// If not, is it an identifier to generate through local.tmp(X) ?
-        //else if (varName == "local" && ...)
-        //{
-        //    return true;
-        //}
-        //
+        else if (isBuiltinVariable(varName))
+        {
+            local dummyResVal;
+            local dummyRtype;
+            return type_map<"::"+varName>(dummyResVal, dummyRtype,
+                                          local_node.body.identifiers[1].name, local_node);
+        }
+        
 
         // If both of the conditionis weren't entered, then that means that
         // it is a simple value weaving, and the next part takes care of it.
@@ -696,10 +698,28 @@ function type_map<T>(resolverValues : node,
 }
 
 // The builtin specializations.
-function type_map<"Builtin::Local">(resolverValues : node,
-                                    theRtype : node, mappedId : value,
-                                    placeHolder : node)
+function type_map<"::local">(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node)
 {
+    error(RED + "Builtin '::local' functions not implemented yet." + DEFAULT_COLOR);
+}
+
+// The builtin specializations.
+function type_map<"::config">(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node)
+{
+    foreach itf in this.config
+    {
+        if (findElement(mappedId, itf))
+        {
+            local retval;
+            retval = placeHolder.prefix + itf[mappedId] + placeHolder.suffix;
+            setall placeHolder#parent.ref_placeholder#parent.name = retval;
+            return true;
+        }
+    }
 }
 
 
