@@ -104,6 +104,10 @@ function	rtxTpl_compile<"__block__">(local_node : node, compile : node,
 	// find every single placeHolder in the cNorm tree
     foreach item in local_node.block
 	{
+        if (isEmpty(item) && !existVariable(item.type))
+        {
+            error(RED + "A parsing artefact may have been left into the block: empty item:"+toString(item) + DEFAULT_COLOR);
+        }
         rtxTpl_compile<item.type>(item, compile, index(item));
     }
 }
