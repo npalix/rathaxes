@@ -594,7 +594,7 @@ function rtxLink_ValidateDiff()
     foreach glob in this.session.temp.global_code
     {
         if (rtxLink_ValidateFiles(this.local_backlib_path,
-                                 "", glob.with,
+                                 "glob_"+key(glob), glob.with,
                                  glob.tree_file,
                                  glob.script_file) == false)
             return false;
@@ -603,18 +603,17 @@ function rtxLink_ValidateDiff()
     {
         if (existVariable(tpl.script_file)
             && rtxLink_ValidateFiles(this.local_backlib_path,
-                                     key(tpl), tpl.with,
+                                     "tpl_"+key(tpl), tpl.with,
                                      tpl.tree_file,
                                      tpl.script_file) == false)
             return false;
-
     }
     foreach pointcut in this.session.temp.chunks
     {
         foreach chunk in pointcut
         {
             if (rtxLink_ValidateFiles(this.local_backlib_path,
-                                     key(chunk), chunk.with,
+                                     "chunk_"+chunk.tpl_id+"_"+key(pointcut)+"_"+key(chunk), chunk.with,
                                      chunk.tree_file,
                                      chunk.script_file) == false)
                 return false;
