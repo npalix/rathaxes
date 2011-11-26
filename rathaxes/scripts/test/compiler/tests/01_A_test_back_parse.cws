@@ -41,7 +41,7 @@ generateString({
             chunk LKM::global_data_declaration(theSymbol)
             {
                 theSymbol = 42;
-                ${TYPE} bla;
+                //${TYPE} bla;
             }
 
             chunk LKM::function_declaration

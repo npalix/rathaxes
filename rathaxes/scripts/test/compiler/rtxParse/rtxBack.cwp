@@ -178,6 +178,20 @@ rtx_stmt_chunk_params(theParams : node) ::=
     ')'
 ;
 
+rtx_chunk_body(theBody : node) ::=
+	'{'
+/**/	#check(cnormNodeDecl_Init(theBody))
+		initializer_list(theBody)
+// last ',' but empty
+		[',']? 
+	'}'
+    |
+    /* The two following lines prevent artefacts (by failing previous alternative) */
+    =>clearVariable(theBody);
+    #check(cnormNodeBlock(theBody))
+    compound_statement(theBody)
+;
+ 
 rtx_stmt<"chunk">(theBlock : node) ::=
 /**/=>traceLine("CHUNK");
     #continue(sError, "Expected pointcut associated to chunk declaration.")
@@ -198,12 +212,8 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     [
         rtx_stmt_chunk_params(parameters)
     ]?
-    #continue(sError, "Expected '{' after pointcut name.")
-    '{'
-        #continue(sError, "Expected instrumentalized C inside chunk block.")
-            block_item_list(body)
-        #continue(sError, "Expected '}' at end of chunk's block.")
-    '}'
+    #continue(sError, "Expected block after chunk declaration.")
+    rtx_chunk_body(body)
 ;
 
 
