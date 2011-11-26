@@ -436,7 +436,7 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
 
     // If there is no explicit interface, we must check each interface in the dependencies.
     // First, load the interface's tree...
-    if (pointcutId.scope != "")
+    if (itfName != "")
     {
         if (rtxLink_findInterface(itfName, itfNode) == false)
         {
@@ -671,7 +671,10 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
     {
         local name = chunk.pointcut.scope;
         if (name == "" && chunk.pointcut.global == false)
+        {
             name = tplTree.prototype.rtype.name.scope;
+            traceLine("Setting default itf to "+name);
+        }
         if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut,
                                                 name) == false)
         {
