@@ -201,7 +201,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
     #continue(sError, "Expected '{' after pointcut name.")
     '{'
         #continue(sError, "Expected instrumentalized C inside chunk block.")
-        block_item_list(body)
+            block_item_list(body)
         #continue(sError, "Expected '}' at end of chunk's block.")
     '}'
 ;

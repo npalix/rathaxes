@@ -58,12 +58,16 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("Generated Script : inject for key @this.key@ : @this.template_expr@"
-                      +" (@this.node.body.type@)");
+		    traceLine("Generated Script : inject for key @this.key@ :"
+                      + " (@this.body.node.type@: @replaceString("\n", " ", this.template_expr)@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve placeHolder '@replaceString("\n", " ", this.template_expr)@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
+            }
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -74,11 +78,16 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
     insert item.key = theKey;
     generateString({
             // Resolving VALUE (place Holder @this.key@)
-		    traceLine("Generated Script : inject for key @this.key@ : (@this.node.body.type@)");
+		    traceLine("Generated Script : inject for key @this.key@ :"
+                      + " (@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve pointcut '@replaceString("\n", " ", this.template_expr)@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
+            }
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -87,20 +96,22 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
 {
     insert item.cws_expr;
     insert item.key = theKey;
-    hashTemplatePrototype(item.node.body.rtype, item.tpl_hash);
     insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
     generateString({
                 // Resolving LINK (place Holder @this.key@)
-                traceLine("Generated Script : inject for key @this.key@ : @this.template_expr@"
-                          +" (@this.node.body.type@)");
+                traceLine("Generated Script : inject for key @this.key@ : "
+                          + "(@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
                 if (type_call<"@this.tpl_hash@">(
                             resVals,
                             "@this.chunkName@",
                             c_tree.compile["@this.key@"].node) == false)
+                {
+                    traceLine(RED + "[Error] Could not resolve chunk call '@replaceString("\n", " ", this.template_expr)@'"
+                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                     increment(errcount);
+                }
     @}, item, item.cws_expr);
     removeVariable(item.key);
-    removeVariable(item.tpl_hash);
     removeVariable(item.chunkName);
 }
 
@@ -123,7 +134,11 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                 c_tree,
                 c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node
                 ) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve type mapping '@replaceString("\n", " ", this.template_expr)@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
+            }
     @}, item, item.cws_expr);
     removeVariable(item.key);
 }
@@ -138,6 +153,7 @@ function    generateCodeWorker<T>(local_node : node, uid : value)
 function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 {
 	local	source_codeworker;
+    // XXX TODO FIXME
     // Fake it for now...
     insert local_node.instanceKey = "LKM";
 	generateString({
@@ -276,6 +292,7 @@ function	gencodeworker<"__rtx_chunk__">(blt_node : node,
     foreach item in theBlock.compile
     {
         traceLine("rtxGen:<LOG> Generating cws for placeHolder "+key(item));
+        insert item.tpl_hash = blt_node.tpl_hash;
         rtxGenPlaceHolder<item.node.body.type>(item, key(item));
     }
 
@@ -293,6 +310,7 @@ function	gencodeworker<"__rtx_chunk__">(blt_node : node,
 function	gencodeworker<"__rtx_with__">(blt_node : node,
                                            theBlock : node, uid : node)
 {
+    insert blt_node.tpl_hash = "With";
     gencodeworker<"__rtx_chunk__">(blt_node, theBlock, uid);
 }
 

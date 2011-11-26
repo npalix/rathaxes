@@ -103,10 +103,19 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
 {
     local idx = $0$;
     local newValue;
+    if (getArraySize(src_params.list) != getArraySize(dst_params.list))
+    {
+        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
+                  +", got "+getArraySize(src_params.list)+")." + DEFAULT_COLOR);
+        return false;
+    }
+
     foreach dst_param in dst_params.list
     {
         localref theValue = src_resVals;
-        localref theParam = src_params.list[idx];
+        if (!existVariable(src_params.list) || !findElement(idx, src_params.list))
+            traceLine(RED + "[Error] src_params do not contain the required field: "+toString(dst_param,true)+" in "+toString(src_params, true) + DEFAULT_COLOR);
+        localref theParam = src_params.list#[idx];
         if (existVariable(theParam.identifiers))
         {
             foreach param_field in theParam.identifiers
@@ -131,6 +140,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         setall dst_resVals[dst_param.identifiers[0].name] = theValue;
         increment(idx); 
     }
+
+    return true;
 }
 
 /*
@@ -398,6 +409,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
 {
     localref theBlock = local_node#parent.ref_placeholder#parent#parent;
     localref thePointcut = local_node#parent;
+    local pointcutName = rtxRTypeName<local_node.body.name.type>(local_node.body.name);
     // Variables for the node replacement
     local phName = thePointcut.ref_placeholder#parent.id;
     local phIdx = 0;
@@ -410,7 +422,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     if (rtxLink_findChunks(local_node.body.name, chunks) == false)
         traceLine("inject_pointcut<\""+T+"\">:<WARN> No chunk associated with"
                   +" the pointcut "
-                  + rtxRTypeName<local_node.body.name.type>(local_node.body.name));
+                  + pointcutName);
 
     // If we cannot find any chunk, let's use default behaviour (if there's one)
     if (isEmpty(chunks)
@@ -443,13 +455,17 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
             if (rtxLink_LoadItem(chunk, c_tree) == false)
             {
                 traceLine("inject_pointcut<\""+T+"\">:<ERROR> Could not "
-                          +"load script for one chunk for pointcut "+local_node.body.name+".");
+                          +"load script for one chunk for pointcut "+pointcutName+".");
                 increment(errcount);
             }
             local resVals;
-            rtxResolve_BuildParameterResVals(resolverValues,
-                                             local_node.body.parameters,
-                                             resVals, c_tree.parameters);
+            if (rtxResolve_BuildParameterResVals(resolverValues,
+                                                 local_node.body.parameters,
+                                                 resVals, c_tree.parameters) == false)
+            {
+                traceLine(RED + "[Error] Wrong parameters given to pointcut '" + pointcutName + "'." + DEFAULT_COLOR);
+                return false;
+            }
 
             if (instanceChunk<c_tree.instanceKey>(resVals, c_tree.body) != false)
                 rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, c_tree.body);

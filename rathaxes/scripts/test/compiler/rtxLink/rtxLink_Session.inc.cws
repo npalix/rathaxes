@@ -96,6 +96,11 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
     // Then recurse to register every template.
     foreach item in local_node.body.block
     {
+        if (item.type == "__rtx_chunk__")
+        {
+            insert out_ref_id.session = 0;
+            insert out_ref_id.tmp = 0;
+        }
         rtxLink_SessionRegister<item.type>(item, theWith, out_ref_id);
     }
 }
@@ -131,10 +136,9 @@ function rtxLink_SessionRegister<"__rtx_tpl__">(local_node : node,
         traceLine("rtxLink_SessionRegister<\"__rtx_tpl__\">:<LOG>"
                   +" registering template '"+hash+"'");
         if (!findElement(hash, this.session.templates))
-        {
             insert this.session.templates[hash];
+        if (!findElement(hash, this.session.temp.templates))
             insert this.session.temp.templates[hash];
-        }
         
         // Setup the base of the template in the cache...
         localref cachedTpl = this.session.templates[hash];

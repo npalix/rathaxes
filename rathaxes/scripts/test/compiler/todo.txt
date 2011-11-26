@@ -111,12 +111,13 @@ Tests Backend :
     * Ajouter l'appel au check FRONT dans la compilation                <= DONE
 
  * Improve Type Checking
+    * Backend: Checker les nb de parametres des pointcuts.              <= TODO
     * Faire une premiere passe de qualification complete des elements   <= TODO
     * Separer la qualification complete du type-checking                <= TODO
     * Detecter correctement les cas ambigus (XXX dans le code) plutot
       que les resoudre silencieusement en acceptant la premiere soluce  <= TODO
     * Front-end: Faire en sorte de checker le contenu des blocks de
-      chaque sequence appellée
+      chaque sequence appellée                                          <= TODO
     * Backend: Ajouter la verification qu'une sequence implemente
       le pointcut CALL si provided ou IMPLEMENTATION si optional/req    <= TODO
     * Checker l'existence des variables de config dans le with          <= TODO
