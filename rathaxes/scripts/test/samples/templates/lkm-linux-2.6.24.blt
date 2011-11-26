@@ -28,7 +28,7 @@ values OS=Linux, version >= 2.6.24
         {
             int rtxModuleExit(void)
             {
-                #pragma(comment, "Here, do something about exiting our module (memory etc..)")
+                //#pragma(comment, "Here, do something about exiting our module (memory etc..)")
             }
         }
 
