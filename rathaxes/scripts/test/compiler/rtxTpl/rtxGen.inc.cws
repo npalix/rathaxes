@@ -36,6 +36,11 @@ function rtxGenInstanceKey<"__rtx_chunk__">(local_node : node)
                                  + "_"  + local_node.pointcut.scope
                                  + "::" + local_node.pointcut.name;
 }
+function rtxGenInstanceKey<"__rtx_with__">(local_node : node)
+{
+    insert local_node.instanceKey;
+    local_node.instanceKey = local_node.tpl_hash + "_"  + local_node.interfaces[0];
+}
 function rtxGenInstanceKey<"__rtx_tpl_type_id_map__">(local_node : node)
 {
     insert local_node.instanceKey;
@@ -155,7 +160,9 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
 	local	source_codeworker;
     // XXX TODO FIXME
     // Fake it for now...
-    insert local_node.instanceKey = "LKM";
+
+    rtxGenInstanceKey<local_node.type>(local_node);
+
 	generateString({
 		// auto generated codeworker DO NOT EDIT
 		// Here, we specialise the function instanceTPL with this.prototype
@@ -372,8 +379,11 @@ function	rtxGen<"__rtx_with__">(local_node : node, uid : node)
 	saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
 
     // generate for the with node !
-    gencodeworker<local_node.type>(local_node, local_node.c_block, uid);
-    increment(uid);
+    if (isEmpty(local_node.c_block.block) == false)
+    {
+        gencodeworker<local_node.type>(local_node, local_node.c_block, uid);
+        increment(uid);
+    }
 
     // Iterate on the content for generation for the subnodes
 	rtxGen<local_node.body.type>(local_node.body, uid);
