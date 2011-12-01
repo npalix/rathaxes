@@ -1,0 +1,97 @@
+#if !existFunction(rtxLink_version)
+
+function rtxLink_version()
+{return "1.0";}
+
+declare function hashTemplatePrototype(theRType : node, out_ref_hash : reference);
+declare function rtxLink_HasCompatibleTpl(proto_hash : value, with_values : node);
+declare function rtxLink_CheckTplConflict(tpl_list : node, tested : node);
+declare function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node);
+declare function rtxLink_getItfCachePath(isLocal : value);
+
+#include "rtxLink_ConfigMatcher.inc.cws"
+#include "rtxLink_Query.inc.cws"
+#include "rtxLink_Session.inc.cws"
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                      TOOL FUNCTIONS TO MANIPULATE THE CACHE                */
+/*                                                                            */
+/******************************************************************************/
+
+// wrapper/faker for the template prototype hashing function (future)
+function hashTemplatePrototype(theRType : node, out_ref_hash : reference)
+{
+    local dummyIds;
+    out_ref_hash = rtxRTypeFullQualifiedName<"sequence">(theRType, dummyIds);
+}
+
+
+/*
+ * This function checks if at least one template exists within the cache
+ * for a given template prototype and with/config block.
+ */
+function rtxLink_HasCompatibleTpl(proto_hash : value, with_values : node)
+{
+    if (findElement(proto_hash, this.session.templates))
+    {
+        foreach tpl in this.session.templates[proto_hash]
+        {
+            if (rtxLink_IsWithNodeCompatible(tpl.with, with_values))
+                return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+/*
+ * This function matches the config of one template against the configurations
+ * of a list of the same template, to see wether it already exists in
+ * the list or not.
+ */
+function rtxLink_CheckTplConflict(tpl_list : node, tested : node)
+{
+    foreach tpl in tpl_list
+    {
+        if (equalTrees(tpl.with, tested.with))
+            return true;
+    }
+    return false;
+}
+
+/*
+ * This function checks if the template already exists within the cache
+ * by matching the two with block with the ConfigMatcher function
+ */
+function rtxLink_CheckSingleTpl(proto_hash : value, with_values : node)
+{
+    if (findElement(proto_hash, this.session.templates))
+    {
+        local dummy;
+        insert dummy.with;
+        setall dummy.with = with_values;
+        return rtxLink_CheckTplConflict(this.session.templates[proto_hash], dummy);
+    }
+    return false;
+}
+
+/*
+ * Tool function to get the specific storage path of files concerning
+ * the registered interfaces
+ */
+function rtxLink_getItfCachePath(isLocal : value)
+{
+    if (isLocal == true)
+        return this.local_backlib_path+"interfaces/";
+    return this.backlib_path+"interfaces/";
+}
+
+
+
+
+
+
+
+#end

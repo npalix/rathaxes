@@ -1,0 +1,78 @@
+interface
+{
+    /{*
+        The following types are purely compiler-managed and defined types
+    *}/
+    builtin type bit;   // 1 or 0
+    builtin type byte;  // 0 to 255
+    builtin type word;  // 0 to 65535
+    builtin type dword; // 0 to 4294967296
+    builtin type qword; // 0 to 18446744073709551616
+
+    builtin type string; // "test"
+
+
+    /{*
+        The following types are variable builtins, which effective types
+        depend on their implementation in the front-end.
+
+        ====
+
+        The register is a collection of register_field.
+        By register is meant either a hardware register or a temporary one.
+
+        The register_field contains a collection of register_field_value.
+    *}/
+    builtin type register [
+                            builtin type register_field [
+                                builtin type register_field_value
+                            ]
+    ];
+
+    builtin sequence set(register, register);
+    builtin sequence set(register, value);
+    builtin sequence set(register_field, register_field_value);
+
+    builtin sequence get(register);
+    builtin sequence get(register_field);
+
+
+    /{*
+        A sequence can wait either for a register's value,
+        or a register_fields's value.
+            
+        Two overloads are thus offered.
+    *}/
+    provided sequence wait(register, value);
+    provided sequence wait(register_field, register_field_value);
+
+
+    provided sequence log(string);
+
+
+    /{*
+        The buffer is a byte buffer with a defined size and a ptr to
+        access the memory (though hidden from the front-end user).
+
+        The algorithms copy and concat may be done under certain 
+        optional pre/post conditions.
+    *}/
+    type buffer{ ptr, size };
+    provided sequence concat(buffer, register) pre, post;
+    provided sequence copy(register, buffer) pre, post;
+
+
+
+
+    system kernel
+    {
+        type context;
+
+        required sequence open(context);
+        optional sequence write(context, buffer);
+        optional sequence read(context, buffer);
+        required sequence close(context);
+
+        optional sequence on_plug(context);
+    }
+}

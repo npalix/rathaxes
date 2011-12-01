@@ -1,0 +1,35 @@
+<%
+/*
+**      load.blt in black_library/windows/RKM/entry_point/
+**      for Rathaxes project
+**      made by Micka
+*/
+local	sDeviceName = this.name;
+%>
+
+ADVICE load PART_OF RKM
+{
+    /*
+    **  Device entry point
+    */
+    NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
+    {
+        NTSTATUS status = STATUS_SUCCESS;
+        WDF_DRIVER_CONFIG	config;
+
+        KdPrint(("@sDeviceName@" "-->DriverEntry\n"));
+        WDF_DRIVER_CONFIG_INIT(&config, EvtDeviceAdd);
+        status = WdfDriverCreate(DriverObject,
+                                RegistryPath,
+                                WDF_NO_OBJECT_ATTRIBUTES,
+                                &config,
+                                WDF_NO_HANDLE);
+        if (!NT_SUCCESS(status))
+	    {
+            KdPrint(("@sDeviceName@" " - Error: WdfDriverCreate failed\n"));
+	    }
+  	    KdPrint(("@sDeviceName@" "<--DriverEntry\n"));
+		
+        return (status);
+    }
+};
