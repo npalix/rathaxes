@@ -437,7 +437,23 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         // to both remove the pointcut and insert the code.
         if (existVariable(local_node.body.default.body))
         {
-            setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
+            traceLine(RED+toString(theBlock#parent#parent,true)+DEFAULT_COLOR);
+            if (theBlock#parent.type == "__block__")
+            {
+                if (getArraySize(theBlock) <= thePointcut.block_idx)
+                {
+                    error(RED+ "Trying to get index " + thePointcut.block_idx + " into block " +
+                          toString(theBlock,true) +DEFAULT_COLOR);
+                }
+                setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
+            }
+            else if (theBlock.type == "__stmt__" && theBlock.stmt_type == "__expr__"
+                     && theBlock.expr.expr_type == "__terminal__")
+            {
+                setall theBlock = local_node.body.default.body;
+            }
+            else
+                error("Node type not supported for default resolution..");
         }
         else
         {
