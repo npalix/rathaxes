@@ -34,6 +34,7 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
                                   phName : value, phIdx : node,
                                   sourceNode : node)
 {
+    local modifier = $-1$;
     local sKey;
 
     // Here, we are at the root of the resolved template AST.
@@ -46,7 +47,10 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
         startIdx = $startIdx + 1$;
 
         phIdx = $phIdx + 1$;
+        increment(modifier);
     }
+    if (modifier != $-1$)
+        destBlock.modifier = $destBlock.modifier + modifier$;
 }
 
 
@@ -199,6 +203,10 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
         {
         }
         // And insert it in the sequence implem after having removed the original call node.
+        if (!existVariable(theSeq.body.block.modifier))
+            insert theSeq.body.block.modifier = 1;
+        else
+            increment(theSeq.body.block.modifier);
         removeElement(theSeq.body.block, index(call));
         rtxResolve_InsertCode(theSeq.body.block, startIdx, phName, phIdx, chunkTree.body);
 
@@ -415,7 +423,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     // Variables for the node replacement
     local phName = thePointcut.ref_placeholder#parent.id;
     local phIdx = 0;
-    local startIdx =  thePointcut.block_idx;
+    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
     // cache-related variable
     local   chunks;
     local   errcount = 0;
@@ -457,6 +465,10 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         }
         else
         {
+            if (!existVariable(theBlock.modifier))
+                insert theBlock.modifier = 1;
+            else
+                increment(theBlock.modifier);
             removeElement(theBlock, thePointcut.block_idx);
         }
     }
@@ -466,6 +478,10 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     {
 
         // First, remove the current placeHolder, in case there was no statement
+        if (!existVariable(theBlock.modifier))
+            insert theBlock.modifier = 1;
+        else
+            increment(theBlock.modifier);
         removeElement(theBlock, thePointcut.block_idx);
         foreach chunk in chunks
         {
@@ -507,7 +523,7 @@ function inject_pointcut<"::CALL">(resolverValues : node, treeNode : node,
     // Some variables for the InsertCode function
     local phName = thePointcut.ref_placeholder#parent.id;
     local phIdx = 0;
-    local startIdx =  thePointcut.block_idx;
+    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
     local dummy;
 
     // First of all, check for builtins: No scope, and voluntarily globally defined item.
@@ -533,6 +549,10 @@ function inject_pointcut<"::CALL">(resolverValues : node, treeNode : node,
                         //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
 
                         // Finally, insert the block in-place of the placeHolder.
+                        if (!existVariable(theBlock.modifier))
+                            insert theBlock.modifier = 1;
+                        else
+                            increment(theBlock.modifier);
                         removeElement(theBlock, startIdx);
                         rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
 
@@ -638,6 +658,10 @@ function    type_call<T>(resolverValues : node,
     localref theCall = placeHolder#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
+    if (!existVariable(theBlock.modifier))
+        insert theBlock.modifier = 1;
+    else
+        increment(theBlock.modifier);
     removeElement(theBlock.block, theCall.block_idx);
     rtxResolve_InsertCode(theBlock.block, theCall.block_idx,
                           theCall.ref_placeholder, phIdx, subtree.body);
