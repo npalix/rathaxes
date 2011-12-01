@@ -4,7 +4,7 @@ ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 
 # Embed CNorm and CodeWorker:
 
-INSTALL(DIRECTORY cnorm/src/. # add '.' to not re-create the src/ directory in the destination
+INSTALL(DIRECTORY cnorm/src/
         DESTINATION lib/rathaxes/cnorm
         PATTERN ".svn" EXCLUDE)
 INSTALL(PROGRAMS ${CODEWORKER_BINARY_PATH}
