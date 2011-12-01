@@ -42,15 +42,12 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
                       + "'' required by ``" + local_node.name + "''" + DEFAULT_COLOR);
             return false;
         }
-        // If any of the two attemps succeededm then retrieve the node.
-        // (either by the cache if parentRef is not false, or in the tree)
+
+        // If any of the two attemps succeeded, then retrieve the node.
+        if (interfaces_list.findElement(parentName) != false)
+            ref local_node.inheritance[parentName] = interfaces_list[parentName];
         else
-        {
-            if (parentRef == false)
-                ref local_node.inheritance[parentName] = interfaces_list[parentName];
-            else
-                rtxLink_LoadItem(parentRef, local_node.inheritance[parentName]);
-        }
+            rtxLink_LoadItem(parentRef, local_node.inheritance[parentName], false);
     }
 
     return true;
