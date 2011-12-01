@@ -715,11 +715,21 @@ function type_map<"::config">(resolverValues : node,
         if (findElement(mappedId, itf))
         {
             local retval;
-            retval = placeHolder.prefix + itf[mappedId] + placeHolder.suffix;
-            setall placeHolder#parent.ref_placeholder#parent.name = retval;
+            retval = placeHolder.prefix + itf[mappedId].name + placeHolder.sufix;
+            // Ok for a terminal id
+            if (placeHolder#parent.ref_placeholder#parent.type == "__expr__"
+                && placeHolder#parent.ref_placeholder#parent.expr_type == "__terminal__")
+                setall placeHolder#parent.ref_placeholder#parent.id = retval;
+            // Ok for a decl
+            else if (placeHolder#parent.ref_placeholder#parent.type == "__decl__")
+                setall placeHolder#parent.ref_placeholder#parent.name = retval;
+            else
+                error("Placeholder type not supported.");
+
             return true;
         }
     }
+    return false;
 }
 
 
