@@ -1,0 +1,11 @@
+device HelloWorld use Main
+{
+    Main::start()
+    {
+    }
+}
+
+configuration
+{
+
+}
