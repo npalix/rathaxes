@@ -1,0 +1,5 @@
+DEPENDENCY RKM
+{
+    REQUIRE ntddk.h;
+	REQUIRE wdf.h;
+};
