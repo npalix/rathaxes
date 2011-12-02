@@ -34,7 +34,7 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
                                   phName : value, phIdx : node,
                                   sourceNode : node)
 {
-    local modifier = $-1$;
+    local modifier = $0$;
     local sKey;
 
     // Here, we are at the root of the resolved template AST.
@@ -49,8 +49,7 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
         phIdx = $phIdx + 1$;
         increment(modifier);
     }
-    if (modifier != $-1$)
-        destBlock.modifier = $destBlock.modifier + modifier$;
+    destBlock.modifier = $destBlock.modifier - modifier$;
 }
 
 
@@ -165,8 +164,9 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
     local   phName = "call";
     local   phIdx = 0;
 
-    foreach call in theSeq.body.block
+    while (startIdx < getArraySize(theSeq.body.block))
     {
+        localref call = theSeq.body.block#[startIdx];
         local   templateCache;
         local   chunkCache;
         local   chunkTree;
@@ -207,9 +207,8 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
             insert theSeq.body.block.modifier = 1;
         else
             increment(theSeq.body.block.modifier);
-        removeElement(theSeq.body.block, index(call));
+        removeElement(theSeq.body.block, startIdx);
         rtxResolve_InsertCode(theSeq.body.block, startIdx, phName, phIdx, chunkTree.body);
-
     }
 }
 
@@ -516,9 +515,16 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
 }
 
 function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : node,
-                                   local_node : node)
+                                             local_node : node)
 {
-    localref theBlock = local_node#parent.ref_placeholder#parent#parent;
+    localref theBlock = local_node#parent.ref_placeholder#parent;
+    // Make sure TheBlock references the parent block (should always be the case for this kind of pointcut).
+    while (theBlock.type != "__block__")
+    {
+        ref theBlock = theBlock#parent;
+    }
+    ref theBlock = theBlock.block;
+
     localref thePointcut = local_node#parent;
     // Some variables for the InsertCode function
     local phName = thePointcut.ref_placeholder#parent.id;
@@ -535,7 +541,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
             foreach decl in item.body.block
             {
                 if (decl.type == "__rtx_sequence__"
-                    && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == treeNode.tpl_hash)
+                    && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == local_node#parent.tpl_hash)
                 {
                     // Then replace each Tpl CALL by the CALL chunks associated.
                     rtxResolve_replaceCall(decl, resolverValues);
