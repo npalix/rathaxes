@@ -1,6 +1,0 @@
-TARGETNAME	= serial_rtx
-TARGETTYPE	= DRIVER
-KMDF_VERSION	= 1
-
-INCLUDES 	= $(INCLUDES); .
-SOURCES		= serial_normalise.c
