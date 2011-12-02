@@ -1,0 +1,12 @@
+device HelloWorld use Main, Types, Log
+{
+    Main::start()
+    {
+        Log::info("Hello World!");
+    }
+}
+
+configuration
+{
+
+}
