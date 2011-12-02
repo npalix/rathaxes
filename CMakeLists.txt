@@ -70,7 +70,7 @@ CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/cmake_uninstall.
               )
 
 ADD_CUSTOM_TARGET(uninstall
-                  "${CMAKE_COMMAND}" -P "${RATHAXES_API_BINARY_DIR}/cmake_uninstall.cmake"
+                  "${CMAKE_COMMAND}" -P "${RATHAXES_BINARY_DIR}/cmake_uninstall.cmake"
                  )
 
 # CPack stuff ##################################################################
