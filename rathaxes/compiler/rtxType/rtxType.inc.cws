@@ -13,7 +13,6 @@ function        rtxType_Search(src : value, out : node)
 {
         foreach it in this.rtxTypes
         {
-                //traceLine(it.key() + "?" + src);
                 if (rtxType_Parse<it.key()>(src))
                 {
                         local sKey = it.key();
@@ -29,7 +28,7 @@ function        rtxType_Search(src : value, out : node)
 function        rtxType_Load(out : node)
 {
         local   theDir;
-        if !scanDirectories(theDir, getEnv("RTX_PATH")+"/scripts/test/compiler/rtxType/rules_types/", "*.inc.cws")
+        if !scanDirectories(theDir, this.scripts_path+"rtxType/rules_types/", "*.inc.cws")
         { error("unable to load rules_types directory"); }
         foreach f in theDir.files
         {
