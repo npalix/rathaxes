@@ -18,6 +18,7 @@ with Main
         {
             int main(void)
             {
+                ${pointcut ::IMPLEMENTATION};
                 return (EXIT_SUCCESS);
             }
         }
