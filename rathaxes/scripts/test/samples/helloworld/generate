@@ -1,0 +1,23 @@
+#!/bin/sh
+
+msg() {
+    echo "\033[1;32m-->\033[0m $*."
+}
+
+msg "clearing cache"
+rathaxes cache clear
+
+set -e
+
+for f in main.rti types.rti log.rti ; do
+    msg "registering rti $f"
+    rathaxes rti-register $f
+done
+
+for f in log.blt main.blt ; do
+    msg "registring blt $f"
+    rathaxes blt-register $f
+done
+
+msg "generating for Linux"
+rathaxes generate linux hello.rtx
