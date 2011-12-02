@@ -1,0 +1,53 @@
+
+#include  "01_D_test_back_type_hash.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_E_test_back_introspect";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+#include "rtxTpl/rtxIntrospect.inc.cws"
+
+// Apply the introspection pass...
+rtxIntrospect(source);
+
+local ret = 0;
+foreach template in source.block[0].body.block
+{
+    foreach chunk in template.body.block
+    {
+        foreach placeHolder in chunk.body.compile
+        {
+            if (existVariable(placeHolder.weave_type))
+            {
+                traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
+                          + " of chunk " + chunk.pointcut.scope + "::"
+                          + chunk.pointcut.name + " updated by introspection.");
+            }
+            else
+            {
+                traceLine("<ERROR>:   PlaceHolder " +key(placeHolder)
+                          + " of chunk " + chunk.pointcut.scope + "::"
+                          + chunk.pointcut.name
+                          + " was not updated by introspection");
+                increment(ret);
+            }
+        }
+    }
+}
+
+saveProject("introspection.tree", source);
+
+if (ret != "0")
+{
+    exit(ret);
+}
+
+traceLine("====>Result of Introspection pass : __01_E_test_back_introspect/*.tree");

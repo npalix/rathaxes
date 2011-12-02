@@ -1,0 +1,25 @@
+with Main
+{
+    /* File structure declaration */
+    ${pointcut Main::include_headers};
+    ${pointcut Main::main};
+
+    /* Definitions */
+    template sequence Main::start()
+    {
+        chunk Main::include_headers
+        {
+            /* Won't be printed because # is not supported yet */
+            #include <stdlib.h>
+            typedef int stdlib_include_stamp;
+        }
+
+        chunk Main::main
+        {
+            int main(void)
+            {
+                return (EXIT_SUCCESS);
+            }
+        }
+    }
+}
