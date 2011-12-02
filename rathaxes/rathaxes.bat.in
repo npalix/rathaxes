@@ -8,7 +8,4 @@ set INCLUDE_PATHS=-I %CNORM_PATH% -I %RATHAXES_PATH%\\compiler
 
 set CODEWORKER="@CODEWORKER_PATH@"
 
-rem We have to explicitely give the path of the script as the first argument on
-rem Windows.
-
-%CODEWORKER% --quiet %INCLUDE_PATHS% -script %RATHAXES_PATH%/compiler/rathaxes.cws -args %RATHAXES_PATH%/compiler/rathaxes.cws %RATHAXES_PATH% %LOCAL_RATHAXES_PATH% %*
+%CODEWORKER% --quiet %INCLUDE_PATHS% -script %RATHAXES_PATH%/compiler/rathaxes.cws -args %RATHAXES_PATH% %LOCAL_RATHAXES_PATH% %*
