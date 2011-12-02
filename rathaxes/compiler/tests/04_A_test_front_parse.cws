@@ -155,12 +155,13 @@ generateString({
 */
 		User::read(User::Context ctx, User::Buffer output)
 		{
-			LOG("my RS232 [read]\n");
-			CONCAT(output, rcv_buf)
-			{
-				PRECONDITION {WAIT(LSR.data_available, TRUE);}
-			}
+		    LOG("my RS232 [read]\n");
+		    CONCAT(output, rcv_buf)
+		    {
+		    	PRECONDITION {WAIT(LSR.data_available, TRUE);}
+		    }
 		}
+
 		User::write(User::Context ctx, User::Buffer input)
 		{
 			LOG("my RS232 [write]\n");
@@ -169,14 +170,17 @@ generateString({
 				PRECONDITION {WAIT(LSR.thr_state, empty);}
 			}
 		}
+
 		User::open(User::Context ctx, User::Buffer buf)
 		{
 			LOG("my RS232 [open]\n");
 		}
+
 		User::close(User::Context ctx, User::Buffer buf)
 		{
 			LOG("my RS232 [close]\n");
 		}
+
 		User::on_plug(User::Context ctx, User::Buffer buf)
 		{
 			LOG("my RS232 [on_plug]\n");
@@ -211,11 +215,14 @@ generateString({
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxType/rtxType.inc.cws"
 
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
 traceLine("input:\n" + input);
 
 local source;
 cnormDialect<"__std__">(source);
 rtxType_Load(source);
+
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);

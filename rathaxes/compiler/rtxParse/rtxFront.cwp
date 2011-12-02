@@ -209,7 +209,9 @@ rtx_sequence(theNode : node) ::=
         #continue(sError, "Expected sequence implementation block.")
         '{'
                 [ rtx_sequence_call(body) ]*
-/**/            #continue(sError, "Expected '}' closing sequence implementation block.")
+/**/            #continue(sError, "Expected '}' closing sequence "
+                          + rtxRTypeFullQualifiedName<"sequence">(seqRtype, seqParamName)
+                          + " implementation block.")
         '}'
 ;
 
