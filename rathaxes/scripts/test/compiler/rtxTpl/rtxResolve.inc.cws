@@ -1,0 +1,770 @@
+#if !existFunction(rtxResolve_version)
+
+function rtxResolve_version()
+{ return "1.0"; }
+
+
+declare function type_map<T>(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node);
+
+declare function type_call<T>(resolverValues : node,
+                              chunkName : value,
+                              placeHolder : node);
+
+function isBuiltinVariable(varname : value)
+{
+    return (varname == "local" || varname == "config");
+}
+/*
+ *
+ * Function that allow weaving ASTs by injecting the function definitions into
+ * the global scope, and every other node in the block starting at the current
+ * index.
+ *
+ * It is only used by a link resolution.
+ *
+ * XXX TODO FIXME
+ * Should this function update the placeHolders' block_idx ?
+ * I fear it may insert wrongly with many multiple inclusions for different
+ * placholders in a same chunk of code.
+ *
+ */
+function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
+                                  phName : value, phIdx : node,
+                                  sourceNode : node)
+{
+    local modifier = $-1$;
+    local sKey;
+
+    // Here, we are at the root of the resolved template AST.
+    foreach item in sourceNode.block
+    {
+        sKey = phName + "_" + phIdx;
+
+        insertElementAt(destBlock, sKey, startIdx);
+        setall destBlock#[startIdx] = item;
+        startIdx = $startIdx + 1$;
+
+        phIdx = $phIdx + 1$;
+        increment(modifier);
+    }
+    if (modifier != $-1$)
+        destBlock.modifier = $destBlock.modifier + modifier$;
+}
+
+
+function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node)
+{
+    local typeDef;
+    local typeDecl;
+    // those booleans are a fucking workaround cause the isEmpty()
+    // function doesn't seem to work.
+    local hasTypeDef = 0;
+    local hasTypeDecl = 0;
+
+    foreach decl in typeDeclBlock.block
+    {
+        if (decl.ctype.storage == "typedef")
+        {
+            ref typeDef = decl;
+            hasTypeDef = 1;
+        }
+        else if (decl.ctype.storage == "auto") // not a typedef, then a simple decl
+        {
+            ref typeDecl = typeDeclBlock.block[key(decl)];
+            hasTypeDecl = 1;
+        }
+    }
+    if (hasTypeDef == 1)
+    {
+        theDecl.ctype.identifier = typeDef.name;
+    }
+    else if (hasTypeDecl)
+    {
+        theDecl.ctype.specifier = typeDecl.ctype.specifier;
+        theDecl.ctype.identifier = typeDecl.ctype.identifier;
+    }
+    else
+    {
+        traceLine("rtxResolve_InsertType:<ERROR> Could not identify how to weave type !");
+        return false;
+    }
+    return true;
+}
+
+
+/*
+ *
+ * Functions to manipulate the "ResolverValues", a hashtree of
+ * values to be used in the resolution of a template.
+ *
+ */
+
+/*
+ * In this function, both params are rtx Var List Nodes
+ */
+function rtxResolve_BuildParameterResVals(src_resVals   : node,
+                                          src_params    : node,
+                                          dst_resVals   : node,
+                                          dst_params    : node)
+{
+    local idx = $0$;
+    local newValue;
+    if (getArraySize(src_params.list) != getArraySize(dst_params.list))
+    {
+        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
+                  +", got "+getArraySize(src_params.list)+")." + DEFAULT_COLOR);
+        return false;
+    }
+
+    foreach dst_param in dst_params.list
+    {
+        localref theValue = src_resVals;
+        if (!existVariable(src_params.list) || !findElement(idx, src_params.list))
+            traceLine(RED + "[Error] src_params do not contain the required field: "+toString(dst_param,true)+" in "+toString(src_params, true) + DEFAULT_COLOR);
+        localref theParam = src_params.list#[idx];
+        if (existVariable(theParam.identifiers))
+        {
+            foreach param_field in theParam.identifiers
+            {
+                if (!findElement(param_field.name, theValue))
+                    error("Could not find an element named " + param_field.name
+                          + " in the source Resolver values.");
+                ref theValue = theValue[param_field.name];
+            }
+        }
+        else
+        {
+            // Then we're building a node leaf from another thing
+            local translatedParam;
+            if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
+                error("Could not translate rathaxes node "
+                      + toString(theParam, true) + " to cnorm node.");
+            rtxNodeResValLeaf(newValue, translatedParam);
+            ref theValue = newValue;
+        }
+        insert dst_resVals[dst_param.identifiers[0].name];
+        setall dst_resVals[dst_param.identifiers[0].name] = theValue;
+        increment(idx); 
+    }
+
+    return true;
+}
+
+/*
+ * This function iterates over a sequence implementation (front end)
+ * and replaces each sequence call by the associated chunk.
+ * This function must be use before inserting the implementation into
+ * the backend implem of the sequence.
+ */
+function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
+{
+    local   dummy;
+    local   startIdx = 0;
+    local   phName = "call";
+    local   phIdx = 0;
+
+    foreach call in theSeq.body.block
+    {
+        local   templateCache;
+        local   chunkCache;
+        local   chunkTree;
+        if (!rtxLink_findTemplates(call.rtype, templateCache))
+        {
+            traceLine("rtxResolve_replaceCall:<ERROR> Could not find template "
+                      + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            return false;
+        }
+        if (!rtxLink_selectUniqueTemplate(templateCache, this.config))
+        {
+            traceLine("rtxResolve_replaceCall:<ERROR> Could not select an unique template"
+                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            return false;
+        }
+        if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
+        {
+            traceLine("rtxResolve_replaceCall:<ERROR> Could not select chunk '::CALL'"
+                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            return false;
+        }
+
+        // Now that we have selected the decl chunk, load the tree & script
+        if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
+        {
+            traceLine("rtxResolve_replaceCall:<ERROR> Could not load script or tree.");
+            return false;
+        }
+
+        // Now, resolve the loaded chunk...
+        local resVals;
+        rtxResolve_BuildParameterResVals(resolverValues, theSeq.seqParamName, resVals, chunkTree.parameters);
+        if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body) == false)
+        {
+        }
+        // And insert it in the sequence implem after having removed the original call node.
+        if (!existVariable(theSeq.body.block.modifier))
+            insert theSeq.body.block.modifier = 1;
+        else
+            increment(theSeq.body.block.modifier);
+        removeElement(theSeq.body.block, index(call));
+        rtxResolve_InsertCode(theSeq.body.block, startIdx, phName, phIdx, chunkTree.body);
+
+    }
+}
+
+/*
+ *
+ * resolverValues -> the hash mapping of values used in the template
+
+        increment(startIdx);
+ * treeNode -> the root of the __rtx_tpl__ node
+ * local_node -> current node
+ *
+ */
+
+function    inject<"">(resolverValues : node, treeNode : node,
+                       local_node : node)
+{
+    // we should NEVER fallback here.
+    error("inject: BAD NODE - Empty Template Node Type !");
+}
+
+function    inject<sNodeType>(resolverValues : node, treeNode   : node,
+                              local_node : node)
+{
+    // we should NEVER fallback here.
+    error("inject: BAD NODE - Unknown Template Node Type : "+sNodeType);
+}
+
+function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
+                                              treeNode          : node,
+                                              local_node        : node)
+{
+    //traceLine("Injecting into placeHolder : realType = "+treeNode.body.type);
+    return inject<local_node.body.type>(resolverValues, treeNode, local_node);
+}
+
+/*
+ * resolverValues : hashtable of key/values
+ *
+ * Both treeNode and local_node are located in the .compile of a chunk
+ * They are located as is :
+ * treeNode is still undefined.
+ *  .compile = {
+ *      [
+ *          "_X" : {
+ *              .node = {
+ *                  .body = {   <-- local_node
+ *                  }
+ *              }
+ *              ...
+ *          }
+ *      ]
+ *  }
+ */
+function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
+                                      local_node : node)
+{
+    //traceLine("Injecting into var : "+toString(local_node));
+    local curCtxNode;
+
+    traceLine("inject<\"__rtx_var__\">:<LOG> Injecting code into placeHolder "+local_node#parent.template_expr);
+    /*
+     *
+     * This block of code has for role to check wether we're manipulating
+     * a rathaxes type or a variable of a rathaxes type.
+     *
+     * Here we can manage the access to a mapped identifier in a type
+     * We need to build the ResVal for the "${self}" placeHolder of the var.
+     * 
+     */
+    //    local_node <=> with.c_block.compile[X].node
+    // or local_node <=> chunk.body.compile[X].node
+    // or local_node <=> chunk.body.compile[X].node
+    localref theChunk = local_node#parent#parent#parent#parent;
+    localref varName = local_node.body.identifiers[0].name;
+    // First, check that there is not prefix or suffix.
+    if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix))
+    {
+        // TODO FIXME XXX FIME TODO          A
+        // TODO FIXME XXX FIME TODO         / \
+        // TODO FIXME XXX FIME TODO        / | \
+        // TODO FIXME XXX FIME TODO       /  .  \
+        // TODO FIXME XXX FIME TODO      /_______\
+
+        // identify if it's a type declaration (i.e. "${Builtin::Buffer} buf;")
+        if (local_node#parent.weave_type == "__weave_type_id__")
+        {
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name.");
+            // refplaceholder = decl.ctype.id;
+            localref theDecl = local_node#parent.ref_placeholder#parent#parent;
+            local   theRtype;
+            setall theRtype = theChunk.type_map[theDecl.name];
+            // First we must select an unique template matching the rtype and config
+            local   templates;
+            local   declChunk;
+            if (!rtxLink_findTemplates(theRtype, templates))
+            {
+                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not find template "
+                          + "associated to type "
+                          + rtxRTypeName<theRtype.type>(theRtype));
+                return false;
+            }
+            if (!rtxLink_selectUniqueTemplate(templates, this.config))
+            {
+                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not select an unique template"
+                          + " associated to type "
+                          + rtxRTypeName<theRtype.type>(theRtype));
+                return false;
+            }
+            if (!rtxLink_selectChunkFromTemplate(templates, "::decl", declChunk))
+            {
+                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not select chunk '::decl'"
+                          + " associated to type "
+                          + rtxRTypeName<theRtype.type>(theRtype));
+                return false;
+            }
+
+            // Now that we have selected the decl chunk, load the tree & script
+            local   subtree;
+            rtxLink_LoadItem(declChunk, subtree);
+
+            if (rtxResolve_InsertType(theDecl, subtree.body) == false)
+                return false;
+
+            return true;
+        }
+        // If not, is it a variable of a rathaxes type : check in type_map ?
+        else if (existVariable(theChunk.type_map)
+                 && findElement(varName, theChunk.type_map))
+        {
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping.");
+            // Create the resolvervalues for the type resolution:
+            // This should not need any more than config and var's identifier.
+            local resVal;
+            insert resVal["self"];
+            rtxNodeResValLeaf(resVal["self"], varName);
+            
+            local qTypeName = rtxRTypeName<theChunk.type_map[varName].type>(
+                                    theChunk.type_map[varName]
+                                );
+
+            return type_map<qTypeName>(resVal, theChunk.type_map[varName],
+                                       local_node.body.identifiers[1].name,
+                                       local_node);
+
+        }
+        else if (isBuiltinVariable(varName))
+        {
+            local dummyResVal;
+            local dummyRtype;
+            return type_map<"::"+varName>(dummyResVal, dummyRtype,
+                                          local_node.body.identifiers[1].name, local_node);
+        }
+        
+
+        // If both of the conditionis weren't entered, then that means that
+        // it is a simple value weaving, and the next part takes care of it.
+    }
+    traceLine("inject<\"__rtx_var__\">:<LOG> Could not find any type manipulation for injection.");
+
+
+    /*
+     *
+     * This block of code means to replace the placeHolder by a simple
+     * identifier in the code. (May be used for the self resolution)
+     *
+     */
+    local fieldValue;
+    local finalNode;
+    rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers,
+                           fieldValue);
+    // The ResValLeaf is a whole node : setall it into the placeholder's parent
+    if (existVariable(fieldValue.type))
+    {
+        traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier : "+toString(local_node.body.identifiers));
+        localref theId = local_node#parent.ref_placeholder;
+        //traceLine("So we have the resolver placeholders parent : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
+        setall theId#parent = fieldValue;
+        //traceLine("So we have the resolver placeholders parent resolved : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
+    }
+    else
+    {
+        traceLine("inject<\"__rtx_var__\">:<LOG> Concatenating identifier : "+toString(local_node.body.identifiers));
+        // First concat prefix
+        finalNode = finalNode + local_node.prefix;
+        // Next resolve the value and concat it
+        finalNode = finalNode + fieldValue;
+        // Finally, concat suffix
+        finalNode = finalNode + local_node.sufix;
+        local_node#parent.ref_placeholder = finalNode;
+    }
+    return true;
+}
+
+
+
+/*
+ * The default case of the function inject_pointcut will resolve a "normal"
+ * pointcut: insert every chunk in place of the said pointcut.
+ *
+ * The specializations are meant to be the builtin pointcuts resolution.
+ */
+declare function inject_pointcut<T>(resolverValues : node, treeNode : node,
+                                    local_node : node);
+
+function inject_pointcut<T>(resolverValues : node, treeNode : node,
+                                    local_node : node)
+{
+    localref theBlock = local_node#parent.ref_placeholder#parent#parent;
+    localref thePointcut = local_node#parent;
+    local pointcutName = rtxRTypeName<local_node.body.name.type>(local_node.body.name);
+    // Variables for the node replacement
+    local phName = thePointcut.ref_placeholder#parent.id;
+    local phIdx = 0;
+    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
+    // cache-related variable
+    local   chunks;
+    local   errcount = 0;
+
+    // First, search every chunk associated to the pointcut...
+    if (rtxLink_findChunks(local_node.body.name, chunks) == false)
+        traceLine("inject_pointcut<\""+T+"\">:<WARN> No chunk associated with"
+                  +" the pointcut "
+                  + pointcutName);
+
+    // If we cannot find any chunk, let's use default behaviour (if there's one)
+    if (isEmpty(chunks)
+        || rtxLink_selectCompatibleChunks(chunks, this.config) == false)
+    {
+        traceLine("inject_pointcut<\""+T+"\">:<WARN> No valid chunk,"
+                  +" falling back to default behaviour.");
+        // If there's a default block inside the poincut, then insert it
+        // instead of the resolved chunks : one setall is enough
+        // to both remove the pointcut and insert the code.
+        if (existVariable(local_node.body.default.body))
+        {
+            traceLine(RED+toString(theBlock#parent#parent,true)+DEFAULT_COLOR);
+            if (theBlock#parent.type == "__block__")
+            {
+                if (getArraySize(theBlock) <= thePointcut.block_idx)
+                {
+                    error(RED+ "Trying to get index " + thePointcut.block_idx + " into block " +
+                          toString(theBlock,true) +DEFAULT_COLOR);
+                }
+                setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
+            }
+            else if (theBlock.type == "__stmt__" && theBlock.stmt_type == "__expr__"
+                     && theBlock.expr.expr_type == "__terminal__")
+            {
+                setall theBlock = local_node.body.default.body;
+            }
+            else
+                error("Node type not supported for default resolution..");
+        }
+        else
+        {
+            if (!existVariable(theBlock.modifier))
+                insert theBlock.modifier = 1;
+            else
+                increment(theBlock.modifier);
+            removeElement(theBlock, thePointcut.block_idx);
+        }
+    }
+    // There are some chunks left, so it's up to us to resolve them
+    // and then insert them in-place of the pointcut.
+    else
+    {
+
+        // First, remove the current placeHolder, in case there was no statement
+        if (!existVariable(theBlock.modifier))
+            insert theBlock.modifier = 1;
+        else
+            increment(theBlock.modifier);
+        removeElement(theBlock, thePointcut.block_idx);
+        foreach chunk in chunks
+        {
+            local c_tree;
+            if (rtxLink_LoadItem(chunk, c_tree) == false)
+            {
+                traceLine("inject_pointcut<\""+T+"\">:<ERROR> Could not "
+                          +"load script for one chunk for pointcut "+pointcutName+".");
+                increment(errcount);
+            }
+            local resVals;
+            if (rtxResolve_BuildParameterResVals(resolverValues,
+                                                 local_node.body.parameters,
+                                                 resVals, c_tree.parameters) == false)
+            {
+                traceLine(RED + "[Error] Wrong parameters given to pointcut '" + pointcutName + "'." + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (instanceChunk<c_tree.instanceKey>(resVals, c_tree.body) != false)
+                rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, c_tree.body);
+            else
+            {
+                traceLine("inject_pointcut<\""+T+"\">:<ERROR> Could not instanciate chunk '"+c_tree.instanceKey+"'.");
+                increment(errcount);
+            }
+        }
+        if (errcount != 0)
+            return false;
+    }
+    return true;
+}
+
+function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : node,
+                                   local_node : node)
+{
+    localref theBlock = local_node#parent.ref_placeholder#parent#parent;
+    localref thePointcut = local_node#parent;
+    // Some variables for the InsertCode function
+    local phName = thePointcut.ref_placeholder#parent.id;
+    local phIdx = 0;
+    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
+    local dummy;
+
+    // Find the right impl to include from the front by walking
+    // through the front tree and checking the tpl against the chunk's hash.
+    foreach item in this.front.block
+    {
+        if (item.type == "__rtx_device__")
+        {
+            foreach decl in item.body.block
+            {
+                if (decl.type == "__rtx_sequence__"
+                    && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == treeNode.tpl_hash)
+                {
+                    // Then replace each Tpl CALL by the CALL chunks associated.
+                    rtxResolve_replaceCall(decl, resolverValues);
+
+                    //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
+
+                    // Finally, insert the block in-place of the placeHolder.
+                    if (!existVariable(theBlock.modifier))
+                        insert theBlock.modifier = 1;
+                    else
+                        increment(theBlock.modifier);
+                    removeElement(theBlock, startIdx);
+                    rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
+
+                    return true;
+                }
+            }
+        }
+    }
+    traceLine(YELLOW + "Could not resolve ::IMPLEMENTATION pointcut for template " + local_node#parent.tpl_hash + DEFAULT_COLOR);
+    return false;
+}
+
+/*
+ *
+ * This function takes a resolver value node, the tree node in which
+ * the resolution is needed, and the local_node which is the placeHolder to
+ * resolve.
+ *
+ * This specialization takes care of the resolution of a pointcut, and manages
+ * builtin pointcuts (like the ::algo pointcut for required/optional templates).
+ *
+ */
+function    inject<"__rtx_pointcut__">(resolverValues   : node,
+                                       treeNode         : node,
+                                       local_node       : node)
+{
+    local ptcutName = rtxRTypeName<local_node.body.name.type>(local_node.body.name);
+
+    if (local_node.body.name.scope == "" && local_node.body.name.global == false)
+    {
+        error("inject<\"__rtx_pointcut__\">:<ERROR> An unexpected error occurred:"
+              + " Unknown scope to poincut " + ptcutName + ".");
+    }
+
+    return inject_pointcut<ptcutName>(resolverValues, treeNode, local_node);
+}
+
+//function    inject<"__rtx_tpl_chunk_call__">(resolverValues : node,
+//                                             treeNode : node,
+//                                             local_node : node)
+//{
+//}
+
+/*
+ *
+ * This function is used to resolve an explicit call to a chunk
+ * contained in a type template.
+ * This model allows easy builtin implementations.
+ *
+ */
+function    type_call<T>(resolverValues : node,
+                         chunkName : value,
+                         placeHolder : node)
+{
+    local   templates;
+    local   theChunk;
+    localref theRtype = placeHolder.body.rtype;
+    if (!rtxLink_findTemplates(theRtype, templates))
+    {
+        traceLine("type_call<"+T+">: Could not find template.");
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(templates, this.config))
+    {
+        traceLine("type_call<"+T+">: Could not select an unique template.");
+        return false;
+    }
+    if (!rtxLink_selectChunkFromTemplate(templates, chunkName, theChunk))
+    {
+        traceLine("type_call<"+T+">: Could not select chunk '" + chunkName + "'.");
+        return false;
+    }
+
+    // Now that we have selected the decl chunk, load the tree & script
+    local   subtree;
+    rtxLink_LoadItem(theChunk, subtree);
+
+    // To actually resolve this, we need : 
+    //  * Current resolverValues (OK)
+    //  * The parameters to the chunk (TBD) FIXME XXX TODO
+    //
+    local resVals;
+    //insert resVals["global"];
+    //setall resVals["global"] = resolverValues["global"];
+    // Now add the "self" to the resVals
+    insert resVals["self"];
+    rtxNodeResValLeaf(resVals["self"], placeHolder.body.var.name);
+    // Then add the call (chunk's) parameters to the resval.
+    rtxResolve_BuildParameterResVals(resolverValues, placeHolder.body.parameters,
+                                     resVals, subtree.parameters);
+
+    traceLine("type_call<"+T+">:<LOG> Resolving chunk " + chunkName + "... ");
+    if (instanceChunk<subtree.instanceKey>(resVals, subtree.body) == false)
+    {
+        traceLine("type_call<\""+T+"\">:<ERROR> Could not instance Chunk '"+subtree.instanceKey+"'.");
+        return false;
+    }
+
+    // Now, insert the subtree in place of the placeHolder !
+    // placeHolder actually is : block.[idx].expr.id, so unwind until theBlock.type != "__block__".
+    localref theBlock = placeHolder#parent.ref_placeholder;
+    do { ref theBlock = theBlock#parent; } while (theBlock.type != "__block__");
+    localref theCall = placeHolder#parent;
+    local phIdx = 0;
+    // First, remove the current placeHolder, in case there was no statement
+    if (!existVariable(theBlock.modifier))
+        insert theBlock.modifier = 1;
+    else
+        increment(theBlock.modifier);
+    removeElement(theBlock.block, theCall.block_idx);
+    rtxResolve_InsertCode(theBlock.block, theCall.block_idx,
+                          theCall.ref_placeholder, phIdx, subtree.body);
+
+    traceLine("type_call<"+T+">:<LOG> Resolved call to chunk " + chunkName + "...");
+    return true;
+}
+
+
+/*
+ * The functions that resolve a type mapping.
+ */
+
+// Builtin functions for type mapping
+declare function instanceMapping<T>(resVals : node, c_tree : node);
+
+/*
+ * The function to call when encountering a type mapping...
+ *
+ * resolverValues : hashtable of values for placeHolder resolution
+ * theRtype       : a __rtx_rtype__ node  matching the template's type
+ * mappedId       : the identifier used in the mapping call
+ * local_node     : the mapping's placeHolder .node
+ */
+function type_map<T>(resolverValues : node,
+                     theRtype : node, mappedId : value,
+                     placeHolder : node)
+{
+    traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedId+"'");
+    // First we must select an unique template matching the rtype and config
+    local   templates;
+    if (!rtxLink_findTemplates(theRtype, templates))
+    {
+        traceLine("type_map<"+T+">:<ERROR> Could not find template associated to type "
+                  + rtxRTypeName<theRtype.type>(theRtype));
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(templates, this.config))
+    {
+        traceLine("type_map<"+T+">:<ERROR> Could not select an unique template associated"
+                  " to type " + rtxRTypeName<theRtype.type>(theRtype));
+        return false;
+    }
+
+    // Now that we have selected an unique template, load the tree+script
+    local   subtree;
+    rtxLink_LoadItem(templates, subtree);
+    localref theMapping = subtree.mapping.body.block[mappedId];
+
+    // Call the right mapping function (based on hash + identifier mapped).
+    traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
+              + subtree.mapping.body.block[mappedId].instanceKey);
+
+    if (instanceMapping<theMapping.instanceKey>(resolverValues, subtree) == false)
+    {
+        traceLine("type_map<"+T+">:<ERROR> instanceMapping<\""+theMapping.instanceKey+"\"> failed.");
+        return false;
+    }
+
+    // Here, the interesting thing to replace is the id's parent.
+    localref theNode = placeHolder#parent.ref_placeholder#parent;
+    if (theNode.type == "__expr__")
+    {
+        setall theNode = theMapping.body.expr;
+    }
+    else
+    {
+        traceLine("type_map<"+T+">:<ERROR>: type_map<" + T + ">: Weaving for node of type '"
+                  + theNode.type + "' not implemented.");
+        return false;
+    }
+
+    return true;
+}
+
+// The builtin specializations.
+function type_map<"::local">(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node)
+{
+    error(RED + "Builtin '::local' functions not implemented yet." + DEFAULT_COLOR);
+}
+
+// The builtin specializations.
+function type_map<"::config">(resolverValues : node,
+                             theRtype : node, mappedId : value,
+                             placeHolder : node)
+{
+    foreach itf in this.config
+    {
+        if (findElement(mappedId, itf))
+        {
+            local retval;
+            retval = placeHolder.prefix + itf[mappedId].name + placeHolder.sufix;
+            // Ok for a terminal id
+            if (placeHolder#parent.ref_placeholder#parent.type == "__expr__"
+                && placeHolder#parent.ref_placeholder#parent.expr_type == "__terminal__")
+                setall placeHolder#parent.ref_placeholder#parent.id = retval;
+            // Ok for a decl
+            else if (placeHolder#parent.ref_placeholder#parent.type == "__decl__")
+                setall placeHolder#parent.ref_placeholder#parent.name = retval;
+            else
+                error("Placeholder type not supported.");
+
+            return true;
+        }
+    }
+    return false;
+}
+
+
+#end

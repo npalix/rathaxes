@@ -1,0 +1,17 @@
+/*
+**	rdsl_algorithms_copy.cwh in scripts/parsing
+**	for Rathaxes project
+**	made by Christophe Fajardo
+**	---------------------------------------------------------------------------
+*/
+
+rdsl_algorithms_copy ( nAlgorithm : node ) ::=
+	#readIdentifier:{"COPY"}
+	=> insert nAlgorithm.algorithm = "copy";
+	'('
+		rdsl_algorithms_paramerter(nAlgorithm.first_parameter)
+		','
+		rdsl_algorithms_paramerter(nAlgorithm.second_parameter)
+	')' [ rdsl_algorithms_conditions(nAlgorithm) ]? ';'
+    => setAlgoritmLocalDeclaration(nAlgorithm);
+;

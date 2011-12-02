@@ -1,0 +1,35 @@
+/*
+**	registers.cwf in scripts/parsing
+**	for Rathaxes project
+**	made by Thor
+*/
+
+
+declare function checkRegisterId(registersTable : node, id : value);
+declare function checkRegisterVariableId(variablesTable : node, id : value);
+
+/*
+** Checks if a register id already exists
+*/
+function checkRegisterId(registersTable : node, id : value)
+{
+  foreach reg in registersTable
+    {
+      if (reg.definition.name == id)
+	rtxError("Register '" + id + "' already defined.");
+    }
+  return;
+}
+
+/*
+** Checks if a register variable id already exists
+*/
+function checkRegisterVariableId(variableTable : node, id : value)
+{
+  foreach var in variablesTable
+    {
+      if (var.definition.name == id)
+		rtxError("Variable '" + id + "' for register '" + variablesTable#parent#parent.definition.name + "' is already defined.");
+    }
+  return;
+}
