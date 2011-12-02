@@ -1,21 +1,20 @@
-# Generate the scripts to install
+# Generate a rathaxes binary script that set up all the path automatically
+# thanks to CMake.
+#
+# These script are meant to be used for development and use path in the
+# build/source directories. Other and equivalent scripts are generated from
+# maintainers/launchers and are meant to be installed (i.e: with make install),
+# these launchers refers to the path as they will once installed (i.e: after
+# make package + installation).
 
 IF (WIN32)
-    # On windows you have to use relative paths and install the proper
-    # shortcut using nsis.
-    SET(PATH_PREFIX "")
     SET(RATHAXES_SCRIPT_NAME "rathaxesvars.bat")
-
-    INSTALL(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/rathaxes.bat" DESTINATION bin)
 ELSE (WIN32)
-    SET(PATH_PREFIX "${CMAKE_INSTALL_PREFIX}")
     SET(RATHAXES_SCRIPT_NAME "rathaxes")
 ENDIF (WIN32)
 
-SET(CNORM_PATH "${PATH_PREFIX}/lib/rathaxes/cnorm/")
-SET(COMPILER_PATH "${PATH_PREFIX}/lib/rathaxes/compiler/")
-SET(CODEWORKER_PATH "${PATH_PREFIX}/lib/rathaxes/codeworker${CMAKE_EXECUTABLE_SUFFIX}")
+SET(CNORM_PATH "${CMAKE_SOURCE_DIR}/maintainers/cnorm/src/")
+SET(COMPILER_PATH "${CMAKE_SOURCE_DIR}/rathaxes/scripts/test/compiler/")
+SET(CODEWORKER_PATH "${CODEWORKER_BINARY_PATH}")
 
 CONFIGURE_FILE("${RATHAXES_SCRIPT_NAME}.in" "${RATHAXES_SCRIPT_NAME}" @ONLY)
-
-INSTALL(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/${RATHAXES_SCRIPT_NAME}" DESTINATION bin)

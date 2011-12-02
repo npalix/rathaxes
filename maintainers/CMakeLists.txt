@@ -9,3 +9,7 @@ INSTALL(DIRECTORY cnorm/src/
         PATTERN ".svn" EXCLUDE)
 INSTALL(PROGRAMS ${CODEWORKER_BINARY_PATH}
         DESTINATION lib/rathaxes/)
+
+# Generate the install rules for the rathaxes binaries:
+
+ADD_SUBDIRECTORY(launchers)
