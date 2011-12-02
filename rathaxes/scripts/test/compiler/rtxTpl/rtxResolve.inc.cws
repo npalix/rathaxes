@@ -515,7 +515,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     return true;
 }
 
-function inject_pointcut<"::CALL">(resolverValues : node, treeNode : node,
+function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : node,
                                    local_node : node)
 {
     localref theBlock = local_node#parent.ref_placeholder#parent#parent;
@@ -526,42 +526,36 @@ function inject_pointcut<"::CALL">(resolverValues : node, treeNode : node,
     local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
     local dummy;
 
-    // First of all, check for builtins: No scope, and voluntarily globally defined item.
-    if (local_node.body.name.scope == "" && local_node.body.name.global == true)
+    // Find the right impl to include from the front by walking
+    // through the front tree and checking the tpl against the chunk's hash.
+    foreach item in this.front.block
     {
-        // Find the right impl to include from the front by walking
-        // through the front tree and checking the tpl against the chunk's hash.
-        foreach item in this.front.body.block
+        if (item.type == "__rtx_device__")
         {
-            if (item.type == "__rtx_device__")
+            foreach decl in item.body.block
             {
-                foreach decl in item.body.block
+                if (decl.type == "__rtx_sequence__"
+                    && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == treeNode.tpl_hash)
                 {
-                    if (decl.type == "__rtx_sequence__"
-                        && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == treeNode.tpl_hash)
-                    {
-                        traceLine("FOUND Sequence to include \o/ : "+ treeNode.tpl_hash +"!");
+                    // Then replace each Tpl CALL by the CALL chunks associated.
+                    rtxResolve_replaceCall(decl, resolverValues);
 
-                        // Then replace each Tpl CALL by the CALL chunks associated.
-                        rtxResolve_replaceCall(decl, resolverValues);
+                    //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
 
-                        traceLine(BLUE + "[Debug] Resolved implementation:"+cnorm2c(decl.body));
-                        //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
+                    // Finally, insert the block in-place of the placeHolder.
+                    if (!existVariable(theBlock.modifier))
+                        insert theBlock.modifier = 1;
+                    else
+                        increment(theBlock.modifier);
+                    removeElement(theBlock, startIdx);
+                    rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
 
-                        // Finally, insert the block in-place of the placeHolder.
-                        if (!existVariable(theBlock.modifier))
-                            insert theBlock.modifier = 1;
-                        else
-                            increment(theBlock.modifier);
-                        removeElement(theBlock, startIdx);
-                        rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
-
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
     }
+    traceLine(YELLOW + "Could not resolve ::IMPLEMENTATION pointcut for template " + local_node#parent.tpl_hash + DEFAULT_COLOR);
     return false;
 }
 
