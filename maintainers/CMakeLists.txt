@@ -12,4 +12,4 @@ INSTALL(PROGRAMS ${CODEWORKER_BINARY_PATH}
 
 # Generate the install rules for the rathaxes binaries:
 
-ADD_SUBDIRECTORY(launchers)
+ADD_SUBDIRECTORY(bin)
