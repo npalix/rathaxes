@@ -1,0 +1,14 @@
+@echo off
+
+set CNORM_PATH="@CNORM_PATH@"
+set RATHAXES_PATH="@RATHAXES_PATH@"
+set LOCAL_RATHAXES_PATH="%LOCALAPPDATA%\\Rathaxes\\"
+
+set INCLUDE_PATHS=-I %CNORM_PATH% -I %RATHAXES_PATH%\\compiler
+
+set CODEWORKER="@CODEWORKER_PATH@"
+
+rem We have to explicitely give the path of the script as the first argument on
+rem Windows.
+
+%CODEWORKER% --quiet %INCLUDE_PATHS% -script %RATHAXES_PATH%/compiler/rathaxes.cws -args %RATHAXES_PATH%/compiler/rathaxes.cws %RATHAXES_PATH% %LOCAL_RATHAXES_PATH% %*

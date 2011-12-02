@@ -1,7 +1,10 @@
 # Generate the binary scripts to install, these are different from the ones in
-# rathaxes/bin/. The scripts in rathaxes/bin are generated to be used from the
+# rathaxes/. The scripts in rathaxes/bin are generated to be used from the
 # build directory, while here, the scripts are generated to be installed and
 # thus refer to the hierarchy (e.g: ${CMAKE_INSTALL_PREFIX}/...)
+
+# XXX Need to be updated to reflect how the compiler is handling PATH. Also
+# maybe the windows script could be simplified in a single script.
 
 IF (WIN32)
     # On windows you have to use relative paths and install the proper
