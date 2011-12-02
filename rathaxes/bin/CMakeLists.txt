@@ -8,7 +8,7 @@
 # make package + installation).
 
 IF (WIN32)
-    SET(RATHAXES_SCRIPT_NAME "rathaxesvars.bat")
+    SET(RATHAXES_SCRIPT_NAME "rathaxes.bat")
 ELSE (WIN32)
     SET(RATHAXES_SCRIPT_NAME "rathaxes")
 ENDIF (WIN32)
