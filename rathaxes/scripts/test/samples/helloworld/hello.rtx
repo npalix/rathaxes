@@ -1,7 +1,8 @@
-device HelloWorld use Main
+device HelloWorld use Main, Types, Log
 {
     Main::start()
     {
+        Log::info("Hello World!");
     }
 }
 

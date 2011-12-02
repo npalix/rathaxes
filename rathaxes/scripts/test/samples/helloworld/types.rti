@@ -1,0 +1,9 @@
+interface Types
+{
+    provided builtintype    ::string;
+    provided builtintype    ::number;
+//  provided builtintype    ::numser;
+//  provided builtintype    ::register;
+//  provided builtintype    ::register_field;
+//  provided builtintype    ::register_value;
+}
