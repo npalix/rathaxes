@@ -21,9 +21,19 @@ function insertModifier(theBlock : node, thePointcut : node)
 {
     if (!existVariable(theBlock.modifier))
         insert theBlock.modifier = 0;
-    thePointcut.block_idx = $thePointcut.block_idx - theBlock.modifier$;
-    removeElement(theBlock, thePointcut.block_idx);
-    increment(theBlock.modifier);
+    thePointcut.block_idx = $thePointcut.block_idx + theBlock.modifier$;
+
+    // Since removeElement uses the keys instead of indexes (what we store...), lets get an iterator at the right index.
+    local iterator_id = thePointcut.block_idx;
+    local   iterator;
+    createIterator(iterator, theBlock);
+    while (iterator_id != 0)
+    {
+        next(iterator);
+        decrement(iterator_id);
+    }
+    removeElement(theBlock, key(iterator));
+    decrement(theBlock.modifier);
 }
 
 /*
@@ -59,7 +69,8 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
         phIdx = $phIdx + 1$;
         increment(modifier);
     }
-    destBlock.modifier = $destBlock.modifier - modifier$;
+    if (existVariable(destBlock.modifier))
+        destBlock.modifier = $destBlock.modifier + modifier$;
 }
 
 
@@ -376,6 +387,11 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         // If both of the conditionis weren't entered, then that means that
         // it is a simple value weaving, and the next part takes care of it.
     }
+    if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
+    {
+        local_node#parent.ref_placeholder = "TARTE";
+        return true;
+    }
     traceLine("inject<\"__rtx_var__\">:<LOG> Could not find any type manipulation for injection.");
 
 
@@ -432,7 +448,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     // Variables for the node replacement
     local phName = thePointcut.ref_placeholder#parent.id;
     local phIdx = 0;
-    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
+    local startIdx = 0;
     // cache-related variable
     local   chunks;
     local   errcount = 0;
@@ -484,6 +500,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
 
         // First, remove the current placeHolder, in case there was no statement
         insertModifier(theBlock, thePointcut);
+        startIdx = thePointcut.block_idx;
         foreach chunk in chunks
         {
             local c_tree;
@@ -531,7 +548,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
     // Some variables for the InsertCode function
     local phName = thePointcut.ref_placeholder#parent.id;
     local phIdx = 0;
-    local startIdx = $thePointcut.block_idx - theBlock.modifier$; // modifier prevents "index out of bounds"
+    local startIdx = 0;
     local dummy;
 
     // Find the right impl to include from the front by walking
@@ -552,7 +569,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
 
                     // Finally, insert the block in-place of the placeHolder.
                     insertModifier(theBlock, thePointcut);
-                    startIdx = thePointcut.block_idx;
+                    startIdx = thePointcut.block_idx; // updated block_idx prevents "index out of bounds"
                     rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
 
                     return true;
@@ -659,7 +676,7 @@ function    type_call<T>(resolverValues : node,
     localref theCall = placeHolder#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
-    insertModifier(theBlock, theCall);
+    insertModifier(theBlock.block, theCall);
     startIdx = theCall.block_idx;
     rtxResolve_InsertCode(theBlock.block, startIdx,
                           theCall.ref_placeholder, phIdx, subtree.body);
