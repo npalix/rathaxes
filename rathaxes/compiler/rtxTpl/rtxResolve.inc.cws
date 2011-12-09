@@ -393,6 +393,11 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         return true;
     }
     traceLine("inject<\"__rtx_var__\">:<LOG> Could not find any type manipulation for injection.");
+    if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
+    {
+        local_node#parent.ref_placeholder = "TARTE";
+        return true;
+    }
 
 
     /*
