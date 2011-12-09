@@ -17,12 +17,12 @@ $compiler cache clear
 
 set -e
 
-for f in main.rti types.rti log.rti ; do
+for f in types.rti main.rti log.rti ; do
     msg "registering rti $f"
     $compiler rti-register $f
 done
 
-for f in log.blt main.blt ; do
+for f in types.blt log.blt main.blt ; do
     msg "registring blt $f"
     $compiler blt-register $f
 done
