@@ -16,6 +16,16 @@ function isBuiltinVariable(varname : value)
 {
     return (varname == "local" || varname == "config");
 }
+
+function insertModifier(theBlock : node, thePointcut : node)
+{
+    if (!existVariable(theBlock.modifier))
+        insert theBlock.modifier = 0;
+    thePointcut.block_idx = $thePointcut.block_idx - theBlock.modifier$;
+    removeElement(theBlock, thePointcut.block_idx);
+    increment(theBlock.modifier);
+}
+
 /*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
@@ -464,11 +474,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         }
         else
         {
-            if (!existVariable(theBlock.modifier))
-                insert theBlock.modifier = 1;
-            else
-                increment(theBlock.modifier);
-            removeElement(theBlock, thePointcut.block_idx);
+            insertModifier(theBlock, thePointcut);
         }
     }
     // There are some chunks left, so it's up to us to resolve them
@@ -477,11 +483,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     {
 
         // First, remove the current placeHolder, in case there was no statement
-        if (!existVariable(theBlock.modifier))
-            insert theBlock.modifier = 1;
-        else
-            increment(theBlock.modifier);
-        removeElement(theBlock, thePointcut.block_idx);
+        insertModifier(theBlock, thePointcut);
         foreach chunk in chunks
         {
             local c_tree;
@@ -549,11 +551,8 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                     //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
 
                     // Finally, insert the block in-place of the placeHolder.
-                    if (!existVariable(theBlock.modifier))
-                        insert theBlock.modifier = 1;
-                    else
-                        increment(theBlock.modifier);
-                    removeElement(theBlock, startIdx);
+                    insertModifier(theBlock, thePointcut);
+                    startIdx = thePointcut.block_idx;
                     rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, decl.body);
 
                     return true;
@@ -610,6 +609,8 @@ function    type_call<T>(resolverValues : node,
     local   templates;
     local   theChunk;
     localref theRtype = placeHolder.body.rtype;
+    local   startIdx;
+
     if (!rtxLink_findTemplates(theRtype, templates))
     {
         traceLine("type_call<"+T+">: Could not find template.");
@@ -658,12 +659,9 @@ function    type_call<T>(resolverValues : node,
     localref theCall = placeHolder#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
-    if (!existVariable(theBlock.modifier))
-        insert theBlock.modifier = 1;
-    else
-        increment(theBlock.modifier);
-    removeElement(theBlock.block, theCall.block_idx);
-    rtxResolve_InsertCode(theBlock.block, theCall.block_idx,
+    insertModifier(theBlock, theCall);
+    startIdx = theCall.block_idx;
+    rtxResolve_InsertCode(theBlock.block, startIdx,
                           theCall.ref_placeholder, phIdx, subtree.body);
 
     traceLine("type_call<"+T+">:<LOG> Resolved call to chunk " + chunkName + "...");
