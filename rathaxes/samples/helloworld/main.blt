@@ -18,8 +18,17 @@ with Main
         {
             int main(void)
             {
+                /*
+                 * Do this typedef here to work-around a bug in CNorm __std__
+                 * dialect.
+                 */
+                typedef int ${Types::integer};
+
+                ${Types::integer}   ret;
+
+                ${ret.set(0)};
                 ${pointcut ::IMPLEMENTATION};
-                return (EXIT_SUCCESS);
+                return (0);
             }
         }
     }

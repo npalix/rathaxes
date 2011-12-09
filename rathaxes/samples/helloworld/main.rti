@@ -1,4 +1,4 @@
-interface Main
+interface Main : Types
 {
     provided pointcut   Main::include_headers;
     provided pointcut   Main::main;
