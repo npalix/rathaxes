@@ -193,27 +193,31 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
         local   chunkTree;
         if (!rtxLink_findTemplates(call.rtype, templateCache))
         {
-            traceLine("rtxResolve_replaceCall:<ERROR> Could not find template "
-                      + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            traceLine(RED + "[Error] Could not find template "
+                      + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
+                      + DEFAULT_COLOR);
             return false;
         }
         if (!rtxLink_selectUniqueTemplate(templateCache, this.config))
         {
-            traceLine("rtxResolve_replaceCall:<ERROR> Could not select an unique template"
-                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            traceLine(RED + "[Error] Could not select an unique template"
+                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
+                      + DEFAULT_COLOR);
             return false;
         }
         if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
         {
-            traceLine("rtxResolve_replaceCall:<ERROR> Could not select chunk '::CALL'"
-                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy));
+            traceLine(RED + "[Error] Could not select chunk '::CALL'"
+                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
+                      + DEFAULT_COLOR);
             return false;
         }
 
         // Now that we have selected the decl chunk, load the tree & script
         if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
         {
-            traceLine("rtxResolve_replaceCall:<ERROR> Could not load script or tree.");
+            traceLine(RED + "[Error] Could not load script or tree."
+                      + DEFAULT_COLOR);
             return false;
         }
 
@@ -231,6 +235,7 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
         removeElement(theSeq.body.block, startIdx);
         rtxResolve_InsertCode(theSeq.body.block, startIdx, phName, phIdx, chunkTree.body);
     }
+    return true;
 }
 
 /*
@@ -568,7 +573,11 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                     && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == local_node#parent.tpl_hash)
                 {
                     // Then replace each Tpl CALL by the CALL chunks associated.
-                    rtxResolve_replaceCall(decl, resolverValues);
+                    if (rtxResolve_replaceCall(decl, resolverValues) == false)
+                    {
+                        traceLine(YELLOW + "Could not resolve ::IMPLEMENTATION pointcut for template '" + local_node#parent.tpl_hash + "'."+ DEFAULT_COLOR);
+                        return false;
+                    }
 
                     //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
 

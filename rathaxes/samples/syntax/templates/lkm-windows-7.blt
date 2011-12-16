@@ -1,5 +1,5 @@
 with LKM
-values OS=Windows, version = 7
+values LKM::OS=Windows, LKM::version = 7
 {
     chunk LKM::INCLUDE_DEPENDENCIES
     {

@@ -171,7 +171,7 @@ configuration
 {
     LKM::devices = RS232;
     LKM::arch = x86;
-    LKM::OS = Linux
+    LKM::OS = linux
     {
         LKM::major = 2;
         LKM::minor = 6;

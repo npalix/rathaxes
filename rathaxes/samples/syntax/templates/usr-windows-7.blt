@@ -1,5 +1,5 @@
 with LKM, User
-values OS=Windows, version = XP
+values LKM::OS=Windows, LKM::version = XP
 {
     template sequence User::open(Context ctx)
     {

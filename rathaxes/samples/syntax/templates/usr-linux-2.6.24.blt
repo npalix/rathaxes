@@ -1,33 +1,33 @@
 with LKM, User
-values OS=linux, version >= 2.6.24
+values LKM::OS=linux, LKM::version >= 2.6.24
 {
-    template sequence User::open(Context ctx)
+    template sequence User::open(User::Context ctx)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION
-        {}
-        chunk ::CALL
-        {}
+        {
+            ${pointcut ::IMPLEMENTATION};
+        }
     }
 
-    template sequence User::close(Context ctx)
+    template sequence User::close(User::Context ctx)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION
-        {}
-
-        chunk ::CALL
-        {}
+        {
+            ${pointcut ::IMPLEMENTATION};
+        }
 
         chunk LKM::INIT_LKM_FPTRS
         {}
     }
 
-    template sequence User::read(Context ctx)
+    template sequence User::read(User::Context ctx, Algorithms::Buffer buf)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION
         {
             typedef void dev_t;
             int ${config.devices}_read(dev_t *)
             {
+                ${pointcut ::IMPLEMENTATION};
                 return (0);
             }
         }
@@ -36,19 +36,16 @@ values OS=linux, version >= 2.6.24
         {
 		    .read      = &${config.devices}_read,
         }
-
-        chunk ::CALL
-        {
-        }
     }
 
-    template sequence User::write(Context ctx)
+    template sequence User::write(User::Context ctx, Algorithms::Buffer buf)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION
         {
             typedef void dev_t;
             int ${config.devices}_write(dev_t *)
             {
+                ${pointcut ::IMPLEMENTATION};
                 return (0);
             }
         }

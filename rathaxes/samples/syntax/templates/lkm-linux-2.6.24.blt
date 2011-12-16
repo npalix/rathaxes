@@ -1,5 +1,5 @@
 with LKM
-values OS=Linux, version >= 2.6.24
+values LKM::OS=Linux, LKM::version >= 2.6.24
 {
     template sequence LKM::load()
     {
@@ -19,6 +19,9 @@ values OS=Linux, version >= 2.6.24
             }
             module_init(rtxModuleInit);
         }
+
+        chunk ::CALL
+        { }
     }
 
     template sequence LKM::unload()
@@ -36,5 +39,8 @@ values OS=Linux, version >= 2.6.24
         {
             module_exit(rtxModuleExit);
         }
+
+        chunk ::CALL
+        { }
     }
 }

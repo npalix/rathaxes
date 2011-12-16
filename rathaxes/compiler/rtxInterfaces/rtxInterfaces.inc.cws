@@ -481,6 +481,28 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
     return false;
 }
 
+function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_error : node)
+{
+    // A builtin chunk should be written as "::Something"
+    if (pointcut.global == true && pointcut.scope == "")
+    {
+        if (   (pointcut.name == "CALL" && tplNode.specifier == "sequence") // code of the call of a sequence
+            || (pointcut.name == "decl" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // code of type declaration for a rathaxes type
+            || (pointcut.name == "init" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // init code for a rathaxes type
+            || (pointcut.name == "fini" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // end code for a rathaxes type
+           )
+        {
+            if (tplNode.qualifier != "provided")
+            {
+                traceLine(RED + "[Error] Builtin pointcut implemented in not provided template." + DEFAULT_COLOR);
+                out_ref_error = true;
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
 
 /*
  * This function takes a Rtype node for a chunk and a template tree,
@@ -508,6 +530,7 @@ function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
     }
     return false;
 }
+
 
 /*
  * This function takes a Rtype node for a pointcut and a template tree,
@@ -541,6 +564,40 @@ function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
         }
     }
     return false;
+}
+
+/*
+ * This function checks, depending on the type of dependency on the template,
+ * that the required builtin chunks are implemented.
+ */
+function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, itfTplNode : node)
+{
+    // Here, check the builtin pointcuts.
+    if (itfTplNode.qualifier == "required" || itfTplNode.qualifier == "optional")
+    {
+        local identifier;
+        rtxNodeIdentifier(identifier, "IMPLEMENTATION", "", true);
+        if (rtxTypeCheck_TemplateHasPointcut(identifier, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    else // case of provided
+    {
+        local identifier;
+        rtxNodeIdentifier(identifier, "CALL", "", true);
+        if (rtxTypeCheck_TemplateHasChunk(identifier, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -661,23 +718,36 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             }
         }
     }
+    // This function checks the builtin chunks/pointcuts to be implemented depending on required/optional/provided
+    if (rtxTypeCheck_TemplateBuiltinItems(tplRtype, tplTree, itfTplNode) == false)
+        increment(errcount);
 
     // Next, we need to check that every non-mandatory chunk actually exists.
     // But... What about non-mandatory pointcuts ?
     foreach chunk in tplTree.body.block
     {
-        local name = chunk.pointcut.scope;
-        if (name == "" && chunk.pointcut.global == false)
+        local builtinCheckError = false;
+
+        // manage not-builtin chunks
+        if (rtxTypeCheck_ChunkIsBuiltin(chunk.pointcut, itfTplNode, builtinCheckError) == false
+            && builtinCheckError != true)
         {
-            name = tplTree.prototype.rtype.name.scope;
-            traceLine("Setting default itf to "+name);
+            local name = chunk.pointcut.scope;
+            if (name == "" && chunk.pointcut.global == false)
+            {
+                name = tplTree.prototype.rtype.name.scope;
+                traceLine("Setting default itf to "+name);
+            }
+            else if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name) == false)
+            {
+                traceLine(RED + "[Error] Pointcut '"
+                          + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                          + "' has never been defined." + DEFAULT_COLOR);
+                increment(errcount);
+            }
         }
-        if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut,
-                                                name) == false)
+        else if (builtinCheckError == true) // builtinCheck detected an error.
         {
-            traceLine(RED + "[Error] Pointcut '"
-                      + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
-                      + "' has never been defined." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -704,7 +774,9 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
  */
 function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
 {
-    local fullTplProto = rtxRTypeName<tplRtype.type>(tplRtype);
+    local spec = tplTree.prototype.tpl_type;
+    local dummy;
+    local fullTplProto = rtxRTypeFullQualifiedName<spec>(tplRtype, dummy);
     local itfName = tplRtype.name.scope;
     local itfNode;
     local itfTree;
@@ -728,7 +800,7 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
         // Then it's either : a type, a sequence or a builtintype
         if (existVariable(item.rtype))
         {
-            local fullItfProto = rtxRTypeName<item.rtype.type>(item.rtype);
+            local fullItfProto = rtxRTypeFullQualifiedName<spec>(item.rtype, dummy);
             if (fullTplProto == fullItfProto)
             {
                 return rtxTypeCheck_TemplateSpec<item.specifier>(tplRtype, tplTree,
@@ -736,6 +808,7 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
             }
         }
     }
+    traceLine(RED + "[Error] Could not find template '" + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
     return false;
 }
 
