@@ -122,6 +122,7 @@ Tests Backend :
       le pointcut CALL si provided ou IMPLEMENTATION si optional/req    <= TODO
     * Checker l'existence des variables de config dans le with          <= TODO
     * Checker la coherence des registres                                <= TODO
+    * Fixer le bug de type check sur le prototype des templates seq.    <= TODO
 
 
 

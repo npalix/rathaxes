@@ -164,7 +164,10 @@ function rtxLink_selectUniqueTemplate(templates : reference, config : node)
     // the search : We're good, and change the array into a template node.
     // Otherwise, it's an error.
     if (getArraySize(templates) != 1)
-        error("rtxLink:<ERROR> No unique template matching the configuration.");
+    {
+        traceLine(RED + "[ERROR] No unique template matching the configuration." + DEFAULT_COLOR);
+        return false;
+    }
 
     // Here, we find the associated chunk in order to set the script_file
     // And the tree_file, and set them into the tpl node in order to allow
