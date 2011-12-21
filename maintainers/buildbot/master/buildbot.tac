@@ -1,16 +1,13 @@
-
 import os
 
 from twisted.application import service
 from buildbot.master import BuildMaster
 
-basedir = r'/home/nyu/projs/rathaxes/maintainers/buildbot/master'
-rotateLength = 10000000
-maxRotatedFiles = 10
+# basedir, once uploaded on DotCloud
+basedir = os.path.expanduser(r'~/')
 
 # if this is a relocatable tac file, get the directory containing the TAC
 if basedir == '.':
-    import os.path
     basedir = os.path.abspath(os.path.dirname(__file__))
 
 # note: this line is matched against to check that this is a buildmaster
@@ -18,19 +15,18 @@ if basedir == '.':
 application = service.Application('buildmaster')
 
 try:
-  from twisted.python.logfile import LogFile
-  from twisted.python.log import ILogObserver, FileLogObserver
-  logfile = LogFile.fromFullPath(os.path.join(basedir, "twistd.log"), rotateLength=rotateLength,
-                                 maxRotatedFiles=maxRotatedFiles)
-  application.setComponent(ILogObserver, FileLogObserver(logfile).emit)
+    # let's directly use the Python logging module, we juste need to log
+    # to stdout/stderr supervisor will take care to log in a file and do
+    # the log rotation for us.
+    import logging
+    from twisted.python.log import ILogObserver, PythonLoggingObserver
+    logging.basicConfig()
+    application.setComponent(ILogObserver, PythonLoggingObserver().emit)
 except ImportError:
-  # probably not yet twisted 8.2.0 and beyond, can't set log yet
-  pass
+    # probably not yet twisted 8.2.0 and beyond, can't set log yet
+    pass
 
-configfile = r'master.cfg'
+configfile = r'master-dotcloud.cfg'
 
 m = BuildMaster(basedir, configfile)
 m.setServiceParent(application)
-m.log_rotation.rotateLength = rotateLength
-m.log_rotation.maxRotatedFiles = maxRotatedFiles
-
