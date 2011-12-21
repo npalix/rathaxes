@@ -1,0 +1,12 @@
+master:
+    type: custom
+    buildscript: master/dotcloud-builder
+    ports:
+        www: http
+        webhook: tcp
+        slaves: tcp
+    processes:
+        buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+
+db:
+    type: postgresql
