@@ -13,6 +13,10 @@ slave:
     buildscript: slave/dotcloud-builder
     processes:
         buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+    systempackages:
+        - cmake
+        - texlive-full
+        - ia32-libs
 
 db:
     type: postgresql
