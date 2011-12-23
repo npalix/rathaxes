@@ -13,7 +13,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 
         chunk::CALL
         {
-            my_logger(str);
+            my_logger(${str});
         }
     }
 }

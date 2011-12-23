@@ -10,7 +10,7 @@ with Log
 
         chunk ::CALL
         {
-            puts(msg);
+            puts(${msg});
         }
     }
 }

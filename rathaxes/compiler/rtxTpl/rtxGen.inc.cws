@@ -415,12 +415,15 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
         // Add the template hash into the chunk node in order to
         // Set an about right specialisation for the instanceChunk function
         hashTemplatePrototype(local_node.prototype.rtype, chunk.tpl_hash);
+        insert chunk.tpl_rtype;
+        setall chunk.tpl_rtype = local_node.prototype.rtype;
+        insert chunk.tpl_params;
+        setall chunk.tpl_params = local_node.prototype.identifiers;
         rtxGen<chunk.type>(chunk, uid);
     }
     if (local_node.prototype.tpl_type == "type")
     {
         // Go mapping
-        insert local_node.tpl_hash;
         hashTemplatePrototype(local_node.prototype.rtype, local_node.tpl_hash);
         gencodeworker<local_node.mapping.type>(local_node, local_node.mapping.body, uid);
         increment(uid);
