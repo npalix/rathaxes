@@ -13,3 +13,8 @@ function        rtxType_Parse<"number.inc.cws">(src : value)
         {       return true;}
         return false;
 }
+
+function        rtxNode2cnormNode<"number">(in_param : node, out_param : node)
+{
+    return cnormNode_TerminalLiteral(out_param, in_param.val);
+}
