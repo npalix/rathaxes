@@ -58,6 +58,7 @@ generateString({
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
 
+#include "misc/colors.cws"
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxInterfaces/rtxInterfaces.inc.cws"
 #include "rtxType/rtxType.inc.cws"

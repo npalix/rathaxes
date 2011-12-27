@@ -12,11 +12,13 @@ ADD_RATHAXES_TEST(01_J_test_back_resolvePointcut.cws)
 ADD_RATHAXES_TEST(01_K_test_back_resolvePointcutDefault.cws)
 ADD_RATHAXES_TEST(01_L_test_back_resolveTypeMapping.cws)
 ADD_RATHAXES_TEST(01_M_test_back_resolveTypeChunkCall.cws)
+ADD_RATHAXES_TEST(01_N_test_back_resolveSequenceCall.cws)
 
 # Pure middle-end validation tests
 ADD_RATHAXES_TEST(02_A_test_middle_parse.cws)
 ADD_RATHAXES_TEST(02_B_test_middle_parse_rti_file.cws)
 ADD_RATHAXES_TEST(02_C_test_middle_check_inheritance.cws)
+ADD_RATHAXES_TEST(02_D_test_middle_check_types_declaration.cws)
 
 # Required for test 2_B
 FILE_COPY(full_lkm/simplified_lkm.rti full_lkm/simplified_lkm.rti)

@@ -1,6 +1,7 @@
 #include "cnorm.inc.cws"
 
 #include "rtxNode/rtxNode.inc.cws"
+#include "rtxType/rtxType.inc.cws"
 
 #if !existFunction(rtxMeta_version)
 
@@ -11,6 +12,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 {
     local treepart;
     cnormDialect<"__std__">(treepart);
+    insert treepart.scripts_path = this.scripts_path;
+    insert treepart.rtxTypes;
+    setall treepart.rtxTypes = compile#root.rtxTypes;
     parseStringAsBNF({
         #include "cnorm.cwp"
         #include "rtxParse/rtxCommon.cwp"
@@ -51,6 +55,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             ]?
             "${"
             [
+                tpl_sequence_call(theNode.body)
+            |
                 tpl_chunk_call(theNode.body)
             |
                 rtx_composed_identifier(theNode.body)
@@ -76,16 +82,53 @@ function    rtxMeta_parsePlaceHolder(compile : node)
             '.'
             rtx_scoped_identifier(theChunk)
             // For later resolution, we need to force it as an explicit global name
-/**/        => theChunk.global = true;
+/**/        => theChunk.global = true; 
             // Create the node from
             #check(rtxNodeCall(theCall, theVar, theChunk, parameters))
             '('
-                #continue(sError, "Expected closing parenthesis in chunk call")
+                #continue(sError, "Expected closing parenthesis in chunk '"
+                          +rtxRTypeName<theChunk.type>(theChunk)+"' call")
                 [
                     rtx_var_list(parameters)
                 ]?
             ')'
         ;
+
+
+        /*
+         * Function used for parsing a call to a rathaxes sequence in a placeHolder.
+         */
+        rtx_sequence_arg(theArg : node) ::=
+            rtx_composed_identifier(theArg)
+            |
+            rtx_literal(theArg)
+        ;
+
+        rtx_literal(theArg : node) ::=
+            [ #readCString | #readCChar | [~[','|')']]+ ]:data
+            #check(rtxType_Search(data, theArg))
+        ;
+
+        tpl_sequence_call(theCall : node) ::=
+            => local seqName;
+            => local seqArgs;
+            rtx_scoped_identifier(seqName)
+            '('
+                #continue(sError, "Expected closing parenthesis in sequence call :'"
+                          +rtxRTypeName<theCall.seqName.type>(theCall.seqName)+"'")
+                [
+                    #pushItem(seqArgs)
+                    rtx_sequence_arg(seqArgs#back)
+                    [
+                        ',' #pushItem(seqArgs)
+                        rtx_sequence_arg(seqArgs#back)
+                    ]*
+                ]?
+            ')'
+            #check(rtxNodeSequenceCall(theCall, seqName, seqArgs))
+        ;
+
+
 
 
         /*
@@ -128,11 +171,14 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         ;
 
     }, treepart, compile.template_expr);
-    removeVariable(treepart.dialect);
+    // remove variables used for parsing
+    removeVariable(treepart.dialect); // cnorm
+    removeVariable(treepart.scripts_path); // types loader
+    removeVariable(treepart.rtxTypes); // rtxtypes
     if (!isEmpty(treepart.error))
     {
-        traceLine("_________\nCould not build node for template_expr : "
-                  + compile.template_expr);
+        traceLine(RED + "Could not build node for template_expr : "
+                  + compile.template_expr + DEFAULT_COLOR);
         local out = "Trace:\n";
         foreach stack_line in treepart.error[0].trace
             out += stack_line;
@@ -140,9 +186,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         traceLine(out);
         return false;
     }
-    traceLine("Just built node for template_expr : "+compile.template_expr);
+    traceLine("Built node for template_expr : "+compile.template_expr);
     insert compile.node;
     setall compile.node = treepart;
+    return true;
 }
 
 
@@ -159,39 +206,56 @@ function rtxMeta_walk<T>(local_node : node)
 {
     // Then we are on a type of node that doesnt matter to us
     // but that does not need any error...
+    return true;
 }
 
 function rtxMeta_walk<"__rtx_with__">(local_node : node)
 {
+    local errcount = 0;
+
     traceLine("rtxMeta_walk<\"__rtx_with__\">: walking through...");
     // First, walk the templates...
     foreach item in local_node.body.block
     {
-        rtxMeta_walk<item.type>(item);
+        if (rtxMeta_walk<item.type>(item) == false)
+            increment(errcount);
     }
     traceLine("rtxMeta_walk<\"__rtx_with__\">: parsing placeHolders...");
     // Second, compile each with placeHolder.
     foreach placeHolder in local_node.c_block.compile
     {
-        rtxMeta_parsePlaceHolder(placeHolder);
+        if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+            increment(errcount);
     }
+    if (errcount != 0)
+        return false;
+    return true;
 }
 
 function rtxMeta_walk<"__rtx_chunk__">(local_node : node)
 {
+    local errcount = 0;
+
     traceLine("rtxMeta_walk<\"__rtx_chunk__\">: compiling placeHolders...");
     foreach placeHolder in local_node.body.compile
     {
-        rtxMeta_parsePlaceHolder(placeHolder);
+        if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+            increment(errcount);
     }
+    if (errcount != 0)
+        return false;
+    return true;
 }
 
 function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
 {
+    local errcount = 0;
+
     traceLine("rtxMeta_walk<\"__rtx_tpl__\">: walking through...");
     foreach chunk in local_node.body.block
     {
-        rtxMeta_walk<chunk.type>(chunk);
+        if (rtxMeta_walk<chunk.type>(chunk) == false)
+            increment(errcount);
     }
     if (rtxNodeTpl_HasMapping(local_node))
     {
@@ -199,10 +263,14 @@ function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
         {
             foreach placeHolder in mapping.compile
             {
-                rtxMeta_parsePlaceHolder(placeHolder);
+                if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+                    increment(errcount);
             }
         }
     }
+    if (errcount != 0)
+        return false;
+    return true;
 }
 
 #end

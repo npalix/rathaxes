@@ -74,6 +74,13 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
 }
 
 
+/*
+ * This function takes the node of the variable declaration as theDecl,
+ * and the resolved chunk of the type's declaration as typeDeclBlock
+ *
+ * If the type declaration is a typedef, the typedef is inserted in the var decl
+ * If the type declaration is not a typedef, the associated type replaces the type of the var decl.
+ */
 function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node)
 {
     local typeDef;
@@ -500,6 +507,112 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     return true;
 }
 
+/*
+ * resolverValues : hashtable of key/values
+ *
+ * Both treeNode and local_node are located in the .compile of a chunk
+ * They are located as is :
+ * treeNode is still undefined.
+ *  .compile = {
+ *      [
+ *          "_X" : {
+ *              .node = {
+ *                  .body = {   <-- local_node
+ *                  }
+ *              }
+ *              ...
+ *          }
+ *      ]
+ *  }
+ */
+function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode : node,
+                                                local_node : node)
+{
+    // Tool variable for code replacing.
+    local       errcount = 0;
+    local       dummy;
+    local       startIdx = 0;
+    local       phName = "call";
+    local       phIdx = 0;
+    localref    theBlock = local_node#parent.ref_placeholder#parent;
+    while (theBlock.type != "__block__")
+    {
+        ref theBlock = theBlock#parent;
+    }
+
+    // Two variables to create the rtype associated to the sequence call
+    local       theRtype;
+    local       paramTypes;
+
+    // Tree variables to help manipulate the cache
+    local       templateCache;
+    local       chunkCache;
+    local       chunkTree;
+
+    // First, build the rtype node.
+    rtxNodeRType(theRtype, local_node.body.seqName, paramTypes);
+    foreach param in local_node.body.seqArgs
+    {
+        if (existVariable(param.rtype))
+        {
+            pushItem paramTypes;
+            setall paramTypes#back = param.rtype;
+        }
+        else
+        {
+            traceLine(RED + "[Error] Could not find rtx type associated to param '"+param.val
+                      +"' for sequence call '"+local_node#parent.template_expr+"'." + DEFAULT_COLOR);
+        }
+    }
+
+    // Then load the chunk ::CALL to resolve.
+    if (!rtxLink_findTemplates(theRtype, templateCache))
+    {
+        traceLine(RED + "[Error] Could not find template "
+                  + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
+                  + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(templateCache, this.config))
+    {
+        traceLine(RED + "[Error] Could not select an unique template"
+                  + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
+                  + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
+    {
+        traceLine(RED + "[Error] Could not find '::CALL' chunk"
+                  + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
+                  + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Now that we have selected the decl chunk, load the tree & script
+    if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
+    {
+        traceLine(RED + "[Error] Could not load script or tree."
+                  + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Now, resolve the loaded chunk...
+    local resVals;
+    rtxResolve_BuildFrontResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params);
+    if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body) == false)
+    {
+        increment(errcount);
+    }
+    // And insert it in the sequence implem after having removed the original call node.
+    if (!existVariable(theBlock.block.modifier))
+        insert theBlock.block.modifier = 1;
+    else
+        increment(theBlock.block.modifier);
+    removeElement(theBlock.block, startIdx);
+    rtxResolve_InsertCode(theBlock.block, startIdx, phName, phIdx, chunkTree.body);
+
+    return true;
+}
 
 
 /*

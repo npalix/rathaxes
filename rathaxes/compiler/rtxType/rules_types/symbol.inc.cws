@@ -2,7 +2,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value)
 {
         local   out;
         parseStringAsBNF({
-                string ::= [#readIdentifier ['.' #readIdentifier]*]:str
+                string ::= [#readIdentifier ['.' #readIdentifier]* ]:str
                         =>{this = str;}
                 ;
         }, out, src);
