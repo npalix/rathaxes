@@ -25,11 +25,13 @@ changeDirectory(working_directory);
 local has_error = false;
 foreach item in source.block
 {
-    rtxMeta_walk<item.type>(item);
-    if (!isEmpty(item.error))
+    if (rtxMeta_walk<item.type>(item) == false)
     {
-        traceLine("Item of type '"+item.type+"' could not be parsed :"
-                  + endl() + item.error);
+        if (!isEmpty(item.error))
+        {
+            traceLine("Item of type '"+item.type+"' could not be parsed :"
+                      + endl() + item.error);
+        }
         has_error = true;
     }
 }

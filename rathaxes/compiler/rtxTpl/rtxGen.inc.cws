@@ -120,6 +120,26 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
     removeVariable(item.chunkName);
 }
 
+function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey : value)
+{
+    insert item.cws_expr;
+    insert item.key = theKey;
+    generateString({
+                // Resolving LINK (place Holder @this.key@)
+                traceLine("Generated Script : inject for key @this.key@ : "
+                          + "(@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
+                if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
+                                                                   c_tree,
+                                                                   c_tree.compile["@this.key@"].node) == false)
+                {
+                    traceLine(RED + "[Error] Could not resolve template call '@replaceString("\n", " ", this.template_expr)@'"
+                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                    increment(errcount);
+                }
+    @}, item, item.cws_expr);
+    removeVariable(item.key);
+}
+
 
 /*
  * This function generated the inject call for one placeholder inside

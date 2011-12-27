@@ -119,6 +119,14 @@ generateString({
             }
         }
 
+        template sequence LKM::test_call(Context ctx)
+        {
+            chunk ::CALL
+            {
+                ${LKM::test(ctx)};
+            }
+        }
+
         template type Builtin::Buffer()
         {
             chunk ::decl
@@ -178,6 +186,8 @@ traceLine("input:\n" + input);
 
 local source;
 cnormDialect<"__std__">(source);
+insert this.scripts_path = "../../"; // Hard-coded path for tests.
+rtxType_Load(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);

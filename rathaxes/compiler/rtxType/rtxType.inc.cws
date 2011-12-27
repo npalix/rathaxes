@@ -28,6 +28,8 @@ function        rtxType_Search(src : value, out : node)
 function        rtxType_Load(out : node)
 {
         local   theDir;
+        insert  out.rtxTypes;
+        insert  out.scripts_path = this.scripts_path;
         if !scanDirectories(theDir, this.scripts_path+"rtxType/rules_types/", "*.inc.cws")
         { error("unable to load rules_types directory"); }
         foreach f in theDir.files

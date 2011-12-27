@@ -190,6 +190,20 @@ function rtxNodeCall(local_node     : node,
     return true;
 }
 
+function rtxNodeSequenceCall(local_node : node, name : node, args : node)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_tpl_sequence_call__";
+
+        insert local_node.seqName;
+        setall local_node.seqName = name;
+
+        insert local_node.seqArgs;
+        setall local_node.seqArgs = args;
+
+        return true;
+}
+
 /*
  *
  * The following functions are used to build the variable hashtable called
