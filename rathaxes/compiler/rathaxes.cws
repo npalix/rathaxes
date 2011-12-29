@@ -151,6 +151,7 @@ else if (   toLowerString(this.operation) == "blt-check"
     if (rtxLink_LoadCache() == false)
         traceLine("Could not load cache. Trying to do without it...");
 
+    rtxType_Load(source);
     rtxParse(inputFile, source);
 
     // Compile the placeHolders
@@ -217,6 +218,7 @@ else if (toLowerString(this.operation) == "rti-check"
     if (rtxLink_LoadCache() == false)
         traceLine("Could not load cache. Trying to do without it...");
 
+    rtxType_Load(source);
     rtxParse(inputFile, source);
 
     // XXX TODO FIXME
