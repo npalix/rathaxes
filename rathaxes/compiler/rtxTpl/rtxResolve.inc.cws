@@ -160,9 +160,22 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
             foreach param_field in theParam.identifiers
             {
                 if (!findElement(param_field.name, theValue))
-                    error("Could not find an element named " + param_field.name
-                          + " in the source Resolver values.");
-                ref theValue = theValue[param_field.name];
+                {
+                    localref theChunk = src_params#root;
+                    if (getArraySize(theParam.identifiers) != 1 || !findElement(param_field.name, theChunk.variables))
+                    {
+                        error("Could not find an element named " + param_field.name
+                              + " in the source Resolver values or in the C variables.");
+                    }
+                    else // Element in chunk C variables.
+                    {
+                        ref theValue = theChunk.variables[param_field.name];
+                    }
+                }
+                else // Element in previous resolver values.
+                {
+                    ref theValue = theValue[param_field.name];
+                }
             }
         }
         else
@@ -214,9 +227,22 @@ function rtxResolve_BuildFrontResVals(src_resVals   : node,
             foreach param_field in theParam.identifiers
             {
                 if (!findElement(param_field.name, theValue))
-                    error("Could not find an element named " + param_field.name
-                          + " in the source Resolver values.");
-                ref theValue = theValue[param_field.name];
+                {
+                    localref theChunk = src_params#root;
+                    if (existVariable(theChunk.variables) && (getArraySize(theParam.identifiers) != 1 || !findElement(param_field.name, theChunk.variables)))
+                    {
+                        error("Could not find an element named " + param_field.name
+                              + " in the source Resolver values or in the C variables.");
+                    }
+                    else // Element in chunk C variables.
+                    {
+                        ref theValue = theChunk.variables[param_field.name];
+                    }
+                }
+                else // Element in previous resolver values.
+                {
+                    ref theValue = theValue[param_field.name];
+                }
             }
         }
         else
