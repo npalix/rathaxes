@@ -1023,7 +1023,6 @@ function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
                                                 interface_list, qualifier) == false
             || qualifier != "provided")
         {
-            traceLine("wualifgier is : "+qualifier);
             if (qualifier != "provided")
                 traceLine(RED + "[Error] A sequence not provided cannot be called ("+cFullName+")." + DEFAULT_COLOR);
             else
