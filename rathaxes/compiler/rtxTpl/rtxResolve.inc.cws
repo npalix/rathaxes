@@ -64,9 +64,9 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
 
         insertElementAt(destBlock, sKey, startIdx);
         setall destBlock#[startIdx] = item;
-        startIdx = $startIdx + 1$;
 
-        phIdx = $phIdx + 1$;
+        increment(startIdx);
+        increment(phIdx);
         increment(modifier);
     }
     if (existVariable(destBlock.modifier))
@@ -321,12 +321,13 @@ function rtxResolve_replaceCall(theSeq : node, resolverValues : node)
         {
             increment(errcount);
         }
+
         // And insert it in the sequence implem after having removed the original call node.
-        if (!existVariable(theSeq.body.block.modifier))
-            insert theSeq.body.block.modifier = 1;
-        else
-            increment(theSeq.body.block.modifier);
-        removeElement(theSeq.body.block, startIdx);
+        local dummy;
+        insert dummy.block_idx;
+        dummy.block_idx = $startIdx - theSeq.body.block.modifier$; // Compute current original index (alias the key).
+        insertModifier(theSeq.body.block, dummy);
+        startIdx = dummy.block_idx; // retrieve updated startIdx from dummy.
         rtxResolve_InsertCode(theSeq.body.block, startIdx, phName, phIdx, chunkTree.body);
     }
     return true;
@@ -630,11 +631,11 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         increment(errcount);
     }
     // And insert it in the sequence implem after having removed the original call node.
-    if (!existVariable(theBlock.block.modifier))
-        insert theBlock.block.modifier = 1;
-    else
-        increment(theBlock.block.modifier);
-    removeElement(theBlock.block, startIdx);
+    local dummy;
+    insert dummy.block_idx;
+    dummy.block_idx = $startIdx - theBlock.block.modifier$; // Compute current original index (alias the key).
+    insertModifier(theBlock.block, dummy);
+    startIdx = dummy.block_idx; // retrieve updated startIdx from dummy.
     rtxResolve_InsertCode(theBlock.block, startIdx, phName, phIdx, chunkTree.body);
 
     return true;
