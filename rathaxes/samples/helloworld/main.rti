@@ -3,9 +3,26 @@ interface Main : Types
     provided pointcut   Main::include_headers;
     provided pointcut   Main::main;
 
-    required sequence   Main::start()
+    provided type       Main::Arguments;
+
+    /* This sequence is required, i.e: its implementation is in the .rtx */
+    required sequence   Main::start(Main::Arguments)
     {
         provided chunk  Main::include_headers;
         provided chunk  Main::main;
+    }
+
+    /*
+     * This sequence is provided i.e: its implementation is in the .blt (it's
+     * called from the .rtx).
+     */
+    provided sequence   Main::log(Main::Arguments)
+    {
+        provided chunk  ::CALL;
+    }
+
+    provided sequence   Main::exit(::number)
+    {
+        provided chunk  ::CALL;
     }
 }

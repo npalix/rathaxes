@@ -5,7 +5,42 @@ with Main
     ${pointcut Main::main};
 
     /* Definitions */
-    template sequence Main::start()
+    template type Main::Arguments()
+    {
+        chunk ::decl()
+        {
+            struct rtx_args
+            {
+                int     argc;
+                char    **argv;
+                char    **env;
+            };
+        }
+
+        chunk ::init(argc, argv, env)
+        {
+            ${self}.argc = argc;
+            ${self}.argv = argv;
+            ${self}.env = env;
+        }
+
+        chunk ::log()
+        {
+            puts("Arguments:");
+            for (int i = 0; i != ${self}.argc; i++)
+                printf("- [%d]: %s\n", i, ${self}.argv[i]);
+
+            puts("Environment:");
+            for (int i = 0; ${self}.env[i]; i++)
+                printf("- %s\n", ${self}.env[i]);
+        }
+
+        map
+        {
+        }
+    }
+
+    template sequence Main::start(Main::Arguments args)
     {
         chunk Main::include_headers
         {
@@ -14,22 +49,38 @@ with Main
             typedef int stdlib_include_stamp;
         }
 
-        chunk Main::main
+        chunk Main::main()
         {
-            int main(void)
+            int main(int argc, char *argv[], char *env[])
             {
                 /*
                  * Do this typedef here to work-around a bug in CNorm __std__
                  * dialect.
                  */
-                typedef int ${Types::integer};
+                typedef int ${Main::Arguments};
 
-                ${Types::integer}   ret;
+                ${Main::Arguments}  args;
 
-                ${ret.set(0)};
+                ${args.init(argc, argv, env)};
+
                 ${pointcut ::IMPLEMENTATION};
-                return (0);
             }
+        }
+    }
+
+    template sequence Main::log(Main::Arguments args)
+    {
+        chunk   ::CALL
+        {
+            ${args.log()};
+        }
+    }
+
+    template sequence Main::exit(::number status)
+    {
+        chunk   ::CALL
+        {
+            exit(${status});
         }
     }
 }

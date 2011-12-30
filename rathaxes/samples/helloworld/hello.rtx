@@ -1,8 +1,12 @@
 device HelloWorld use Main, Types, Log
 {
-    Main::start()
+    Main::start(Main::Arguments args)
     {
-        Log::info("Hello World!");
+        Main::log(args);
+
+        Log::info("It works!");
+
+        Main::exit(0);
     }
 }
 
