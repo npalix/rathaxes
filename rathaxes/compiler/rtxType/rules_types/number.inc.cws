@@ -18,3 +18,22 @@ function        rtxNode2cnormNode<"number">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalLiteral(out_param, in_param.val);
 }
+
+function type_map<"::number">(resolverValues : node,
+                              theRtype : node, mappedId : value,
+                              placeHolder : node)
+{
+    if (mappedId == "")
+    {
+        // Here, the data should already be a cnorm Literal node.
+        local tplVarName = resolverValues["self"].body;
+        localref data = resolverValues[tplVarName].body;
+        setall placeHolder#parent.ref_placeholder#parent = data;
+        return true;
+    }
+    else
+    {
+        traceLine(RED + "[Error] Identifier '"+mappedId+"' not mapped for type '::number'." + DEFAULT_COLOR);
+    }
+    return false;
+}

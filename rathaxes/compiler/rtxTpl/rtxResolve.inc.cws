@@ -1004,24 +1004,6 @@ function type_map<"::config">(resolverValues : node,
 }
 
 // The builtin specializations.
-function type_map<"::string">(resolverValues : node,
-                              theRtype : node, mappedId : value,
-                              placeHolder : node)
-{
-    if (mappedId == "")
-    {
-        // Here, the data should already be a cnorm Literal node.
-        local tplVar = resolverValues["self"].body; // string = the name of the variable.
-        localref data = resolverValues[tplVar].body;
-        setall placeHolder#parent.ref_placeholder#parent = data;
-        return true;
-    }
-    else
-    {
-        traceLine(RED + "[Error] Identifier '"+mappedId+"' not mapped for type '::string'." + DEFAULT_COLOR);
-    }
-    return false;
-}
 
 
 #end
