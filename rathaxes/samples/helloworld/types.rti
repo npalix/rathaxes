@@ -1,6 +1,8 @@
 interface Types
 {
     provided builtintype    ::string;
+    provided builtintype    ::number;
+
     /* Repeat "Types::" to work-around limitations in the compiler. */
     provided type           Types::integer;
 //  provided builtintype    ::numser;
