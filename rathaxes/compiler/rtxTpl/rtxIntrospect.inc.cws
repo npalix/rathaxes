@@ -419,6 +419,11 @@ function rtxIntrospect_stmt<"__cond__">(local_node : node, theChunk : node,
     // Next, check the rest depending on the statement (if, while, for, etc...)
     rtxIntrospect_cond<local_node.name>(local_node, theChunk, blockIds);
 }
+function rtxIntrospect_stmt<"__for__">(local_node : node, theChunk : node,
+                                       blockIds : node)
+{
+    rtxIntrospect_stmt<"__cond__">(local_node, theChunk, blockIds);
+}
 
 function rtxIntrospect_cond<"do">(local_node : node, theChunk : node,
                                   blockIds : node)
