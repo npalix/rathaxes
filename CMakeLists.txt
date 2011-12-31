@@ -33,7 +33,7 @@ FIND_PACKAGE(CodeWorker REQUIRED)
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
 INCLUDE(RathaxesCopyLatexClasses)
-INCLUDE(AddRathaxesTest)
+INCLUDE(UseRathaxes)
 
 # Global definitions ###########################################################
 
