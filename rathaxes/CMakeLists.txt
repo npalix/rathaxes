@@ -1,4 +1,5 @@
 ADD_SUBDIRECTORY(compiler)
+ADD_SUBDIRECTORY(samples)
 
 # Generate a rathaxes binary script that set up all the path automatically
 # thanks to CMake.
