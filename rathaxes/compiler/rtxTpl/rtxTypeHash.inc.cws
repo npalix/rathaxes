@@ -1,0 +1,117 @@
+
+#if !existFunction(rtxTypeHash_version)
+
+function rtxTypeHash_version()
+{return "1.0";}
+
+
+declare function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node);
+
+function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node)
+{ error(RED + "rtxTypeHash_placeHolder<"+phType+"> not implemented yet."+ DEFAULT_COLOR); }
+
+
+function rtxTypeHash_placeHolder<"__rtx_var__">(local_node : node, type_map : node)
+{
+}
+
+function rtxTypeHash_placeHolder<"__rtx_pointcut__">(local_node : node, type_map : node)
+{
+}
+
+function rtxTypeHash_placeHolder<"__rtx_tpl_chunk_call__">(local_node : node, type_map : node)
+{
+}
+
+/*
+ * In the case of a call, if the param's type is a symbol, let's check if its type is a rtype or a ctype.
+ * If it's a rtype, retrieve it now.
+ */
+function rtxTypeHash_placeHolder<"__rtx_tpl_sequence_call__">(local_node : node, type_map : node)
+{
+    foreach arg in local_node.seqArgs
+    {
+        if (arg.type == "symbol")
+        {
+            // Search for a rtype in the type_map of the chunk
+            localref refRtype = arg;
+            while (refRtype.type != "__rtx_chunk__")
+            {
+                ref refRtype = refRtype#parent;
+            }
+            ref refRtype = refRtype.type_map;
+            if (findElement(arg.val, refRtype))
+            {
+                insert arg.rtype;
+                setall arg.rtype = refRtype[arg.val];
+            }
+        }
+    }
+}
+
+
+
+function rtxTypeHash_walk<"__root_block__">(local_node : node, type_map : node)
+{
+    foreach item in local_node.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__block__">(local_node : node, type_map : node)
+{
+    foreach item in local_node.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__rtx_with__">(local_node : node, type_map : node)
+{
+    // Iterate on templates and rtx statements.
+    foreach item in local_node.body.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__rtx_tpl__">(local_node : node, type_map : node)
+{
+    // First, retrieve accessible types from the prototype
+    rtxTypeHash_walk<local_node.prototype.type>(local_node.prototype, type_map);
+    
+    // Next, iterate on the chunks to annotate them
+    foreach chunk in local_node.body.block
+    { rtxTypeHash_walk<chunk.type>(chunk, type_map); }
+
+    // Now that it's used, delete its content.
+    clearVariable(type_map);
+}
+
+function rtxTypeHash_walk<"__rtx_tpl_proto__">(local_node : node,
+                                               type_map : node)
+{
+    local id;
+    local emptynode; // no parameters to a template type...
+    foreach type in local_node.rtype.params
+    {
+        id = local_node.identifiers[key(type)];
+        insert type_map[id];
+        rtxNodeRType(type_map[id], type, emptynode);
+    }
+}
+
+function rtxTypeHash_walk<"__rtx_chunk__">(local_node : node, type_map : node)
+{
+    insert local_node.type_map;
+    setall local_node.type_map = type_map;
+
+    foreach ph in local_node.body.compile
+    {
+        rtxTypeHash_placeHolder<ph.node.body.type>(ph.node.body, type_map);
+    }
+}
+
+function rtxTypeHash(local_node : node)
+{
+    local dummy;
+    rtxTypeHash_walk<local_node.type>(local_node, dummy);
+}
+
+
+#end
