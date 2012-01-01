@@ -71,7 +71,7 @@ ENDFUNCTION(_RTX_GENERATE_BUILD_COMMANDS
 
 # This function will build a Rathaxes target. Usage:
 #
-# ADD_RATHAXES_EXECUTABLE(hello.rtx
+# ADD_RATHAXES_SOURCES(hello.rtx
 #                         [RTI hello.rti [file.rti]]
 #                         [BLT hello.blt [file.blt]]
 #                         [SYSTEM windows [linux]])
@@ -84,7 +84,7 @@ ENDFUNCTION(_RTX_GENERATE_BUILD_COMMANDS
 #
 # At some point we will certainly have our own language definition for CMake
 # but let's start with simpler things.
-FUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
+FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
     SET(_RTX_CODEWORKER_COMMAND
         ${CODEWORKER_BINARY_PATH} "-nologo"
         "-I" "${RATHAXES_SOURCE_DIR}/maintainers/cnorm/src"
@@ -124,7 +124,7 @@ FUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
                        DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES} ${COMPILER_FILES})
 
     ADD_CUSTOM_TARGET(${OUT_NAME} ALL DEPENDS ${OUTPUTS})
-ENDFUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
+ENDFUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
 
 # This function call codeworker + cnorm with the given codeworker script. The
 # path to the rathaxes source directory is given as the first argument (arg[0]).
@@ -139,3 +139,24 @@ FUNCTION(ADD_RATHAXES_CWS_TEST CW_SCRIPT)
              "-script" "${CMAKE_CURRENT_SOURCE_DIR}/${CW_SCRIPT}"
              "-args" "${RATHAXES_SOURCE_DIR}/rathaxes")
 ENDFUNCTION(ADD_RATHAXES_CWS_TEST CW_SCRIPT)
+
+# This function build a native binary executable from a previously generated
+# Rathaxes sources.
+#
+# Usage: ADD_RATHAXES_EXECUTABLE(NAME RATHAXES_SOURCE [SYSTEM])
+#
+# RATHAXES_SOURCE must corresponds to the first argument of a call to
+# ADD_RATHAXES_SOURCES.
+#
+# The third argument SYSTEM may be used if the target system doesn't correspond
+# to CMAKE_SYSTEM_NAME.
+FUNCTION(ADD_RATHAXES_EXECUTABLE NAME RATHAXES_SOURCE)
+    IF (${ARGC} EQUAL 2)
+        SET(SYSTEM ${CMAKE_SYSTEM_NAME})
+    ELSE (${ARGC} EQUAL 2)
+        SET(SYSTEM ${ARGV2})
+    ENDIF (${ARGC} EQUAL 2)
+
+    ADD_EXECUTABLE(${NAME} "${RATHAXES_SOURCE}_${SYSTEM}.c")
+    ADD_DEPENDENCIES(${NAME} ${RATHAXES_SOURCE})
+ENDFUNCTION(ADD_RATHAXES_EXECUTABLE NAME RATHAXES_SOURCE)

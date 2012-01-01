@@ -1,4 +1,4 @@
-PROJECT(RATHAXES NONE)
+PROJECT(RATHAXES C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
@@ -38,6 +38,10 @@ INCLUDE(UseRathaxes)
 # Global definitions ###########################################################
 
 ENABLE_TESTING()
+
+IF (CMAKE_COMPILER_IS_GNUCC)
+    SET(CMAKE_C_FLAGS "-pipe -Wextra -Wall -std=c99")
+ENDIF (CMAKE_COMPILER_IS_GNUCC)
 
 # Subdirectories ###############################################################
 
