@@ -141,6 +141,7 @@ if (toLowerString(this.operation) == "generate")
         traceLine("Could not load cache. Trying to do without it...");
 
     insert this.front;
+    insert this.c_types;
 
     cnormDialect<"__std__">(this.front);
     rtxType_Load(this.front);
@@ -178,17 +179,41 @@ if (toLowerString(this.operation) == "generate")
     //traceLine(PURPLE + toString(this.c_tree.c_block,true) + DEFAULT_COLOR);
 
     /*
+     * For the code to compile, we need to have the types declared.
+     * Here is the "include" code generation:
+     */
+    local include;
+    cnormNodeRoot(include);
+    foreach  item in this.c_types
+    {
+        if (existVariable(item.c_decl))
+        {
+            pushItem include.block;
+            setall include.block#back = item.c_decl;
+        }
+        else // specifier sublist
+        {
+            foreach  specitem in item
+            {
+                pushItem include.block;
+                setall include.block#back = specitem.c_decl;
+            }
+        }
+    }
+    /*
      * This is our final code, tell cnorm2c that this is a root block,
      * otherwise it will scope the whole thing inside braces.
      */
     this.c_tree.c_block.type = "__root_block__";
+    local include_code = cnorm2c(include);
     local code = cnorm2c(this.c_tree.c_block);
+    traceLine("Resulting include:" + include_code);
     traceLine("Resulting code: " + code);
 
     if (findElement("output", options))
     {
         traceLine("Writing to file: " + options["output"]);
-        saveToFile(options["output"], code + endl());
+        saveToFile(options["output"], include_code + code + endl());
     }
 }
 else if (   toLowerString(this.operation) == "blt-check"
