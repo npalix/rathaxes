@@ -29,7 +29,13 @@ FUNCTION(_RTX_PARSE_OPTIONS ARGS RTI_OUT BLT_OUT SYSTEM_OUT)
     SET(${SYSTEM_OUT} ${${SYSTEM_OUT}} PARENT_SCOPE)
 ENDFUNCTION(_RTX_PARSE_OPTIONS ARGS RTI_OUT BLT_OUT)
 
-FUNCTION(_RTX_GENERATE_BUILD_COMMANDS REGISTER_COMMANDS_OUT RTI_FILES BLT_FILES GENERATE_COMMANDS_OUT SYSTEMS)
+FUNCTION(_RTX_GENERATE_BUILD_COMMANDS
+         OUT_NAME               # [in] Name of the target
+         REGISTER_COMMANDS_OUT  # [out] rathaxes [rti,blt]-registers commands
+         RTI_FILES BLT_FILES    # [in, in] rti and blt files
+         GENERATE_COMMANDS_OUT  # [out] rathaxes generate /o commands
+         OUTPUTS                # [out] name of each generate file
+         SYSTEMS)               # [in] name of each target system
     FOREACH(RTI ${RTI_FILES})
         LIST(APPEND ${REGISTER_COMMANDS_OUT}
              "COMMAND" ${_RTX_CODEWORKER_COMMAND}
@@ -43,15 +49,25 @@ FUNCTION(_RTX_GENERATE_BUILD_COMMANDS REGISTER_COMMANDS_OUT RTI_FILES BLT_FILES 
     ENDFOREACH(BLT ${BLT_FILES})
 
     FOREACH(OS ${SYSTEMS})
+        LIST(APPEND ${OUTPUTS} "${OUT_NAME}_${OS}.c")
+        # At some point I guess we will use different directories instead of
+        # different file names.
         LIST(APPEND ${GENERATE_COMMANDS_OUT}
              COMMAND ${_RTX_CODEWORKER_COMMAND}
-             "generate" "${OS}"
+             "generate" "/o" "${OUT_NAME}_${OS}.c" "${OS}"
              "${CMAKE_CURRENT_SOURCE_DIR}/${RTX_FILE}")
     ENDFOREACH(OS ${SYSTEMS})
 
     SET(${REGISTER_COMMANDS_OUT} ${${REGISTER_COMMANDS_OUT}} PARENT_SCOPE)
     SET(${GENERATE_COMMANDS_OUT} ${${GENERATE_COMMANDS_OUT}} PARENT_SCOPE)
-ENDFUNCTION(_RTX_GENERATE_BUILD_COMMANDS REGISTER_COMMANDS_OUT RTI_FILES BLT_FILES GENERATE_COMMANDS_OUT SYSTEMS)
+    SET(${OUTPUTS} ${${OUTPUTS}} PARENT_SCOPE)
+ENDFUNCTION(_RTX_GENERATE_BUILD_COMMANDS
+            OUT_NAME
+            REGISTER_COMMANDS_OUT
+            RTI_FILES BLT_FILES
+            GENERATE_COMMANDS_OUT
+            OUTPUTS
+            SYSTEMS)
 
 # This function will build a Rathaxes target. Usage:
 #
@@ -82,26 +98,24 @@ FUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
     # argument (otherwise it would expand as different arguments).
     _RTX_PARSE_OPTIONS("${ARGV}" RTI_FILES BLT_FILES SYSTEMS)
 
-    _RTX_GENERATE_BUILD_COMMANDS(REGISTER_COMMANDS
+    _RTX_GENERATE_BUILD_COMMANDS(${OUT_NAME}
+                                 REGISTER_COMMANDS
                                  "${RTI_FILES}"
                                  "${BLT_FILES}"
                                  GENERATE_COMMANDS
+                                 OUTPUTS
                                  "${SYSTEMS}")
 
-    # As soon as we start to write the generation result to files this should
-    # be translated to an ADD_CUSTOM_COMMAND:
-    ADD_CUSTOM_TARGET(${OUT_NAME}
-                      ${_RTX_CODEWORKER_COMMAND} "cache" "clear"
-                      ${REGISTER_COMMANDS}
-                      COMMENT "Registering .rti and .blt for the Rathaxes target ${OUT_NAME}"
-                      VERBATIM
-                      SOURCES ${RTX_FILE} ${RTI_FILES} ${BLT_FILES})
-
     STRING(REPLACE ";" ", " SYSTEMS "${SYSTEMS}")
-    ADD_CUSTOM_COMMAND(TARGET ${OUT_NAME} POST_BUILD
+    ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUTS}
+                       COMMAND ${_RTX_CODEWORKER_COMMAND} "cache" "clear"
+                       ${REGISTER_COMMANDS}
                        ${GENERATE_COMMANDS}
                        COMMENT "Building Rathaxes target ${OUT_NAME} for ${SYSTEMS}"
-                       VERBATIM)
+                       VERBATIM
+                       DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES})
+
+    ADD_CUSTOM_TARGET(${OUT_NAME} ALL DEPENDS ${OUTPUTS})
 ENDFUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
 
 # This function call codeworker + cnorm with the given codeworker script. The
