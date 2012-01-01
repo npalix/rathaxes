@@ -74,6 +74,55 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
 }
 
 
+
+function    rtxResolve_insertTypeMap(theType : node)
+{
+    localref    mapping = this.c_types;
+
+    if (theType.ctype.storage != "typedef")
+    {
+        // Check the specifier is not already inserted (struct, union, etc...)
+        if (!findElement(theType.ctype.specifier, mapping))
+            insert mapping[theType.ctype.specifier];
+        // Then it's already defined.
+        if (findElement(theType.ctype.identifier, mapping[theType.ctype.specifier]))
+            return;
+        insert mapping[theType.ctype.specifier][theType.ctype.identifier];
+        ref mapping = mapping[theType.ctype.specifier][theType.ctype.identifier];
+    }
+    else
+    {
+        // If it's already defined, then it's ok.
+        if (findElement(theType.name, mapping))
+            return;
+        insert mapping[theType.name];
+        ref mapping = mapping[theType.name];
+    }
+
+    // First, insert the type into the type map.
+    insert mapping.c_decl;
+    setall mapping.c_decl = theType;
+    // Then, go through the types dependencies.
+    insert mapping.deps;
+    foreach subtype in theType.ctype.body.block
+    {
+        localref theCtype = subtype.ctype;
+        if (theCtype.storage == "typedef")
+        {
+            if (!findElement(theCtype.name, mapping.deps))
+                insert mapping.deps[theCtype.name];
+        }
+        else
+        {
+            if (!findElement(theCtype.specifier, mapping.deps))
+                insert mapping.deps[theCtype.specifier];
+            if (!findElement(theCtype.identifier, mapping.deps[theCtype.specifier]))
+                insert mapping.deps[theCtype.specifier][theCtype.identifier];
+        }
+    }
+    return;
+}
+
 /*
  * This function takes the node of the variable declaration as theDecl,
  * and the resolved chunk of the type's declaration as typeDeclBlock
@@ -86,7 +135,7 @@ function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node)
     local typeDef;
     local typeDecl;
     // those booleans are a fucking workaround cause the isEmpty()
-    // function doesn't seem to work.
+    // function doesn't seem to work as expected.
     local hasTypeDef = 0;
     local hasTypeDecl = 0;
 
@@ -105,10 +154,16 @@ function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node)
     }
     if (hasTypeDef == 1)
     {
+        // First, insert the type definition into a map of defined types.
+        rtxResolve_insertTypeMap(typeDef);
+        // Then, replace the type by the typedef if there's one
         theDecl.ctype.identifier = typeDef.name;
     }
     else if (hasTypeDecl)
     {
+        // One variable or one structure -> insert the type into the type map.
+        rtxResolve_insertTypeMap(typeDecl);
+        // Now, set the type into the variable decl.
         theDecl.ctype.specifier = typeDecl.ctype.specifier;
         theDecl.ctype.identifier = typeDecl.ctype.identifier;
     }
