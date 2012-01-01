@@ -106,6 +106,14 @@ FUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
                                  OUTPUTS
                                  "${SYSTEMS}")
 
+    # Create a list of the compiler files, we will use them as dependencies of
+    # the target we are going to add. This way, when we modify the compiler the
+    # target goes out of date and will be rebuilt at the next "make".
+    FILE(GLOB_RECURSE COMPILER_FILES
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/misc/*.cw[sp]"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rtx*.cw[sp]"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws")
+
     STRING(REPLACE ";" ", " SYSTEMS "${SYSTEMS}")
     ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUTS}
                        COMMAND ${_RTX_CODEWORKER_COMMAND} "cache" "clear"
@@ -113,7 +121,7 @@ FUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
                        ${GENERATE_COMMANDS}
                        COMMENT "Building Rathaxes target ${OUT_NAME} for ${SYSTEMS}"
                        VERBATIM
-                       DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES})
+                       DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES} ${COMPILER_FILES})
 
     ADD_CUSTOM_TARGET(${OUT_NAME} ALL DEPENDS ${OUTPUTS})
 ENDFUNCTION(ADD_RATHAXES_EXECUTABLE OUT_NAME RTX_FILE)
