@@ -187,6 +187,7 @@ traceLine("input:\n" + input);
 local source;
 cnormDialect<"__std__">(source);
 insert this.scripts_path = "../../"; // Hard-coded path for tests.
+insert this.c_types;
 rtxType_Load(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
