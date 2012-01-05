@@ -96,23 +96,30 @@ rtx_serial(theSerial : node) ::=
 ;
 
 rtx_value(theValue : node) ::=
-        #readIdentifier:sId
-        // Prevent next char from being a serial sep. (or its a serial value)
-        [ #!ignore !rtx_serial_separator ]
-        #check(rtxNodeIdentifier(theValue, sId))
-    |
-        #readInteger:sInt
-        // Prevent next char from being a serial sep. (or its a serial value)
-        // AND     next char from being an alpha char. (or its a serial value)
-        [ #!ignore ![ [#noCase 'A'..'Z'] | rtx_serial_separator ] ]
-        #check(rtxNodeNumber(theValue, sInt))
+        /*
+         * This bit of code should be valid for any number (integer/float/etc...)
+         * and for the simple identifiers and c_strings.
+         */
+        [ #readCString | #readCChar | [~[','|')'|'{'|';']]+ ]:data
+        #check(rtxType_Search(data, theValue))
+
+//      #readIdentifier:sId
+//      // Prevent next char from being a serial sep. (or its a serial value)
+//      [ #!ignore !rtx_serial_separator ]
+//      #check(rtxNodeIdentifier(theValue, sId))
+//  |
+//      #readInteger:sInt
+//      // Prevent next char from being a serial sep. (or its a serial value)
+//      // AND     next char from being an alpha char. (or its a serial value)
+//      [ #!ignore ![ [#noCase 'A'..'Z'] | rtx_serial_separator ] ]
+//      #check(rtxNodeNumber(theValue, sInt))
     |
         #check(rtxNodeSerial(theValue))
         rtx_serial(theValue)
-    |
-/**/    => local sString;
-        string_constant(sString)
-        #check(rtxNodeString(theValue, sString))
+//    |
+///**/    => local sString;
+//       string_constant(sString)
+//       #check(rtxNodeString(theValue, sString))
 ;
 
 

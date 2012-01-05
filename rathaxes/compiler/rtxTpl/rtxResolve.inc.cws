@@ -1074,6 +1074,17 @@ function type_map<"::config">(resolverValues : node,
 
                 return true;
             }
+            else
+            {
+                local cNode;
+                if (rtxNode2cnormNode<itf[mappedId].type>(itf[mappedId].val, cNode) == true)
+                {
+                    // Now that we have the C node, we can replace in the c tree.
+                    setall placeHolder#parent.ref_placeholder#parent = cNode;
+                    return true;
+                }
+                
+            }
             traceLine(RED + "[Error] Cannot translate node of type '" + itf[mappedId].type
                       + "' into a C value for config item replacement." + DEFAULT_COLOR);
             return false;
