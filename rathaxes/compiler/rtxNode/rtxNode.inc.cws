@@ -232,6 +232,7 @@ function rtxNodeWith_BuildFromConfigVar(local_node : node, config : node)
                   + DEFAULT_COLOR);
         return false;
     }
+    insert config[itfName][varName].type = local_node.val.type;
     insert config[itfName][varName].val;
     setall config[itfName][varName].val = local_node.val;
 
