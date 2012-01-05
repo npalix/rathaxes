@@ -184,10 +184,11 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
 	localref ctype_ref = local_node.ctype;
 	do
 	{
-        if (rtxIntrospect_checkPlaceHolder(local_node.ctype.identifier,
-                                           theChunk, placeHolder))
+        local tmpPlaceHolder;
+        if (rtxIntrospect_checkPlaceHolder(ctype_ref.identifier,
+                                           theChunk, tmpPlaceHolder))
         {
-            insert placeHolder.weave_type = "__weave_type_id__";
+            insert tmpPlaceHolder.weave_type = "__weave_type_id__";
             // Then we must insert the variable associated in the type_map field.
             if (existVariable(local_node.name))
             {
@@ -196,7 +197,7 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
                 insert theChunk.type_map[local_node.name];
                 // Build the associated Rtype node into the type_map
                 rtxNodeRType(theChunk.type_map[local_node.name],
-                             placeHolder.node.body.identifiers[0], emptynode);
+                             tmpPlaceHolder.node.body.identifiers[0], emptynode);
             }
         }
 		// recurse param list
@@ -206,7 +207,7 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
 		if (!existVariable(ctype_ref.pointer))
 		{break;}
 		// deref
-		ref ctype_ref = ctype_ref.pointer;
+		ref ctype_ref = ctype_ref.pointer.ctype;
 	} while(true);
 
     //TODO FIXME XXX FIXME TODO
