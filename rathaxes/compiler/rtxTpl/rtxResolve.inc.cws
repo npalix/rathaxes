@@ -472,10 +472,16 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         if (local_node#parent.weave_type == "__weave_type_id__")
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name.");
-            // refplaceholder = decl.ctype.id;
+            // first, retrieve the name of the variable associated to the type or pointer
             localref theDecl = local_node#parent.ref_placeholder#parent#parent;
+            while (!existVariable(theDecl.name) && theDecl.type == "__decl__")
+            { ref theDecl = theDecl#parent#parent; }
+            traceLine(toString(theDecl, true));
+            local   varName = theDecl.name;
+            // go back to theDecl where we replace an identifier.
+            ref theDecl = local_node#parent.ref_placeholder#parent#parent;
             local   theRtype;
-            setall theRtype = theChunk.type_map[theDecl.name];
+            setall theRtype = theChunk.type_map[varName];
             // First we must select an unique template matching the rtype and config
             local   templates;
             local   declChunk;
