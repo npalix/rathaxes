@@ -147,7 +147,7 @@ function	rtxTpl_compile<"__decl__">(local_node : node, compile : node,
 		if (!existVariable(ctype_ref.pointer))
 		{break;}
 		// deref
-		ref ctype_ref = ctype_ref.pointer;
+		ref ctype_ref = ctype_ref.pointer.ctype;
 	} while(true);
 
 	// variable name
