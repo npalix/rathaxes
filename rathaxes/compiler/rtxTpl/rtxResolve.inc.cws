@@ -1041,18 +1041,36 @@ function type_map<"::config">(resolverValues : node,
         if (findElement(mappedId, itf))
         {
             local retval;
-            retval = placeHolder.prefix + itf[mappedId].name + placeHolder.sufix;
-            // Ok for a terminal id
-            if (placeHolder#parent.ref_placeholder#parent.type == "__expr__"
-                && placeHolder#parent.ref_placeholder#parent.expr_type == "__terminal__")
-                setall placeHolder#parent.ref_placeholder#parent.id = retval;
-            // Ok for a decl
-            else if (placeHolder#parent.ref_placeholder#parent.type == "__decl__")
-                setall placeHolder#parent.ref_placeholder#parent.name = retval;
-            else
-                error("Placeholder type not supported.");
+            if (itf[mappedId].type == "__rtx_cstring__")
+            {
+                retval = itf[mappedId].val.val;
+                // Ok for a terminal literal
+                if (placeHolder#parent.ref_placeholder#parent.type == "__expr__"
+                    && placeHolder#parent.ref_placeholder#parent.expr_type == "__terminal__")
+                    setall placeHolder#parent.ref_placeholder#parent.id = retval;
+                else
+                    error("Placeholder type not supported.");
 
-            return true;
+                return true;
+            }
+            else if (itf[mappedId].type == "__rtx_id__")
+            {
+                retval = placeHolder.prefix + itf[mappedId].val.name + placeHolder.sufix;
+                // Ok for a terminal id
+                if (placeHolder#parent.ref_placeholder#parent.type == "__expr__"
+                    && placeHolder#parent.ref_placeholder#parent.expr_type == "__terminal__")
+                    setall placeHolder#parent.ref_placeholder#parent.id = retval;
+                // Ok for a decl
+                else if (placeHolder#parent.ref_placeholder#parent.type == "__decl__")
+                    setall placeHolder#parent.ref_placeholder#parent.name = retval;
+                else
+                    error("Placeholder type not supported.");
+
+                return true;
+            }
+            traceLine(RED + "[Error] Cannot translate node of type '" + itf[mappedId].type
+                      + "' into a C value for config item replacement." + DEFAULT_COLOR);
+            return false;
         }
     }
     return false;
