@@ -213,6 +213,7 @@ generateString({
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
 #include "rtxType/rtxType.inc.cws"
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";

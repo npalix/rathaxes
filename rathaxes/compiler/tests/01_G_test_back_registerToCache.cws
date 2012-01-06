@@ -44,20 +44,24 @@ function build_config(theWith : node)
     local val;
     insert theWith["LKM"];
     insert theWith["LKM"]["OS"];
-    rtxNodeWithConstraint(theWith["LKM"]["OS"], id, "", val);
-    rtxNodeIdentifier(val, "pigeonMouette");
-    clearVariable(id);
+    insert theWith["LKM"]["OS"].type = "symbol";
+    insert theWith["LKM"]["OS"].val;
+    insert theWith["LKM"]["OS"].val.type = "symbol";
+    insert theWith["LKM"]["OS"].val.val = "pigeonMouette";
     insert theWith["LKM"]["version"];
     rtxNodeWithConstraint(theWith["LKM"]["version"], id, "", val);
     build_version(val, 2, 6, 24);
     clearVariable(id);
     insert theWith["LKM"]["maj"];
-    rtxNodeWithConstraint(theWith["LKM"]["maj"], id, "", val);
-    rtxNodeNumber(val, "0");
-    clearVariable(id);
+    insert theWith["LKM"]["maj"].type = "number";
+    insert theWith["LKM"]["maj"].val;
+    insert theWith["LKM"]["maj"].val.type = "number";
+    insert theWith["LKM"]["maj"].val.val = "0";
     insert theWith["LKM"]["min"];
-    rtxNodeWithConstraint(theWith["LKM"]["min"], id, "", val);
-    rtxNodeNumber(val, "1");
+    insert theWith["LKM"]["min"].type = "number";
+    insert theWith["LKM"]["min"].val;
+    insert theWith["LKM"]["min"].val.type = "number";
+    insert theWith["LKM"]["min"].val.val = "1";
 }
 
 // Now that we have compiled and generated the code for each one of

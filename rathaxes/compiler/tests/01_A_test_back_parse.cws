@@ -179,6 +179,7 @@ generateString({
 #include "patchLib/cnormPatchLib.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxType/rtxType.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
 
 traceLine("input:\n" + input);
 

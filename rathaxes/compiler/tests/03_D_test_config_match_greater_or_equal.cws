@@ -1,6 +1,13 @@
+#include "misc/colors.cws"
 #include "cnorm.inc.cws"
 #include "rtxNode/rtxNode.inc.cws"
-#include "rtxLink/rtxLink_ConfigMatcher.inc.cws"
+#include "rtxType/rtxType.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
+
+
+insert this.scripts_path = "../";
+local source;
+rtxType_Load(source);
 
 // Used to build things bit by bit
 local tmp;
@@ -81,8 +88,10 @@ if (rtxLink_CompareValues<">=">(with, config) == false)
 
 config = "";
 with = "";
-rtxNodeNumber(config, "1");
-rtxNodeNumber(with, "2");
+insert config.val = "1";
+insert config.type= "number";
+insert with.val = "2";
+insert with.type= "number";
 if (rtxLink_CompareValues<">=">(with, config) == true)
 {
     traceLine("Type " + config.type
@@ -92,8 +101,10 @@ if (rtxLink_CompareValues<">=">(with, config) == true)
 
 config = "";
 with = "";
-rtxNodeNumber(config, "1");
-rtxNodeNumber(with, "1");
+insert config.val = "1";
+insert config.type= "number";
+insert with.val = "1";
+insert with.type= "number";
 if (rtxLink_CompareValues<">=">(with, config) == false)
 {
     traceLine("Type " + config.type
@@ -103,8 +114,10 @@ if (rtxLink_CompareValues<">=">(with, config) == false)
 
 config = "";
 with = "";
-rtxNodeNumber(config, "2");
-rtxNodeNumber(with, "1");
+insert config.val = "2";
+insert config.type= "number";
+insert with.val = "1";
+insert with.type= "number";
 if (rtxLink_CompareValues<">=">(with, config) == false)
 {
     traceLine("Type " + config.type
@@ -115,8 +128,10 @@ if (rtxLink_CompareValues<">=">(with, config) == false)
 
 config = "";
 with = "";
-rtxNodeIdentifier(config, "Windows7");
-rtxNodeIdentifier(with, "WindowsXP");
+insert config.val = "Windows7";
+insert config.type= "symbol";
+insert with.val = "WindowsXP";
+insert with.type= "symbol";
 try
 {
     traceLine("rtxLink_CompareValues<\">=\">(with, config) = "

@@ -13,6 +13,10 @@ function        rtxType_Search(src : value, out : node)
 {
         foreach it in this.rtxTypes
         {
+            /*
+             * If the syntax throws an error, catch it here.
+             */
+            try {
                 if (rtxType_Parse<it.key()>(src))
                 {
                         local sKey = it.key();
@@ -21,6 +25,7 @@ function        rtxType_Search(src : value, out : node)
                         insert out.val = src;
                         return true;
                 }
+            } catch (sError) {}
         }
         return false;
 }
