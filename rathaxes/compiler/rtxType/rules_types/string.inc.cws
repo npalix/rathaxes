@@ -3,7 +3,7 @@ function        rtxType_Parse<"string.inc.cws">(src : value)
         local   out;
         parseStringAsBNF({
                 string ::= ['"' ->[~'\\' '"']]:str
-                        //=>traceLine("parse:" + str);
+                        #continue #empty
                         =>{this = str;}
                 ;
         }, out, src);
@@ -34,4 +34,12 @@ function type_map<"::string">(resolverValues : node,
         traceLine(RED + "[Error] Identifier '"+mappedId+"' not mapped for type '::string'." + DEFAULT_COLOR);
     }
     return false;
+}
+
+/*
+ * The only comparison operator valid for a string is the equal.
+ */
+function rtxLink_CompareEqual<"string">(ref : node, val : node)
+{
+    return (ref.val == val.val);
 }

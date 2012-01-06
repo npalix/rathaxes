@@ -3,6 +3,7 @@ function        rtxType_Parse<"number.inc.cws">(src : value)
         local   out;
         parseStringAsBNF({
                 string ::= [hexa|#readInteger]:str
+                        #continue #empty
                         =>{this = str;}
                 ;
                 hexa ::= #!ignore #noCase
@@ -35,5 +36,69 @@ function type_map<"::number">(resolverValues : node,
     {
         traceLine(RED + "[Error] Identifier '"+mappedId+"' not mapped for type '::number'." + DEFAULT_COLOR);
     }
+    return false;
+}
+
+
+
+function rtxLink_CompareLesser<"number">(ref : node, val : node)
+{
+    local ref_parts;
+    local val_parts;
+
+    cutString(ref.val, ".", ref_parts);
+    cutString(val.val, ".", val_parts);
+    if (val_parts[0] < ref_parts[0])
+        return true;
+    
+    else if (val_parts[0] == ref_parts[0])
+    {
+        if (getArraySize(ref_parts) > 1)
+        {
+            if (getArraySize(val_parts) == 1)
+                return true; // no decimals -> val is necessarily lesser.
+            else
+                return val_parts[1] < ref_parts[1];
+        }
+    }
+
+    return false;
+}
+
+function rtxLink_CompareLesserEqual<"number">(ref : node, val : node)
+{
+    return (rtxLink_CompareLesser<"number">(ref,val) || rtxLink_CompareEqual<"number">(ref,val));
+}
+
+function rtxLink_CompareEqual<"number">(ref : node, val : node)
+{
+    return (ref.val == val.val);
+}
+
+function rtxLink_CompareGreaterEqual<"number">(ref : node, val : node)
+{
+    return (rtxLink_CompareGreater<"number">(ref,val) || rtxLink_CompareEqual<"number">(ref,val));
+}
+
+function rtxLink_CompareGreater<"number">(ref : node, val : node)
+{
+    local ref_parts;
+    local val_parts;
+
+    cutString(ref.val, ".", ref_parts);
+    cutString(val.val, ".", val_parts);
+    if (val_parts[0] > ref_parts[0])
+        return true;
+    else if (val_parts[0] == ref_parts[0])
+    {
+        if (getArraySize(val_parts) > 1)
+        {
+            if (getArraySize(ref_parts) == 1)
+                return false; // no decimals -> val is necessarily greater.
+            else
+                return val_parts[1] > ref_parts[1];
+        }
+    }
+
     return false;
 }
