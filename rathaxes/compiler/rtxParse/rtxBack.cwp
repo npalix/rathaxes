@@ -189,7 +189,32 @@ rtx_chunk_body(theBody : node) ::=
     /* The two following lines prevent artefacts (by failing previous alternative) */
     =>clearVariable(theBody);
     #check(cnormNodeBlock(theBody))
-    compound_statement(theBody)
+    rtx_chunk_compound_statement(theBody)
+;
+
+rtx_chunk_compound_statement(theBlock : node) ::=
+'{'
+/**/	#check(cnormNodeBlock(theBlock, true))
+	rtx_chunk_block_item_list(theBlock) 
+'}'
+;
+
+rtx_chunk_block_item_list(theBlock : node) ::=
+[
+	line_of_code(theBlock)
+        | '#' 
+        [// TODO: Add Define with chunks variables detections/substitutions
+        "include" 
+                [
+                ['"' -> '"' | '<' -> '>' ]:sFile
+                ]
+/**/    #pushItem(theBlock.block)
+/**/    => local lastNode;
+/**/	#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/    => local sData = "\n#include " + sFile + " \n";
+/**/    => cnormNode_Raw(lastNode, sData);
+        ]
+]*
 ;
  
 rtx_stmt<"chunk">(theBlock : node) ::=

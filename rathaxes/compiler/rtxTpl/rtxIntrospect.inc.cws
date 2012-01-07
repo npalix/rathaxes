@@ -474,6 +474,10 @@ function rtxIntrospect_cond<"for">(local_node : node, theChunk : node,
  * Expression type code introspection function
  *
  */
+function rtxIntrospect_expr<"__raw__">(local_node : node, theChunk : node, blockIds : node)
+{/*nothing to do*/
+}
+
 function rtxIntrospect_expr<"__terminal__">(local_node : node, theChunk : node,
                                             blockIds : node)
 {

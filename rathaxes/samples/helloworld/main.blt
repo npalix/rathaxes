@@ -44,7 +44,6 @@ with Main
     {
         chunk Main::include_headers
         {
-            /* Won't be printed because # is not supported yet */
             #include <stdlib.h>
             typedef int stdlib_include_stamp;
         }

@@ -1,11 +1,22 @@
 #include "cnorm.cwp"
 
+#ignore["rathaxes"] ::= 
+[
+	["//" ->[['\r']? '\n']]
+	| ["/*" ->"*/"]
+	| ' '
+	| '\t'
+	| '\n'
+	| '\r'
+	| '\f' // form feed, sometimes Windows kernel headers have this character.
+]+:skip
+;
 /* root of grammar */
 #overload
 translation_unit ::=
     => traceLine("PARSE!");
     #try
-        #ignore
+        #ignore("rathaxes")
         #check(cnormNodeRoot(this))
         [
             rtx_declaration(this)
