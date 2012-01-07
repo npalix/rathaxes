@@ -777,7 +777,10 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     // and then insert them in-place of the pointcut.
     else
     {
-
+        // make sure it's the block.
+        while (theBlock.type != "__block__")
+            ref theBlock = theBlock#parent;
+        ref theBlock = theBlock.block;
         // First, remove the current placeHolder, in case there was no statement
         insertModifier(theBlock, thePointcut);
         startIdx = thePointcut.block_idx;
