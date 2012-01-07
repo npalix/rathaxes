@@ -31,19 +31,32 @@ function rtxTypeHash_placeHolder<"__rtx_tpl_sequence_call__">(local_node : node,
 {
     foreach arg in local_node.seqArgs
     {
-        if (arg.type == "symbol")
+        // If it's a builtin type...
+        if (findElement(arg.type+".inc.cws", local_node#root.rtxTypes))
         {
-            // Search for a rtype in the type_map of the chunk
-            localref refRtype = arg;
-            while (refRtype.type != "__rtx_chunk__")
+            if (arg.type == "symbol")
             {
-                ref refRtype = refRtype#parent;
+                // Search for a rtype in the type_map of the chunk
+                localref refRtype = arg;
+                while (refRtype.type != "__rtx_chunk__")
+                {
+                    ref refRtype = refRtype#parent;
+                }
+                ref refRtype = refRtype.type_map;
+                if (findElement(arg.val, refRtype))
+                {
+                    insert arg.rtype;
+                    setall arg.rtype = refRtype[arg.val];
+                }
             }
-            ref refRtype = refRtype.type_map;
-            if (findElement(arg.val, refRtype))
+            else
             {
+                local theId;
+                local dummy;
+
                 insert arg.rtype;
-                setall arg.rtype = refRtype[arg.val];
+                rtxNodeIdentifier(theId, arg.type, "", true);
+                rtxNodeRType(arg.rtype, theId, dummy);
             }
         }
     }
