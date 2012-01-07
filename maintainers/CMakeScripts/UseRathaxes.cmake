@@ -114,6 +114,8 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rtx*.cw[sp]"
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws")
 
+    # ADD_CUSTOM_COMMAND + ADD_CUSTOM_TARGET is a CMake idiom to add a target
+    # that should be rebuilt automatically when its sources change.
     STRING(REPLACE ";" ", " SYSTEMS "${SYSTEMS}")
     ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUTS}
                        COMMAND ${_RTX_CODEWORKER_COMMAND} "cache" "clear"
@@ -160,3 +162,51 @@ FUNCTION(ADD_RATHAXES_EXECUTABLE NAME RATHAXES_SOURCE)
     ADD_EXECUTABLE(${NAME} "${RATHAXES_SOURCE}_${SYSTEM}.c")
     ADD_DEPENDENCIES(${NAME} ${RATHAXES_SOURCE})
 ENDFUNCTION(ADD_RATHAXES_EXECUTABLE NAME RATHAXES_SOURCE)
+
+# This function build a native kernel module from a previously generated
+# Rathaxes sources. It works by setting up a build directory and calling the
+# native build tools from there.
+#
+# Usage: ADD_RATHAXES_LKM(NAME RATHAXES_SOURCE [SYSTEM])
+#
+# RATHAXES_SOURCE must corresponds to the first argument of a call to
+# ADD_RATHAXES_SOURCES.
+#
+# The third argument SYSTEM may be used if the target system doesn't correspond
+# to CMAKE_SYSTEM_NAME.
+FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
+    IF (${ARGC} EQUAL 2)
+        SET(SYSTEM ${CMAKE_SYSTEM_NAME})
+    ELSE (${ARGC} EQUAL 2)
+        SET(SYSTEM ${ARGV2})
+    ENDIF (${ARGC} EQUAL 2)
+
+    IF (${SYSTEM} MATCHES "Linux")
+        # Create a little build space for the native Linux build-chain.
+        SET(MODULE_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${NAME}.dir/${SYSTEM}Build/")
+
+        # Generate the Linux Makefile to build a Linux kernel module
+        SET(MODULE_MAKEFILE "${MODULE_BUILD_DIR}/Makefile")
+        SET(LKM_OBJECTS "${RATHAXES_SOURCE}_${SYSTEM}.o")
+        CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/MakefileLKM.in"
+                       "${MODULE_MAKEFILE}")
+
+        SET(KERNEL_OBJECT_NAME "${RATHAXES_SOURCE}_${SYSTEM}.ko")
+        ADD_CUSTOM_COMMAND(OUTPUT "${KERNEL_OBJECT_NAME}"
+                           # The linux Makefile to build kernel module is quite
+                           # picky about file location and its own name. Let's
+                           # copy our source side by side with the Makefile:
+                           COMMAND "${CMAKE_COMMAND}" "-E" "copy" "${RATHAXES_SOURCE}_${SYSTEM}.c" "${MODULE_BUILD_DIR}"
+                           # Then call make in the little build space we created
+                           COMMAND "${CMAKE_COMMAND}" "-E" "chdir" "${MODULE_BUILD_DIR}" "${CMAKE_BUILD_TOOL}"
+                           # Finally copy the generated .ko back into the current binary dir
+                           COMMAND "${CMAKE_COMMAND}" "-E" "copy" "${MODULE_BUILD_DIR}/${KERNEL_OBJECT_NAME}" "${CMAKE_CURRENT_BINARY_DIR}"
+                           COMMENT "Building Rathaxes Linux LKM for ${NAME}"
+                           VERBATIM
+                           DEPENDS "${RATHAXES_SOURCE}_${SYSTEM}.c")
+
+        ADD_CUSTOM_TARGET("${NAME}" ALL DEPENDS "${KERNEL_OBJECT_NAME}")
+    ELSE (${SYSTEM} MATCHES "Linux")
+        MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
+    ENDIF (${SYSTEM} MATCHES "Linux")
+ENDFUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
