@@ -447,10 +447,15 @@ function rtxIntrospect_cond<"switch">(local_node : node, theChunk : node,
 function rtxIntrospect_cond<"if">(local_node : node, theChunk : node,
                                   blockIds : node)
 {
-    rtxIntrospect_code<local_node.then.type>(local_node.then, theChunk,
-                                             blockIds);
-    rtxIntrospect_code<local_node.else.type>(local_node.else, theChunk,
-                                             blockIds);
+    if (existVariable(local_node.condition))
+        rtxIntrospect_code<local_node.condition.type>(local_node.condition, theChunk,
+                                                      blockIds);
+    if (existVariable(local_node.then))
+        rtxIntrospect_code<local_node.then.type>(local_node.then, theChunk,
+                                                 blockIds);
+    if (existVariable(local_node.else))
+        rtxIntrospect_code<local_node.else.type>(local_node.else, theChunk,
+                                                 blockIds);
 }
 function rtxIntrospect_cond<"for">(local_node : node, theChunk : node,
                                    blockIds : node)
