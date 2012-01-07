@@ -64,12 +64,12 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
     generateString({
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ :"
-                      + " (@this.body.node.type@: @replaceString("\n", " ", this.template_expr)@)");
+                      + " (@this.body.node.type@: @replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node) == false)
             {
-                traceLine(RED + "[Error] Could not resolve placeHolder '@replaceString("\n", " ", this.template_expr)@'"
+                traceLine(RED + "[Error] Could not resolve placeHolder '@replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
             }
@@ -84,12 +84,12 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
     generateString({
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ :"
-                      + " (@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
+                      + " (@this.node.body.type@: @replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node) == false)
             {
-                traceLine(RED + "[Error] Could not resolve pointcut '@replaceString("\n", " ", this.template_expr)@'"
+                traceLine(RED + "[Error] Could not resolve pointcut '@replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
             }
@@ -105,13 +105,13 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
     generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
-                          + "(@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
+                          + "(@this.node.body.type@: @replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@)");
                 if (type_call<"@this.tpl_hash@">(
                             resVals,
                             "@this.chunkName@",
                             c_tree.compile["@this.key@"].node) == false)
                 {
-                    traceLine(RED + "[Error] Could not resolve chunk call '@replaceString("\n", " ", this.template_expr)@'"
+                    traceLine(RED + "[Error] Could not resolve chunk call '@replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@'"
                               + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                     increment(errcount);
                 }
@@ -127,12 +127,12 @@ function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey :
     generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
-                          + "(@this.node.body.type@: @replaceString("\n", " ", this.template_expr)@)");
+                          + "(@this.node.body.type@: @replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@)");
                 if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                                                    c_tree,
                                                                    c_tree.compile["@this.key@"].node) == false)
                 {
-                    traceLine(RED + "[Error] Could not resolve template call '@replaceString("\n", " ", this.template_expr)@'"
+                    traceLine(RED + "[Error] Could not resolve template call '@replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@'"
                               + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                     increment(errcount);
                 }
@@ -160,7 +160,7 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                 c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node
                 ) == false)
             {
-                traceLine(RED + "[Error] Could not resolve type mapping '@replaceString("\n", " ", this.template_expr)@'"
+                traceLine(RED + "[Error] Could not resolve type mapping '@replaceString("\"", "\\\"", replaceString("\n", " ", this.template_expr))@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 increment(errcount);
             }

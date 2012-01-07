@@ -476,7 +476,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             localref theDecl = local_node#parent.ref_placeholder#parent#parent;
             while (!existVariable(theDecl.name) && theDecl.type == "__decl__")
             { ref theDecl = theDecl#parent#parent; }
-            traceLine(toString(theDecl, true));
             local   varName = theDecl.name;
             // go back to theDecl where we replace an identifier.
             ref theDecl = local_node#parent.ref_placeholder#parent#parent;

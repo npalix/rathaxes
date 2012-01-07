@@ -52,7 +52,10 @@ function rtxLink_LoadItem(cache_node : node,
         }
         catch (sError) {
             local err = sError;
-            try { extendExecutedScript(loadFile(this.local_backlib_path+cache_node.script_file)); }
+            try{
+                try { extendExecutedScript(loadFile(this.local_backlib_path+cache_node.script_file)); }
+                catch (sError) { error(sError+" in file "+this.local_backlib_path+cache_node.script_file); }
+            }
             catch (sError) {
                 // If double error, then display both errors.
                 traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+err+DEFAULT_COLOR);
