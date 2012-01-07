@@ -25,14 +25,14 @@ function insertModifier(theBlock : node, thePointcut : node)
 
     // Since removeElement uses the keys instead of indexes (what we store...), lets get an iterator at the right index.
     local iterator_id = thePointcut.block_idx;
-    local   iterator;
-    createIterator(iterator, theBlock);
+    local   it;
+    createIterator(it, theBlock);
     while (iterator_id != 0)
     {
-        next(iterator);
+        next(it);
         decrement(iterator_id);
     }
-    removeElement(theBlock, key(iterator));
+    removeElement(theBlock, key(it));
     decrement(theBlock.modifier);
 }
 
@@ -742,7 +742,6 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         // to both remove the pointcut and insert the code.
         if (existVariable(local_node.body.default.body))
         {
-            traceLine(RED+toString(theBlock#parent#parent,true)+DEFAULT_COLOR);
             if (theBlock#parent.type == "__block__")
             {
                 if (getArraySize(theBlock) <= thePointcut.block_idx)
@@ -762,7 +761,16 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         }
         else
         {
-            insertModifier(theBlock, thePointcut);
+            if (theBlock.type == "__block__")
+            {
+                // removes the current placeHolder and inserts the modifier
+                insertModifier(theBlock, thePointcut);
+            }
+            else if (theBlock#parent.type == "__block__")
+            {
+                // removes the current placeHolder and inserts the modifier
+                insertModifier(theBlock, thePointcut);
+            }
         }
     }
     // There are some chunks left, so it's up to us to resolve them

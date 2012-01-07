@@ -708,8 +708,8 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                 increment(errcount);
             }
             if (item.specifier == "pointcut"
-                && rtxTypeCheck_TemplateHasPointcut(item.body.name, tplTree) == false
-                && item.qualifier == "provided")
+                && item.qualifier == "provided"
+                && rtxTypeCheck_TemplateHasPointcut(item.body.name, tplTree) == false)
             {
                 traceLine(RED + "[Error] Sequence template '" + tplName
                           + "' does not provide the pointcut '"
