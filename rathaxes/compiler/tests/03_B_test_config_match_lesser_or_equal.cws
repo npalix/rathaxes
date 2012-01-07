@@ -4,7 +4,7 @@
 #include "rtxType/rtxType.inc.cws"
 #include "rtxLink/rtxLink.inc.cws"
 
-insert this.scripts_path = "../";
+insert this.scripts_path = _ARGS[0] + "/compiler/";
 local source;
 rtxType_Load(source);
 
