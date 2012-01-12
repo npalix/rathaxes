@@ -1,6 +1,7 @@
 ---
 layout: post
-title: EN - Rathaxes is accepted for the LSM 2011
+title: Rathaxes is accepted for the LSM 2011
+lang: us
 ---
 
 h1. {{ page.title }}

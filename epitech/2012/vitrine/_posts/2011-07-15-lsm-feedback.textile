@@ -1,6 +1,7 @@
 ---
 layout: post
-title: EN - LSM feedback
+title: LSM feedback
+lang: us
 ---
 
 h1. {{ page.title }}
