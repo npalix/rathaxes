@@ -27,6 +27,8 @@ backgroundcolor=\color{black}
 0.1 & 09/04/2011 & Louis Opter & Traduction de la version Anglaise \\
 \hline
 0.2 & 19/07/2011 & Louis Opter & Ajout d'une vue d'ensemble de la génération d'un pilote \\
+\hline
+0.3 & 12/01/2012 & Louis Opter & Mise à jour par rapport à la version Anglaise \\
 }
 
 \begin{document}
@@ -36,7 +38,7 @@ backgroundcolor=\color{black}
 \begin{abstract}
 \rtx\ est un Langage de programmation Spécifique à un Domaine (DSL) qui permet
 de décrire des pilotes de périphériques. \rtx\ compile vers des modules noyaux
-écrits en C pour Linux, Windows et OpenBSD.
+écrits en C pour n'importe quel système d'exploitation défini.
 
 Ce document explique comment installer \rtx\ sous Windows et les systèmes
 d'exploitations de type Unix et comment générer votre premier pilote de
@@ -54,12 +56,28 @@ et comment compiler la dernière la version de \rtx.
 
 Un installateur existe pour Windows, sur les autres systèmes d'exploitation
 seulement une installation depuis les sources est supportée pour le moment.
-Bien sûr, si vous souhaitez développer sur \rtx\ en lui même vous pouvez
-choisir d'installer \rtx\ depuis les sources (càd sans l'installateur).
+Bien sûr, si vous souhaitez développer sur \rtx\ lui même vous pouvez choisir
+d'installer \rtx\ depuis les sources (c.à.d sans l'installateur).
 
-Bien que \rtx\ génère des pilotes uniquement pour Windows, Linux et OpenBSD il
-est possible de l'installer et de l'utiliser depuis d'autre systèmes (comme
-d'autre BSD et MacOS~X).
+\subsection{Pré-requis}
+
+\rtx\ n'a pas besoin d'être installé sur le même système d'exploitation que
+celui que vous visez pour la génération de pilotes. En d'autres mots, vous
+pouvez installer \rtx\ sur Windows et générer les sources d'un pilote pour Linux
+(alors que vous êtes sous Windows).
+
+Nous avons rendu très facile la compilation de fichier sources écrit en \rtx\
+depuis des «~Makefile~» générés par CMake. Vous aurez donc besoin d'installer
+\href{http://www.cmake.org/}{CMake} (>= 2.6) en même temps que \rtx. CMake
+fonctionne sur tous les systèmes d'exploitation supportés par \rtx\ et possède
+un \href{http://www.cmake.org/cmake/resources/software.html}{installateur pour
+Windows}\footnote{Quand vous installez CMake sur Windows, faites attention à
+bien sélectionner l'option « Ajoutez CMake dans le \texttt{PATH} pour tous les
+utilisateurs ».}.
+
+Enfin, si vous souhaitez compiler les sources générées par \rtx\ vous aurez
+aussi besoin des sources de Linux sous Linux, du Kit de Développement de Pilote
+de Périphérique pour Microsoft Windows sous Windows, etc.
 
 \subsection{Avec l'installateur Windows}
 
@@ -67,23 +85,16 @@ L'installateur fournis pour Windows inclut tout ce dont vous avez besoin pour
 écrire des pilotes en utilisant \rtx\ : le compilateur et sa documentation.
 
 Téléchargez l'\href{http://rathaxes.googlecode.com/files/rathaxes-latest.exe}{installeur},
-puis exécuter le et suivez les instructions sur l'écran.
-
-Pour compiler et utiliser les pilotes générés par \rtx\ vous aurez besoin
-d'installer le kit de développement de pilotes de périphériques de Microsoft
-Windows.
+exécuter le puis suivez les instructions sur l'écran.
 
 \subsection{Depuis les sources sur Unix}
 
 Si vous n'utilisez pas Windows vous êtes obligés d'installer \rtx\ depuis les
 «~sources~».
 
-Installez CMake >= 2.6 et téléchargez la dernière
-\href{http://rathaxes.googlecode.com/files/rathaxes-src-latest.tar.gz}{archive
-des sources}.
-
-Ensuite, extrayez l'archive et deplacez vous avec «~cd~» à l'intérieur. Enfin
-vous pouvez installer \rtx\ avec les lignes de commandes suivantes :
+Téléchargez la dernière \href{http://rathaxes.googlecode.com/files/rathaxes-src-latest.tar.gz}
+{archive des sources}. Une fois l'archive extraite, déplacez vous avec «~cd~» à
+l'intérieur. Vous pouvez installer \rtx\ avec les lignes de commandes suivantes~:
 
 \begin{lstlisting}
 $ mkdir build
@@ -95,15 +106,46 @@ $ sudo make install
 \emph{Vous aurez besoin d'être root pour exécuter «~make install~», cet exemple
 utilise «~sudo~» mais adaptez le à votre installation locale}.
 
-\section{Générer votre premier pilote}
+\section{Générez votre premier pilote}
 
-Si vous êtes sous Windows ouvrez le «~Rathaxes Shell~», sinon ouvrez votre
-émulateur de terminal favoris.
+Le processus pour générer un pilote est le même pour chaque système
+d'exploitation mais le nom de quelques programmes et certain chemins de fichiers
+changent; sélectionnez les instructions qui correspondent a votre système.
 
-La génération n'est pas encore totalement implémentée. Cette section sera
-complétée en temps voulu.
+\subsection{Depuis Windows}
 
-\newpage
+Open the ``\rtx\ Shell''. Then, ``cd'' somewhere you have read-write rights and
+generate the \rtx\ sources for our ``LKM'' example:
+
+Ouvrez le « \rtx\ Shell », ensuite utilisez « cd » pour vous déplacer quelque
+part où vous avez les droits en lecture et en écriture puis générez les sources
+de notre exemple « LKM » :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake "-GNMake Makefiles" %RATHAXES_PATH%/share/doc/samples/LKM/
+$ nmake lkm_src
+\end{lstlisting}
+
+\subsection{Depuis n'importe quel Unix}
+
+Ouvrez votre émulateur de terminal favoris et générez les sources de notre
+exemple de pilote « LKM » :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake /usr/share/doc/rathaxes/samples/LKM/
+$ make lkm_src
+\end{lstlisting}
+
+Si vous êtes sous Linux et avez un arbre des sources valide, vous pouvez aussi
+compilez le module noyau que vous venez de générer:
+
+\begin{lstlisting}
+$ make lkm
+\end{lstlisting}
 
 \section{Plongée dans \rtx}
 
@@ -144,11 +186,29 @@ d'ensemble du processus de génération d'un pilote~:
 \end{center}
 \end{figure}
 
-Quand une version plus stable de \rtx\ sera dans le dépôt nous compléterons les
-informations nécessaire pour comprendre ces 3 parties.
+Vous pouvez constater que le compilateur utilise trois types de fichiers. Ces
+fichiers ont tous des extensions différente mais sont en réalité écrit dans le
+même langage : \rtx. (Comme en C ou, les fichiers \texttt{.c} et \texttt{.h}
+utilisent des extensions différentes mais sont écrits dans le même
+langage). Ces trois « types » de fichiers ont des rôles différents :
+\begin{description}
+\item [{\texttt .rtx}] : décrit votre pilote, ainsi que ces propres algorithmes
+qui sont indépendant à chaque plateforme ;
+\item [{\texttt .rti}] : contiennent des \emph{interfaces} qui décrivent ce qui
+doit être implémenté dans les fichiers \texttt{.rtx} et ce qui doit être fournis
+par les \emph{patrons} de code enregistrés dans les fichiers \texttt{.blt} ;
+\item [{\texttt .blt}] : contiennent des \emph{unités} de code qui peuvent être
+spécifiques à un système d'exploitation; ces unités sont sélectionnées grâce aux
+informations fournies dans le fichier \texttt{.rtx} et l'introspection du
+système.
+\end{description}
 
-% TODO: explain the different parts of the DSL and how they fit together. And
-% give links to their respective documentations here.
+Un projet \rtx\ est compilé à partir d'un fichier \texttt{.rtx} et d'un ou
+plusieurs fichiers \texttt{.rti} et \texttt{.blt}. La documentation complète de
+la partie du langage utilisée dans les fichiers \texttt{.rtx} est disponible
+ici : \href{http://rathaxes.googlecode.com/files/dsl_frontend_fr.pdf}{dsl\_frontend\_fr.pdf}.
+Un autre document couvre les fichiers \texttt{.rti} et \texttt{.blt} :
+\href{http://rathaxes.googlecode.com/files/dsl_backend_fr.pdf}{dsl\_backend\_fr.pdf}.
 
 \section{Installer la version de développement}
 
@@ -168,24 +228,19 @@ logiciels suivants :
       sur Windows) ;
 \item Subversion (vous devez installer
       \href{http://www.sliksvn.com/en/download}{Slik SVN} qui contient les
-      programmes en lignes de commande) ;
-\item \href{http://www.cmake.org/cmake/resources/software.html}{CMake} >= 2.6
-      (vous pouvez vérifier votre version avec la commande «~cmake {-}{-}version~») ;
-\item Une suite d'outils de compilation (par exemple en installant le paquet
-      «~build-essential~» sur une distribution GNU/Linux style Debian ou en
-      installant
-      \href{http://www.microsoft.com/express/Downloads/#2010-Visual-CPP}{Visual
-      Studio Express for C++} sur Windows).
+      programmes en lignes de commande).
 \end{itemize}
 
-\emph{Lorsque vous installez CMake sur Windows, assurez vous de choisir
-l'option pour ajouter CMake dans le PATH du système pour tous les
-utilisateurs.}
+Vous aurez aussi besoin des pré-requis habituel pour \rtx\ (CMake et une chaîne
+de compilation). Si vous souhaitez générer la documentation vous aurez besoin
+d'une distribution \LaTeX\ (\href{http://www.tug.org/texlive/}{\TeX Live} >= 2009
+ou \href{http://www.miktex.org/}{Mik\TeX} sur Windows) et de
+\href{http://pages.cs.wisc.edu/~ghost/}{Ghostscript}.
 
 \subsection{Cloner les sources}
 
-Ouvrez un shell (faite le depuis le menu de Visual Studio sous Windows) et
-cloner le projet en utilisant :
+Ouvrez un shell (depuis le menu de Visual Studio sous Windows) et cloner le
+projet en utilisant :
 
 \begin{lstlisting}
 $ hg clone https://rathaxes.googlecode.com/hg/ rathaxes
