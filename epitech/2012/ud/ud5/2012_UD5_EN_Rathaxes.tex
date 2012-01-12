@@ -1,0 +1,82 @@
+\documentclass[american]{rtxarticle}
+
+\usepackage[utf8]{inputenc}
+
+\title{User documentation}
+\author{Louis Opter}
+
+\rtxdoctype{UD5}
+\rtxdocstatus{Final}
+\rtxdocversion{0.4}
+
+\rtxdochistory
+{
+0.1 & 11/03/2011 & Thomas Luquet & Initial Import \\
+\hline
+0.2 & 11/03/2011 & Louis Opter & Some corrections and make it compile \\
+\hline
+0.3 & 05/05/2011 & Louis Opter & Complete rewrite \\
+\hline
+0.4 & 07/18/2011 & Louis Opter & Add a section about the EIP context and host the files on SVN \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\rtx\ is a Domain Specific Language to describes peripherals drivers. \rtx\
+compiles to kernel modules written in C for Linux, Windows and OpenBSD.
+
+Our user documentation is split in three parts, this document links
+to each part.
+\end{abstract}
+
+\section{Installation guide}
+
+This document explains how to install \rtx\ on Windows or any Unix like. It
+also explains how to generate your first driver with \rtx\ and what are the
+different parts of the language and the project:
+\begin{itemize}
+\item {\small\url{https://labeip.epitech.eu/svn/2012/rathaxes/rendu/firststeps_en.pdf}}.
+\end{itemize}
+
+\section{Language -- front-end}
+
+This document describes the ``driver descriptions'' part of the \rtx\ language
+(\texttt{.rtx} files):
+\begin{itemize}
+\item {\small\url{https://labeip.epitech.eu/svn/2012/rathaxes/rendu/dsl_frontend_en.pdf}}.
+\end{itemize}
+
+\section{Language -- back-end}
+
+This document describes the ``code templates'' part of the \rtx\ language
+(\texttt{.blt} files):
+\begin{itemize}
+\item {\small\url{https://labeip.epitech.eu/svn/2012/rathaxes/rendu/dsl_backend_en.pdf}}.
+\end{itemize}
+
+\section*{Project context}
+
+\subsection*{EIP Projects}
+
+\rtx\ is developed at Epitech as a subject for the EIP projects course. EIP
+projects are realized by groups of five or more persons on a period of two
+years. The EIP course try to teach students all the steps of a project in a
+corporate environment.
+
+The \rtx\ project has been started by a first team from the 2009 class. And has
+been taken over by a team of five 2012 class to extend its functionalities using
+the research work done by the previous team.
+
+\subsection*{LSE}
+
+\rtx\ is developed in a partnership with the \emph{LSE}\footnote{System and
+Security Laboratory Epita/Epitech.} where a lot of resources, either physical
+(books, computers\ldots) or human (experience, other field of knowledge\ldots),
+are available.
+
+\rtxmaketitleblock
+
+\end{document}

@@ -1,0 +1,148 @@
+#if !existFunction(rtxGenerate_version)
+
+function rtxGenerate_version()
+{ return "1.0"; }
+
+function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node)
+{
+}
+
+/*
+ *
+ * This function recursively iterates on an interface's inheritance
+ * tree, and instanciate each interface's templates when unwinding.
+ * While doing that, it sets a flag into the itfUsedList in order to
+ * prevent any itnerface from being instanciated twice.
+ *
+ */
+function rtxFrontGen_Itf(itfName : node, itfUsedList : node)
+{
+    local itfNode;
+    local itfTree;
+
+    // If there is no explicit interface, we must check each interface in the dependencies.
+    // First, load the interface's tree...
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName + "' "
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '" + itfName
+                  + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Iterates on the parents to instanciate them first.
+    foreach parent in itfTree.inheritance
+    {
+        if (!findElement(parent, itfUsedList) || isEmpty(itfUsedList[parent]))
+            rtxFrontGen_Itf(parent, itfUsedList);
+    }
+}
+
+/*
+ *
+ * This function generates the driver for a given device node.
+ * In order to do so, It first lists every interface that is declared
+ * as necessary by the device block.
+ *
+ * It then builds a list of templates to instanciate, in order to
+ * instanciate every template, depending on whether they're
+ * used or not, and on the qualifiers (provided, auto, required, optional).
+ *
+ */
+function rtxFrontGen_Device(theDevice : node)
+{
+    local errcount = 0;
+    local itfList;
+    local itfUsed;
+
+    foreach itfName in theDevice.use
+    {
+        if (!findElement(itfName, itfList))
+            insert itfList[itfName];
+    }
+
+    // XXX TODO FIXME
+    // For now, we will instanciate EVERYTHING.
+    //
+    // setall itfUsed = itfList;
+    // foreach itf in itfList
+    // {
+    //     if (rtxFrontGen_Itf(itf, itfUsed) == falsE)
+    //         increment(errcount);
+    // }
+
+    local withNode;
+    local resVals;
+    
+    if (rtxLink_findGlobalCode(this.config, withNode) == false)
+    {
+        traceLine(RED + "[Error] Could not find global code to start"
+                  + " generation for device '" + theDevice.name + "'." + DEFAULT_COLOR);
+        return false;
+    }
+
+    insert this.c_tree;
+    if (rtxLink_LoadItem(withNode, this.c_tree) == false)
+    {
+        traceLine(RED + "[Error] Could not load script for global code generation." + DEFAULT_COLOR);
+        return false;
+    }
+
+    rtxFrontGen_BuildResValFromDevice(resVals, theDevice);
+
+    //its an interface, so we should use the c_block field.
+    if (instanceChunk<this.c_tree.instanceKey>(resVals, this.c_tree.c_block) == false)
+    {
+        traceLine(RED + "[Error] Could not resolve global code." + DEFAULT_COLOR);
+        return false;
+    }
+
+
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+
+/*
+ *
+ * The iterating functions allow to generate a pilot for each device described
+ * in the front-end.
+ *
+ */
+declare function rtxFrontGen_iterate<T>(local_node : node);
+
+function rtxFrontGen_iterate<"__rtx_device__">(local_node : node)
+{
+    return rtxFrontGen_Device(local_node);
+}
+
+function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
+{ return true; }
+
+function rtxFrontGen_iterate<"__block__">(local_node : node)
+{
+    local errcount = 0;
+
+    foreach item in local_node.block
+    {
+        if (rtxFrontGen_iterate<item.type>(item) == false)
+            increment(errcount);
+    }
+
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+function rtxFrontGen_iterate<"__root_block__">(local_node : node)
+{ return rtxFrontGen_iterate<"__block__">(local_node); }
+
+
+#end
