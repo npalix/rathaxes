@@ -1,9 +1,10 @@
 To generate the website read the following howto and then instal jekyll using:
 
-   gem instal jekyll
+   gem install --no-ri --no-rdoc RedCloth
+   gem install --no-ri --no-rdoc jekyll
 
 Finally, run "jekyll --server --base-url /2012/rathaxes/" and point your browser
-to http://locahost:4000/2012/rathaxes to see the result.
+to http://localhost:4000/2012/rathaxes/ to see the result.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
