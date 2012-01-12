@@ -1,6 +1,7 @@
 ---
 layout: post
-title: EN - Rathaxes Development Goes Public
+title: Rathaxes Development Goes Public
+lang: us
 ---
 
 h1. {{ page.title }}

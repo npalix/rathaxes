@@ -1,6 +1,7 @@
 ---
 layout: post
-title: FR - Conférence sur Rathaxes
+title: Conférence sur Rathaxes
+lang: fr
 ---
 
 h1. {{ page.title }}

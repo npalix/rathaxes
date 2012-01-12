@@ -1,6 +1,7 @@
 ---
 layout: post
-title: EN - Rathaxes presentation
+title: Rathaxes presentation
+lang: us
 ---
 
 h1. {{ page.title }}

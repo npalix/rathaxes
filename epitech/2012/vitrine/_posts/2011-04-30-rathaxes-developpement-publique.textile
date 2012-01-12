@@ -1,6 +1,7 @@
 ---
 layout: post
-title: FR - Le développement de Rathaxes devient publique
+title: Le développement de Rathaxes devient publique
+lang: fr
 ---
 
 h1. {{ page.title }}

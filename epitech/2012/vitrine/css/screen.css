@@ -202,3 +202,8 @@ ul.posts {
   #related h2 {
     margin-bottom: 1em;
   }
+
+.flag {
+    opacity: 0.8;
+    filter:alpha(opacity=80);
+}
