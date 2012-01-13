@@ -1,0 +1,49 @@
+#if !existFunction(rtxTplTypeCheck_version)
+
+function rtxTplTypeCheck_version()
+{ return "1.0"; }
+
+declare function rtxTpl_TypeCheckFor<T>(local_node : node);
+
+function rtxTpl_TypeCheckFor<T>(local_node : node)
+{
+    // Silent if not implemented...
+    traceLine("unmanaged type "+T);
+    return true;
+}
+
+function    rtxTpl_TypeCheckFor<"__rtx_tpl__">(local_node : node)
+{
+    return rtxTypeCheck_Template(local_node.prototype.rtype, local_node);
+}
+
+function rtxTpl_TypeCheckFor<"__block__">(local_node : node)
+{
+    local count;
+    foreach item in local_node.block
+    {
+        if (rtxTpl_TypeCheckFor<item.type>(item) == false)
+            increment(count);
+    }
+    return count;
+}
+
+function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node)
+{
+    return rtxTpl_TypeCheckFor<"__block__">(local_node.body);
+}
+
+function rtxTpl_TypeCheckFor<"__root_block__">(local_node : node)
+{
+    return rtxTpl_TypeCheckFor<"__block__">(local_node);
+}
+
+
+
+function rtxTpl_TypeCheck(local_node : node)
+{
+    return rtxTpl_TypeCheckFor<local_node.type>(local_node);
+}
+
+
+#end

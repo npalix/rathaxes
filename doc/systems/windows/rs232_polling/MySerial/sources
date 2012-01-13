@@ -1,0 +1,6 @@
+TARGETNAME		= myserial
+TARGETTYPE		= DRIVER
+KMDF_VERSION	= 1
+
+INCLUDES 	= $(INCLUDES); .
+SOURCES		= driver.c device.c pnp.c read.c write.c ioctl.c uart.c
