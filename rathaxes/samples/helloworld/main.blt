@@ -27,12 +27,20 @@ with Main
         chunk ::log()
         {
             puts("Arguments:");
-            for (int i = 0; i != ${self}.argc; i++)
-                printf("- [%d]: %s\n", i, ${self}.argv[i]);
+            {
+                int i;
+                i = 0;
+                for (; i != ${self}.argc; i++)
+                    printf("- [%d]: %s\n", i, ${self}.argv[i]);
+            }
 
             puts("Environment:");
-            for (int i = 0; ${self}.env[i]; i++)
-                printf("- %s\n", ${self}.env[i]);
+            {
+                int i;
+                i = 0;
+                for (; ${self}.env[i]; i++)
+                    printf("- %s\n", ${self}.env[i]);
+            }
         }
 
         map
@@ -45,7 +53,6 @@ with Main
         chunk Main::include_headers
         {
             #include <stdlib.h>
-            typedef int stdlib_include_stamp;
         }
 
         chunk Main::main()
