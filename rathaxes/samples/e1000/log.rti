@@ -1,0 +1,7 @@
+interface Log
+{
+    provided sequence   Log::info(::string)
+    {
+        provided chunk  ::CALL;
+    }
+}

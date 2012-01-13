@@ -1,0 +1,52 @@
+device LKM use LKM, PCI, Ethernet, Log
+{
+    Ethernet::open(Ethernet::Device dev)
+    {
+        Log::info("Open the device");
+        e1000::setup_interrupt_handler();
+        Log::info("Interrupt handler installed");
+        e1000::set_up_device();
+        e1000::activate_device_interruption();
+    }
+
+    Ethernet::close(Ethernet::Device dev)
+    {
+        Log::info("Close the device");
+        e1000::free_interrupt_handler();
+    }
+
+    Ethernet::interrupt_handler(Ethernet::Device dev)
+    {
+        Log::info("Got an interruption");
+        e1000::handle_intr();
+    }
+
+    Ethernet::send(Ethernet::Device dev, Socket::SKBuff skb)
+    {
+        Log::info("We have one packet to transmit!");
+    }
+
+    LKM::init()
+    {
+        Log::info("Hello this is LKM");
+    }
+
+    LKM::exit()
+    {
+        Log::info("Good bye this was LKM");
+    }
+}
+
+configuration
+{
+    LKM::name = "hello";
+    LKM::author = "Rathaxes";
+    LKM::description = "Hello World Loadable Kernel Module (LKM)";
+    LKM::license = "GPL";
+
+    PCI::vendor_id = 0x8086;
+    PCI::product_id = 0x100f;
+    PCI::set_master = true;
+
+    Ethernet::ifname = "rtx%d";
+}
