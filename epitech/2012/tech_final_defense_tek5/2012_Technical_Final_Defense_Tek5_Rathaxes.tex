@@ -6,6 +6,9 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,fit}
 
+\newcommand{\bgcolor}{white}
+\newcommand{\fgcolor}{black}
+
 \lstdefinelanguage{rathaxes}%
 {
 	morekeywords={
@@ -53,16 +56,13 @@
 \author{\rtx\ 2012 \\ \texttt{www.rathaxes.org}}
 
 \definecolor{lightred}{RGB}{147,36,33}
-\newcommand{\bgcolor}{black}
-\newcommand{\fgcolor}{white}
-
 \newcommand{\cemph}[1]{{\itshape\LARGE{\textcolor{rathaxesred}{#1}}}}
 
 \setbeamertemplate{navigation symbols}{}
 
 \tikzset{textbox/.style={draw, ultra thick, color=rathaxesred, rectangle, text=\fgcolor, rounded corners=3pt}}
 \tikzset{warrow/.style={->, >=stealth, color=\fgcolor, ultra thick}}
-\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=white}}
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=\fgcolor}}
 \tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
 
 \begin{document}
@@ -297,7 +297,7 @@ Implémentations des interfaces pour chaque OS :
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,2.0) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
-\begin{minipage}{115mm}
+\begin{minipage}{85mm}
 \begin{lstlisting}
 device LKM use LKM {
     LKM::init() {
@@ -313,7 +313,7 @@ configuration {
 \node (RTI) at (1.2,-0.6) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.east) node[right]{%
-\begin{minipage}{115mm}
+\begin{minipage}{85mm}
 \begin{lstlisting}
 interface LKM {
     provided pointcut   LKM::includes;
@@ -327,7 +327,7 @@ interface LKM {
 \node (BLT) at (1.2,-3.2) {\includegraphics[height=1.5cm]{icons/blt}};
 
 \draw (BLT.east) node[right]{%
-\begin{minipage}{115mm}
+\begin{minipage}{85mm}
 \begin{lstlisting}
 with LKM {
     ${pointcut LKM::includes};
@@ -391,8 +391,6 @@ with LKM {
 \end{frame}
 
 \setbeamertemplate{footline}{}
-
-\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
 
 \begin{frame}[fragile]
 \begin{center}
