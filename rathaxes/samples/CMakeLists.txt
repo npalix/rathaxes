@@ -1,3 +1,4 @@
 ADD_SUBDIRECTORY(helloworld)
 ADD_SUBDIRECTORY(syntax)
 ADD_SUBDIRECTORY(e1000)
+ADD_SUBDIRECTORY(windows_minimal_lkm)
