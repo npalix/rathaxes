@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(helloworld)
+ADD_SUBDIRECTORY(syntax)

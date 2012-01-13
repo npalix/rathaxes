@@ -1,0 +1,109 @@
+I : Qu'est ce qu'un registre ?
+
+C'est une unite elementaire de memoire, pouvant contenir un certain nombre de bits
+utilise comme moyen de communication entre l'ordinateur et le materiel.
+Pour encapsuler ces communications dans rathaxes nous utilisons la syntaxe suivante :
+
+II : Declaration d'un registre
+
+/*   
+Exemple de declaration de registre :
+
+REGISTER mcr[8] ON read write LIKE (**......)
+*/
+
+1) Taille du registre
+
+Un registre peut contenir un certain nombre de bits.
+On commence la declaration par le mot cle REGISTER, puis le nom de la variable suivi
+de sa taille en bits entre crochets :
+
+REGISTER my_register[35]
+
+2) Modes d'acces au regsitre
+
+En quel mode l'ordinateur va acceder aux informations du registre.
+On rajoute le mot cle ON suivi du mode.
+
+modes disponibles :
+- read
+- write
+- read write
+
+exemple : 
+
+" ON read write"
+
+3) Masque de bits
+
+ensuite entre parentheses on va decrire par un masque les differents roles des bits.
+
+On ouvre les parentheses, puis pour CHAQUE bit contenu dans le registre on va le representer
+par un des symboles suivants :
+-  * -> On s'en fout
+-  . -> Variable
+-  1 | 0 -> toujours a cette valeur
+
+exemple : 
+
+LIKE (**......)
+
+III : Description interne du registre
+
+A partir de la on ouvre les acolades et pour chaque bit
+du registre on fait une description de toutes les valeurs qu'il peut prendre
+
+/*
+{
+    [7] AS divisor_lacht_access_bit
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [6] AS set_break_enable
+    {
+        (0) -> FALSE;
+        (1) -> TRUE;
+    };
+
+    [3..5] AS parity_select
+    {
+        (000) -> NO_PARITY;
+        (001) -> ODD_PARITY;
+        (011) -> EVEN_PARITY;
+        (101) -> HIGH_PARITY;
+        (111) -> LOW_PARITY;
+    };
+
+    [2] AS length_of_stop_bit
+    {
+        (0) -> ONE_STOP_BIT;
+        (1) -> TWO_STOP_BITS;
+    };
+
+    [0..1] AS word_length
+    {
+        (00) -> _5_BITS;
+        (01) -> _6_BITS;
+        (10) -> _7_BITS;
+        (11) -> _8_BITS;
+    };
+
+};
+*/
+
+
+Les bits peuvent etre regroupes ensemble et seront utilisables ensuite comme des variables.
+
+syntaxe :
+
+[BIT | ENSEMBLE DE BITS] AS "nom_de_variable"
+{
+    (valeur1) -> nom_de_valeur_1;
+    (valeur2) -> nom_de_valeur_2;
+    ...
+};
+
+
+

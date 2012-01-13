@@ -1,0 +1,22 @@
+master:
+    type: custom
+    buildscript: master/dotcloud-builder
+    ports:
+        www: http
+        webhook: tcp
+        slaves: tcp
+    processes:
+        buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+
+slave:
+    type: custom
+    buildscript: slave/dotcloud-builder
+    processes:
+        buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+    systempackages:
+        - cmake
+        - texlive-full
+        - ia32-libs
+
+db:
+    type: postgresql
