@@ -208,7 +208,32 @@ FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
                            DEPENDS "${RATHAXES_SOURCE}_${SYSTEM}.c")
 
         ADD_CUSTOM_TARGET("${NAME}" ALL DEPENDS "${KERNEL_OBJECT_NAME}")
-    ELSE (${SYSTEM} MATCHES "Linux")
-        MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
-    ENDIF (${SYSTEM} MATCHES "Linux")
+
+    ELSEIF (${SYSTEM} MATCHES "Windows")
+        # Create a little build space for the native Windows build-chain.
+        SET(MODULE_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${NAME}.dir/${SYSTEM}Build/")
+
+        # Generate the Windows Makefile to build a Windows kernel module
+        SET(MODULE_SOURCES "${MODULE_BUILD_DIR}/sources")
+        SET(LKM_SOURCES "${RATHAXES_SOURCE}_${SYSTEM}.c")
+        CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/sources.in"
+                       "${MODULE_SOURCES}")
+
+       SET(WINDOWS_MAKEFILE
+           "${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/Windows_Makefile")
+
+        SET(KERNEL_OBJECT_NAME "${RATHAXES_SOURCE}_${SYSTEM}.sys")
+        ADD_CUSTOM_COMMAND(OUTPUT "${KERNEL_OBJECT_NAME}"
+                           COMMAND "${CMAKE_COMMAND}" "-E" "copy" "${RATHAXES_SOURCE}_${SYSTEM}.c" "${MODULE_BUILD_DIR}"
+                           COMMAND "${CMAKE_COMMAND}" "-E" "copy" "${WINDOWS_MAKEFILE}" "${MODULE_BUILD_DIR}/Makefile"
+                           COMMAND "${CMAKE_COMMAND}" "-E" "chdir" "${MODULE_BUILD_DIR}" "${CMAKE_BUILD_TOOL}"
+                           COMMENT "Building Rathaxes Windows LKM for ${NAME}"
+                           VERBATIM
+                           DEPENDS "${RATHAXES_SOURCE}_${SYSTEM}.c")
+
+        ADD_CUSTOM_TARGET("${NAME}" ALL DEPENDS "${KERNEL_OBJECT_NAME}")
+
+ELSE (${SYSTEM} MATCHES "Linux")
+	MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
+ENDIF (${SYSTEM} MATCHES "Linux")
 ENDFUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
