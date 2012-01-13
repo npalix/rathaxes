@@ -20,6 +20,8 @@
 0.3 & 19/08/2011 & David Pineau & Correction de typographies        \\
 \hline
 0.4 & 11/09/2011 & Louis Opter & Traduction de «~Compilation des Interfaces~» \\
+\hline
+0.5 & 04/01/2012 & David Pineau & Ajout de la compilation du front-end et mise a jour de la compilation back-end \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -453,9 +455,27 @@ information au noyau au sujet du module à charger.
 
 De l'analyse syntaxique d'un fichier \texttt{.rtx} à la génération du code C
 d'un pilote, l'AST va subir un certain nombre de transformations. Cependant,
-les templates sont eux aussi compilés dans le but de les sauvegarder dans un
-cache au sein du compilateur. Ceci mène à deux modèles de compilation : La
-compilation d'un template, et la compilation d'un pilote.
+les interfaces comme les templates sont aussi compilés dans le but de les
+sauvegarder dans un cache au sein du compilateur. Ceci mène à trois modèles de
+compilation : la compilation et l'enregistrement des interfaces, la compilation
+d'un template, et la compilation d'un pilote.
+
+\subsection{Interface}
+
+La compilation d'une interface est une tâche simple, comparé aux deux autres
+parties du language \rtx\. Il est nécessaire de valider l'interface, dans le
+but de s'assurer que rien n'est incohérent au sein des interfaces (utilisation
+d'un type \rtx\ inexistant, de pointcuts inexistats, etc...).
+
+Nous pouvons donc identifier deux étapes de compilation :
+\begin{enumerate}
+    \item Analyse syntaxique: construction d'un AST normalisé par Rtx\_Tree;
+    \item TypeChecking: valide les interfaces avec celles dont elles dépendent
+        (used types, pointcuts and chunks).
+\end{enumerate}
+
+L'interface compilée est alors prête pour enregistrement et/ou installation
+dans le cache.
 
 \subsection{Template}
 
@@ -467,16 +487,22 @@ template au sein de l'AST du pilote.
 
 On peut ainsi identifier les étapes suivantes :
 \begin{enumerate}
-    \item Analyse syntaxique : construction d'un AST normalisé par le Cnorm et
-        RTX\_Tree;
-    \item Identification des placeHolders : construction d'une node référençant
-        chacun des placeHolder.
-    \item Analyse des placeHolders : Construction d'une node pour chacun des
-        placeHolders référencés.
-    \item Génération de CodeWorker : génération de code CodeWorker dont le rôle
-        est de résoudre les placeHolders a l'aide des variables templates
-        provenant du frontend, permettant le tissage de l'AST du template dans
-        l'AST du pilote final.
+    \item Analyse syntaxique (Parse) : construction d'un AST normalisé par le
+        Cnorm et RTX\_Tree ;
+    \item Identification des placeHolders (Compile) : construction d'une node
+        référençant chacun des placeHolder ;
+    \item Analyse des placeHolders (Meta) : Construction d'une node pour chacun
+        des placeHolders référencés ;
+    \item Identification des types \rtx\ (TypeHash) : indexation des
+        variables \rtx\ utilisées dans le code \rtx\ ;
+    \item Identification des variables locales (Introspect) : indexation
+        des variables du langage cible pour utilisation dans les placeHolders;
+    \item Typage (TypeCheck) : vérification des types avec les interfaces
+        disponibles dans le cache ;
+    \item Génération de CodeWorker (Gen) : génération de code CodeWorker dont
+        le rôle est de résoudre les placeHolders a l'aide des variables
+        templates provenant du frontend, permettant le tissage de l'AST du
+        template dans l'AST du pilote final.
 \end{enumerate}
 
 Par la suite, le développeur pourra installer le template compilé au sein de la
@@ -543,6 +569,7 @@ n'importe quelle information. Elle est en réalité utilisée par rathaxes afin 
 stocker le \emph{cache} et de le rendre accessible durant toute la phase de
 compilation et de génération. Nous y stockons les informations suivantes :
 \begin{enumerate}
+    \item Les \emph{interfaces} enregistrées
     \item Les ``codes globaux'' enregistrés
     \item Les \emph{templates} enregistrés
     \item Les \emph{chunks} enregistrés
@@ -562,6 +589,35 @@ l'AST correspondant. Ces deux éléments peuvent être optionnels pour certains
 
 Maintenant, nous allons décrire chacune de ces catégories de manière plus
 détaillée, et expliquer leur rôle et leur utilisation.
+
+
+\subsection{Interfaces enregistrées}
+
+Une interface est un élément de code qui force la sémantique d'un sous-système
+dans \rtx\. Dans le but d'éviter les incohérences dans l'implémentation du
+pilote, par le back-end ou le front-end, et d'empêcher le besoin de re-analyser
+le contenu de chaque interface lors de chaque compilation (back ou front end),
+chaque interface peut être enregistrée dans le cache.
+
+Une interface est identifiée par son nom dans le cache, et seule une interface
+associée à un identifiant peut être enregistrée à la fois. Lors de la
+génération du pilote, ou lors de la compilation d'un template, l'interface est
+utilisée afin de vérifier que le code implémenté respecte le schéma qu'elle
+impose.
+
+Lorsqu'une interface est stockée dans le cache, elle y est référencée comme un
+élement d'un tableau associatif ayant pour clef le nom de l'interface :
+\begin{itemize}
+    \item ``.name'' : le nom de l'interface'
+    \item ``.tree\_file'' : le chemin du fichier contenant l'AST à charger
+    \item ``.extensions'' : liste des extensions disponibles pour l'interface
+        Elle contient :
+        \begin{itemize}
+            \item ``.with'' : les contraintes associées à l'extension
+            \item ``.tree\_file'' : le chemin du fichier contenant l'AST à
+                charger.
+        \end{itemize}
+\end{itemize}
 
 
 \subsection{Codes globaux enregistrés}
@@ -856,6 +912,7 @@ les templates de \emph{type}. Ils partagent les mêmes étapes de compilations:
     \item Meta : \texttt{rtxTpl/rtxMeta.inc.cws};
     \item TypeHash : \texttt{rtxTpl/rtxTypeHash.inc.cws};
     \item Introspect : \texttt{rtxTpl/rtxIntrospect.inc.cws};
+    \item TypeCheck: \texttt{rtxInterfaces/rtxInterfaces.inc.cws};
     \item Gen : \texttt{rtxTpl/rtxGen.inc.cws}.
 \end{enumerate}
 Cependant, l'étape ---finale--- de génération du code est légèrement différente
@@ -917,6 +974,18 @@ associer les types ---que ce soit des types \rtx\ ou des types
 définis dans le code--- avec leurs variables. Ceci aide l'algorithme de
 résolution des placeholders lorsqu'une variable locale est utilisée. % ?
 
+\subsection{TypeCheck}
+
+Une fois le code du modèle correctement annoté, et prêt à générer du code,
+nous pouvons vérifier le modèle avec un contract exprimé dans la forme d'une
+ou plusieurs interfaces. Pour chaque type ou prototype \rtx\, on va alors
+vérifier qu'ils correspondent bien à ceux décrits dans les interfaces dont
+le modèle dépend. Ceci provoque l'arrêt pur et simple du processus de
+compilation en cas d'échec, après avoir tenté de vérifier le plus possible
+du code du modèle. Ainsi, chaque utilisation de type \rtx\, chaque prototype,
+chaque pointcut et chaque chunk est vérifiée (il doit être présent, accessible
+par les interfaces dont le modèle dépend, et correspondre à celui utilisé).
+
 \subsection{Gen}
 
 La dernière étape avant d'enregistrer un template dans le cache du compilateur
@@ -947,7 +1016,107 @@ chaque association du template et résout chacun d'eux.
 La fonction qui génère ce code se nomme «~\texttt{gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">}~»
 et se trouve dans le fichier \texttt{rtxTpl/rtxGen.inc.cws}.
 
-%\section{Compilation d'un pilote}
+\section{Compilation d'un pilote}
+
+La compilation d'un pilote (donc de la description front-end) est une des
+parties les plus sensibles de l'ensemble des processus de compilation dans
+\rtx\. Ce processus utilise les deux autres parties du langage.
+
+Chaque passe de compilation est écrite dans un fichier séparé, et ces fichiers
+de script peuvent être trouvés dans le dossier de scripts du compilateur. On
+peut actuellement identifier les passes suivantes, avec les fichiers associés :
+\begin{enumerate}
+    \item Parse: \texttt{rtxParse/rtxFront.cwp}
+    \item TypeCheck: \texttt{rtxInterfaces/rtxInterfaces.inc.cws}
+    \item Configuration Building: \texttt{rtxFront/rtxTools.inc.cws},
+                                  \texttt{rtxNode/rtxNode.inc.cws}
+    \item Generation: \texttt{rtxFront/rtxGenerate.inc.cws},
+                      \texttt{rtxTpl/rtxResolve.inc.cws}
+\end{enumerate}
+
+De la même manière que les passes de compilation des modèles de code, la
+plupart d'entre elles sont écrites sous forme de fonctions CodeWorker
+templatées, de manière à faciliter l'implémentation des parcours d'arbre
+pour de possibles nouveaux types de nœuds, et ainsi pouvoir spécialiser
+le code pour les nœuds qui nous intéressent.
+
+Nous allons décrire chacune de ces passes ci-dessous.
+
+\subsection{Parse}
+
+L'étape de parsing construit un AST normalisé avec l'aide du module
+\texttt{rtxNode}.
+
+Cette étape est en réalité partagée avec tout ce que \rtx\ accepte en entré. Le
+code de parsing se situe dans le répertoire \texttt{rtxParse/}, les fonctions
+partagée avec le reste du code sont dans le fichier \texttt{rtxCompile.inc.cwp}
+et les règles de parsing spécifiques aux templates sont dans le fichier
+\texttt{rtxBack.inc.cwp}.
+
+\subsection{TypeCheck}
+
+La passe de typage pour le front-end est composée de deux grandes étapes :
+tout d'abord, la vérification par rapport aux interfaces, puis la vérification
+de cohérence.
+
+Premièrement, on vérifie que les interfaces citées dans les dépendances du
+bloc driver décrivent la même chose que ce qui est implémenté et/ou utilisé :
+\begin{itemize}
+
+    \item le prototype de l'implémentation : on vérifie que la séquence
+        implémentée dans le block driver est soit ``required'' (implémentation
+        obligatoire), soit optionnelle, et qu'il ne manque aucune ``required''.
+        Aucune séquence ``provided'' ne doit être implémentée dans le bloc
+        driver, ce mécanisme étant réservé à des séquence fournies par le
+        back-end pour le front-end et lui-même.
+
+    \item le code de l'implémentation : il est analysé afin de vérifier que les
+        séquences et les types utilisés sont ``provided'' ou non, puisque seuls
+        ceux-là sont sensés être utilisables dans un morceau de code \rtx\ .
+
+    \item le bloc de configuration : chaque variable utilisée doit être décrite
+        dans les interfaces associées.
+
+\end{itemize}
+
+Lorsque les vérifications par rapport aux interfaces (dépendant des dépendances
+du bloc driver) sont finies, des vérifications de cohérence sont effectuées sur
+le front-end lui-même. Par exemple, la description d'un registre va être
+vérifiée afin d'empêcher les valeurs écrites d'être incompatibles avec le
+masque de bits décrit dans l'expression ``LIKE''.
+
+Les vérifications faites, nous pouvons alors préparer la génération du code C.
+
+\subsection{Construction de la Configuration}
+
+Le construction de la configuration fait ce que son nom implique. Le parsing du
+bloc de configuration dans le front-end génère un arbre peu utilisable pour la
+sélection des modèles de codes pour la génération. Nous avons donc besoin de
+transcrire ce bout d'arbre dans une structure de données plus facilement
+manipulable. Les fichiers associés se chargent de ce travail, et génèrent
+des configurations multiples, qui seront chacune utilisées pour une génération
+différente. Ces configurations multiples ont pour origine les extensions de
+configuration, au travers de la syntaxe ``var = value'' suivie d'un bloc.
+
+\subsection{Generation}
+
+Finalement, l'arbre du front-end est prêt pour l'étape de génération. Cette
+passe pourrait être la plus complexe de l'ensemble du compilateur \rtx\ .
+En réalité, tout ce qu'elle fait est d'itérer sur les configurations
+disponibles, afin de lancer une génération pour chacune d'entre elles.
+
+Pour chaque génération, le bloc driver est récupéré, et la résolution des
+modèles de code est lancée, en partant du code global comme racine.
+
+Attention: Actuellement, il n'y a pas de pré-sélection des templates à
+utiliser pour la génération du code C. Ainsi, une grande quantité de code
+inutilisé est inséré dans le pilote généré.
+
+
+La résolution est récursive, et pour chaque placeHolder rencontré, une fonction
+de résolution est appellée. Elle instancie une partie d'arbre, la résoud, puis
+l'insère à la place du placeHolder. Cela peut paraitre simple, mais c'est
+essentiellement permis par la complexité des autres processus de compilation.
 
 % TODO
 

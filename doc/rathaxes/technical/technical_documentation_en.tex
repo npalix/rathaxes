@@ -26,6 +26,8 @@
 0.6 & 01/09/2011 & David Pineau & Finished template compilation steps in the chapter 4\\
 \hline
 0.7 & 11/09/2011 & Louis Opter & Minor improvements in ``Template Compilation'' \\
+\hline
+0.6 & 04/01/2012 & David Pineau & Adding of the front compilation process + update of backend compilation process \\
 }
 
 \newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
@@ -422,10 +424,27 @@ of files.
 \label{sec:compilationSteps}
 
 From the parsing of a \texttt{.rtx} file to the generation of the driver's C
-code, the AST will undergo a number of transformations. However, the templates
-of code are also compiled in order to allow caching in the core of the
-compiler.  That leads to two compilation schemes: a template's compilation and
-a driver's compilation.
+code, the AST will undergo a number of transformations. However, the interfaces
+and the templates of code are also compiled in order to allow caching in the
+core of the compiler. That leads to three compilation schemes: an interface's
+checking and registration, a template's compilation and a driver's compilation.
+
+\subsection{Steps of an interface's compilation}
+
+The compilation of an interface is a simple task, compared to the two other
+parts of the \rtx\ language. We need to validate it, in order to make sure
+nothing out of order was written in it (use of an unknown \rtx\ type and
+such).
+
+We can identify two steps in the compilation:
+\begin{enumerate}
+    \item Parsing: construction of an AST normalized by Rtx\_Tree;
+    \item TypeChecking: validate the interface against the interfaces it
+        depends on (used types, pointcuts and chunks).
+\end{enumerate}
+
+Then, the interface is ready for registration and/or installation into the
+cache.
 
 \subsection{Steps of a template's compilation}
 
@@ -437,12 +456,18 @@ We can then identify the following steps:
 \begin{enumerate}
     \item Parsing: construction of an AST normalized by CNormNode and
         RTX\_Tree;
-    \item Place Holders Identification: construction of a node containing
-        every template placeholder;
-    \item Place Holders Parsing: construction of an AST Node for each
+    \item Place Holders Identification (Compile): construction of a node
+        containing every template placeholder;
+    \item Place Holders Parsing (Meta): construction of an AST Node for each
         place holder;
-    \item Code Generation: generation of CodeWorker code that resolves the
-        linkage of the main AST with the template AST Node.
+    \item Identification of the \rtx\ types (TypeHash) : indexation of the
+        \rtx\ variables \rtx\ used in the code ;
+    \item Identification of the local variables (Introspect) : indexation
+        of the variables of the target langage for use in the placeHolders;
+    \item Type Checking (TypeCheck) : validation of the types against the
+        available interfaces from the cache;
+    \item Code Generation (Gen): generation of CodeWorker code that resolves
+        the linkage of the main AST with the template AST Node.
 \end{enumerate}
 
 Afterwards, the developer will be able to install the template into the
@@ -503,8 +528,9 @@ used for a driver's compilation and generation.
 
 CodeWorker uses a global variable called ``this'', where one can keep any
 information one wants. It is actually used by rathaxes to host the
-\emph{cache}. It contains four types of informations:
+\emph{cache}. It contains five types of informations:
 \begin{enumerate}
+    \item Registered interfaces
     \item Registered ``global codes''
     \item Registered templates
     \item Registered chunks
@@ -523,6 +549,36 @@ the code. Those two fields may be optional for some registered items.
 
 Now, we will describe in a more detailed fashion each of those types of items,
 and explain their use and how they are used.
+
+\subsection{Registered interfaces}
+
+An interface is a piece of code that enforces the semantic of a sub-system in
+\rtx\. In order to avoid inconsistencies throughout the implementation of a
+driver, either from the back-end or the front-end, and to prevent the need of
+re-parsing each interface at each compilation, each interfaces can be
+registered in the cache.
+
+An interface is identified by its name in the cache, and only one interface
+associated to an identifier can be registered at the same time. At driver
+generation time, or at template compilation time, it is used to check wether
+the code implemented matches with the required semantics described by
+the interface.
+
+When an interface is stored in the cache, it is an element in an associative
+table, which key is the interface's name:
+\begin{itemize}
+    \item ``.name'': the name of the interface
+    \item ``.tree\_file'': the path to the file containing the tree to load
+        (Mandatory)
+    \item ``.extensions'': list of extensions for this interface, each
+        containing:
+        \begin{itemize}
+            \item ``.with'': the configuration constraint associated to the
+                extension
+            \item ``.tree\_file'': the path to the file containing the tree
+                to load (Mandatory)
+        \end{itemize}
+\end{itemize}
 
 
 \subsection{Registered Global code}
@@ -765,7 +821,7 @@ obtained through the latter previously described functions.
 
 \section{Template compilation}
 
-In \rtx, two types of templates exist. Those are the sequence templates and the
+In \rtx, two kinds of templates exist. Those are the sequence templates and the
 type templates. Both share common passes for their compilation, though there
 are some differences between them.
 
@@ -778,6 +834,7 @@ identify the following passes in order:
     \item Meta: \texttt{rtxTpl/rtxMeta.inc.cws};
     \item TypeHash: \texttt{rtxTpl/rtxTypeHash.inc.cws};
     \item Introspect: \texttt{rtxTpl/rtxIntrospect.inc.cws};
+    \item TypeCheck: \texttt{rtxInterfaces/rtxInterfaces.inc.cws};
     \item Gen: \texttt{rtxTpl/rtxGen.inc.cws}.
 \end{enumerate}
 
@@ -794,7 +851,7 @@ a template's compilation process.
 
 \subsection{Parse}
 
-This is the common pass for every compilation process throughout \rtx's
+This is the common pass for every compilation process throughout \rtx\'s
 compiler. Every parsing code can be found inside the directory rtxParse/ of the
 compiler's scripts. The common necessities can be found in the file
 rtxCommon.inc.cwp and the templates-only rules can be found inside the file
@@ -833,6 +890,20 @@ to associate the types (be it a \rtx\ type or a base code type) with the
 variables. This helps the \emph{placeholder} resolution mechanism when we are
 trying to use a local variable.
 
+\subsection{TypeCheck}
+
+Once the code is properly processed, and ready to generate some code, we can
+check the \emph{template}'s implementation against the contract expressed in
+the form of one or more interfaces. Then, for each encountered \rtx\ type or
+prototype (template's prototype), the compiler checks it against the ones
+described in the interface. This causes the compilation process to halt in
+case of failure, after trying to check every checkable bit of code. Thus,
+every use of a \rtx\ type, every template prototype, every pointcut, every
+chunk is checked for existence (if it was never described, it is an error),
+and for validity (present in an interface the template depends on, or
+explicitly called).
+
+
 \subsection{Gen}
 
 The last thing to do before registering a template into the compiler's cache is
@@ -857,10 +928,96 @@ Therefore, a templated \emph{CodeWorker} function is generated for the
 template's mapping, in the same way a function is generated for each chunk it
 contains. This function manages every mapping associated to the template and
 resolves each one of them. See the code generating function in the file
-\texttt{rtxTpl/rtxGen.inc.cws}, called ``\texttt{gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">}''.
+\texttt{rtxTpl/rtxGen.inc.cws}, called
+``\texttt{gencodeworker<"\_\_rtx\_tpl\_type\_map\_\_">}''.
 
-%\section{Driver compilation}
+\section{Driver compilation}
 
+The compilation of the driver (with the front-end description) is one of the
+most sensible parts of the whole compilation process in \rtx\. It uses both
+others parts of the language.
+
+Each compilation pass is written in a separate file, and the scripts can be
+found in the compiler's scripts directory. We can currently identify the
+following passes and their containing files:
+\begin{enumerate}
+    \item Parse: \texttt{rtxParse/rtxFront.cwp}
+    \item TypeCheck: \texttt{rtxInterfaces/rtxInterfaces.inc.cws}
+    \item Configuration Building: \texttt{rtxFront/rtxTools.inc.cws,
+                                          rtxNode/rtxNode.inc.cws}
+    \item Generation: \texttt{rtxFront/rtxGenerate.inc.cws,
+                              rtxTpl/rtxResolve.inc.cws}
+\end{enumerate}
+
+In the same way as the template compilation passes, many of the passes are
+coded into CodeWorker templated functions, in order to ease the walking of
+the AST, and to specialize only for the nodes that are relevant for the task.
+We will now describe each step.
+
+\subsection{Parse}
+
+This is the common pass for every compilation process throughout \rtx\'s
+compiler. Every parsing code can be found inside the directory rtxParse/ of the
+compiler's scripts. The common necessities can be found in the file
+rtxCommon.inc.cwp and the templates-only rules can be found inside the file
+rtxBack.inc.cwp. The parsing pass builds an AST standardized with the help of
+the rtxNode module.
+
+\subsection{TypeCheck}
+
+The TypeCheck pass for the front-end has two main parts: first, the check
+against the interfaces, and second the consistency check.
+
+First, we check that the interfaces given in the driver block description
+describe properly what we are using:
+\begin{itemize}
+    \item the implementation prototype: we check that every templated which
+        algorithm is written in the driver is either required (implementation
+        is mandatory), or optional. No ``provided'' should ever find its way
+        into the front-end implementation, those being reserved for use by
+        calls from either the front-end or the back-end
+    \item the code of the implementation: analyzed in order to check whether
+        the sequences and types used are provided or not, since those are the
+        the only ones that should be usable in a chunk of \rtx\ code.
+    \item the configuration block: each variable expected must be described in the associated interface(s).
+\end{itemize}
+
+When the checks about the interfaces (depending on the interfaces written
+in the dependency list of the front-end) are done, consistency checks are
+run against the front-end itself. For instance, the registers'description
+is checked in order to prevent the values written to be incompatible with the
+bit mask written in the "LIKE" statement.
+
+The checks done, we can now go on to prepare the generation.
+
+\subsection{Configuration Building}
+
+The configuration building step is as its name implies. The configuration block
+is stored in an AST but its form is not easily usable for the selection process
+of the templates for the generation. We need to translate it into an usable
+data structure. The associated file does the job, and generates the multiple
+configurations described in the block (each extension depending on a
+configuration value creates a branch in the possible configuration schemas).
+
+\subsection{Generation}
+
+Finally, the front-end AST is prepared for the generation process. This pass
+may be one of the most complex of the \rtx\ compiler. Actually, all it does is
+iterate on the available configurations, and start the generation for each one.
+
+For each generation, the driver block is retrieve, and the template resolution
+is started, with the global code as a root.
+
+Warning: Currently, there is no pre-selection of the used templates for the
+resolution of the C code, and thus every single matching chunk
+(configuration-wise and template-wise) is inserted into their associated
+pointcut.
+
+The resolution is recursive, and for each placeHolder encountered, a resolver
+function is called, which instanciates the AST part, and resolves it before
+inserting it in-place of the original placeHolder. This may seem simple but
+is permitted by the multiple steps done in each compilation process for
+each part of the \rtx\ language.
 
 %
 % TODO
