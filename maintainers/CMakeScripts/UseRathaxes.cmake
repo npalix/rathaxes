@@ -193,6 +193,8 @@ FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
 
         SET(KERNEL_OBJECT_NAME "${RATHAXES_SOURCE}_${SYSTEM}.ko")
         ADD_CUSTOM_COMMAND(OUTPUT "${KERNEL_OBJECT_NAME}"
+                           # …
+                           COMMAND "sed" "-i" "/TARTE/ d" "${RATHAXES_SOURCE}_${SYSTEM}.c"
                            # The linux Makefile to build kernel module is quite
                            # picky about file location and its own name. Let's
                            # copy our source side by side with the Makefile:
