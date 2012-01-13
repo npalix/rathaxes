@@ -1,0 +1,48 @@
+/*
+ **      colors.cws in script/misc
+ **      for Rathaxes project
+ **      made by Thor
+ */
+
+if (existEnv("OS") && getEnv("OS") == "Windows")
+{
+	global DEFAULT_COLOR = "";
+	global BLACK = "";
+	global GREY =  "";
+	global RED = "";
+	global LRED = "";
+	global GREEN = "";
+	global LGREEN = "";
+	global YELLOW = "";
+	global LYELLOW = "";
+	global BLUE =  "";
+	global LBLUE =  "";
+	global PURPLE =  "";
+	global LPURPLE =  "";
+	global CYAN =  "";
+	global WHITE =  "";
+	global LWHITE =  "";
+}
+else
+{
+	global DEFAULT_COLOR = "\033\[0m";
+	global BLACK = "\033\[0;30m";
+	global GREY =  "\033\[1;30m";
+	global RED = "\033\[0;31m";
+	global LRED = "\033\[1;31m";
+	global GREEN = "\033\[0;32m";
+	global LGREEN = "\033\[1;32m";
+	global YELLOW = "\033\[0;33m";
+	global LYELLOW = "\033\[1;33m";
+	global BLUE =  "\033\[0;34m";
+	global LBLUE =  "\033\[1;34m";
+	global PURPLE =  "\033\[0;35m";
+	global LPURPLE =  "\033\[1;35m";
+	global CYAN =  "\033\[0;36m";
+	global WHITE =  "\033\[0;37m";
+	global LWHITE =  "\033\[1;37m";
+}
+/*
+ ** Rem: colors' background is black.
+ ** Add more colors below if you REALLY need...
+ */

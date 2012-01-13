@@ -1,0 +1,19 @@
+Index: files.pci
+===================================================================
+RCS file: /cvs/src/sys/dev/pci/files.pci,v
+retrieving revision 1.257
+diff -u -r1.257 files.pci
+--- files.pci	26 Sep 2008 10:35:15 -0000	1.257
++++ files.pci	7 Nov 2008 14:54:48 -0000
+@@ -414,6 +414,11 @@
+ attach	ne at pci with ne_pci: rtl80x9
+ file	dev/pci/if_ne_pci.c		ne_pci
+ 
++# RL8029 test for rathaxes
++device	rln: ether, ifnet, ifmedia
++attach	rln at pci
++file	dev/pci/if_ne2000.c		rln
++
+ # Sun GEM ethernet
+ attach	gem at pci with gem_pci
+ file	dev/pci/if_gem_pci.c		gem_pci

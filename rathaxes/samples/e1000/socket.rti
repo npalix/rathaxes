@@ -1,0 +1,4 @@
+interface Socket : LKM
+{
+    provided type Socket::SKBuff;
+}

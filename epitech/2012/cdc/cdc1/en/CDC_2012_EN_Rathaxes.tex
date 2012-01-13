@@ -1,0 +1,46 @@
+\documentclass[a4paper,11pt]{article}
+
+% Also allow to change to "Backend Library" if needed
+\newcommand{\BL}{"Black Library"}
+
+% Will be used by sec-documentation-control
+\newcommand{\doctype}{Specifications}
+\newcommand{\docversion}{1.0}
+\newcommand{\docref}{CDC\_2012\_EN\_Rathaxes}
+\newcommand{\docstatus}{To be validated}
+
+\usepackage[utf8]{inputenc}
+\usepackage[american]{babel}
+\usepackage{array,
+            fancyhdr,
+            graphicx,
+            indentfirst}
+\usepackage[pdftex,
+            colorlinks=true,
+            pdftitle={Specifications 2012 Rathaxes},
+            pdfauthor={Rathaxes 2012 Team}]{hyperref}
+
+\pagestyle{fancy}
+\lhead{\includegraphics[height=1.2cm]{../images/logo_epitech}}
+\chead{Rathaxes \\ \doctype}
+\rhead{\includegraphics[height=1.2cm]{../images/logo_rathaxes}}
+
+\setlength{\headheight}{38.22325pt} % there I fixed it
+
+\begin{document}
+
+\input{titlepage}
+
+\include{sec-documentation-control}
+
+\tableofcontents
+\newpage
+
+\input{sec-introduction}
+\input{sec-context}
+\input{sec-objectives}
+\input{sec-requirements}
+\input{sec-project-control}
+\input{bibliography}
+
+\end{document}

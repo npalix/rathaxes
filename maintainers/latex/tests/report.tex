@@ -1,0 +1,57 @@
+\documentclass{rtxreport}
+
+\usepackage{lipsum}
+
+\author{Louis Opter}
+\title{Test for the \rtx\ report document class}
+
+\rtxdoctype{Test Document}
+\rtxdocstatus{Testing}
+\rtxdocversion{0.1}
+
+\rtxdochistory
+{
+0.1 & 11/09/2010 & Louis Opter & Creation of the test document \\
+\hline
+0.2 & 11/09/2010 & Thomas Sanchez & Test with a longer name \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This short text allow us to check if the abstract environment is well
+integrated into our \rtx\ \LaTeX\ report class.
+\end{abstract}
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\chapter{Part one}
+
+\section{Introduction}
+
+\lipsum[1]
+
+Ceci est un paragraphe \cite{GPL3}.
+Ceci est dans le meme paragraphe.
+
+Ceci est un autre paragraphe.
+
+\section{Objectives}
+
+\lipsum[2]
+
+\section{How we did it}
+
+\lipsum[3]
+
+\section{Conclusion}
+
+\lipsum[4]
+
+\rtxbibliography
+
+\end{document}
