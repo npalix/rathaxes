@@ -29,11 +29,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RATHAXES_SOURCE_DIR}/maintainers/CM
 
 FIND_PACKAGE(LATEX)
 FIND_PACKAGE(CodeWorker REQUIRED)
+FIND_PACKAGE(LinuxKBuildDir)
 
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
 INCLUDE(RathaxesCopyLatexClasses)
 INCLUDE(UseRathaxes)
+
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT LINUX_KBUILD_DIR)
+    MESSAGE(STATUS "No valid Linux build tree found, kernel modules will not be built")
+ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT LINUX_KBUILD_DIR)
 
 # Global definitions ###########################################################
 
