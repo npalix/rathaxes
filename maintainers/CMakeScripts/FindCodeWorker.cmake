@@ -39,7 +39,7 @@ IF (NOT CODEWORKER_BINARY_PATH)
                  "http://rathaxes.googlecode.com/files/${CODEWORKER_BINARY_NAME}"
                  ${CODEWORKER_BINARY_PATH}
                  STATUS CODEWORKER_DL_STATUS
-                 TIMEOUT 10)
+                 TIMEOUT 20)
 
             LIST(GET CODEWORKER_DL_STATUS 0 CODEWORKER_DL_RETURN)
             LIST(GET CODEWORKER_DL_STATUS 1 CODEWORKER_DL_MESSAGE)
