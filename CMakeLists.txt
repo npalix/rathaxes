@@ -25,28 +25,18 @@ $ rm -f CMakeCache.txt ; mkdir build ; cd build ; cmake ..")
     # FILE(REMOVE "CMakeCache.txt") doesn't work so include it into the snippet.
 ENDIF (${RATHAXES_SOURCE_DIR} STREQUAL ${RATHAXES_BINARY_DIR})
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts)
+LIST(APPEND CMAKE_MODULE_PATH ${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts)
 
+INCLUDE(UseRathaxes)
 FIND_PACKAGE(LATEX)
-FIND_PACKAGE(CodeWorker REQUIRED)
-FIND_PACKAGE(LinuxKBuildDir)
 
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
 INCLUDE(RathaxesCopyLatexClasses)
-INCLUDE(UseRathaxes)
-
-IF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT LINUX_KBUILD_DIR)
-    MESSAGE(STATUS "No valid Linux build tree found, kernel modules will not be built")
-ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND NOT LINUX_KBUILD_DIR)
 
 # Global definitions ###########################################################
 
 ENABLE_TESTING()
-
-IF (CMAKE_COMPILER_IS_GNUCC)
-    SET(CMAKE_C_FLAGS "-pipe -Wextra -Wall -std=c99")
-ENDIF (CMAKE_COMPILER_IS_GNUCC)
 
 # Subdirectories ###############################################################
 
@@ -60,7 +50,6 @@ ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
     MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
 ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
 
-ADD_SUBDIRECTORY(maintainers)
 ADD_SUBDIRECTORY(rathaxes)
 
 # Install rules ################################################################
@@ -87,7 +76,7 @@ ADD_CUSTOM_TARGET(uninstall
 SET(PACKAGE_NAME "rathaxes")
 SET(IGNORE_PATTERNS
     "/\\\\.hg.*"
-    ".*\\\\.sw.?$"
+    ".*\\\\.sw.$"
     "/CMakeFiles/"
     "CMakeCache.txt"
     ".*install.*\\\\.(cmake|txt)$"
@@ -95,6 +84,8 @@ SET(IGNORE_PATTERNS
     ".*CPack.*([^t][^x][^t])$"
     "/Test_.*/"
     "/build/"
+    ".*\\\\.r?tree$"
+    ".*\\\\.pp$"
     # delete some legacy stuff and save some space:
     "/management/"
     "/epitech/2009/"
@@ -110,7 +101,7 @@ SET(CPACK_PACKAGE_FILE_NAME ${PACKAGE_FILE_NAME})
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/CPackDescription.txt")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Rathaxes, the cross-platform driver generator.")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY ${PACKAGE_FILE_NAME})
-SET(CPACK_PACKAGE_VENDOR "Rathaxes Team")
+SET(CPACK_PACKAGE_VENDOR "Rathaxes")
 
 SET(CPACK_SOURCE_PACKAGE_FILE_NAME ${PACKAGE_SOURCE_FILE_NAME})
 SET(CPACK_SOURCE_IGNORE_FILES ${IGNORE_PATTERNS})
@@ -125,9 +116,12 @@ IF (UNIX)
 ENDIF (UNIX)
 
 IF (WIN32)
-    SET(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Rathaxes.lnk' '%comspec%' '/k bin\\\\rathaxesvars.bat'")
     SET(CPACK_GENERATOR "NSIS")
     SET(CPACK_SOURCE_GENERATOR "ZIP")
+    # Add a page in the installer wizard that ask to put rathaxes in the PATH:
+    SET(CPACK_NSIS_MODIFY_PATH ON)
 ENDIF (WIN32)
+
+ADD_SUBDIRECTORY(maintainers)
 
 INCLUDE(CPack)

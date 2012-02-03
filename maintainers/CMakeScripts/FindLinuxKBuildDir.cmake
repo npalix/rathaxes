@@ -34,6 +34,8 @@ IF (NOT LINUX_KBUILD_DIR)
             SET(LINUX_KBUILD_DIR "${KDIR}" CACHE PATH "Path to the Linux KBuild directory (usually /lib/modules/`uname -r`/build/)")
         ENDIF (LINUX_KBUILD_DIR_MAKEFILE)
     ENDIF (IS_DIRECTORY "${KDIR}")
+ELSE (NOT LINUX_KBUILD_DIR)
+    SET(LINUXKBUILDDIR_FIND_QUIETLY TRUE)
 ENDIF (NOT LINUX_KBUILD_DIR)
 
 INCLUDE(FindPackageHandleStandardArgs)
