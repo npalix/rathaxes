@@ -1,3 +1,11 @@
+# CMake library to easily work on Rathaxes projects.
+#
+# Simply INCLUDE() it in your Rathaxes project. Obviously you need to have
+# Rathaxes installed to use it (unless you are a Rathaxes developer and
+# directly working on Rathaxes itself).
+
+# Functions ####################################################################
+
 FUNCTION(_RTX_PARSE_OPTIONS ARGS RTI_OUT BLT_OUT SYSTEM_OUT)
     SET(OPTIONS "RTI" "BLT" "SYSTEM")
     SET(FILE_LISTS ${RTI_OUT} ${BLT_OUT} ${SYSTEM_OUT})
@@ -38,13 +46,13 @@ FUNCTION(_RTX_GENERATE_BUILD_COMMANDS
          SYSTEMS)               # [in] name of each target system
     FOREACH(RTI ${RTI_FILES})
         LIST(APPEND ${REGISTER_COMMANDS_OUT}
-             "COMMAND" ${_RTX_CODEWORKER_COMMAND}
+             "COMMAND" ${_USE_RATHAXES_CODEWORKER_COMMAND}
              "rti-register" "${CMAKE_CURRENT_SOURCE_DIR}/${RTI}")
     ENDFOREACH(RTI ${RTI_FILES})
 
     FOREACH(BLT ${BLT_FILES})
         LIST(APPEND ${REGISTER_COMMANDS_OUT}
-            "COMMAND" ${_RTX_CODEWORKER_COMMAND}
+            "COMMAND" ${_USE_RATHAXES_CODEWORKER_COMMAND}
             "blt-register" "${CMAKE_CURRENT_SOURCE_DIR}/${BLT}")
     ENDFOREACH(BLT ${BLT_FILES})
 
@@ -53,7 +61,7 @@ FUNCTION(_RTX_GENERATE_BUILD_COMMANDS
         # At some point I guess we will use different directories instead of
         # different file names.
         LIST(APPEND ${GENERATE_COMMANDS_OUT}
-             COMMAND ${_RTX_CODEWORKER_COMMAND}
+             COMMAND ${_USE_RATHAXES_CODEWORKER_COMMAND}
              "generate" "/o" "${OUT_NAME}_${OS}.c" "${OS}"
              "${CMAKE_CURRENT_SOURCE_DIR}/${RTX_FILE}")
     ENDFOREACH(OS ${SYSTEMS})
@@ -85,13 +93,6 @@ ENDFUNCTION(_RTX_GENERATE_BUILD_COMMANDS
 # At some point we will certainly have our own language definition for CMake
 # but let's start with simpler things.
 FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
-    SET(_RTX_CODEWORKER_COMMAND
-        ${CODEWORKER_BINARY_PATH} "-nologo"
-        "-I" "${RATHAXES_SOURCE_DIR}/maintainers/cnorm/src"
-        "-I" "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/"
-        "-script" "${CMAKE_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws"
-        "-args" "${CMAKE_SOURCE_DIR}/rathaxes/" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/RathaxesCache/")
-
     LIST(REMOVE_ITEM ARGV ${OUT_NAME} ${RTX_FILE})
 
     # We have to expand ARGV inside quotes, so it expand as a single LIST
@@ -118,7 +119,7 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
     # that should be rebuilt automatically when its sources change.
     STRING(REPLACE ";" ", " SYSTEMS "${SYSTEMS}")
     ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUTS}
-                       COMMAND ${_RTX_CODEWORKER_COMMAND} "cache" "clear"
+                       COMMAND ${_USE_RATHAXES_CODEWORKER_COMMAND} "cache" "clear"
                        ${REGISTER_COMMANDS}
                        ${GENERATE_COMMANDS}
                        COMMENT "Building Rathaxes target ${OUT_NAME} for ${SYSTEMS}"
@@ -188,8 +189,7 @@ FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
         # Generate the Linux Makefile to build a Linux kernel module
         SET(MODULE_MAKEFILE "${MODULE_BUILD_DIR}/Makefile")
         SET(LKM_OBJECTS "${RATHAXES_SOURCE}_${SYSTEM}.o")
-        CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/MakefileLKM.in"
-                       "${MODULE_MAKEFILE}")
+        CONFIGURE_FILE("${_USE_RATHAXES_LIST_DIR}/Templates/MakefileLKM.in" "${MODULE_MAKEFILE}")
 
         SET(KERNEL_OBJECT_NAME "${RATHAXES_SOURCE}_${SYSTEM}.ko")
         ADD_CUSTOM_COMMAND(OUTPUT "${KERNEL_OBJECT_NAME}"
@@ -216,11 +216,9 @@ FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
         # Generate the Windows Makefile to build a Windows kernel module
         SET(MODULE_SOURCES "${MODULE_BUILD_DIR}/sources")
         SET(LKM_SOURCES "${RATHAXES_SOURCE}_${SYSTEM}.c")
-        CONFIGURE_FILE("${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/sources.in"
-                       "${MODULE_SOURCES}")
+        CONFIGURE_FILE("${_USE_RATHAXES_LIST_DIR}/Templates/sources.in" "${MODULE_SOURCES}")
 
-       SET(WINDOWS_MAKEFILE
-           "${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/Templates/Windows_Makefile")
+       SET(WINDOWS_MAKEFILE "${_USE_RATHAXES_LIST_DIR}/Templates/Windows_Makefile")
 
         SET(KERNEL_OBJECT_NAME "${RATHAXES_SOURCE}_${SYSTEM}.sys")
         ADD_CUSTOM_COMMAND(OUTPUT "${KERNEL_OBJECT_NAME}"
@@ -237,3 +235,58 @@ ELSE (${SYSTEM} MATCHES "Linux")
 	MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
 ENDIF (${SYSTEM} MATCHES "Linux")
 ENDFUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
+
+# Like FIND_PACKAGE but also search in the Rathaxes directories. Usage:
+#
+# FIND_RATHAXES_PACKAGE(PACKAGE [REQUIRED])
+FUNCTION(FIND_RATHAXES_PACKAGE NAME)
+    # The environment variable is set by rathaxesvars.bat on Windows
+    FOREACH(I ${CMAKE_SYSTEM_PREFIX_PATH} $ENV{RATHAXES_PATH})
+        LIST(APPEND CMAKE_MODULE_PATH "${I}/share/rathaxes/CMakeScripts")
+    ENDFOREACH(I ${CMAKE_SYSTEM_PREFIX_PATH} $ENV{RATHAXES_PATH})
+    FIND_PACKAGE(${NAME} ${ARGV2})
+ENDFUNCTION(FIND_RATHAXES_PACKAGE NAME)
+
+# Code #########################################################################
+
+# Inside a FUNCTION OR MACRO CMAKE_CURRENT_LIST_{DIR,FILE} return the path of
+# the caller CMakeLists.txt. Additionaly, CMAKE_CURRENT_LIST_DIR is a feature
+# of CMake >= 2.8.3.
+GET_FILENAME_COMPONENT(_USE_RATHAXES_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH CACHE)
+MARK_AS_ADVANCED(_USE_RATHAXES_LIST_DIR)
+
+# Find additional dependencies:
+
+# If we are within the Rathaxes project directly use CodeWorker and directly
+# point to the compiler files within the repository.
+# Else use the "system" rathaxes binary.
+IF (${PROJECT_NAME} STREQUAL RATHAXES)
+    FIND_RATHAXES_PACKAGE(CodeWorker REQUIRED)
+
+    SET(_USE_RATHAXES_CODEWORKER_COMMAND
+        ${CODEWORKER_BINARY_PATH} "-nologo"
+        "-I" "${RATHAXES_SOURCE_DIR}/maintainers/cnorm/src"
+        "-I" "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/"
+        "-script" "${CMAKE_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws"
+        "-args" "${CMAKE_SOURCE_DIR}/rathaxes/" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/RathaxesCache/"
+        CACHE INTERNAL "CodeWorker command to -manually- invoke the Rathaxes compiler")
+ELSE (${PROJECT_NAME} STREQUAL RATHAXES)
+    FIND_RATHAXES_PACKAGE(Rathaxes REQUIRED)
+
+    SET(_USE_RATHAXES_CODEWORKER_COMMAND ${RATHAXES_BINARY_PATH} CACHE INTERNAL "Rathaxes command")
+ENDIF (${PROJECT_NAME} STREQUAL RATHAXES)
+
+# Only do this on Linux, as far as I know nobody compiles Linux from another OS.
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    FIND_RATHAXES_PACKAGE(LinuxKBuildDir)
+    IF (LINUX_KBUILD_DIR)
+        MESSAGE(STATUS "No valid Linux build tree found, Linux kernel modules will not be built")
+    ENDIF (LINUX_KBUILD_DIR)
+ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+# Set some compiler options:
+
+# Set some sane flags that should be used in every project made with Rathaxes
+IF (CMAKE_COMPILER_IS_GNUCC)
+    SET(CMAKE_C_FLAGS "-pipe -Wextra -Wall -std=c99")
+ENDIF (CMAKE_COMPILER_IS_GNUCC)

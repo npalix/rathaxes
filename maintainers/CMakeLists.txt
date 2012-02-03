@@ -10,6 +10,10 @@ INSTALL(DIRECTORY cnorm/src/
 INSTALL(PROGRAMS ${CODEWORKER_BINARY_PATH}
         DESTINATION lib/rathaxes/)
 
-# Generate the install rules for the rathaxes binaries:
+# Generate the install rules for the rathaxes binaries
 
 ADD_SUBDIRECTORY(bin)
+
+# Install the Rathaxes CMakeScripts library
+
+ADD_SUBDIRECTORY(CMakeScripts)

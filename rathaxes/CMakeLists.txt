@@ -26,4 +26,17 @@ CONFIGURE_FILE("${RATHAXES_SCRIPT_NAME}.in" "${RATHAXES_SCRIPT_NAME}" @ONLY)
 
 INSTALL(DIRECTORY compiler DESTINATION lib/rathaxes
         PATTERN compiler/tests EXCLUDE)
-INSTALL(DIRECTORY samples DESTINATION share/doc/rathaxes)
+INSTALL(DIRECTORY samples DESTINATION share/doc/rathaxes
+        PATTERN "SamplesCMakeLists.txt" EXCLUDE)
+
+# Install rules for the "standalone" build system to generate the examples:
+
+# Top-level CMakeLists.txt
+INSTALL(FILES samples/SamplesCMakeLists.txt
+        DESTINATION share/doc/rathaxes/samples
+        RENAME CMakeLists.txt)
+
+# UseRathaxes.cmake
+INSTALL(FILES
+        ${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts/UseRathaxes.cmake
+        DESTINATION share/doc/rathaxes/samples/CMakeScripts/)
