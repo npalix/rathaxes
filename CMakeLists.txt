@@ -17,6 +17,8 @@ MESSAGE(STATUS "Install Prefix: ${CMAKE_INSTALL_PREFIX}")
 MESSAGE(STATUS "Source Directory: ${RATHAXES_SOURCE_DIR}")
 MESSAGE(STATUS "Binary Directory: ${RATHAXES_BINARY_DIR}")
 
+OPTION(WITH_DOCUMENTATION "Build the Rathaxes documentation and slides")
+
 # Platform checks/includes #####################################################
 
 IF (${RATHAXES_SOURCE_DIR} STREQUAL ${RATHAXES_BINARY_DIR})
@@ -28,7 +30,10 @@ ENDIF (${RATHAXES_SOURCE_DIR} STREQUAL ${RATHAXES_BINARY_DIR})
 LIST(APPEND CMAKE_MODULE_PATH ${RATHAXES_SOURCE_DIR}/maintainers/CMakeScripts)
 
 INCLUDE(UseRathaxes)
-FIND_PACKAGE(LATEX)
+
+IF (WITH_DOCUMENTATION)
+    FIND_PACKAGE(LATEX)
+ENDIF (WITH_DOCUMENTATION)
 
 INCLUDE(AddFileDependencies)
 INCLUDE(FileCopy)
@@ -40,16 +45,19 @@ ENABLE_TESTING()
 
 # Subdirectories ###############################################################
 
-IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
-    INCLUDE(UseLATEX)
+IF (WITH_DOCUMENTATION)
+    IF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
+        INCLUDE(UseLATEX)
 
-    ADD_SUBDIRECTORY(doc)
-    ADD_SUBDIRECTORY(com)
-    ADD_SUBDIRECTORY(epitech)
-ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
-    MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
-ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
-
+        ADD_SUBDIRECTORY(doc)
+        ADD_SUBDIRECTORY(com)
+        ADD_SUBDIRECTORY(epitech)
+    ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
+        MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
+    ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
+ELSE (WITH_DOCUMENTATION)
+    MESSAGE(STATUS "Documentation building disabled")
+ENDIF (WITH_DOCUMENTATION)
 ADD_SUBDIRECTORY(rathaxes)
 
 # Install rules ################################################################
