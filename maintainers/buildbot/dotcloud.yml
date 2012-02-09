@@ -1,3 +1,7 @@
+# Required environment variables that should be set using dotcloud var set:
+# - BUILDBOT_SLAVES_PASSWORD
+# - BUILDBOT_GOOGLE_CODE_SECRET_KEY: found on Google Code administer/source tab.
+
 master:
     type: custom
     buildscript: master/dotcloud-builder
