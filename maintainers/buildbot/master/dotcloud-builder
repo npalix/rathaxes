@@ -34,7 +34,7 @@ install_dependencies() {
     # We can't install the latest version of buildbot with pip because the
     # setup.py is not in the root directory.
     # -e git+git://github.com/buildbot/buildbot.git#egg=buildbot
-    local buildbot_repo="$HOME/data/buildbot"
+    local buildbot_repo="$HOME/buildbot"
     if [ ! -d $buildbot_repo ] ; then
         msg "installing buildbot"
         mkdir -p $buildbot_repo
