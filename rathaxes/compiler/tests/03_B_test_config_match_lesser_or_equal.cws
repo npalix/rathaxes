@@ -34,6 +34,16 @@ function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
     unit = "";
 }
 
+function build_builtin(local_node : node, name : value, val : value)
+{
+    local dummy;
+    local   id;
+    rtxNodeIdentifier(id, name, "Builtin");
+    rtxNodeRType(local_node.rtype, id, dummy);
+    insert local_node.val = val;
+}
+
+
 config = "";
 with = "";
 build_version(config, "2", "6", "34");
@@ -87,10 +97,8 @@ if (rtxLink_CompareValues<"<=">(with, config) == true)
 
 config = "";
 with = "";
-insert config.val = "1";
-insert config.type= "number";
-insert with.val = "2";
-insert with.type= "number";
+build_builtin(config, "number", "1");
+build_builtin(with, "number", "2");
 if (rtxLink_CompareValues<"<=">(with, config) == false)
 {
     traceLine("Type " + config.type
@@ -100,10 +108,8 @@ if (rtxLink_CompareValues<"<=">(with, config) == false)
 
 config = "";
 with = "";
-insert config.val = "1";
-insert config.type= "number";
-insert with.val = "1";
-insert with.type= "number";
+build_builtin(config, "number", "1");
+build_builtin(with, "number", "1");
 if (rtxLink_CompareValues<"<=">(with, config) == false)
 {
     traceLine("Type " + config.type
@@ -113,10 +119,8 @@ if (rtxLink_CompareValues<"<=">(with, config) == false)
 
 config = "";
 with = "";
-insert config.val = "2";
-insert config.type= "number";
-insert with.val = "1";
-insert with.type= "number";
+build_builtin(config, "number", "2");
+build_builtin(with, "number", "1");
 if (rtxLink_CompareValues<"<=">(with, config) == true)
 {
     traceLine("Type " + config.type
@@ -127,10 +131,8 @@ if (rtxLink_CompareValues<"<=">(with, config) == true)
 
 config = "";
 with = "";
-insert config.val = "Windows7";
-insert config.type= "symbol";
-insert with.val = "WindowsXP";
-insert with.type= "symbol";
+build_builtin(config, "symbol", "Windows7");
+build_builtin(with, "symbol", "WindowsXP");
 try
 {
     traceLine("rtxLink_CompareValues<\"<=\">(with, config) = "

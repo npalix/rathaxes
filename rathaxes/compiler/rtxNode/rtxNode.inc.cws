@@ -3,6 +3,8 @@
 function rtxNode_version()
 {return "1.0";}
 
+declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
+
 function	rtxNode(local_node : node)
 {
     cnormNode(local_node);
@@ -27,6 +29,18 @@ function rtxNodeString(local_node : node, string : value)
     insert local_node.type = "__rtx_cstring__";
 
     insert local_node.val = string;
+
+    return true;
+}
+
+function rtxNodeIdentifier(local_node : node, id : value, scope : value = "", global : value = false)
+{
+    rtxNode(local_node);
+    insert local_node.type = "__rtx_id__";
+
+    insert local_node.scope = scope;
+    insert local_node.name = id;
+    insert local_node.global = global;
 
     return true;
 }
@@ -67,19 +81,13 @@ function rtxNodeSerial(local_node : node)
     rtxNode(local_node);
     insert local_node.type = "__rtx_serial__";
 
+    insert local_node.rtype;
+    local id;
+    local dummy;
+    rtxNodeIdentifier(id, "serial", "Builtin");
+    rtxNodeRType(local_node.rtype, id, dummy);
+
     insert local_node.list;
-
-    return true;
-}
-
-function rtxNodeIdentifier(local_node : node, id : value, scope : value = "", global : value = false)
-{
-    rtxNode(local_node);
-    insert local_node.type = "__rtx_id__";
-
-    insert local_node.scope = scope;
-    insert local_node.name = id;
-    insert local_node.global = global;
 
     return true;
 }

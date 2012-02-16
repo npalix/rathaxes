@@ -21,14 +21,14 @@ function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
         return true;
 }
 
-function        rtxNode2cnormNode<"number">(in_param : node, out_param : node)
+function        rtxNode2cnormNode<"Builtin::number">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalLiteral(out_param, in_param.val);
 }
 
-function type_map<"::number">(resolverValues : node,
-                              theRtype : node, mappedId : value,
-                              placeHolder : node)
+function type_map<"Builtin::number">(resolverValues : node,
+                                     theRtype : node, mappedId : value,
+                                     placeHolder : node)
 {
     if (mappedId == "")
     {
@@ -47,7 +47,7 @@ function type_map<"::number">(resolverValues : node,
 
 
 
-function rtxLink_CompareLesser<"number">(ref : node, val : node)
+function rtxLink_CompareLesser<"Builtin::number">(ref : node, val : node)
 {
     local ref_parts;
     local val_parts;
@@ -71,22 +71,22 @@ function rtxLink_CompareLesser<"number">(ref : node, val : node)
     return false;
 }
 
-function rtxLink_CompareLesserEqual<"number">(ref : node, val : node)
+function rtxLink_CompareLesserEqual<"Builtin::number">(ref : node, val : node)
 {
-    return (rtxLink_CompareLesser<"number">(ref,val) || rtxLink_CompareEqual<"number">(ref,val));
+    return (rtxLink_CompareLesser<"Builtin::number">(ref,val) || rtxLink_CompareEqual<"Builtin::number">(ref,val));
 }
 
-function rtxLink_CompareEqual<"number">(ref : node, val : node)
+function rtxLink_CompareEqual<"Builtin::number">(ref : node, val : node)
 {
     return (ref.val == val.val);
 }
 
-function rtxLink_CompareGreaterEqual<"number">(ref : node, val : node)
+function rtxLink_CompareGreaterEqual<"Builtin::number">(ref : node, val : node)
 {
-    return (rtxLink_CompareGreater<"number">(ref,val) || rtxLink_CompareEqual<"number">(ref,val));
+    return (rtxLink_CompareGreater<"Builtin::number">(ref,val) || rtxLink_CompareEqual<"Builtin::number">(ref,val));
 }
 
-function rtxLink_CompareGreater<"number">(ref : node, val : node)
+function rtxLink_CompareGreater<"Builtin::number">(ref : node, val : node)
 {
     local ref_parts;
     local val_parts;
