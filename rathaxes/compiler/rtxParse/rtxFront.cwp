@@ -149,19 +149,17 @@ rtx_register(theNode : node) ::= "register"
 
 rtx_property(theNode : node) ::=
         ["public"|"private"]?:visibility "property" 
-        => local type;
+        => local rtype;
         => local body;
-        =>traceLine("PROP");
-        #check(rtxNodeProperty(theNode, type, body, visibility))
-        =>traceLine("PROP:"+toString(theNode));
-        rtx_scoped_identifier(type)
-        =>traceLine("PROP:"+toString(type));
+        #check(rtxNodeProperty(theNode, rtype, body, visibility))
+        => local typeNode;
+        => local dummy;
+        rtx_scoped_identifier(typeNode)
+        #check(rtxNodeRType(rtype, typeNode, dummy))
         #readIdentifier:theNode.name
-        =>traceLine("PROP:"+theNode.name);
         '{'
                 [
                         rtx_sequence_call(theNode.body)
-                        =>traceLine("PROP:"+toString(theNode.body#back));
                 ]*
         '}'
 ;
@@ -197,9 +195,9 @@ rtx_sequence_call(theBlock : node) ::=
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
         rtx_scoped_identifier(lastNode.sequence)
         [rtx_sequence_args(lastNode.args) ]?
+        #continue(sError, "Error in sequence call")
         [';' 
         |       '{'
-=>traceLine("FUUU:"+lastNode.sequence.name);
                 #insert(lastNode.body)
                 #check(cnormNodeBlock(lastNode.body))
                 [rtx_sequence_call(lastNode.body)]*

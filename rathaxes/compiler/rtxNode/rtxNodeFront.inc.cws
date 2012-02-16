@@ -85,10 +85,10 @@ function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : ref
         if (visibility == "")
         {       visibility = "private";}
         insert local_node.visibility = visibility;
-        insert local_node.type;
+        insert local_node.rtype;
         insert local_node.body;
         cnormNodeBlock(local_node.body);
-        ref type_ref = local_node.type;
+        ref type_ref = local_node.rtype;
         ref body_ref = local_node.body;
         return true;
 }

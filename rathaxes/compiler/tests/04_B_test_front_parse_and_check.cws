@@ -5,7 +5,7 @@
 #include "02_C_test_middle_check_inheritance.cws"
 traceLine("ITF:" + toString(this));
 
-local working_directory = "../__04_A_test_front_parse";
+local working_directory = "../__04_B_test_front_parse";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
@@ -21,7 +21,6 @@ local input;
 generateString({    
 
 	device RS232
-	use LKM
 	{
 		register byte rcv_buf mode R like (........) at 0;
 		register byte snd_buf mode R like (........) at 0;
@@ -135,80 +134,8 @@ generateString({
 				(1) -> error;
 			}
 		}
-
-
-		public property word divisor
-		{
-			set
-			{
-				SET(LCR->dlab.clock);
-				SET(DLL, value[0..7]);
-				SET(DLM, value[8..15]);
-				SET(LCR->dlab.buffers);
-			}
-	
-			get
-			{
-				SET(LCR->dlab.clock);
-				SET(value[0..7], DLM);
-				SET(value[8..15], DLL);
-				SET(LCR->dlab.buffers);
-			}
-		}
-
-		User::read(User::Context ctx, User::Buffer output)
-		{
-		    LOG("my RS232 [read]\n");
-		    CONCAT(output, rcv_buf)
-		    {
-		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
-		    }
-		}
-
-		User::write(User::Context ctx, User::Buffer input)
-		{
-			LOG("my RS232 [write]\n");
-			COPY(snd_buf, input)
-			{
-				PRECONDITION {WAIT(LSR->thr_state.empty);}
-			}
-		}
-
-		User::open(User::Context ctx, User::Buffer buf)
-		{
-			LOG("my RS232 [open]\n");
-		}
-
-		User::close(User::Context ctx, User::Buffer buf)
-		{
-			LOG("my RS232 [close]\n");
-		}
-
-		User::on_plug(User::Context ctx, User::Buffer buf)
-		{
-			LOG("my RS232 [on_plug]\n");
-			SET(divisor, 0x0C);
-			SET(LCR->word_lengh._8bits);
-		}
-
 	}
 
-    configuration
-    {
-        devices = RS232;
-        arch = x86;
-        OS = Linux
-        {
-            major = 2;
-            minor = 6;
-            patch = 24;
-        }
-
-        OS = Windows
-        {
-            version = XP;
-        }
-    }
 @}, dummy, input);
 
 #include "cwTool.inc.cws"
@@ -218,6 +145,7 @@ generateString({
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxLink/rtxLink.inc.cws"
 #include "rtxType/rtxType.inc.cws"
+#include "rtxFront/rtxTypeCheck.inc.cws"
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
@@ -232,9 +160,10 @@ parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
 
-saveProject("__04_rtx_parse__.tree", source);
+saveProject("__04_B_rtx_parse__.tree", source);
+rtxFront_TypeCheck(source);
 
-traceLine("====>Result of parsing: __04_rtx_parse__.tree");
+traceLine("====>Result of parsing: __04_B_rtx_parse__.tree");
 if (!isEmpty(source.error))
 {
     local out = "\nAn error Occured while parsing :\nTrace:\n";
