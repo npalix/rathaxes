@@ -78,6 +78,21 @@ function rtxNodeDevice_AddUseInterface(local_node : node, name : value)
     return true;
 }
 
+function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : reference, visibility : value)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx__property__";
+        if (visibility == "")
+        {       visibility = "private";}
+        insert local_node.visibility = visibility;
+        insert local_node.type;
+        insert local_node.body;
+        cnormNodeBlock(local_node.body);
+        ref type_ref = local_node.type;
+        ref body_ref = local_node.body;
+        return true;
+}
+
 function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference)
 {
 	rtxNode(local_node);
