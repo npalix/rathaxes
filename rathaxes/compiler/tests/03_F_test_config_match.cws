@@ -30,6 +30,16 @@ function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
     clearVariable(unit);
 }
 
+function build_builtin(local_node : node, name : value, val : value)
+{
+    local dummy;
+    local   id;
+    rtxNodeIdentifier(id, name, "Builtin");
+    rtxNodeRType(local_node.rtype, id, dummy);
+    insert local_node.val = val;
+}
+
+
 /*
  *
  * Exact match meaning that every field should be matched.
@@ -44,8 +54,7 @@ function build_exactmatch(config : node, with : node)
     insert with["LKM"];
     insert with["LKM"]["OS"];
     rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert with["LKM"]["version"];
     rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
@@ -53,20 +62,17 @@ function build_exactmatch(config : node, with : node)
     clearVariable(id);
     insert with["LKM"]["maj"];
     rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert with["LKM"]["min"];
     rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
-    insert val.type = "number";
-    insert val.val = "3";
+    build_builtin(val, "number", "3");
 
     clearVariable(config);
     insert config["LKM"];
     insert config["LKM"]["OS"];
     rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert config["LKM"]["version"];
     rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
@@ -74,13 +80,11 @@ function build_exactmatch(config : node, with : node)
     clearVariable(id);
     insert config["LKM"]["maj"];
     rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert config["LKM"]["min"];
     rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "4";
+    build_builtin(val, "number", "4");
 }
 
 /*
@@ -98,8 +102,7 @@ function build_overmatch(config : node, with : node)
     insert with["LKM"];
     insert with["LKM"]["OS"];
     rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert with["LKM"]["version"];
     rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
@@ -107,24 +110,21 @@ function build_overmatch(config : node, with : node)
     clearVariable(id);
     insert with["LKM"]["maj"];
     rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    clearVariable(id);
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert with["LKM"]["min"];
     rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
-    insert val.type = "number";
-    insert val.val = "3";
+    build_builtin(val, "number", "3");
     insert with["LKM"]["distrib"];
     rtxNodeWithConstraint(with["LKM"]["distrib"], id, "=", val);
-    insert val.type = "symbol";
-    insert val.val = "debian";
+    build_builtin(val, "symbol", "debian");
 
     clearVariable(config);
     insert config["LKM"];
     insert config["LKM"]["OS"];
     rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert config["LKM"]["version"];
     rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
@@ -132,13 +132,11 @@ function build_overmatch(config : node, with : node)
     clearVariable(id);
     insert config["LKM"]["maj"];
     rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert config["LKM"]["min"];
     rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "4";
+    build_builtin(val, "number", "4");
 }
 
 
@@ -158,8 +156,7 @@ function build_nomatch(config : node, with : node)
     insert with["LKM"];
     insert with["LKM"]["OS"];
     rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert with["LKM"]["version"];
     rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
@@ -167,20 +164,17 @@ function build_nomatch(config : node, with : node)
     clearVariable(id);
     insert with["LKM"]["maj"];
     rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert with["LKM"]["min"];
     rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
-    insert val.type = "number";
-    insert val.val = "3";
+    build_builtin(val, "number", "3");
 
     clearVariable(config);
     insert config["LKM"];
     insert config["LKM"]["OS"];
     rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert config["LKM"]["version"];
     rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
@@ -188,13 +182,11 @@ function build_nomatch(config : node, with : node)
     clearVariable(id);
     insert config["LKM"]["maj"];
     rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert config["LKM"]["min"];
     rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "3";
+    build_builtin(val, "number", "3");
 }
 
 function build_multi_itf_match(config : node, with : node)
@@ -206,8 +198,7 @@ function build_multi_itf_match(config : node, with : node)
     insert with["LKM"];
     insert with["LKM"]["OS"];
     rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert with["LKM"]["version"];
     rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
@@ -215,25 +206,21 @@ function build_multi_itf_match(config : node, with : node)
     clearVariable(id);
     insert with["LKM"]["maj"];
     rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert with["LKM"]["min"];
     rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
-    insert val.type = "number";
-    insert val.val = "3";
+    build_builtin(val, "number", "3");
     insert with["Userland"];
     insert with["Userland"]["testkey"];
     rtxNodeWithConstraint(with["Userland"]["testkey"], id, "<", val);
-    insert val.type = "number";
-    insert val.val = "34";
+    build_builtin(val, "number", "34");
 
     clearVariable(config);
     insert config["LKM"];
     insert config["LKM"]["OS"];
     rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
-    insert val.type = "symbol";
-    insert val.val = "PigeonMouette";
+    build_builtin(val, "symbol", "PigeonMouette");
     clearVariable(id);
     insert config["LKM"]["version"];
     rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
@@ -241,18 +228,15 @@ function build_multi_itf_match(config : node, with : node)
     clearVariable(id);
     insert config["LKM"]["maj"];
     rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "1";
+    build_builtin(val, "number", "1");
     clearVariable(id);
     insert config["LKM"]["min"];
     rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "4";
+    build_builtin(val, "number", "4");
     insert config["Userland"];
     insert config["Userland"]["testkey"];
     rtxNodeWithConstraint(config["Userland"]["testkey"], id, "", val);
-    insert val.type = "number";
-    insert val.val = "21";
+    build_builtin(val, "number", "21");
 }
 
 
