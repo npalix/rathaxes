@@ -70,12 +70,13 @@ function rtxLink_LoadItem(cache_node : node,
         traceLine("rtxLink:<LOG> Script Already loaded !");
     }
 
-    // Try/catch and load first from global cache, and try out local after it failed.
-    try{
-        cwLoadProject(this.backlib_path+cache_node.tree_file, out_ref_tree);
-    } catch (sError) {
-        cwLoadProject(this.local_backlib_path+cache_node.tree_file, out_ref_tree);
-    }
+    // local cache overload global cache
+    if (existFile(this.local_backlib_path + cache_node.tree_file))
+    {cwLoadProject(this.local_backlib_path + cache_node.tree_file, out_ref_tree);}
+    else if (existFile(this.backlib_path + cache_node.tree_file))
+    {cwLoadProject(this.backlib_path+cache_node.tree_file, out_ref_tree);}
+    else
+    {error("Cache Error: inexistant " + cache_node.tree_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
 
     traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;

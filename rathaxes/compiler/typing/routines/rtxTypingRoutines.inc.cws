@@ -940,12 +940,11 @@ function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
  */
 function rtxTypeCheck_Register(theRegister : node)
 {
-        // TODO : not finish
-        traceLine("check REG:" + theRegister.name);  
         // get the pattern in usefull way
         local   likePattern;
         stringToArray(theRegister.like.pattern, likePattern);
         local   bitsize = getArraySize(likePattern);
+        insert theRegister.bitsize = bitsize;
         // TODO: check that the pattern match the bitsize of the register type
         //...
         // foreach fields
@@ -973,14 +972,13 @@ function rtxTypeCheck_Register(theRegister : node)
                 local field_bitsize = 1;
                 if (existVariable(field.map.end))
                 {       field_bitsize = $1 + field.map.end - field.map.begin$;}
-                traceLine("FIELD:" + field.name + " FIELDSIZE:" + field_bitsize);
+                insert field.bitsize = field_bitsize;
                 // check that the range don't have * and calc the mask
-                traceLine("check pattern:" + theRegister.like.pattern);
-                local maskPattern;
+                insert field.maskPattern;
                 local end = field.map.begin;
                 if (existVariable(field.map.end))
                 {       end = field.map.end;}
-                if (!bitArrayExtractMask(likePattern, field.map.begin, end, maskPattern))
+                if (!bitArrayExtractMask(likePattern, field.map.begin, end, field.maskPattern))
                 {
                         traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
                                         + "Can't extract * value in pattern :" + likePattern 
@@ -988,7 +986,6 @@ function rtxTypeCheck_Register(theRegister : node)
                                         + DEFAULT_COLOR);
                         return false;
                 }
-                traceLine("Mask:" + toString(maskPattern));
                 // foreach value in field
                 foreach value in field.listmask
                 {
@@ -1003,8 +1000,9 @@ function rtxTypeCheck_Register(theRegister : node)
                                                 + DEFAULT_COLOR);
                                 return false;
                         }
-                        local   valueMask = $bitArrayValue(valuePattern) << field.map.begin$;
-                        traceLine("VALUE :" + value.name + " = " + valueMask);
+                        insert  value.bitsize = value_bitsize;
+                        insert  value.value = $bitArrayValue(valuePattern) << field.map.begin$;
+                        // TODO: ... duplicate value, completude, value inclusion
                 }
         }
         return true;

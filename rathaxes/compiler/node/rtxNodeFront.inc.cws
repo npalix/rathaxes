@@ -142,6 +142,8 @@ function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : r
         localref regmap_ref = local_node#root.map.registers[local_node#parent#parent#parent.name].map;
         insert regmap_ref[local_node.name].ref;
         ref regmap_ref[local_node.name].ref = local_node;
+        insert local_node.to_register;
+        ref local_node.to_register = regmap_ref;
         return true;
 }
 
@@ -154,6 +156,8 @@ function rtxNodeRegMap_addMask(local_node : node)
         localref regmap_ref = local_node#root.map.registers[nameReg].map[nameField].map;
         insert regmap_ref[local_node.name].ref;
         ref regmap_ref[local_node.name].ref = local_node;
+        insert local_node.to_field;
+        ref local_node.to_field = regmap_ref;
         return true;
 }
 
