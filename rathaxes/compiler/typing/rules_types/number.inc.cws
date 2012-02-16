@@ -1,0 +1,111 @@
+function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
+{
+        parseStringAsBNF({
+                data ::= [hexa|#readInteger]:str
+                        =>{// TODO: must extend for more numeric type...aka float :(
+                                this.rtype = "";
+                                local nameId;
+                                rtxNodeIdentifier(nameId, "number", "Builtin");
+                                local dummy;
+                                rtxNodeRType(this.rtype, nameId, dummy);
+                                insert this.type = "__rtx_number__";
+                                insert this.val = str;
+                        }
+                ;
+                hexa ::= #!ignore #noCase
+                        "0x" ['0'..'9'|'a'..'f']+
+                ;
+        }, out_type, src);
+        if (out_type.rtype == "unknown")
+        {       return false;}
+//        traceLine("FOUND:" + toString(out_type));
+        return true;
+}
+
+function        rtxNode2cnormNode<"__rtx_number__">(in_param : node, out_param : node)
+{
+    return cnormNode_TerminalLiteral(out_param, in_param.val);
+}
+
+function type_map<"Builtin::number">(resolverValues : node,
+                                     theRtype : node, mappedId : value,
+                                     placeHolder : node)
+{
+    if (mappedId == "")
+    {
+        // Here, the data should already be a cnorm Literal node.
+        local tplVarName = resolverValues["self"].body;
+        localref data = resolverValues[tplVarName].body;
+        setall placeHolder#parent.ref_placeholder#parent = data;
+        return true;
+    }
+    else
+    {
+        traceLine(RED + "[Error] Identifier '"+mappedId+"' not mapped for type '::number'." + DEFAULT_COLOR);
+    }
+    return false;
+}
+
+
+
+function rtxLink_CompareLesser<"Builtin::number">(ref : node, val : node)
+{
+    local ref_parts;
+    local val_parts;
+
+    cutString(ref.val, ".", ref_parts);
+    cutString(val.val, ".", val_parts);
+    if (val_parts[0] < ref_parts[0])
+        return true;
+    
+    else if (val_parts[0] == ref_parts[0])
+    {
+        if (getArraySize(ref_parts) > 1)
+        {
+            if (getArraySize(val_parts) == 1)
+                return true; // no decimals -> val is necessarily lesser.
+            else
+                return val_parts[1] < ref_parts[1];
+        }
+    }
+
+    return false;
+}
+
+function rtxLink_CompareLesserEqual<"Builtin::number">(ref : node, val : node)
+{
+    return (rtxLink_CompareLesser<"Builtin::number">(ref,val) || rtxLink_CompareEqual<"Builtin::number">(ref,val));
+}
+
+function rtxLink_CompareEqual<"Builtin::number">(ref : node, val : node)
+{
+    return (ref.val == val.val);
+}
+
+function rtxLink_CompareGreaterEqual<"Builtin::number">(ref : node, val : node)
+{
+    return (rtxLink_CompareGreater<"Builtin::number">(ref,val) || rtxLink_CompareEqual<"Builtin::number">(ref,val));
+}
+
+function rtxLink_CompareGreater<"Builtin::number">(ref : node, val : node)
+{
+    local ref_parts;
+    local val_parts;
+
+    cutString(ref.val, ".", ref_parts);
+    cutString(val.val, ".", val_parts);
+    if (val_parts[0] > ref_parts[0])
+        return true;
+    else if (val_parts[0] == ref_parts[0])
+    {
+        if (getArraySize(val_parts) > 1)
+        {
+            if (getArraySize(ref_parts) == 1)
+                return false; // no decimals -> val is necessarily greater.
+            else
+                return val_parts[1] > ref_parts[1];
+        }
+    }
+
+    return false;
+}

@@ -1,0 +1,232 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[francais]{babel}
+\title{OpenBSD LKM}
+\author{Sylvestre "Syl" Gallon - syl@evilkittens.org\\\\ Relecture : \\\\ Gilles "Veins" Chehade - veins@evilkittens.org \\ David "Filth" Amsallem - filth@evilkittens.org}
+\date{\today}
+\pagestyle{plain}
+\usepackage{listings} 
+\usepackage{color}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+\lstset{numbers=left, tabsize=2, frame=single, breaklines=true, basicstyle=\ttfamily,
+   numberstyle=\tiny\ttfamily, framexleftmargin=13mm, backgroundcolor=\color{grey}, xleftmargin=12mm}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+\section{Licence}
+Copyright (c) 2007 Gallon Sylvestre syl@evilkittens.org
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+\newpage
+\section{Generalites}
+\subsection{Introduction}
+Je vais essayer de vous montrer a l'aide de cet article comment utiliser des
+LKM sous sous openBSD. Cet article, etant destine au developpeur de driver, ne couvre
+que la partie utilisation de l'API des LKM mais pas son implementation (cela fera
+peut etre partit d'un prochain article)\\
+
+Contrairement a d'autres plateformes il existe une vrai API LKM sous OpenBSD.
+Je vais vous l'expliquer a l'aide de ces quelques lignes.
+
+\subsection{Differentes parties}
+Sous OpenBSD les LKM se divisent en 5 parties.
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Nom & Description \\
+\hline
+- System Call modules & Ajout d'un syscall au systeme.\\
+- Virtual File System modules &  Ajout d'un systeme de fichier virtuel\\
+- Device Driver modules & Ajout d'un device de type character ou block.\\
+- Execution Interpreters & Si j'ai bien compris c'est pour gerer d'autre\\&  formats de binaires\\
+- Miscellaneous modules & Autres modules.\\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Parties non-ciblee}
+Nous ne nous attarderons pas sur les modules de type VFS et de type Execution
+Interpreteurs, car n'ayant pas eu la chance ni le temps de les implementer
+ces modules sont assez obscures pour moi.
+\newpage
+\section{Miscellaneous}
+\subsection{Definition}
+La description du man (4) lkm de Open est on ne peut plus clair sur la
+definition d'un module de type misc: Miscellaneous modules sont des modules
+pour lesquels il n'y a pas encore d'interface predefinie. L'utilisateur
+peut ainsi ecrire son propre loader et manipuler les structures de donnees kernel
+pour activer et desactiver le module
+\subsection{Implementation}
+Dans un premier temps nous definissons les differents includes :
+\begin{lstlisting}
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/exec.h>
+#include <sys/lkm.h>
+\end{lstlisting}
+\par Nous allons ensuite utiliser la macro MOD\_MISC declaree et implantee dans le
+sys/lkm.h. Cette macro ne prend qu'un seul argument, le nom du LKM. Cela
+permettra de definir le point d'entree du module.
+\begin{lstlisting}
+MOD_MISC("mymod")
+\end{lstlisting}
+\par Nous allons maintenant implementer notre point d'entree:
+\begin{lstlisting}
+mymod( struct lkm_table *l, int cmd, int ver) 
+{
+        DISPATCH(lkmtp, cmd, ver, myload, lkm_nofunc, lkm_nofunc)
+}
+\end{lstlisting}
+\par Le point d'entree porte donc le nom de notre module. struct lkm\_table
+correspond a une structure contenant diverses informations sur le LKM et
+permettant son fonctionnement interne. cmd quand a lui correspond a la commande
+utilisee en userland pour interagir avec le LKM :
+\begin{lstlisting}
+LKM_E_LOAD   ==> correspond au modload
+LKM_E_UNLOAD ==> correspond au modunload
+LKM_E_STAT   ==> correspond au modstat
+\end{lstlisting}
+\par La variable ver correspond a la version du LKM, il peut correspondre a LKM\_OLDVERSION
+ou LKM\_VERSION.\\\par A l'interieur de notre point d'entree nous appellerons donc la
+macro DISPATCH elle aussi presente dans le sys/lkm.h. Elle prend six
+parametres dont notre struct lk\_table, notre cmd et notre ver plus trois
+pointeurs sur fonctions. Ces pointeurs correspondent a des handlers qui seront
+appeles au modload modunload et modstat.\\\par  Si nous ne voulons pas appeller de fonctions
+sur ces evenements nous remplirons ces handlers avec la valeur l\_nofunc sinon
+nous y mettrons nos fonctions prototypees de la sorte:
+\begin{lstlisting}
+static int
+myload(struct lkm_table *lkmtp, int cmd) {
+        printf("helloworld\n");
+}
+\end{lstlisting}
+\subsection{Test}
+Testons maintenant ce module a l'aide de ce Makefile
+\begin{lstlisting}
+SRCS=test.c
+OBJS=$(SRCS:.c=.o)
+MODOBJ=combined.o
+KMOD=mymod
+CFLAGS+= -D_KERNEL -I/sys
+
+all:    $(MODOBJ)
+clean:
+                rm -f $(OBJS) $(MODOBJ) $(KMOD)
+load:
+                modload -o $(KMOD) -e$(KMOD) $(MODOBJ)
+unload:
+                modunload -n $(KMOD)
+$(MODOBJ): $(OBJS)
+                $(LD) -r -o $(MODOBJ) $(OBJS)
+\end{lstlisting}
+\par Ensuite si vous avez votre securelevel a -1 vous pouvez tester
+avec un simple :
+\begin{lstlisting}
+#make
+#make load
+#make unload
+#dmesg
+\end{lstlisting}
+\par Attention le man dit bien : Loading a bogus module is likely to kill your
+machine.
+
+\newpage
+\section{SysCalls}
+\subsection{Definition}
+Attelons nous maintenant a la partie syscall des LKM. Le but de ce module et de rajouter
+ un syscall dans la syscall table. 
+
+\subsection{Implementation}
+La procedure a suivre est la meme que pour un LKM de type misc, sauf que l'on va
+ utiliser a la place de
+MOD\_MISC cela:
+\begin{lstlisting}
+MOD_SYSCALL("mycall", -1, &newentry)
+\end{lstlisting}
+\par Le premier parametre correspond au nom du syscall, le deuxeme est l'index dans
+la table des syscalls ($-1$ pour automatique) et le troisieme corresponda un
+pointeur sur une struct sysent. Nous allons remplir cette structure pour notre
+exemple de cette maniere :
+\begin{lstlisting}
+static struct sysent newentry=
+{
+        0,0, thecall
+};
+\end{lstlisting}
+
+le premier $0$ correspondant au nombre d'arguments, le deuxiemea la taille total
+des arguments et le troisieme a un handler sur la fonction representant le
+syscall qui, dans notre exemple, ne fera qu'un simple "hello syscall world":
+\begin{lstlisting}
+int	thecall(struct proc *p, void *uap, int retval[])
+{
+        printf("hello syscall world\n");
+}
+\end{lstlisting}
+
+Le premier argument de the call sera un pointeur vers une struc proc, le
+deuxieme repesente les parametres passe au syscall et le troisieme correspond
+a la valeur de retour a destination du userland.
+voila vous avez un syscall operationnel.
+\subsection{Test}
+\begin{lstlisting}
+# make
+# make load
+\end{lstlisting}
+\par Pour le tester : man syscall ,pour connaitre le numero de syscall pour un syscall dynamique :
+\begin{lstlisting}
+#modstat -i id
+\end{lstlisting}
+\newpage
+\section{Device driver}
+\subsection{Definition}
+Nous allons finir avec la partie qui est pour moi de loin la plus interessante.
+Elle permet de rajouter un peripherique en mode block ou charactere.
+\subsection{Implementation}
+Tout comme pour le module syscall, la difference entre le module de type device
+driver et le module de type misc se situe au niveau de la macro MOD\_X qui
+correspond ici a:
+\begin{lstlisting}
+MOD_DEV("mydriv", LM_DT_CHAR, -1, &driv_c);
+\end{lstlisting}
+\par Le premier parametre correspond au nom du driver , le deuxieme est le type
+de driver :
+\begin{lstlisting}
+LM_DT_CHAR             ==> correspond a un peripherique en mode charactere
+LM_DT_BLOCK            ==> correspond a un peripherique en mode block
+\end{lstlisting}
+\par Le troisieme quand a lui correspond au numero de majeur du device ou a $-1$ si on
+veux que ce numero soit dynamique. Le dernier argument correspond a un union
+qui permet selon le besoin de recevoir la structure de donnee d'un peripherique
+en mode character ou en mode block. le voici :
+\begin{lstlisting}
+union {
+        void            *anon;
+        struct bdevsw   *bdev;
+        struct cdevsw   *cdev;
+} lkm_dev;
+\end{lstlisting}
+\subsection{Test}
+Pour le charger vous devrez suivre la meme procedure que les autres et le
+modstat vous permettra de connaitre le numero de major si vous avez passe $-1$
+a ce parametre.
+\newline
+\section{Conclusion}
+Je viens de finir le tour de mes connaissances sur les LKM OpenBSD. Cet article
+etant sous licence BSD n'hesitez pas a corriger mes eventuelles erreurs ou a y
+apporter vos modifications.
+\end{document}

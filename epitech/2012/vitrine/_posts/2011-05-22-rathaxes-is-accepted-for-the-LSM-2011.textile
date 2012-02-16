@@ -1,0 +1,19 @@
+---
+layout: post
+title: Rathaxes is accepted for the LSM 2011
+lang: us
+---
+
+h1. {{ page.title }}
+
+Our apply for the "12th Libre Software Meeting":http://2011.rmll.info/?lang=en (aka RMLL) has been accepted.
+
+It means that we will be in Strasbourg in July from Saturday 9 to Tuesday 14.
+
+David Pineau and myself will animate a presentation and a talk about Rathaxes. The whole team, except Thomas Sanchez (who will be at the Berkeley Summer Session), will be available on a stand during the entire meeting.
+
+If you are interested in Rathaxes do not hesitate to come and chat, drinks will be on us.
+
+We will post the exact date and hour of our talk as soon as we know it.
+
+-- Louis Opter

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+CNORM_PATH="@CNORM_PATH@"
+RATHAXES_PATH="@RATHAXES_PATH@"
+LOCAL_RATHAXES_PATH=${LOCAL_RATHAXES_PATH:-~/.rathaxes/}
+
+INCLUDE_PATHS="-I $CNORM_PATH -I $RATHAXES_PATH/compiler"
+
+exec @CODEWORKER_PATH@ --quiet                      \
+    $INCLUDE_PATHS                                  \
+    -script $RATHAXES_PATH/compiler/rathaxes.cws    \
+    -args $RATHAXES_PATH $LOCAL_RATHAXES_PATH $*

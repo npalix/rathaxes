@@ -1,0 +1,278 @@
+#include "misc/colors.cws"
+#include "cnormNode.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+local source;
+rtxType_Load(source);
+
+function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
+{
+    local unit;
+    rtxNodeSerial(local_node);
+    rtxNodeSerialUnit(unit, v1);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v2);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+    rtxNodeSerialUnit(unit, v3);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    clearVariable(unit);
+}
+
+function build_builtin(local_node : node, name : value, val : value)
+{
+    local dummy;
+    local   id;
+    rtxNodeIdentifier(id, name, "Builtin");
+    rtxNodeRType(local_node.rtype, id, dummy);
+    insert local_node.val = val;
+}
+
+
+/*
+ *
+ * Exact match meaning that every field should be matched.
+ *
+ */
+function build_exactmatch(config : node, with : node)
+{
+    local id = "";
+    local val = "";
+
+    clearVariable(with);
+    insert with["LKM"];
+    insert with["LKM"]["OS"];
+    rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert with["LKM"]["version"];
+    rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert with["LKM"]["maj"];
+    rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert with["LKM"]["min"];
+    rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
+    build_builtin(val, "number", "3");
+
+    clearVariable(config);
+    insert config["LKM"];
+    insert config["LKM"]["OS"];
+    rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert config["LKM"]["version"];
+    rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert config["LKM"]["maj"];
+    rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert config["LKM"]["min"];
+    rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
+    build_builtin(val, "number", "4");
+}
+
+/*
+ *
+ * Over match means that the constraints are wider than the config.
+ * This example should not match.
+ *
+ */
+function build_overmatch(config : node, with : node)
+{
+    local id = "";
+    local val = "";
+
+    clearVariable(with);
+    insert with["LKM"];
+    insert with["LKM"]["OS"];
+    rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert with["LKM"]["version"];
+    rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert with["LKM"]["maj"];
+    rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
+    clearVariable(id);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert with["LKM"]["min"];
+    rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
+    build_builtin(val, "number", "3");
+    insert with["LKM"]["distrib"];
+    rtxNodeWithConstraint(with["LKM"]["distrib"], id, "=", val);
+    build_builtin(val, "symbol", "debian");
+
+    clearVariable(config);
+    insert config["LKM"];
+    insert config["LKM"]["OS"];
+    rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert config["LKM"]["version"];
+    rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert config["LKM"]["maj"];
+    rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert config["LKM"]["min"];
+    rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
+    build_builtin(val, "number", "4");
+}
+
+
+/*
+ *
+ * This test is almost a copy of the exact match but with a non-match value
+ * somewhere instead of matching values.
+ * This test should fail on the version matching.
+ *
+ */
+function build_nomatch(config : node, with : node)
+{
+    local id = "";
+    local val = "";
+
+    clearVariable(with);
+    insert with["LKM"];
+    insert with["LKM"]["OS"];
+    rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert with["LKM"]["version"];
+    rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
+    build_version(val, 2, 6, 30);
+    clearVariable(id);
+    insert with["LKM"]["maj"];
+    rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert with["LKM"]["min"];
+    rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
+    build_builtin(val, "number", "3");
+
+    clearVariable(config);
+    insert config["LKM"];
+    insert config["LKM"]["OS"];
+    rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert config["LKM"]["version"];
+    rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert config["LKM"]["maj"];
+    rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert config["LKM"]["min"];
+    rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
+    build_builtin(val, "number", "3");
+}
+
+function build_multi_itf_match(config : node, with : node)
+{
+    local id = "";
+    local val = "";
+
+    clearVariable(with);
+    insert with["LKM"];
+    insert with["LKM"]["OS"];
+    rtxNodeWithConstraint(with["LKM"]["OS"], id, "=", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert with["LKM"]["version"];
+    rtxNodeWithConstraint(with["LKM"]["version"], id, ">=", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert with["LKM"]["maj"];
+    rtxNodeWithConstraint(with["LKM"]["maj"], id, "=", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert with["LKM"]["min"];
+    rtxNodeWithConstraint(with["LKM"]["min"], id, ">", val);
+    build_builtin(val, "number", "3");
+    insert with["Userland"];
+    insert with["Userland"]["testkey"];
+    rtxNodeWithConstraint(with["Userland"]["testkey"], id, "<", val);
+    build_builtin(val, "number", "34");
+
+    clearVariable(config);
+    insert config["LKM"];
+    insert config["LKM"]["OS"];
+    rtxNodeWithConstraint(config["LKM"]["OS"], id, "", val);
+    build_builtin(val, "symbol", "PigeonMouette");
+    clearVariable(id);
+    insert config["LKM"]["version"];
+    rtxNodeWithConstraint(config["LKM"]["version"], id, "", val);
+    build_version(val, 2, 6, 24);
+    clearVariable(id);
+    insert config["LKM"]["maj"];
+    rtxNodeWithConstraint(config["LKM"]["maj"], id, "", val);
+    build_builtin(val, "number", "1");
+    clearVariable(id);
+    insert config["LKM"]["min"];
+    rtxNodeWithConstraint(config["LKM"]["min"], id, "", val);
+    build_builtin(val, "number", "4");
+    insert config["Userland"];
+    insert config["Userland"]["testkey"];
+    rtxNodeWithConstraint(config["Userland"]["testkey"], id, "", val);
+    build_builtin(val, "number", "21");
+}
+
+
+local with;
+local config;
+
+build_exactmatch(config, with);
+if (!rtxLink_IsWithNodeCompatible(with, config))
+{
+    error("Exact matching test did not match !!");
+}
+else
+    traceLine("SUCCESS: First match test succeeded as expected.");
+
+build_overmatch(config, with);
+if (rtxLink_IsWithNodeCompatible(with, config))
+{
+    error("Overmatch matched !! What happened ?");
+}
+else
+    traceLine("SUCCESS: Overmatch failed as expected.");
+
+build_nomatch(config, with);
+if (rtxLink_IsWithNodeCompatible(with, config))
+{
+    error("Nomatch matched !! What happened ?");
+}
+else
+    traceLine("SUCCESS: Nomatch failed as expected.");
+
+build_multi_itf_match(config, with);
+if (!rtxLink_IsWithNodeCompatible(with, config))
+{
+    error("Multiple interfaces match failed !! What happened ?");
+}
+else
+    traceLine("SUCCESS: Multiple interfaces match succeeded");
+
+exit(0);

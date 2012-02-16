@@ -1,0 +1,13 @@
+---
+layout: post
+title: Rathaxes presentation
+lang: us
+---
+
+h1. {{ page.title }}
+
+We are pleased to announce that Rathaxes will be presented during the LSM the 13th wednesday 2011 at 5pm.
+
+Here is the link where you can find all the information: "Rathaxes":http://2011.rmll.info/Rathaxes?lang=en
+
+-- Thomas Sanchez

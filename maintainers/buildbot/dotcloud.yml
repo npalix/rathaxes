@@ -1,0 +1,26 @@
+# Required environment variables that should be set using dotcloud var set:
+# - BUILDBOT_SLAVES_PASSWORD
+# - BUILDBOT_GOOGLE_CODE_SECRET_KEY: found on Google Code administer/source tab.
+
+master:
+    type: custom
+    buildscript: master/dotcloud-builder
+    ports:
+        www: http
+        webhook: tcp
+        slaves: tcp
+    processes:
+        buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+
+slave:
+    type: custom
+    buildscript: slave/dotcloud-builder
+    processes:
+        buildbot: twistd --no_save --nodaemon -y ~/buildbot.tac
+    systempackages:
+        - cmake
+        - texlive-full
+        - ia32-libs
+
+db:
+    type: postgresql
