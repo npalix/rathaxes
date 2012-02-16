@@ -20,7 +20,7 @@ changeDirectory(working_directory);
 
 // Walk through the AST in order to parse each placeholder
 // and to save their AST into the .compile node.
-#include "rtxTpl/rtxMeta.inc.cws"
+#include "passes/back/rtxMeta.inc.cws"
 
 local has_error = false;
 foreach item in source.block

@@ -112,8 +112,14 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
     # target goes out of date and will be rebuilt at the next "make".
     FILE(GLOB_RECURSE COMPILER_FILES
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/misc/*.cw[sp]"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rtx*.cw[sp]"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/parse/*.cwp"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/node/*.cws"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/typing/*.cws"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/linker/*.cws"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*.cws"
+         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*/*.cws"
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws")
+    MESSAGE(STATUS ${COMPILER_FILES})
 
     # ADD_CUSTOM_COMMAND + ADD_CUSTOM_TARGET is a CMake idiom to add a target
     # that should be rebuilt automatically when its sources change.

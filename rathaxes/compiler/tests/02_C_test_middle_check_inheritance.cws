@@ -18,7 +18,7 @@ createDirectory(working_directory);
 changeDirectory(working_directory);
 
 traceLine("Checking inheritance");
-#include "rtxInterfaces/rtxInterfaces.inc.cws"
+#include "passes/mid/rtxTypeCheck.inc.cws"
 
 foreach itf_node in source.block
 {

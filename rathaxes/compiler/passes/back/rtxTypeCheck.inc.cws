@@ -1,7 +1,9 @@
-#if !existFunction(rtxTplTypeCheck_version)
+#if !existFunction(rtxBack_TypeCheck_version)
 
-function rtxTplTypeCheck_version()
+function rtxBack_TypeCheck_version()
 { return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
 
 declare function rtxTpl_TypeCheckFor<T>(local_node : node);
 

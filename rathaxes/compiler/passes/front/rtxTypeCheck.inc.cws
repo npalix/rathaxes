@@ -1,7 +1,9 @@
-#if !existFunction(rtxFront_version)
+#if !existFunction(rtxFront_TypeCheck_version)
 
-function rtxFront_version()
+function rtxFront_TypeCheck_version()
 { return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
 
 /*
  * This set of templated functions walk through the front-end tree,

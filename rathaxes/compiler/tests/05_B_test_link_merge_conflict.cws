@@ -1,7 +1,7 @@
 #include "misc/colors.cws"
 #include "cnorm.inc.cws"
-#include "rtxNode/rtxNode.inc.cws"
-#include "rtxLink/rtxLink.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
 
 function addItf(cache1 : node, cache2 : node, item : node)
 {
