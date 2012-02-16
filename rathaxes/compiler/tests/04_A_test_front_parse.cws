@@ -1,7 +1,7 @@
 /*
 	TEST for template code parsing
 */
-
+#include "misc/colors.cws"
 #include "02_C_test_middle_check_inheritance.cws"
 traceLine("ITF:" + toString(this));
 
@@ -136,33 +136,33 @@ generateString({
 			}
 		}
 
-/*
+
 		public property word divisor
 		{
-			set
+			set(value)
 			{
-				SET(LCR.dlab, clock);
+				SET(LCR->dlab.clock);
 				SET(DLL, value[0..7]);
 				SET(DLM, value[8..15]);
-				SET(LCR.dlab, buffers);
+				SET(LCR->dlab.buffers);
 			}
 	
-			get
+			get(value)
 			{
-				SET(LCR.dlab, clock);
+				SET(LCR->dlab.clock);
 				SET(value[0..7], DLM);
 				SET(value[8..15], DLL);
-				SET(LCR.dlab, buffers);
+				SET(LCR->dlab.buffers);
 			}
 		}
-*/
+
 		User::read(User::Context ctx, User::Buffer output)
 		{
 		    LOG("my RS232 [read]\n");
-		    /* CONCAT(output, rcv_buf)
+		    CONCAT(output, rcv_buf)
 		    {
-		    	PRECONDITION {WAIT(LSR.data_available, TRUE);}
-		    } */
+		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
+		    }
 		}
 
 		User::write(User::Context ctx, User::Buffer input)
@@ -170,7 +170,7 @@ generateString({
 			LOG("my RS232 [write]\n");
 			COPY(snd_buf, input)
 			{
-				PRECONDITION {WAIT(LSR.thr_state, empty);}
+				PRECONDITION {WAIT(LSR->thr_state.empty);}
 			}
 		}
 
@@ -188,8 +188,7 @@ generateString({
 		{
 			LOG("my RS232 [on_plug]\n");
 			SET(divisor, 0x0C);
-			SET(LCR.word_lengh, _8bits);
-			SET();
+			SET(LCR->word_lengh._8bits);
 		}
 	}
 
