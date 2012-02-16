@@ -2,7 +2,10 @@
 	TEST for template code parsing
 */
 
-local working_directory = "__04_A_test_front_parse";
+#include "02_C_test_middle_check_inheritance.cws"
+traceLine("ITF:" + toString(this));
+
+local working_directory = "../__04_A_test_front_parse";
 if (existDirectory(working_directory))
 {
     traceLine("Directory " + working_directory + " already exists");
@@ -156,10 +159,10 @@ generateString({
 		User::read(User::Context ctx, User::Buffer output)
 		{
 		    LOG("my RS232 [read]\n");
-		    CONCAT(output, rcv_buf)
+		    /* CONCAT(output, rcv_buf)
 		    {
 		    	PRECONDITION {WAIT(LSR.data_available, TRUE);}
-		    }
+		    } */
 		}
 
 		User::write(User::Context ctx, User::Buffer input)
@@ -219,6 +222,7 @@ generateString({
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
 traceLine("input:\n" + input);
+saveToFile("INPUT.TXT", input);
 
 local source;
 cnormDialect<"__std__">(source);

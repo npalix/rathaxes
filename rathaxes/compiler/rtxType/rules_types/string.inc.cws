@@ -1,15 +1,21 @@
-function        rtxType_Parse<"string.inc.cws">(src : value)
+function        rtxType_Parse<"string.inc.cws">(src : value, out_type : node)
 {
-        local   out;
         parseStringAsBNF({
                 string ::= ['"' ->[~'\\' '"']]:str
-                        #continue #empty
-                        =>{this = str;}
+                        =>{
+                                this.rtype = "";
+                                local nameId;
+                                rtxNodeIdentifier(nameId, "string", "Builtin");
+                                local dummy;
+                                rtxNodeRType(this.rtype, nameId, dummy);
+                                insert this.val = str;
+                        }
                 ;
-        }, out, src);
-        if (out != "")
-        {       return true;}
-        return false;
+        }, out_type, src);
+        if (out_type.rtype == "unknown")
+        {       return false;}
+        traceLine("FOUND:" + toString(out_type));
+        return true;
 }
 
 function        rtxNode2cnormNode<"string">(in_param : node, out_param : node)
