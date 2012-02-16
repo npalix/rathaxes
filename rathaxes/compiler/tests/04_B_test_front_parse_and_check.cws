@@ -20,12 +20,12 @@ local dummy;
 local input;
 generateString({    
 
-	device RS232
+	device Testouille
 	{
 		register byte rcv_buf mode R like (........) at 0;
 		register byte snd_buf mode R like (........) at 0;
 		
-		register byte IER mode RW like (.........) at 1
+		register byte IER mode RW like (..10101.) at 1
 		{
 			[0] as data_available;
 			[1] as transmitter_empty;
@@ -35,9 +35,9 @@ generateString({
 			[5] as low_power_mode;
 		}
 
-		register byte LCR mode RW like (........) at 3
+		register byte LCR mode RW like (.*.011..) at 3
 		{
-			[0..1] as word_lengh
+			[1..0] as word_lengh
 			{
 				(00) -> _5bits;
 				(01) -> _6bits;
@@ -59,13 +59,13 @@ generateString({
 				(101) -> high;
 				(111) -> low;
 			}
-
+/*
 			[6] as break_signal
 			{
 				(0) -> disable;
 				(1) -> enable;
 			}
-
+*/
 			[7] as dlab
 			{
 				(0) -> buffers;
@@ -73,7 +73,7 @@ generateString({
 			}
 		}
 
-		register byte MCR mode RW like (****.*..) at 4
+		register byte MCR mode RW like (****....) at 4
 		{
 			[0] as dtr;
 			[1] as rts;
@@ -161,6 +161,7 @@ removeVariable(source.dialect);
 
 saveProject("__04_B_rtx_parse__.tree", source);
 rtxFront_TypeCheck(source);
+saveProject("__04_B_rtx_compiled.tree", source);
 
 traceLine("====>Result of parsing: __04_B_rtx_parse__.tree");
 if (!isEmpty(source.error))

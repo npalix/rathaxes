@@ -940,9 +940,74 @@ function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
  */
 function rtxTypeCheck_Register(theRegister : node)
 {
-    // TODO : not finish
-   traceLine("check REG:" + theRegister.name);  
-    return true;
+        // TODO : not finish
+        traceLine("check REG:" + theRegister.name);  
+        // get the pattern in usefull way
+        local   likePattern;
+        stringToArray(theRegister.like.pattern, likePattern);
+        local   bitsize = getArraySize(likePattern);
+        // TODO: check that the pattern match the bitsize of the register type
+        //...
+        // foreach fields
+        foreach field in theRegister.body.block
+        {
+                // check that begin and end are ordered
+                if (existVariable(field.map.end) && $field.map.begin >= field.map.end$)
+                {
+                        local tmp = field.map.end;
+                        field.map.end = field.map.begin;
+                        field.map.begin = tmp;
+                }
+                // check that the field is in the pattern
+                if (
+                        ($field.map.begin < 0$ || $field.map.begin > bitsize - 1$)
+                        || (existVariable(field.map.end) && $field.map.end > bitsize - 1$)
+                )
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                + "[" + field.map.begin + ".." + field.map.end + "] is outside range 0.." + $bitsize - 1$ + "\n"
+                                + DEFAULT_COLOR);
+                        return false;
+                }
+                // calc the size of the field in bitsize
+                local field_bitsize = 1;
+                if (existVariable(field.map.end))
+                {       field_bitsize = $1 + field.map.end - field.map.begin$;}
+                traceLine("FIELD:" + field.name + " FIELDSIZE:" + field_bitsize);
+                // check that the range don't have * and calc the mask
+                traceLine("check pattern:" + theRegister.like.pattern);
+                local maskPattern;
+                local end = field.map.begin;
+                if (existVariable(field.map.end))
+                {       end = field.map.end;}
+                if (!bitArrayExtractMask(likePattern, field.map.begin, end, maskPattern))
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                        + "Can't extract * value in pattern :" + likePattern 
+                                        + " for range [" + field.map.begin + ".." + end + "]\n"
+                                        + DEFAULT_COLOR);
+                        return false;
+                }
+                traceLine("Mask:" + toString(maskPattern));
+                // foreach value in field
+                foreach value in field.listmask
+                {
+                        local   valuePattern;
+                        stringToArray(value.mask, valuePattern);
+                        local   value_bitsize = getArraySize(valuePattern);
+                        // check that the value_bitsize == field_bitsize
+                        if (value_bitsize != field_bitsize)
+                        {
+                                traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                                + "the value " + value.mask + " is outside the range value for the field\n"
+                                                + DEFAULT_COLOR);
+                                return false;
+                        }
+                        local   valueMask = $bitArrayValue(valuePattern) << field.map.begin$;
+                        traceLine("VALUE :" + value.name + " = " + valueMask);
+                }
+        }
+        return true;
 }
 
 /*
