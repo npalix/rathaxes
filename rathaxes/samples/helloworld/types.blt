@@ -1,0 +1,20 @@
+with Types
+{
+    /* Repeat "Types::" to work-around limitations in the compiler. */
+    template type Types::integer()
+    {
+        chunk ::decl()
+        {
+            typedef int t_integer;
+        }
+
+        chunk ::set(value)
+        {
+            ${self} = ${value};
+        }
+
+        map
+        {
+        }
+    }
+}

@@ -1,0 +1,16 @@
+device HelloWorld use Main, Types, Log
+{
+    Main::start(Main::Arguments args)
+    {
+        Main::log(args);
+
+        Log::info("It works!");
+
+        Main::exit(0);
+    }
+}
+
+configuration
+{
+
+}

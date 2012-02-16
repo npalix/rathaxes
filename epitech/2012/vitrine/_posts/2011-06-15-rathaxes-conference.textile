@@ -1,0 +1,13 @@
+---
+layout: post
+title: Conférence sur Rathaxes
+lang: fr
+---
+
+h1. {{ page.title }}
+
+Nous avons le plaisir de vous annoncer que la conférence sur Rathaxes aura lieu le mercredi 13 juillet 2011 à 17 h.
+
+Voici le lien vers la page "Rathaxes":http://2011.rmll.info/Rathaxes?lang=fr
+
+-- Thomas Sanchez
