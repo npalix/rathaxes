@@ -9,8 +9,9 @@ function        rtxTools_version()
 
 declare function        stringToArray(str : value, list : node);
 declare function        bitArrayValue(list : node);
+declare function        bitToValue(str : value);
+declare function        valueToHex(num : value);
 declare function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference);
-declare function        integerToBitString(num : value);
 
 // transform a string into his array representation
 function        stringToArray(str : value, list : node)
@@ -37,63 +38,68 @@ function        bitArrayValue(list : node)
         return res;
 }
 
+// convert a binary string representation to integer value
+function        bitToValue(str : value)
+{
+        local   bitArray;
+        stringToArray(str, bitArray);
+        return bitArrayValue(bitArray);
+}
+
+// convert a binary string representation to integer value
+function        valueToHex(num : value)
+{
+        local   repr = {"0", "1", "2", "3", "4","5","6","7","8","9","A","B","C","D","E", "F"};
+        local   res;
+        if ($num == 0$)
+        {       return "0";}
+        while ($num > 0$)
+        {
+                res = repr[$num % 16$] + res;
+                num = $num >> 4$;
+        }
+        return res;
+}
+
 // extract from a bitarray a sub part for a mask value (allow .,0,1 in pattern, disallow *)
 // assume begin and end in the range of the bit array
 // assume list in MSB order
 // result: a mask in {.and, .or} form 
 function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference)
 {
-        insert mask.and = 0;
-        insert mask.or = 0;
+        insert mask.and = "";
+        insert mask.or = "";
         local idx = 0;
         foreach thebit in reverse list
         {
                 if ($idx >= begin$ && $idx <= end$)
+                {
                         switch (thebit)
                         {
                                 case '.':
-                                        mask.and = $mask.and + 1$;
-                                        mask.or = $mask.or$;
+                                        mask.and = '1' + mask.and;
+                                        mask.or = '0' + mask.or;
                                         break;
                                 case '1':
-                                        mask.and = $mask.and$;
-                                        mask.or = $mask.or + 1$;
+                                        mask.and = '0' + mask.and;
+                                        mask.or = '1' + mask.or;
                                         break;
                                 case '0':
-                                        mask.and = $mask.and$;
-                                        mask.or = $mask.and$;
+                                        mask.and = '0' + mask.and;
+                                        mask.or = '0' + mask.or;
                                         break;
                                 case '*':
                                 default:
                                         return false;
                         }
-                if ($idx >= begin$)
-                {       
-                        mask.and = $mask.and << 1$;
-                        mask.or = $mask.or << 1$;
                 }
                 idx = $idx + 1$;
         }
-        traceLine("Mask &:" + mask.and + " :" + integerToBitString(mask.and) + "\n");
-        traceLine("Mask |:" + mask.or + " :" + integerToBitString(mask.or) + "\n");
+        insert mask.and_int = bitToValue(mask.and);
+        insert mask.or_int = bitToValue(mask.or);
+        insert mask.and_hex = valueToHex(mask.and_int);
+        insert mask.or_hex = valueToHex(mask.or_int);
         return true;
-}
-
-// convert a integer number into a bit string representation in MSB order
-function        integerToBitString(num : value)
-{
-        local   res;
-        if (num == 0)
-        {res = "0";}
-        local bit;
-        while ($num != 0$)
-        {
-                bit = $num & 1$;
-                traceLine("BITE:" + bit);
-                res = (($bit == 1$)? "1" : "0") + res;
-                num = $num >> 1$;
-        }
-        return res;
 }
 
 #end
