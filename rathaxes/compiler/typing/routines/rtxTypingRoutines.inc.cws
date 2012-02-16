@@ -1,10 +1,12 @@
-#if !existFunction(rtxTypingRoutines_version)
-
-function        rtxTypingRoutines_version()
-{ return "1.0"; }
+#if !existFunction(rtxInterfaces_version)
 
 #include "misc/colors.cws"
-#include "linker/rtxLink.inc.cws"
+#include "misc/rtxTools.inc.cws"
+#include "rtxLink/rtxLink.inc.cws"
+
+function        rtxInterfaces_version()
+{ return "1.0"; }
+
 
 function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
 {
@@ -433,6 +435,8 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
     return false;
 }
 
+
+////////// TO CHECK
 function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_error : node)
 {
     // A builtin chunk should be written as "::Something"
@@ -936,7 +940,8 @@ function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
  */
 function rtxTypeCheck_Register(theRegister : node)
 {
-    // TODO FIXME XXX
+    // TODO : not finish
+   traceLine("check REG:" + theRegister.name);  
     return true;
 }
 
@@ -1057,4 +1062,4 @@ function rtxTypeCheck_Config(theConfig : node)
 
 
 
-#end    /* !existFunction(rtxTypingRoutines_version) */
+#end    /* !existFunction(rtxInterfaces_version) */
