@@ -101,12 +101,16 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
     // Unkown scope and not explicit global ?
     if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
     {
+        // We are searching for qualified items, thus set the scope before checking.
+        rtypeNode.name.scope = interfaceNode.name;
+        name = rtxRTypeName<rtypeNode.type>(rtypeNode);
         // Check current interface.
         if (findElement(name + "{}", interfaceNode.types) == true)
         {
             rtypeNode.name.scope = interfaceNode.name;
             return true;
         }
+        rtypeNode.name.scope = "";
 
         // Recursive check in parents interfaces.
         foreach parentInterface in interfaceNode.inheritance
@@ -275,6 +279,29 @@ function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
     return true;
 }
 
+function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
+                                                     currentInterface : node,
+                                                     interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"builtintype">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
 
 function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : node,
                                                          currentInterface : node,
@@ -298,7 +325,6 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
             traceLine(RED + "[Error] Type ``" + typeName + "''"
                       + " could not be found for variable ``" + varname + "''." + DEFAULT_COLOR);
     }
-
     return ret;
 }
 
@@ -355,6 +381,7 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
     {
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.name);
 
     return true;
 }
@@ -808,6 +835,9 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
             }
         }
     }
+    /// XXX TODO FIXME
+    // WE NEED ABSOLUTELY TO BE ABLE TO RESOLVE THE SCOPES OF THE TEMPLATE's PARAMETERS
+    /// XXX TODO FIXME
     traceLine(RED + "[Error] Could not find template '" + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
     return false;
 }
@@ -907,11 +937,12 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
  */
 function rtxTypeCheck_DeviceHasSequence(theDevice : node, itfSeqNode : node)
 {
-    local itfSeqName = rtxRTypeName<itfSeqNode.rtype.type>(itfSeqNode.rtype);
+    local dummy;
+    local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(itfSeqNode.rtype, dummy);
     foreach item in theDevice.body.block
     {
         if (item.type == "__rtx_sequence__"
-            && itfSeqName == rtxRTypeName<item.rtype.type>(item.rtype))
+            && itfSeqProto == rtxRTypeFullQualifiedName<"sequence">(item.rtype, dummy))
             return true;
     }
     return false;
@@ -995,8 +1026,9 @@ function rtxTypeCheck_Register(theRegister : node)
  */
 function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
 {
+    local dummy;
     local errcount = 0;
-    local fullName = rtxRTypeName<theSequence.rtype.type>(theSequence.rtype);
+    local prototype = rtxRTypeFullQualifiedName<"sequence">(theSequence.rtype, dummy);
     local qualifier = "";
 
     // Check that the prototype exists...
@@ -1008,7 +1040,7 @@ function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
         if (qualifier == "provided")
             traceLine(RED + "[Error] A provided sequence cannot be implemented." + DEFAULT_COLOR);
         else
-            traceLine(RED + "[Error] Sequence " + fullName
+            traceLine(RED + "[Error] Sequence " + prototype
                       + " does not comply to the available interfaces." + DEFAULT_COLOR);
         return false;
     }
@@ -1026,8 +1058,8 @@ function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
             if (qualifier != "provided")
                 traceLine(RED + "[Error] A sequence not provided cannot be called ("+cFullName+")." + DEFAULT_COLOR);
             else
-                traceLine(RED + "[Error] The call " + cFullName + " in sequence " + fullName
-                          + " does not comply to the available interfaces" + DEFAULT_COLOR);
+                traceLine(RED + "[Error] The call " + cFullName + " in sequence " + prototype
+                          + " does not comply to the available interfaces ->"+toString(call,true) + DEFAULT_COLOR);
             increment(errcount);
         }
     }

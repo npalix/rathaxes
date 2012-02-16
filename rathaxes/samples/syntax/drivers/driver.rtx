@@ -16,7 +16,7 @@ use Algorithms, LKM, User
 
     register byte LCR mode RW like (........) at 3
     {
-        [0..1] as word_lengh
+        [0..1] as word_length
         {
             (00) -> _5bits;
             (01) -> _6bits;
@@ -162,7 +162,7 @@ use Algorithms, LKM, User
     {
         log("my RS232 [on_plug]\n");
         //set(divisor, 0x0C);
-        set(LCR.word_lengh._8bits);
+        set(LCR->word_length._8bits);
         //set();
     }
 }

@@ -1,4 +1,4 @@
-device HelloWorld use Main, Types, Log
+device HelloWorld use Main, Builtin, Log
 {
     Main::start(Main::Arguments args)
     {

@@ -1,6 +1,6 @@
 with Log
 {
-    template sequence   Log::info(::string msg)
+    template sequence   Log::info(Builtin::string msg)
     {
         chunk   ::CALL
         {

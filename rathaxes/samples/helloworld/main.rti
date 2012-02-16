@@ -1,4 +1,4 @@
-interface Main : Types
+interface Main : Builtin
 {
     provided pointcut   Main::include_headers;
     provided pointcut   Main::main;
@@ -21,7 +21,7 @@ interface Main : Types
         provided chunk  ::CALL;
     }
 
-    provided sequence   Main::exit(::number)
+    provided sequence   Main::exit(Builtin::number)
     {
         provided chunk  ::CALL;
     }

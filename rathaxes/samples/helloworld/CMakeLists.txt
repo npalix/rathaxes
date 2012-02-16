@@ -1,6 +1,6 @@
 ADD_RATHAXES_SOURCES(hello hello.rtx
-                     RTI types.rti main.rti log.rti
-                     BLT types.blt log.blt main.blt)
+                     RTI builtin.rti main.rti log.rti
+                     BLT builtin.blt log.blt main.blt)
 
 ADD_RATHAXES_EXECUTABLE(Test_Rathaxes_Samples_Helloworld hello)
 

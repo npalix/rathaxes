@@ -8,6 +8,7 @@ function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
                                 rtxNodeIdentifier(nameId, "number", "Builtin");
                                 local dummy;
                                 rtxNodeRType(this.rtype, nameId, dummy);
+                                insert this.type = "__rtx_number__";
                                 insert this.val = str;
                         }
                 ;
@@ -21,7 +22,7 @@ function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
         return true;
 }
 
-function        rtxNode2cnormNode<"Builtin::number">(in_param : node, out_param : node)
+function        rtxNode2cnormNode<"__rtx_number__">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalLiteral(out_param, in_param.val);
 }

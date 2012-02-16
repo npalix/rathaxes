@@ -91,7 +91,6 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
     rtx_scoped_identifier(nameNode)
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList(theDecl, nameList);
     ['{' [ rtx_type_list(theDecl, rtypeNode) ]* '}']?
     #continue(sError, "Missing ';' ending type declaration.")
     ';'
@@ -108,7 +107,6 @@ rtx_itf_stmt<"builtintype">(theDecl : node, nameList : node, theQualif : value) 
     ';'
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList(theDecl, nameList);
 ;
 
 rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=
@@ -132,7 +130,6 @@ rtx_itf_stmt<"sequence">(theDecl : node, nameList : node, theQualif : value) ::=
     => local rtypeNode;
     rtx_template_prototype(rtypeNode, theDecl.identifiers)
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
-    => rtxItfAddTypeToList(theDecl, nameList);
     #continue(sError, "Expected Block or ';' ending sequence declaration.")
     [
         ';'
