@@ -2,7 +2,7 @@
 
 #include "misc/colors.cws"
 #include "misc/rtxTools.inc.cws"
-#include "rtxLink/rtxLink.inc.cws"
+#include "linker/rtxLink.inc.cws"
 
 function        rtxInterfaces_version()
 { return "1.0"; }
