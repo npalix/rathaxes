@@ -139,7 +139,7 @@ generateString({
 
 		public property word divisor
 		{
-			set(value)
+			set
 			{
 				SET(LCR->dlab.clock);
 				SET(DLL, value[0..7]);
@@ -147,7 +147,7 @@ generateString({
 				SET(LCR->dlab.buffers);
 			}
 	
-			get(value)
+			get
 			{
 				SET(LCR->dlab.clock);
 				SET(value[0..7], DLM);
@@ -217,6 +217,7 @@ generateString({
 #include "rtxNode/rtxNode.inc.cws"
 #include "rtxLink/rtxLink.inc.cws"
 #include "rtxType/rtxType.inc.cws"
+#include "rtxFront/rtxTypeCheck.inc.cws"
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
@@ -230,6 +231,8 @@ rtxType_Load(source);
 parseStringAsBNF("rtxParse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
+
+rtxFront_TypeCheck(source);
 
 saveProject("__04_rtx_parse__.tree", source);
 traceLine("====>Result of parsing: __04_rtx_parse__.tree");

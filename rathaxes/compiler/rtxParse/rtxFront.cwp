@@ -148,12 +148,20 @@ rtx_register(theNode : node) ::= "register"
  */
 
 rtx_property(theNode : node) ::=
-        ["public"|"private"]? "property" rtx_qualified_name #readIdentifier:name
+        ["public"|"private"]?:visibility "property" 
+        => local type;
+        => local body;
+        =>traceLine("PROP");
+        #check(rtxNodeProperty(theNode, type, body, visibility))
+        =>traceLine("PROP:"+toString(theNode));
+        rtx_scoped_identifier(type)
+        =>traceLine("PROP:"+toString(type));
+        #readIdentifier:theNode.name
+        =>traceLine("PROP:"+theNode.name);
         '{'
-                #insert(theNode.body)
-                => cnormNodeBlock(theNode.body);
                 [
                         rtx_sequence_call(theNode.body)
+                        =>traceLine("PROP:"+toString(theNode.body#back));
                 ]*
         '}'
 ;
@@ -191,6 +199,7 @@ rtx_sequence_call(theBlock : node) ::=
         [rtx_sequence_args(lastNode.args) ]?
         [';' 
         |       '{'
+=>traceLine("FUUU:"+lastNode.sequence.name);
                 #insert(lastNode.body)
                 #check(cnormNodeBlock(lastNode.body))
                 [rtx_sequence_call(lastNode.body)]*
