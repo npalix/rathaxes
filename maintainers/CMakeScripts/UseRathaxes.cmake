@@ -279,9 +279,9 @@ ENDIF (${PROJECT_NAME} STREQUAL RATHAXES)
 # Only do this on Linux, as far as I know nobody compiles Linux from another OS.
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     FIND_RATHAXES_PACKAGE(LinuxKBuildDir)
-    IF (LINUX_KBUILD_DIR)
+    IF (NOT LINUX_KBUILD_DIR)
         MESSAGE(STATUS "No valid Linux build tree found, Linux kernel modules will not be built")
-    ENDIF (LINUX_KBUILD_DIR)
+    ENDIF (NOT LINUX_KBUILD_DIR)
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 # Set some compiler options:
