@@ -8,6 +8,9 @@ function        rtxTools_version()
 {       return "1.0";}
 
 declare function        stringToArray(str : value, list : node);
+declare function        bitArrayValue(list : node);
+declare function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference);
+declare function        integerToBitString(num : value);
 
 // transform a string into his array representation
 function        stringToArray(str : value, list : node)
@@ -19,6 +22,78 @@ function        stringToArray(str : value, list : node)
                 pushItem list = charAt(str, i);
                 i = $i + 1$;
         }
+}
+
+// to transform a bit array representation into a value
+function        bitArrayValue(list : node)
+{
+        local res = 0;
+        foreach bit in list
+        {
+                res = $(res + bit)$;
+                if (!last(bit))
+                {       res = $res << 1$;}
+        }
+        return res;
+}
+
+// extract from a bitarray a sub part for a mask value (allow .,0,1 in pattern, disallow *)
+// assume begin and end in the range of the bit array
+// assume list in MSB order
+// result: a mask in {.and, .or} form 
+function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference)
+{
+        insert mask.and = 0;
+        insert mask.or = 0;
+        local idx = 0;
+        foreach thebit in reverse list
+        {
+                if ($idx >= begin$ && $idx <= end$)
+                        switch (thebit)
+                        {
+                                case '.':
+                                        mask.and = $mask.and + 1$;
+                                        mask.or = $mask.or$;
+                                        break;
+                                case '1':
+                                        mask.and = $mask.and$;
+                                        mask.or = $mask.or + 1$;
+                                        break;
+                                case '0':
+                                        mask.and = $mask.and$;
+                                        mask.or = $mask.and$;
+                                        break;
+                                case '*':
+                                default:
+                                        return false;
+                        }
+                if ($idx >= begin$)
+                {       
+                        mask.and = $mask.and << 1$;
+                        mask.or = $mask.or << 1$;
+                }
+                idx = $idx + 1$;
+        }
+        traceLine("Mask &:" + mask.and + " :" + integerToBitString(mask.and) + "\n");
+        traceLine("Mask |:" + mask.or + " :" + integerToBitString(mask.or) + "\n");
+        return true;
+}
+
+// convert a integer number into a bit string representation in MSB order
+function        integerToBitString(num : value)
+{
+        local   res;
+        if (num == 0)
+        {res = "0";}
+        local bit;
+        while ($num != 0$)
+        {
+                bit = $num & 1$;
+                traceLine("BITE:" + bit);
+                res = (($bit == 1$)? "1" : "0") + res;
+                num = $num >> 1$;
+        }
+        return res;
 }
 
 #end
