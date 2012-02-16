@@ -433,14 +433,97 @@ function rtxNodeCall_paramType<"__rtx_number__">(theParam : node, theSequence : 
 
 function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSequence : node, out_param : node)
 {
-    // TODO FIXME XXX Use hash tables to check this. For now we assume it's alright.
+    if (getArraySize(theParam.val) != 2)
+    {
+        traceLine(RED + "[CRITICAL ERROR] The register field node is malformed." + DEFAULT_COLOR);
+        return false;
+    }
+
+    if (!existVariable(theParam#root.map.registers))
+    {
+        traceLine(RED + "[ERROR] No mapping in the tree to identify registers." + DEFAULT_COLOR);
+        return false;
+    }
+    localref    curMap = theParam#root.map.registers;
+
+    if (!findElement(theParam.val[0], curMap))
+    {
+        traceLine(RED + "[ERROR] There is no register named '"+theParam.val[0]+"' in the device."+ DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap[theParam.val[0]];
+
+    if (!existVariable(curMap.map))
+    {
+        traceLine(RED + "[ERROR] The register named '"+theParam.val[0]+"' does not describe any field."+ DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap.map;
+
+    if (!findElement(theParam.val[1], curMap))
+    {
+        traceLine(RED + "[ERROR] No register field named '"+theParam.val[1]
+                  +"' could be found in the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        return false;
+    }
+
     setall out_param = theParam.rtype;
     return true;
 }
 
 function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSequence : node, out_param : node)
 {
-    // TODO FIXME XXX Use hash tables to check this. For now we assume it's alright.
+    if (getArraySize(theParam.val) != 3)
+    {
+        traceLine(RED + "[CRITICAL ERROR] The register value node is malformed." + DEFAULT_COLOR);
+        return false;
+    }
+
+    if (!existVariable(theParam#root.map.registers))
+    {
+        traceLine(RED + "[ERROR] No mapping in the tree to identify registers." + DEFAULT_COLOR);
+        return false;
+    }
+    localref    curMap = theParam#root.map.registers;
+
+    if (!findElement(theParam.val[0], curMap))
+    {
+        traceLine(RED + "[ERROR] There is no register named '"+theParam.val[0]+"' in the device."+ DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap[theParam.val[0]];
+
+    if (!existVariable(curMap.map))
+    {
+        traceLine(RED + "[ERROR] The register named '"+theParam.val[0]+"' does not describe any field."+ DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap.map;
+
+    if (!findElement(theParam.val[1], curMap))
+    {
+        traceLine(RED + "[ERROR] No register field named '"+theParam.val[1]
+                  +"' could be found in the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap[theParam.val[1]];
+
+    if (!existVariable(curMap.map))
+    {
+        traceLine(RED + "[ERROR] The register field '"+theParam.val[1]
+                  +"' of the register '"+theParam.val[0]+"' does not describe any value."+ DEFAULT_COLOR);
+        return false;
+    }
+    ref curMap = curMap.map;
+
+    if (!findElement(theParam.val[2], curMap))
+    {
+        traceLine(RED + "[ERROR] No register value named '"+theParam.val[2]
+                  +"' could be found in the register field '"+theParam.val[1]
+                  +"' of the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        return false;
+    }
+
     setall out_param = theParam.rtype;
     return true;
 }
