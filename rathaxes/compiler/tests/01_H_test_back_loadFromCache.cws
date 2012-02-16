@@ -49,4 +49,10 @@ if (rtxLink_LoadItem(theChunk, c_tree) == false)
     error("01_H_test_back_loadFromCache.cws: Could not load script for chunk"
           + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
 
+// test failed cache
+//deleteFile("__01_test_back_cache/__06_rtx_codeworker_6.cws");
+//if (rtxLink_LoadItem(theChunk, c_tree) == true)
+//    error("01_H_test_back_loadFromCache.cws: Could not load script for chunk"
+//          + " 'CALL' for template "+rtxRTypeName<theRtype.type>(theRtype));
+
 traceLine("====>Codeworker Script and tree Loaded with success.");
