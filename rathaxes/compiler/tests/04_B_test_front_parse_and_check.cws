@@ -27,12 +27,11 @@ generateString({
 		
 		register byte IER mode RW like (..10101.) at 1
 		{
-			[0] as data_available;
-			[1] as transmitter_empty;
-			[2] as line_status_change;
-			[3] as modem_status_change;
-			[4] as sleep_mode;
-			[5] as low_power_mode;
+			[0..7] as data_available
+                        {
+                                (00000000) -> nia;
+                        
+                        }
 		}
 
 		register byte LCR mode RW like (.*.011..) at 3
