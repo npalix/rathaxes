@@ -52,7 +52,7 @@ use Algorithms, LKM, User
         }
     }
 
-    register byte MCR mode RW like (****.*..) at 4
+    register byte MCR mode RW like (****....) at 4
     {
         [0] as dtr;
         [1] as rts;
