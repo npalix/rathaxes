@@ -17,7 +17,7 @@ function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
         }, out_type, src);
         if (out_type.rtype == "unknown")
         {       return false;}
-        traceLine("FOUND:" + toString(out_type));
+//        traceLine("FOUND:" + toString(out_type));
         return true;
 }
 

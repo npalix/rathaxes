@@ -18,13 +18,11 @@ function        rtxType_Search(src : value, out : node)
             /*
              * If the syntax throws an error, catch it here.
              */
-                try {
-                        if (rtxType_Parse<it.key()>(src, out))
-                        {
-                                traceLine("Found TYPE:" + toString(out));
-                                return true;
-                        }
-                } catch (sError) {}
+                if (rtxType_Parse<it.key()>(src, out))
+                {
+                        //traceLine("Found TYPE:" + toString(out));
+                        return true;
+                }
         }
         return false;
 }
