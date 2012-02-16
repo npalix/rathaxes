@@ -2,8 +2,8 @@ interface PCI : LKM
 {
     provided type       PCI::Device;
 
-    required variable ::number  PCI::vendor_id;
-    required variable ::number  PCI::product_id;
+    required variable Builtin::number  PCI::vendor_id;
+    required variable Builtin::number  PCI::product_id;
 
     provided sequence   PCI::register()
     {

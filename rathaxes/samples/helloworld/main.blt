@@ -82,7 +82,7 @@ with Main
         }
     }
 
-    template sequence Main::exit(::number status)
+    template sequence Main::exit(Builtin::number status)
     {
         chunk   ::CALL
         {

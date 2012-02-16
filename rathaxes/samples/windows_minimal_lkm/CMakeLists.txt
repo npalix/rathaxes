@@ -1,6 +1,6 @@
 ADD_RATHAXES_SOURCES(minimal_lkm_src lkm.rtx
-                     RTI log.rti lkm.rti
-                     BLT log.blt lkm.blt)
+                     RTI builtin.rti log.rti lkm.rti
+                     BLT             log.blt lkm.blt)
 
 IF (WIN32)
     IF ("_not_a_var_$ENV{DDKBUILDENV}" STREQUAL "_not_a_var_chk")

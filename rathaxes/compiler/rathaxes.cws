@@ -147,6 +147,8 @@ if (toLowerString(this.operation) == "generate")
     rtxType_Load(this.front);
     rtxParse(inputFile, this.front);
 
+    saveProject("front_end.tree", this.front);
+
     if (rtxFront_TypeCheck(this.front) == false)
     {
         traceLine(RED + "[Error] Front-end implementation type"

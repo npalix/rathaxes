@@ -1,7 +1,7 @@
 with LKM, User
 values LKM::OS=linux, LKM::version >= 2.6.24
 {
-    template sequence   Algorithms::log(::string str)
+    template sequence   Algorithms::log(Builtin::string str)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION
         {

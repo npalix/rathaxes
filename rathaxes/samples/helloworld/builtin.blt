@@ -1,7 +1,7 @@
-with Types
+with Builtin
 {
-    /* Repeat "Types::" to work-around limitations in the compiler. */
-    template type Types::integer()
+    /* Repeat "Builtin::" to work-around limitations in the compiler. */
+    template type Builtin::integer()
     {
         chunk ::decl()
         {

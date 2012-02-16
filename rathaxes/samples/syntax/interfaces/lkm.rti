@@ -1,3 +1,13 @@
+interface Builtin
+{
+    provided builtintype        Builtin::string;
+    provided builtintype        Builtin::number;
+    provided builtintype        Builtin::numser;
+    provided builtintype        Builtin::register;
+    provided builtintype        Builtin::register_field;
+    provided builtintype        Builtin::register_value;
+}
+
 interface LKM : Algorithms
 {
     provided builtintype        LKM::Device_list;
@@ -24,26 +34,20 @@ interface LKM : Algorithms
     optional variable ::numser              LKM::arch;
 }
 
-interface Algorithms
+interface Algorithms : Builtin
 {
-    provided builtintype        ::string;
-    provided builtintype        ::number;
-    provided builtintype        ::numser;
-    provided builtintype        ::register;
-    provided builtintype        ::register_field;
-    provided builtintype        ::register_value;
     provided type               Algorithms::Buffer;
 
-    provided sequence   Algorithms::log(::string)
+    provided sequence   Algorithms::log(Builtin::string)
     {
         provided chunk   ::CALL; // use current namespace/template from frontend
     }
 
-    provided sequence   set(::register_value)
+    provided sequence   set(Builtin::register_value)
     {
         provided chunk  ::CALL; // use current namespace/template from frontend
     }
-    provided sequence   set(::register, ::number)
+    provided sequence   set(Builtin::register, Builtin::number)
     {
         provided chunk  ::CALL; // use current namespace/template from frontend
     }
@@ -52,7 +56,7 @@ interface Algorithms
 
 interface User : LKM
 {
-    provided type               Context;//why not device?
+    provided builtintype        User::Context;//why not device?
 
 
     required sequence           User::open(Context)

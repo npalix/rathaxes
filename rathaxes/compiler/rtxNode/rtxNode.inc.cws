@@ -421,91 +421,80 @@ function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param
     error("rtxNodeCall_paramType<"+T+"> not implemented.");
 }
 
-function rtxNodeCall_paramType<"string">(theParam : node, theSequence : node, out_param : node)
+function rtxNodeCall_paramType<"__rtx_string__">(theParam : node, theSequence : node, out_param : node)
 {
-    return rtxNodeIdentifier(out_param, "string", "", true);
+    return rtxNodeIdentifier(out_param, "string", "Builtin");
 }
 
-function rtxNodeCall_paramType<"number">(theParam : node, theSequence : node, out_param : node)
+function rtxNodeCall_paramType<"__rtx_number__">(theParam : node, theSequence : node, out_param : node)
 {
-    return rtxNodeIdentifier(out_param, "number", "", true);
+    return rtxNodeIdentifier(out_param, "number", "Builtin");
 }
 
-function rtxNodeCall_paramType<"symbol">(theParam : node, theSequence : node, out_param : node)
+function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSequence : node, out_param : node)
 {
-    // Since it's a symbol, we truncate at the first '.'
-    local varParts;
-    cutString(theParam.val, '.', varParts);
+    // TODO FIXME XXX Use hash tables to check this. For now we assume it's alright.
+    setall out_param = theParam.rtype;
+    return true;
+}
 
+function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSequence : node, out_param : node)
+{
+    // TODO FIXME XXX Use hash tables to check this. For now we assume it's alright.
+    setall out_param = theParam.rtype;
+    return true;
+}
+
+function rtxNodeCall_paramType<"__rtx_data_field__">(theParam : node, theSequence : node, out_param : node)
+{
     // First, search inside the parameters of the implemented sequence.
     foreach item in theSequence.seqParamName
     {
-        if (item == varParts[0])
+        if (item == theParam.val)
         {
             setall out_param = theSequence.rtype.params[index(item)];
-            // Now that the variable is identified, we must check the mappings if there's some
-            if (getArraySize(varParts) > 1)
-            {
-                // Then we're using a mapping
-                traceLine(YELLOW + "[Warning] Mapping checking not implemented."+ DEFAULT_COLOR);
-                return false;
-            }
-            // Success.
+            // Now, search for the mapping...
+            traceLine(YELLOW + "[WARNING] Type Mapping not checked yet. TBD !" + DEFAULT_COLOR);
             return true;
         }
     }
 
-    // If it's not a parameter of the implemented sequence, is it a register ?
+    // Next, search in the sequence's implementation.
+    traceLine(RED + "[ERROR] We do not search through the implem yet..."+ DEFAULT_COLOR);
+
+    return false;
+}
+
+function rtxNodeCall_paramType<"__rtx_symbol__">(theParam : node, theSequence : node, out_param : node)
+{
+    // First, search inside the parameters of the implemented sequence.
+    foreach item in theSequence.seqParamName
+    {
+        if (item == theParam.val)
+        {
+            setall out_param = theSequence.rtype.params[index(item)];
+            // Success since the field case is not managed here. (here it's a value we want).
+            return true;
+        }
+    }
+
+    // Next, search in the sequence's implementation.
+    traceLine(YELLOW + "[WARNING] We do not search through the implem yet (Call_paramType<symbol>)..."+ DEFAULT_COLOR);
+
+    // If it's not a parameter of the implemented sequence,  or a variable value, is it a register ?
     localref theDevice = theSequence#parent#parent#parent;
     foreach decl in theDevice.body.block
     {
         // The variable was actually a register... Let's check it thoroughly
-        if (decl.type == "__rtx_register__" && decl.name == varParts[0]
-            && getArraySize(varParts) == 1)
+        if (decl.type == "__rtx_register__" && decl.name == theParam.val)
         {
             // Set the id as a '::register'
-            rtxNodeIdentifier(out_param, "register", "", true);
+            rtxNodeIdentifier(out_param, "register", "Builtin");
             return true;
-        }
-        else if (decl.type == "__rtx_register__" && decl.name == varParts[0])
-        {
-            foreach field in decl.body.block
-            {
-                if (field.name == varParts[1] && getArraySize(varParts) == 2)
-                {
-                    // Set the id as a '::register_field'
-                    rtxNodeIdentifier(out_param, "register_field", "", true);
-                    return true;
-                }
-                else if (field.name == varParts[1])
-                {
-                    foreach val in field.listmask
-                    {
-                        if (val.name == varParts[2])
-                        {
-                            if (getArraySize(varParts) > 3)
-                            {
-                                traceLine(RED + "[Error] A register value cannot contain elements: '"
-                                  + theParam.val + "'." + DEFAULT_COLOR);
-                                return false;
-                            }
-                            // Set the id as a '::register_value'
-                            rtxNodeIdentifier(out_param, "register_value", "", true);
-                            return true;
-                        }
-                    }
-                    traceLine(RED + "[Error] Value '" + varParts[2] + "' not defined for field '"
-                              + varParts[1] + "' of register '" + varParts[0] + "'." + DEFAULT_COLOR);
-                    return false;
-                }
-            }
-            traceLine(RED + "[Error] Field '" + varParts[1] + "' not defined for register '"
-                      + varParts[0] + "'." + DEFAULT_COLOR);
-            return false;
         }
     }
 
-    traceLine(RED + "[Error] Variable '" + varParts[0] + "' is not defined in the sequence '"
+    traceLine(RED + "[Error] Variable '" + theParam.val + "' is not defined in the sequence '"
               + rtxRTypeName<theSequence.rtype.type>(theSequence.rtype) + "'.");
     return false;
 }
