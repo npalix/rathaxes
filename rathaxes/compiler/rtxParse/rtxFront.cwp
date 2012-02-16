@@ -175,7 +175,7 @@ rtx_sequence_args(theArgs : node) ::=
         ')'
 ;
 
-rtx_sequence_arg(theArg : node) ::= [ #readCString | #readCChar | [~[','|')']]+ ]:data
+rtx_sequence_arg(theArg : node) ::= [ #readCString | #readCChar | [~[','|')'|'{'|';']]+ ]:data
                 #check(rtxType_Search(data, theArg))
 ;
 
