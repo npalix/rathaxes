@@ -3,7 +3,7 @@
 function        rtxType_version()
 {return "1.0";}
 
-function        rtxType_Parse<T>(src : value)
+function        rtxType_Parse<T>(src : value, out_type : node)
 {
         error("unknown type :" + src);
         return false;
@@ -11,21 +11,20 @@ function        rtxType_Parse<T>(src : value)
 
 function        rtxType_Search(src : value, out : node)
 {
-        foreach it in this.rtxTypes
+        insert out.rtype = "unknown";
+        insert out.val = "";
+        foreach it in this.rtxTypes.files
         {
             /*
              * If the syntax throws an error, catch it here.
              */
-            try {
-                if (rtxType_Parse<it.key()>(src))
-                {
-                        local sKey = it.key();
-                        truncateBeforeString(sKey, ".inc.cws");
-                        insert out.type = sKey;
-                        insert out.val = src;
-                        return true;
-                }
-            } catch (sError) {}
+                try {
+                        if (rtxType_Parse<it.key()>(src, out))
+                        {
+                                traceLine("Found TYPE:" + toString(out));
+                                return true;
+                        }
+                } catch (sError) {}
         }
         return false;
 }
@@ -39,9 +38,10 @@ function        rtxType_Load(out : node)
         { error("unable to load rules_types directory"); }
         foreach f in theDir.files
         {
+                traceLine("Load:" + f);
                 local content = loadFile(theDir + f);
                 extendExecutedScript(content);
-                insert out.rtxTypes[f];
+                insert out.rtxTypes.files[f] = true;
         }
 }
 

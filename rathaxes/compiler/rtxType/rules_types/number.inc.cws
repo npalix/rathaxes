@@ -1,18 +1,24 @@
-function        rtxType_Parse<"number.inc.cws">(src : value)
+function        rtxType_Parse<"number.inc.cws">(src : value, out_type : node)
 {
-        local   out;
         parseStringAsBNF({
-                string ::= [hexa|#readInteger]:str
-                        #continue #empty
-                        =>{this = str;}
+                data ::= [hexa|#readInteger]:str
+                        =>{// TODO: must extend for more numeric type...aka float :(
+                                this.rtype = "";
+                                local nameId;
+                                rtxNodeIdentifier(nameId, "number", "Builtin");
+                                local dummy;
+                                rtxNodeRType(this.rtype, nameId, dummy);
+                                insert this.val = str;
+                        }
                 ;
                 hexa ::= #!ignore #noCase
                         "0x" ['0'..'9'|'a'..'f']+
                 ;
-        }, out, src);
-        if (out != "")
-        {       return true;}
-        return false;
+        }, out_type, src);
+        if (out_type.rtype == "unknown")
+        {       return false;}
+        traceLine("FOUND:" + toString(out_type));
+        return true;
 }
 
 function        rtxNode2cnormNode<"number">(in_param : node, out_param : node)
