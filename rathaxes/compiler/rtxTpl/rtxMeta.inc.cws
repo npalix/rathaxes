@@ -13,8 +13,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
     local treepart;
     cnormDialect<"__std__">(treepart);
     insert treepart.scripts_path = this.scripts_path;
-    insert treepart.rtxTypes;
-    setall treepart.rtxTypes = compile#root.rtxTypes;
+    insert treepart.map;
+    insert treepart.map.files;
+    setall treepart.map.files = compile#root.map.files;
     parseStringAsBNF({
         #include "cnorm.cwp"
         #include "rtxParse/rtxCommon.cwp"
@@ -174,7 +175,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
     // remove variables used for parsing
     removeVariable(treepart.dialect); // cnorm
     removeVariable(treepart.scripts_path); // types loader
-    removeVariable(treepart.rtxTypes); // rtxtypes
+    removeVariable(treepart.map); // rtxtypes
     if (!isEmpty(treepart.error))
     {
         traceLine(RED + "Could not build node for template_expr : "
