@@ -18,14 +18,14 @@ function        rtxType_Parse<"string.inc.cws">(src : value, out_type : node)
         return true;
 }
 
-function        rtxNode2cnormNode<"string">(in_param : node, out_param : node)
+function        rtxNode2cnormNode<"Builtin::string">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalLiteral(out_param, in_param.val);
 }
 
-function type_map<"::string">(resolverValues : node,
-                              theRtype : node, mappedId : value,
-                              placeHolder : node)
+function type_map<"Builtin::string">(resolverValues : node,
+                                     theRtype : node, mappedId : value,
+                                     placeHolder : node)
 {
     if (mappedId == "")
     {
@@ -45,7 +45,7 @@ function type_map<"::string">(resolverValues : node,
 /*
  * The only comparison operator valid for a string is the equal.
  */
-function rtxLink_CompareEqual<"string">(ref : node, val : node)
+function rtxLink_CompareEqual<"Builtin::string">(ref : node, val : node)
 {
     return (ref.val == val.val);
 }
