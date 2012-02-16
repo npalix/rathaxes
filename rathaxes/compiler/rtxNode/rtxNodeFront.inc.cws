@@ -93,6 +93,16 @@ function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : 
 	return true;
 }
 
+function rtxNodeRegister_addMap(local_node : node)
+{
+        if (!existVariable(local_node#root.map.registers))
+        {       insert local_node#root.map.registers;}
+        localref regmap_ref = local_node#root.map.registers;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
+        return true;
+}
+
 function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value)
 {
 	rtxNode(local_node);
@@ -112,6 +122,23 @@ function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : r
         setall local_node.map = map;
         insert local_node.listmask;
         ref listmask = local_node.listmask;
+        if (!existVariable(local_node#root.map.registers[local_node#parent#parent#parent.name].map))
+        { insert local_node#root.map.registers[local_node#parent#parent#parent.name].map;}
+        localref regmap_ref = local_node#root.map.registers[local_node#parent#parent#parent.name].map;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
+        return true;
+}
+
+function rtxNodeRegMap_addMask(local_node : node)
+{
+        local nameField = local_node#parent#parent.name;
+        local nameReg = local_node#parent#parent#parent#parent#parent.name;
+        if (!existVariable(local_node#root.map.registers[nameReg].map[nameField].map))
+        { insert local_node#root.map.registers[nameReg].map[nameField].map;}
+        localref regmap_ref = local_node#root.map.registers[nameReg].map[nameField].map;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
         return true;
 }
 

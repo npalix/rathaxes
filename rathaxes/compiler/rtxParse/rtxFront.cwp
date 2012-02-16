@@ -120,6 +120,7 @@ rtx_register_map(theBlock : node) ::=
                         [
 /**/                            #pushItem(listmask)
                                 rtx_bit_mask(listmask#back)
+                                #check(rtxNodeRegMap_addMask(listmask#back))
                         ]+
                 '}'
         ]
@@ -132,6 +133,7 @@ rtx_register(theNode : node) ::= "register"
 /**/    #check(rtxNodeRegister(theNode, type, like, body))
         rtx_scoped_identifier(type)
         #readIdentifier:theNode.name
+        #check(rtxNodeRegister_addMap(theNode))
         rtx_register_like(like)
         [';'
         | 
@@ -147,10 +149,12 @@ rtx_register(theNode : node) ::= "register"
 
 rtx_property(theNode : node) ::=
         ["public"|"private"]? "property" rtx_qualified_name #readIdentifier:name
-        =>traceLine("end decl property:" + name);
         '{'
                 #insert(theNode.body)
-                [rtx_sequence_call(theNode.body)]*
+                => cnormNodeBlock(theNode.body);
+                [
+                        rtx_sequence_call(theNode.body)
+                ]*
         '}'
 ;
 

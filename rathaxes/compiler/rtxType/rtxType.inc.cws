@@ -13,7 +13,7 @@ function        rtxType_Search(src : value, out : node)
 {
         insert out.rtype = "unknown";
         insert out.val = "";
-        foreach it in this.rtxTypes.files
+        foreach it in this.map.files
         {
             /*
              * If the syntax throws an error, catch it here.
@@ -30,7 +30,7 @@ function        rtxType_Search(src : value, out : node)
 function        rtxType_Load(out : node)
 {
         local   theDir;
-        insert  out.rtxTypes;
+        insert  out.map;
         insert  out.scripts_path = this.scripts_path;
         if !scanDirectories(theDir, this.scripts_path+"rtxType/rules_types/", "*.inc.cws")
         { error("unable to load rules_types directory"); }
@@ -39,7 +39,7 @@ function        rtxType_Load(out : node)
                 traceLine("Load:" + f);
                 local content = loadFile(theDir + f);
                 extendExecutedScript(content);
-                insert out.rtxTypes.files[f] = true;
+                insert out.map.files[f] = true;
         }
 }
 
