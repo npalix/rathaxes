@@ -1,0 +1,24 @@
+/*
+        Usefull functions for rathaxes
+*/
+
+#if !existFunction(rtxTools_version)
+
+function        rtxTools_version()
+{       return "1.0";}
+
+declare function        stringToArray(str : value, list : node);
+
+// transform a string into his array representation
+function        stringToArray(str : value, list : node)
+{
+        local sz = lengthString(str);
+        local i = 0;
+        while ($i < sz$)
+        {
+                pushItem list = charAt(str, i);
+                i = $i + 1$;
+        }
+}
+
+#end
