@@ -1,26 +1,86 @@
 function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
 {
-        parseStringAsBNF({
-                string ::= [
-                        [#readIdentifier "::"]? // scope
-                        #readIdentifier 
-                                // TODO : add search in tree for context of what symbol is?
-                                [
-                                        '.' #readIdentifier // register field
-                                        ["->" #readIdentifier]? // register value
-                                ]?
-                        ]:str
-                        =>{
-                                // TODO: could be rtype...
-                                this.rtype = "";
-                                local nameId;
-                                rtxNodeIdentifier(nameId, "symbol", "Builtin");
-                                local dummy;
-                                rtxNodeRType(this.rtype, nameId, dummy);
-                                insert this.val = str;
-                        }
-                ;
-        }, out_type, src);
+        try {
+                parseStringAsBNF({
+                        string ::=
+                                => local scope;
+                                => local sym;
+                                => local field;
+                                => local value;
+                                => local bitBegin;
+                                => local bitEnd;
+                                [#readIdentifier "::"]?:scope // scope
+                                #readIdentifier:sym 
+                                        [
+                                                '.' #readIdentifier:field // register field
+                                                ["->" #readIdentifier]?:value // register value
+                                        | 
+                                        '[' #readInteger:bitBegin [".." #readInteger:bitEnd]?
+                                        ']'
+                                        ]?
+                                #continue #empty
+                                =>{
+                                        this.rtype = "";
+                                        local nameId;
+                                        if (sym != "" && bitBegin != "")
+                                        {
+                                                if (bitEnd != "")
+                                                {
+                                                        rtxNodeIdentifier(nameId, "array_range", "Builtin");
+                                                        local dummy;
+                                                        rtxNodeRType(this.rtype, nameId, dummy);
+                                                        insert this.val;
+                                                        pushItem this.val = sym;
+                                                        pushItem this.val = bitBegin;
+                                                        pushItem this.val = bitEnd;
+                                                }
+                                                else
+                                                {
+                                                        rtxNodeIdentifier(nameId, "array_access", "Builtin");
+                                                        local dummy;
+                                                        rtxNodeRType(this.rtype, nameId, dummy);
+                                                        insert this.val;
+                                                        pushItem this.val = sym;
+                                                        pushItem this.val = bitBegin;
+                                                }
+                                        
+                                        }
+                                        else if (sym != "" && field != "" && value != "")
+                                        {
+                                                rtxNodeIdentifier(nameId, "register_value", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = field;
+                                                pushItem this.val = value;
+                                        }
+                                        else if (sym != "" && field != "")
+                                        {
+                                                rtxNodeIdentifier(nameId, "register_field", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = field;
+                                        }
+                                        else if (sym != "")
+                                        {
+                                                // TODO: Add register identification in type checking
+                                                rtxNodeIdentifier(nameId, "symbol", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val = sym;
+                                        }
+                                }
+                        ;
+                }, out_type, src);
+        }
+        catch (sError)
+        {       
+                traceLine("PERROR:" + sError);
+                return false;
+        }
         if (out_type.rtype == "unknown")
         {       return false;}
 //        traceLine("FOUND:" + toString(out_type));
