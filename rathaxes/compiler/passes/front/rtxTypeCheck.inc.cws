@@ -56,7 +56,6 @@ function rtxFront_TypeCheckNode<"__block__">(local_node : node, itf_list : node)
     local errcount = 0;
     foreach item in local_node.block
     {
-        traceLine(">>" + item.type);
         if (rtxFront_TypeCheckNode<item.type>(item, itf_list) == false)
             increment(errcount);
     }
