@@ -5,18 +5,21 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                         string ::=
                                 => local scope;
                                 => local sym;
-                                => local field;
+                                => local rfield;
                                 => local value;
+                                => local field;
                                 => local bitBegin;
                                 => local bitEnd;
                                 [#readIdentifier "::"]?:scope // scope
                                 #readIdentifier:sym 
                                         [
-                                                '.' #readIdentifier:field // register field
-                                                ["->" #readIdentifier]?:value // register value
+                                            "->" #readIdentifier:rfield // register rfield
+                                            ['.' #readIdentifier]?:value // register value
                                         | 
-                                        '[' #readInteger:bitBegin [".." #readInteger:bitEnd]?
-                                        ']'
+                                            '.'  #readIdentifier:field // variable field
+                                        |
+                                            '[' #readInteger:bitBegin [".." #readInteger:bitEnd]?
+                                            ']'
                                         ]?
                                 #continue #empty
                                 =>{
@@ -26,6 +29,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                         {
                                                 if (bitEnd != "")
                                                 {
+                                                        insert this.type = "__rtx_symbol__";
                                                         rtxNodeIdentifier(nameId, "array_range", "Builtin");
                                                         local dummy;
                                                         rtxNodeRType(this.rtype, nameId, dummy);
@@ -36,6 +40,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                                 }
                                                 else
                                                 {
+                                                        insert this.type = "__rtx_symbol__";
                                                         rtxNodeIdentifier(nameId, "array_access", "Builtin");
                                                         local dummy;
                                                         rtxNodeRType(this.rtype, nameId, dummy);
@@ -45,19 +50,31 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                                 }
                                         
                                         }
-                                        else if (sym != "" && field != "" && value != "")
+                                        else if (sym != "" && rfield != "" && value != "")
                                         {
+                                                insert this.type = "__rtx_register_value__";
                                                 rtxNodeIdentifier(nameId, "register_value", "Builtin");
                                                 local dummy;
                                                 rtxNodeRType(this.rtype, nameId, dummy);
                                                 insert this.val;
                                                 pushItem this.val = sym;
-                                                pushItem this.val = field;
+                                                pushItem this.val = rfield;
                                                 pushItem this.val = value;
                                         }
-                                        else if (sym != "" && field != "")
+                                        else if (sym != "" && rfield != "")
                                         {
+                                                insert this.type = "__rtx_register_field__";
                                                 rtxNodeIdentifier(nameId, "register_field", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = rfield;
+                                        }
+                                        else if (sym != "" && field != "") // its a rtx var field.
+                                        {
+                                                insert this.type = "__rtx_data_field__";
+                                                rtxNodeIdentifier(nameId, "data_field", "Builtin");
                                                 local dummy;
                                                 rtxNodeRType(this.rtype, nameId, dummy);
                                                 insert this.val;
@@ -67,6 +84,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                         else if (sym != "")
                                         {
                                                 // TODO: Add register identification in type checking
+                                                insert this.type = "__rtx_symbol__";
                                                 rtxNodeIdentifier(nameId, "symbol", "Builtin");
                                                 local dummy;
                                                 rtxNodeRType(this.rtype, nameId, dummy);
@@ -87,7 +105,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
         return true;
 }
 
-function        rtxNode2cnormNode<"Builtin::symbol">(in_param : node, out_param : node)
+function        rtxNode2cnormNode<"__rtx_symbol__">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalId(out_param, in_param.val);
 }
