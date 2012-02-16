@@ -27,7 +27,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
         return true;
 }
 
-function        rtxNode2cnormNode<"symbol">(in_param : node, out_param : node)
+function        rtxNode2cnormNode<"Builtin::symbol">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalId(out_param, in_param.val);
 }
@@ -35,7 +35,7 @@ function        rtxNode2cnormNode<"symbol">(in_param : node, out_param : node)
 /*
  * The only comparison operator valid for a symbol is the equal.
  */
-function rtxLink_CompareEqual<"symbol">(ref : node, val : node)
+function rtxLink_CompareEqual<"Builtin::symbol">(ref : node, val : node)
 {
     return (ref.val == val.val);
 }
