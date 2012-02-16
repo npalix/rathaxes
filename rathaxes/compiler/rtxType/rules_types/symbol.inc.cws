@@ -14,7 +14,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                 #readIdentifier:sym 
                                         [
                                             "->" #readIdentifier:rfield // register rfield
-                                            ['.' #readIdentifier]?:value // register value
+                                            ['.' #readIdentifier:value]? // register value
                                         | 
                                             '.'  #readIdentifier:field // variable field
                                         |
