@@ -4,7 +4,7 @@
 
 #include  "01_G_test_back_registerToCache.cws"
 
-#include "rtxTpl/rtxResolve.inc.cws"
+#include "passes/common/rtxResolve.inc.cws"
 
 // Load the template :
 // First, hash the prototype, then find every template matching it,

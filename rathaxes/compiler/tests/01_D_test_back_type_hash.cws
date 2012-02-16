@@ -13,7 +13,7 @@ traceLine("Creating directory: " + working_directory);
 createDirectory(working_directory);
 changeDirectory(working_directory);
 
-#include "rtxTpl/rtxTypeHash.inc.cws"
+#include "passes/back/rtxTypeHash.inc.cws"
 
 // Apply the pass...
 rtxTypeHash(source);

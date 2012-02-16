@@ -1,8 +1,8 @@
 #include "misc/colors.cws"
 #include "cnorm.inc.cws"
-#include "rtxNode/rtxNode.inc.cws"
-#include "rtxType/rtxType.inc.cws"
-#include "rtxLink/rtxLink.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+#include "linker/rtxLink.inc.cws"
 
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";

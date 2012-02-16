@@ -59,15 +59,15 @@ generateString({
 #include "patchLib/cnormPatchLib.inc.cws"
 
 #include "misc/colors.cws"
-#include "rtxNode/rtxNode.inc.cws"
-#include "rtxInterfaces/rtxInterfaces.inc.cws"
-#include "rtxType/rtxType.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "passes/mid/rtxTypeCheck.inc.cws"
+#include "typing/rtxTyping.inc.cws"
 
 traceLine("Input:\n" + input + "\nEnd of input");
 
 local source;
 cnormDialect<"__std__">(source);
-parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+parseStringAsBNF("parse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
 

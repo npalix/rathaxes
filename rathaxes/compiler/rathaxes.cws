@@ -8,33 +8,22 @@
 #include "cnorm.inc.cws"
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
-#include "rtxNode/rtxNode.inc.cws"
+#include "node/rtxNode.inc.cws"
 
 /*
- * Include the type-checking scripts
+ * Include the type-checking routines
  */
-#include "rtxType/rtxType.inc.cws"
-#include "rtxInterfaces/rtxInterfaces.inc.cws"
-#include "rtxFront/rtxTypeCheck.inc.cws"
+#include "typing/rtxTyping.inc.cws"
 
 /*
  * Include the cache-managing script
  */
-#include "rtxLink/rtxLink.inc.cws"
+#include "linker/rtxLink.inc.cws"
 
 /*
  * Include the backend annotation passes for the AST.
  */
-#include "rtxTpl/rtxCompile.inc.cws"
-#include "rtxTpl/rtxMeta.inc.cws"
-#include "rtxTpl/rtxTypeHash.inc.cws"
-#include "rtxTpl/rtxIntrospect.inc.cws"
-#include "rtxTpl/rtxTypeCheck.inc.cws"
-#include "rtxTpl/rtxGen.inc.cws"
-#include "rtxTpl/rtxResolve.inc.cws"
-
-#include "rtxFront/rtxGenerate.inc.cws"
-#include "rtxFront/rtxTools.inc.cws"
+#include "passes/rtxPasses.inc.cws"
 
 function usage()
 {
@@ -69,7 +58,7 @@ function rtxParse(inputFile : value, source : node)
 {
     // First setup cnorm...
     cnormDialect<"__std__">(source);
-    parseAsBNF("rtxParse/rtx.cwp", source, inputFile);
+    parseAsBNF("parse/rtx.cwp", source, inputFile);
     removeVariable(source.dialect);
     if (!isEmpty(source.error))
     {

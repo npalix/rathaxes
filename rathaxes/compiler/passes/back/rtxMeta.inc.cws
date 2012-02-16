@@ -1,7 +1,7 @@
 #include "cnorm.inc.cws"
 
-#include "rtxNode/rtxNode.inc.cws"
-#include "rtxType/rtxType.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "typing/rtxType.inc.cws"
 
 #if !existFunction(rtxMeta_version)
 
@@ -15,10 +15,11 @@ function    rtxMeta_parsePlaceHolder(compile : node)
     insert treepart.scripts_path = this.scripts_path;
     insert treepart.map;
     insert treepart.map.files;
-    setall treepart.map.files = compile#root.map.files;
+    if (existVariable(compile#root.map.files))
+        setall treepart.map.files = compile#root.map.files;
     parseStringAsBNF({
         #include "cnorm.cwp"
-        #include "rtxParse/rtxCommon.cwp"
+        #include "parse/rtxCommon.cwp"
 
         /*
          *

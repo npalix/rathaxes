@@ -1,2 +1,2 @@
 #!/bin/sh
-codeworker --quiet -I $CNORM_PATH/src -I ../ -script $1 -args $PWD/../../
+codeworker --quiet -I $CNORM_PATH/src -I `pwd`/../ -script $1 -args $PWD/../../

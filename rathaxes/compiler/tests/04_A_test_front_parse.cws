@@ -215,9 +215,9 @@ generateString({
 #include "cnorm.inc.cws"
 #include "cnorm2c/cnorm2c.inc.cws"
 #include "patchLib/cnormPatchLib.inc.cws"
-#include "rtxNode/rtxNode.inc.cws"
-#include "rtxLink/rtxLink.inc.cws"
-#include "rtxType/rtxType.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/front/rtxTypeCheck.inc.cws"
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
@@ -228,7 +228,7 @@ local source;
 cnormDialect<"__std__">(source);
 rtxType_Load(source);
 
-parseStringAsBNF("rtxParse/rtx.cwp", source, input);
+parseStringAsBNF("parse/rtx.cwp", source, input);
 // remove the dialect
 removeVariable(source.dialect);
 

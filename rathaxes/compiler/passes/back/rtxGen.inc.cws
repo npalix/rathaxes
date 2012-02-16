@@ -4,21 +4,6 @@ function rtxGen_version()
 {return "1.0";}
 
 
-// The tree save must already be loaded into c_tree before calling it...
-declare function instanceChunk<T>(resVals : node, c_tree : node);
-function	     instanceChunk<T>(resVals : node, c_tree : node)
-{
-	// If this cocde is called, there was a linking problem.
-	error("instanceChunk: BAD LINK - Unkown registry value: " + T);
-}
-
-declare function instanceMapping<T>(resVals : node, c_tree : node);
-function instanceMapping<T>(resVals : node, c_tree : node)
-{
-    //If this code is called, there was a linking problem.
-    error("instanceMapping: BAD LINK - Unkown registry value: "+T);
-}
-
 /*
  * Tool functions
  *

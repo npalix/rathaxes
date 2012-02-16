@@ -17,7 +17,7 @@ traceLine("Creating directory: " + working_directory);
 createDirectory(working_directory);
 changeDirectory(working_directory);
 
-#include "rtxInterfaces/rtxInterfaces.inc.cws"
+#include "passes/mid/rtxTypeCheck.inc.cws"
 traceLine("Checking types declarations");
 
 if (rtxItfCheckTypesDeclarations_walk(source, source.interfaces) == false)

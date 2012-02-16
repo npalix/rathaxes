@@ -18,8 +18,8 @@ createDirectory(working_directory);
 changeDirectory(working_directory);
 
 
-#include "rtxLink/rtxLink.inc.cws"
-#include "rtxTpl/rtxGen.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/back/rtxGen.inc.cws"
 
 // The generated code will need this :
 // brutal foreach, we should walk the tree properly in the end in order to
