@@ -644,9 +644,19 @@ function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
         // We Need to have the type stored for the calls...
         if (nodeBody.type == "__rtx_tpl_chunk_call__")
         {
-            if (findElement(nodeBody.var.name, local_node.type_map))
+            // XXX TODO FIXME
+            // Here we need some function to instrument this,
+            // so that we avoid breaking everything at every change
+            // XXX TODO FIXME
+            // We may have some multiple dereferencing types (i.e.: ${local.buf.init()})
+            localref theVar = nodeBody.vars#[0];
+            if (theVar.name == "local")
             {
-                setall nodeBody.rtype = local_node.type_map[nodeBody.var.name];
+                ref theVar = nodeBody.vars#[1];
+            }
+            if (findElement(theVar.name, local_node.type_map))
+            {
+                setall nodeBody.rtype = local_node.type_map[theVar.name];
             }
         }
     }

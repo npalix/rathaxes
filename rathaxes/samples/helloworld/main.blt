@@ -19,9 +19,9 @@ with Main
 
         chunk ::init(argc, argv, env)
         {
-            ${self}.argc = argc;
-            ${self}.argv = argv;
-            ${self}.env = env;
+            ${self}.argc = ${argc};
+            ${self}.argv = ${argv};
+            ${self}.env = ${env};
         }
 
         chunk ::log()
@@ -67,7 +67,7 @@ with Main
 
                 ${Main::Arguments}  args;
 
-                ${args.init(argc, argv, env)};
+                ${local.args.init(local.argc, local.argv, local.env)};
 
                 ${pointcut ::IMPLEMENTATION};
             }
