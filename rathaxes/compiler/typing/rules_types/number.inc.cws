@@ -46,8 +46,6 @@ function type_map<"Builtin::number">(resolverValues : node,
     return false;
 }
 
-
-
 function rtxLink_CompareLesser<"Builtin::number">(ref : node, val : node)
 {
     local ref_parts;
