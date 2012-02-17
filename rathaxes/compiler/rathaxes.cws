@@ -218,9 +218,11 @@ else if (   toLowerString(this.operation) == "blt-check"
         traceLine("Could not load cache. Trying to do without it...");
 
     rtxType_Load(source);
+    traceLine("READ:" + inputFile);
     rtxParse(inputFile, source);
 
     // Compile the placeHolders
+    /*
     foreach item in source.block
         rtxTpl_walk<item.type>(item);
     local has_error = false;
@@ -234,7 +236,8 @@ else if (   toLowerString(this.operation) == "blt-check"
             has_error = true;
         }
     }
-    if (has_error)
+    */
+    if (!rtxMeta(source))
     {
         exit(-1);
     }

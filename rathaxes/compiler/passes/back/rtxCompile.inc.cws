@@ -3,17 +3,22 @@
 function rtxCompile_version()
 {return "1.0";}
 
-
-
+/*
+ * The goal of this func is to go thru all
+*/
 declare function	rtxTpl_walk<T>(local_node : node);
+
+/**/
 declare function	rtxTpl_compile<T>(local_node : node, compile : node,
                                       node_idx : value);
 
 
+// TODO: specialize all __rtx_
 function	rtxTpl_walk<T>(local_node : node)
 {
-    traceLine("Unknown rtx_node :" + T);
-	error("Unknown rtx_node :" + T);
+        return true;
+//    traceLine("Unknown rtx_node :" + T);
+//	error("Unknown rtx_node :" + T);
 }
 
 function	rtxTpl_walk<"__rtx_tpl__">(local_node : node)
