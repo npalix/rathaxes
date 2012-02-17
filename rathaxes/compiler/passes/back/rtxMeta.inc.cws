@@ -1,13 +1,20 @@
+#if !existFunction(rtxMeta_version)
+
+function rtxMeta_version()
+{return "1.0";}
+
+
 #include "cnorm.inc.cws"
 
 #include "node/rtxNode.inc.cws"
 #include "passes/back/rtxCompile.inc.cws"
 #include "typing/rtxType.inc.cws"
 
-#if !existFunction(rtxMeta_version)
+declare function rtxMeta_parsePlaceHolder(compile : node);
+declare function rtxMeta_walk<T>(local_node : node);
 
-function rtxMeta_version()
-{return "1.0";}
+
+
 
 /*
  * Facade Function, take a tree a apply Meta passes :

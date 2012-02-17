@@ -3,6 +3,15 @@
 function rtxGenerate_version()
 { return "1.0"; }
 
+
+
+declare function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node);
+declare function rtxFrontGen_Itf(itfName : node, itfUsedList : node);
+declare function rtxFrontGen_Device(theDevice : node);
+declare function rtxFrontGen_iterate<T>(local_node : node);
+
+
+
 function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node)
 {
 }

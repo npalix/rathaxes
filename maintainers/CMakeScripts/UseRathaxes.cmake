@@ -119,7 +119,6 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*.cws"
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*/*.cws"
          "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws")
-    MESSAGE(STATUS ${COMPILER_FILES})
 
     # ADD_CUSTOM_COMMAND + ADD_CUSTOM_TARGET is a CMake idiom to add a target
     # that should be rebuilt automatically when its sources change.

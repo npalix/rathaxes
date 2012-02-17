@@ -6,6 +6,11 @@ function rtxTypeHash_version()
 
 
 declare function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node);
+declare function rtxTypeHash_walk<T>(local_node : node, type_map : node);
+declare function rtxTypeHash(local_node : node);
+
+
+
 
 function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node)
 { error(RED + "rtxTypeHash_placeHolder<"+phType+"> not implemented yet."+ DEFAULT_COLOR); }

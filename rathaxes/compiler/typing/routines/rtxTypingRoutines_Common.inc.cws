@@ -1,0 +1,36 @@
+#if !existFunction(rtxTypingRoutines_Common_version)
+
+function rtxTypingRoutines_Common_version()
+{ return "1.0"; }
+
+/*
+ * This function checks whether the pointcut is declared by the itfTree.
+ */
+function        rtxTypeCheck_ItfDefinesPointcut(pointcutId : node, itfTree : node)
+{
+    // Then check if the pointcut is defined within the interface
+    // (global or inside a sequence)
+    foreach def in itfTree.body.block
+    {
+        // Check global pointcuts...
+        if (def.type == "__rtx_itf_decl__" && def.specifier == "pointcut")
+        {
+            if (def.body.name.name == pointcutId.name)
+                return true;
+        }
+        // type templates dont matter here, they should not define pointcuts.
+        // So, check only sequence templates...
+        else if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        {
+            // In which, check every poincut...
+            foreach item in def.body.block
+            {
+                if (item.type == "__rtx_itf_decl__" && item.specifier == "pointcut"
+                    && item.body.name.name == pointcutId.name)
+                    return true;
+            }
+        }
+    }
+}
+
+#end

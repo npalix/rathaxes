@@ -3,6 +3,27 @@
 function rtxNodeFront_version()
 {return "1.0";}
 
+// Front-end config nodes (see rtxNode.inc.cws to see )
+declare function rtxNodeConfig(local_node : node, out_ref_body : reference);
+declare function rtxNodeConfigField(local_node : node, out_ref_id : reference, out_ref_val : reference);
+declare function rtxNodeConfig_BodyAddField(local_node : node, field : node);
+declare function rtxNodeConfigField_Extend(local_node : node, out_ref_body : reference);
+// The device block functions
+declare function rtxNodeDevice(local_node : node, name : value, out_ref_body : reference);
+declare function rtxNodeDevice_AddUseInterface(local_node : node, name : value);
+// The sequence implem function
+declare function rtxNodeSequence(local_node : node, rtype : node, seqparamname : node, body : reference);
+// Register-related functions
+declare function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : reference, visibility : value);
+declare function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference);
+declare function rtxNodeRegister_addMap(local_node : node);
+declare function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value);
+declare function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : reference);
+declare function rtxNodeRegMap_addMask(local_node : node);
+
+
+
+
 function rtxNodeConfig(local_node   : node,
                        out_ref_body : reference)
 {
