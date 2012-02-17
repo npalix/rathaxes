@@ -5,6 +5,11 @@ function rtxFront_TypeCheck_version()
 
 #include "typing/rtxTyping.inc.cws"
 
+declare function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node);
+declare function rtxFront_TypeCheck(local_node : node);
+
+
+
 /*
  * This set of templated functions walk through the front-end tree,
  * and call the right type-checking functions for each type of node.

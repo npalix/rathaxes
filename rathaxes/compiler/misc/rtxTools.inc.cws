@@ -13,6 +13,8 @@ declare function        bitToValue(str : value);
 declare function        valueToHex(num : value);
 declare function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference);
 
+
+
 // transform a string into his array representation
 function        stringToArray(str : value, list : node)
 {

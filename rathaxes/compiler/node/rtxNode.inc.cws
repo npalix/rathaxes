@@ -4,6 +4,48 @@ function rtxNode_version()
 {return "1.0";}
 
 declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
+declare function rtxNode(local_node : node);
+
+// Some Useful Node functions for basic types... Most should be builtin
+declare function rtxNodeNumber(local_node : node, nb : value);
+declare function rtxNodeString(local_node : node, string : value);
+declare function rtxNodeIdentifier(local_node : node, id : value, scope : value = "", global : value = false);
+declare function rtxNodeSerialUnit(local_node : node, theUnit : value);
+declare function rtxNodeSerialSep(local_node : node, theSeparator : value);
+declare function rtxNodeSerial_AddUnit(theSerial : node, theSerialUnit : node);
+declare function rtxNodeSerial(local_node : node);
+// These functions allow
+declare function rtxNodeVar_AddIdentifier(local_node : node, theField : value);
+declare function rtxNodeVar(local_node : node, theIdentifier : node);
+declare function rtxNodeVarList_AddNode(local_node : node, theVar : node);
+declare function rtxNodeVarList(local_node : node);
+/*
+ * These functions manipulate the "with" parsed in the template, and can transform a with (or a front-end config)
+ * into a more useful structure (the Build* functions) for configuration selection
+ */
+declare function rtxNodeWithConstraint(local_node : node, theId : node, theOperator : value, out_ref_val : reference);
+declare function rtxNodeWith(local_node : node, out_ref_interfaces : reference, out_ref_constraints : reference, out_ref_body : reference, out_ref_c_block : reference);
+declare function rtxNodeWith_AssocInterfaceConstraint(local_node : node, interface : value, constraint_key : value);
+declare function rtxNodeWith_BuildFromConstraints(local_node : node);
+declare function rtxNodeWith_BuildFromConfigVar(local_node : node, config : node);
+declare function rtxNodeWith_BuildFromConfig(local_node : node, out_config : node);
+/*
+ * The Rtype node represents a rathaxes type (like the ctype for C types)
+ */
+declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
+declare function rtxRTypeName<T>(theNode : node);
+declare function rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node);
+/*
+ * Some backend functions also usable in other parts.
+ */
+declare function rtxNodePointcut(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_default : reference);
+declare function rtxNodePointcut_Default(local_node : node, body : reference);
+declare function rtxNodeChunk(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_body : reference);
+declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
+declare function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node);
+
+
+
 
 function	rtxNode(local_node : node)
 {
@@ -414,7 +456,6 @@ function rtxNodeChunk(local_node        : node,
     return true;
 }
 
-declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
 
 function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node)
 {
