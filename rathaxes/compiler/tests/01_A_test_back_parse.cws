@@ -106,7 +106,27 @@ generateString({
             {
                 // Soon the unstrict cnorm...
                 typedef int ${Builtin::Buffer};
+                typedef int ${Builtin::symbol};
+                typedef int ${Builtin::register_value};
+                
+                // ${} -> ? to nowhere
+                ${Builtin::symbol} nia;
+
+                ${Builtin::register_value} plop;
+
                 ${Builtin::Buffer}  buf;
+                // mappedId == gla
+                ${nia.gla} = 42;
+                // mappedId == null
+                ${nia} = 5;
+
+                ${plop.extern} = 12;
+                enum test {
+                        ${plop.name} = ${plop.size},
+                } toto;
+
+                // chunk call -> voir le type de ce pointcut
+                //${nia.chausette(12,tuut)} = 42; 
                 int tab[${buf.size}] = {${buf.size}};
                 ${buf.size} = 256;
                 ${buf.ptr} = kmalloc(${buf.size} * sizeof(*${buf.ptr}));

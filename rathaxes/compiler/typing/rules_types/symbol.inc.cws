@@ -105,6 +105,28 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
         return true;
 }
 
+function type_map<"Builtin::symbol">(resolverValues : node,
+                                     theRtype : node, mappedId : value,
+                                     placeHolder : node)
+{
+        traceLine("Builtin SYMBOL:" + mappedId);
+        traceLine("Resolve Value:" + toString(resolverValues));
+        traceLine("RType:" + toString(theRtype));
+        traceLine("PH:" + toString(placeHolder));
+        return true;
+}
+
+function type_map<"Builtin::register_value">(resolverValues : node,
+                                     theRtype : node, mappedId : value,
+                                     placeHolder : node)
+{
+        traceLine("Builtin REGFIELDVALUE:" + mappedId);
+        traceLine("Resolve Value:" + toString(resolverValues));
+        traceLine("RType:" + toString(theRtype));
+        traceLine("PH:" + toString(placeHolder));
+        return true;
+}
+
 function        rtxNode2cnormNode<"__rtx_symbol__">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalId(out_param, in_param.val);
