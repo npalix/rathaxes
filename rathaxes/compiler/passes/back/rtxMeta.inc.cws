@@ -7,14 +7,8 @@ function rtxMeta_version()
 #include "cnorm.inc.cws"
 
 #include "node/rtxNode.inc.cws"
-#include "passes/back/rtxCompile.inc.cws"
+#include "passes/back/rtxPlaceHolders.inc.cws"
 #include "typing/rtxType.inc.cws"
-
-declare function rtxMeta_parsePlaceHolder(compile : node);
-declare function rtxMeta_walk<T>(local_node : node);
-
-
-
 
 /*
  * Facade Function, take a tree a apply Meta passes :
@@ -44,7 +38,7 @@ function rtxMeta(source : node)
 {
         // Compile the placeHolders
         foreach item in source.block
-                rtxTpl_walk<item.type>(item);
+                rtxPH_walk<item.type>(item);
         local has_error = false;
         foreach item in source.block
         {

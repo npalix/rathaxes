@@ -18,11 +18,11 @@ createDirectory(working_directory);
 changeDirectory(working_directory);
 
 
-#include "passes/back/rtxCompile.inc.cws"
+#include "passes/back/rtxPlaceHolders.inc.cws"
 foreach item in source.block
 {
     traceLine("compiling item : "+key(item));
-	rtxTpl_walk<item.type>(item);
+	rtxPH_walk<item.type>(item);
 }
 
 traceLine("====>Result of placeHolder compilation : __02_rtx_compil__.tree");

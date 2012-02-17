@@ -120,7 +120,7 @@ generateString({
                 // mappedId == null
                 ${nia} = 5;
 
-                ${plop.extern} = 12;
+                ${plop.nia} = 12;
                 enum test {
                         ${plop.name} = ${plop.size},
                 } toto;
