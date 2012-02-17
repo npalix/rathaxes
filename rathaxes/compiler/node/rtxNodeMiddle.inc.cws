@@ -3,6 +3,18 @@
 function rtxNodeMiddle_version()
 {return "1.0";}
 
+
+declare function rtxNodeItf(local_node : node, itf_name : value, out_ref_inherit : reference, out_ref_body : reference);
+declare function rtxNodeItfDeclaration(local_node : node, qualifier : value, dtype : value);
+declare function addRTypeToItfDeclaration(declaration_node : node, rtype : node);
+declare function addSequenceBody(theSequence : node, theBody : node);
+declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
+declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
+declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, qualifier : value);
+
+
+
+
 function        rtxNodeItf(local_node      : node,
                            itf_name        : value,
                            out_ref_inherit : reference,

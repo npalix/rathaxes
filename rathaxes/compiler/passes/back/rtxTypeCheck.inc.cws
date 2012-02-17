@@ -6,6 +6,9 @@ function rtxBack_TypeCheck_version()
 #include "typing/rtxTyping.inc.cws"
 
 declare function rtxTpl_TypeCheckFor<T>(local_node : node);
+declare function rtxTpl_TypeCheck(local_node : node);
+
+
 
 function rtxTpl_TypeCheckFor<T>(local_node : node)
 {
