@@ -7,6 +7,9 @@ function rtxTyping_version()
 #include "linker/rtxLink.inc.cws"
 
 #include "rtxType.inc.cws"
-#include "routines/rtxTypingRoutines.inc.cws"
+#include "routines/rtxTypingRoutines_Common.inc.cws"
+#include "routines/rtxTypingRoutines_Front.inc.cws"
+#include "routines/rtxTypingRoutines_Mid.inc.cws"
+#include "routines/rtxTypingRoutines_Back.inc.cws"
 
 #end
