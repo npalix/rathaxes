@@ -188,19 +188,36 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         [ ";" ]?//>>>>>????????????
                 ;
 
-                //Parse a chunk call (i.e. "${buf.init()}" )
+                //Parse a chunk call (i.e. "${local.buf.init()}" )
                 tpl_chunk_call(theCall : node) ::=
 /**/                    => local parameters;
-/**/                    => local theVar;
+/**/                    => local theVars;
 /**/                    => local theChunk;
-                        rootidentifier:var_name
-/**/                    #check(rtxNodeIdentifier(theVar, var_name))
+                        // first identifier (may be local ? ${local.buf.init(42)} )
+                        [
+                            rootidentifier:var_name
+/**/                        #pushItem(theVars)
+/**/                        #check(rtxNodeIdentifier(theVars#back, var_name))
+=>traceLine("READ identifier:"+var_name);
+                        ]
+                        // second identifier (may be either the var of the chunk : ${local.buf.init(42)} | ${buf.init(42)} )
                         '.'
-                        rtx_scoped_identifier(theChunk)
-                        // For later resolution, we need to force it as an explicit global name
-/**/                    => theChunk.global = true; 
+                        rootidentifier:var2_name
+                        [
+                                '.'
+                                rootidentifier:chunk_name
+=>traceLine("READ identifier2:"+var2_name);
+/**/                            #pushItem(theVars)
+/**/                            #check(rtxNodeIdentifier(theVars#back, var2_name))
+/**/                            #check(rtxNodeIdentifier(theChunk, chunk_name, "", true))
+                            |
+/**/                            #check(rtxNodeIdentifier(theChunk, var2_name, "", true))
+
+                        ]
+                            
+/**/                    // For later resolution, we need to force it as an explicit global name
                         // Create the node from
-/**/                    #check(rtxNodeCall(theCall, theVar, theChunk, parameters))
+/**/                    #check(rtxNodeCall(theCall, theVars, theChunk, parameters))
                         '('
                                 #continue(sError, "Expected closing parenthesis in chunk '" + rtxRTypeName<theChunk.type>(theChunk) + "' call")
                                 [ rtx_var_list(parameters) ]?

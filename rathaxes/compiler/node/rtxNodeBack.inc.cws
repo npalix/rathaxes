@@ -17,7 +17,7 @@ declare function rtxNodeTplTypeMapping_AddIdentifier(local_node : node, identifi
 // PlaceHolder-related nodes
 declare function rtxNodePointcut_Raw(local_node : node, out_ref_placeHolder : reference);
 declare function rtxNodePlaceHolder(local_node : node);
-declare function rtxNodeCall(local_node : node, theVar : node, theChunk : node, out_ref_params : reference);
+declare function rtxNodeCall(local_node : node, theVars : node, theChunk : node, out_ref_params : reference);
 declare function rtxNodeSequenceCall(local_node : node, name : node, args : node);
 // Tool functions for the resolution/generation
 declare function rtxNodeResVal_GetField(resolver_values : node, idList : node, out_ref : reference);
@@ -187,17 +187,17 @@ function rtxNodePlaceHolder(local_node   : node)
     return true;
 }
 
-// chunk call (ex : ${Builtin::Buffer.init(params)})
+// chunk call (ex : ${local.buf.init(params)})
 function rtxNodeCall(local_node     : node,
-                     theVar         : node,
+                     theVars        : node,
                      theChunk       : node,
                      out_ref_params : reference)
 {
     insert local_node.type = "__rtx_tpl_chunk_call__";
 
-    // the type of the template associated
-    insert local_node.var;
-    setall local_node.var = theVar;
+    // the identifier list indicating the variable
+    insert local_node.vars;
+    setall local_node.vars = theVars;
 
     // The name of the chunk (simple value)
     insert local_node.chunk;

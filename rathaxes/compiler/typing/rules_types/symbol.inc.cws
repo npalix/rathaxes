@@ -106,10 +106,10 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
 }
 
 function type_map<"Builtin::symbol">(resolverValues : node,
-                                     theRtype : node, mappedId : value,
-                                     placeHolder : node)
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node)
 {
-        traceLine("Builtin SYMBOL:" + mappedId);
+        traceLine("Builtin SYMBOL:(s)" + toString(mappedIds));
         traceLine("Resolve Value:" + toString(resolverValues));
         traceLine("RType:" + toString(theRtype));
         traceLine("PH:" + toString(placeHolder));
@@ -117,10 +117,10 @@ function type_map<"Builtin::symbol">(resolverValues : node,
 }
 
 function type_map<"Builtin::register_value">(resolverValues : node,
-                                     theRtype : node, mappedId : value,
-                                     placeHolder : node)
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node)
 {
-        traceLine("Builtin REGFIELDVALUE:" + mappedId);
+        traceLine("Builtin REGFIELDVALUE(s):" + toString(mappedIds));
         traceLine("Resolve Value:" + toString(resolverValues));
         traceLine("RType:" + toString(theRtype));
         traceLine("PH:" + toString(placeHolder));

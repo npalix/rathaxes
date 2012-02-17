@@ -99,43 +99,30 @@ generateString({
                 // Soon the unstrict cnorm...
                 typedef int ${Builtin::Buffer};
                 ${Builtin::Buffer}  buf;
-                ${buf.init(42)};
+                ${local.buf.init(42)};
             }
 
             chunk ::CALL
             {
                 // Soon the unstrict cnorm...
                 typedef int ${Builtin::Buffer};
-                typedef int ${Builtin::symbol};
-                typedef int ${Builtin::register_value};
-                
-                // ${} -> ? to nowhere
-                ${Builtin::symbol} nia;
-
-                ${Builtin::register_value} plop;
 
                 ${Builtin::Buffer}  buf;
-                // mappedId == gla
-                ${nia.gla} = 42;
-                // mappedId == null
-                ${nia} = 5;
 
-                ${plop.nia} = 12;
                 enum test {
-                        ${plop.name} = ${plop.size},
+                        ${local.plop.name} = ${local.plop.size},
                 } toto;
 
                 // chunk call -> voir le type de ce pointcut
-                //${nia.chausette(12,tuut)} = 42; 
-                int tab[${buf.size}] = {${buf.size}};
-                ${buf.size} = 256;
-                ${buf.ptr} = kmalloc(${buf.size} * sizeof(*${buf.ptr}));
-                int a = ${buf.constant};
-                a = ${buf.constant};
-                char * s = ${buf.name};
-                s = ${buf.name};
-                int b = ${buf.id};
-                b = ${buf.id};
+                int tab[${local.buf.size}] = {${local.buf.size}};
+                ${local.buf.size} = 256;
+                ${local.buf.ptr} = kmalloc(${local.buf.size} * sizeof(*${local.buf.ptr}));
+                int a = ${local.buf.constant};
+                a = ${local.buf.constant};
+                char * s = ${local.buf.name};
+                s = ${local.buf.name};
+                int b = ${local.buf.id};
+                b = ${local.buf.id};
             }
         }
 

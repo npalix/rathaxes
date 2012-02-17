@@ -96,6 +96,7 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
     insert item.cws_expr;
     insert item.key = theKey;
     insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
+    item.tpl_hash = rtxRTypeName<item.node.body.rtype.type>(item.node.body.rtype)+"_"+this.chunkName;
     generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
