@@ -6,8 +6,7 @@ function rtxCompile_version()
 
 
 declare function	rtxTpl_walk<T>(local_node : node);
-declare function	rtxTpl_compile<T>(local_node : node, compile : node,
-                                      node_idx : value);
+declare function	rtxTpl_compile<T>(local_node : node, compile : node, node_idx : value);
 
 
 function	rtxTpl_walk<T>(local_node : node)

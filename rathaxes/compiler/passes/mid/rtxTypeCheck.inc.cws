@@ -5,6 +5,9 @@ function rtxMid_TypeCheck_version()
 
 #include "typing/rtxTyping.inc.cws"
 
+declare function rtxItfCheckInheritance_walk<T>(local_node : node, interfaces_list : node);
+
+
 
 /*
  * This function checks whether the interfaces inherited/depended on

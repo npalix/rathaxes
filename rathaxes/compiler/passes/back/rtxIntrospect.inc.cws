@@ -36,28 +36,34 @@ function rtxIntrospect_version()
  *
  */
 
+declare function rtxIntrospect_code<T>(local_node : node, theChunk : node, blockIds : node);
+declare function rtxIntrospect_decl<T>(local_node : node, theChunk : node, blockIds : node);
+declare function rtxIntrospect_stmt<T>(local_node : node, theChunk : node, blockIds : node);
+declare function rtxIntrospect_cond<T>(local_node : node, theChunk : node, blockIds : node);
+declare function rtxIntrospect_expr<T>(local_node : node, theChunk : node, blockIds : node);
 
-/*
-function rtxIntrospect_code<T>(local_node : node, theChunk : node);
-function rtxIntrospect_decl<T>(local_node : node, theChunk : node);
-function rtxIntrospect_stmt<T>(local_node : node, theChunk : node);
-function rtxIntrospect_cond<T>(local_node : node, theChunk : node);
-function rtxIntrospect_expr<T>(local_node : node, theChunk : node);
-*/
-function rtxIntrospect_code<T>(local_node : node, theChunk : node,
-                               blockIds : node)
+declare function rtxIntrospect_checkPlaceHolder(identifier : node, theChunk : node, out_ref_pHNode : reference);
+declare function rtxIntrospect_TypeRType(identifier : node, rtype : node);
+declare function rtxIntrospect_copyBlockList(dst : node, src : node);
+declare function rtxIntrospect_registerVar(identifier : value, theNode : node, theChunk : node, blockIds : node);
+declare function rtxIntrospectChunk(theChunk : node);
+
+declare function rtxIntrospect_walk<T>(local_node : node);
+declare function rtxIntrospect(local_node : node);
+
+
+
+
+// Basic implementations of the introspection pass
+function rtxIntrospect_code<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_code<"+T+"> is not implemented."); }
-function rtxIntrospect_decl<T>(local_node : node, theChunk : node,
-                               blockIds : node)
+function rtxIntrospect_decl<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_decl<"+T+"> is not implemented."); }
-function rtxIntrospect_stmt<T>(local_node : node, theChunk : node,
-                               blockIds : node)
+function rtxIntrospect_stmt<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_stmt<"+T+"> is not implemented."); }
-function rtxIntrospect_cond<T>(local_node : node, theChunk : node,
-                               blockIds : node)
+function rtxIntrospect_cond<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_cond<"+T+"> is not implemented."); }
-function rtxIntrospect_expr<T>(local_node : node, theChunk : node,
-                               blockIds : node)
+function rtxIntrospect_expr<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_expr<"+T+"> is not implemented."); }
 
 
@@ -75,8 +81,6 @@ function rtxIntrospect_checkPlaceHolder(identifier : node, theChunk : node, out_
     {
         if (findElement(identifier, theChunk.body.compile) == false)
             return false;
-//       traceLine("Found PlaceHolder in chunk " + theChunk.pointcut.scope
-//                 + "::" + theChunk.pointcut.name + " -> " + identifier);
         ref out_ref_pHNode = theChunk.body.compile[identifier];
         return true;
     }

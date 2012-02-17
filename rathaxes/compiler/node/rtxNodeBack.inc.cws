@@ -3,6 +3,31 @@
 function rtxNodeBack_version()
 {return "1.0";}
 
+
+// Template nodes
+declare function rtxNodeTpl(local_node : node, out_ref_proto : reference, out_ref_block : reference);
+declare function rtxNodeTplPrototype(local_node : node, tpl_type : value, out_ref_rtype : reference, out_ref_ids : reference);
+// Type template specific nodes
+declare function rtxNodeTpl_HasMapping(local_node : node);
+declare function rtxNodeIdentifierMapping(local_node : node, identifier : value, out_ref_body : reference);
+declare function rtxNodeTpl_AddMapping(local_node : node, out_ref_mapping : reference);
+declare function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference);
+declare function rtxNodeTplTypeMapping_HasIdentifier(local_node : node, identifier : value);
+declare function rtxNodeTplTypeMapping_AddIdentifier(local_node : node, identifier : value, mapped_body : reference);
+// PlaceHolder-related nodes
+declare function rtxNodePointcut_Raw(local_node : node, out_ref_placeHolder : reference);
+declare function rtxNodePlaceHolder(local_node : node);
+declare function rtxNodeCall(local_node : node, theVar : node, theChunk : node, out_ref_params : reference);
+declare function rtxNodeSequenceCall(local_node : node, name : node, args : node);
+// Tool functions for the resolution/generation
+declare function rtxNodeResVal_GetField(resolver_values : node, idList : node, out_ref : reference);
+declare function rtxNodeResVal(local_node : node);
+declare function rtxNodeResValLeaf(local_node : node, theValue : node);
+declare function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node);
+
+
+
+
 function	rtxNodeTpl(local_node : node,
                        out_ref_proto : reference,
                        out_ref_block : reference)
@@ -269,7 +294,6 @@ function rtxNodeResValLeaf(local_node : node, theValue : node)
  * in order to keep consistency while generating some resolved chunks.
  *
  */
-declare function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node);
 
 function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node)
 {
