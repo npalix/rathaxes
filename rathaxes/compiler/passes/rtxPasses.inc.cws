@@ -12,7 +12,7 @@ function rtxPasses_version()
 
 #include "mid/rtxTypeCheck.inc.cws"
 
-#include "back/rtxCompile.inc.cws"
+#include "back/rtxPlaceHolders.inc.cws"
 #include "back/rtxMeta.inc.cws"
 #include "back/rtxTypeHash.inc.cws"
 #include "back/rtxIntrospect.inc.cws"

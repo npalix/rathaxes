@@ -221,22 +221,7 @@ else if (   toLowerString(this.operation) == "blt-check"
     traceLine("READ:" + inputFile);
     rtxParse(inputFile, source);
 
-    // Compile the placeHolders
-    /*
-    foreach item in source.block
-        rtxTpl_walk<item.type>(item);
-    local has_error = false;
-    foreach item in source.block
-    {
-        rtxMeta_walk<item.type>(item);
-        if (!isEmpty(item.error))
-        {
-            traceLine("Item of type '"+item.type+"' could not be parsed :"
-                      + endl() + item.error);
-            has_error = true;
-        }
-    }
-    */
+    // Compile the Meta Instructions aka ${}
     if (!rtxMeta(source))
     {
         exit(-1);
