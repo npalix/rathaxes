@@ -1,0 +1,12 @@
+#if !existFunction(rtxTyping_version)
+
+function rtxTyping_version()
+{ return "1.0"; }
+
+#include "misc/colors.cws"
+#include "linker/rtxLink.inc.cws"
+
+#include "rtxType.inc.cws"
+#include "routines/rtxTypingRoutines.inc.cws"
+
+#end

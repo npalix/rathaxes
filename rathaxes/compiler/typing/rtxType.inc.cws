@@ -1,0 +1,46 @@
+#if !existFunction(rtxType_version)
+
+function        rtxType_version()
+{return "1.0";}
+
+function        rtxType_Parse<T>(src : value, out_type : node)
+{
+        error("unknown type :" + src);
+        return false;
+}
+
+function        rtxType_Search(src : value, out : node)
+{
+        insert out.rtype = "unknown";
+        insert out.val = "";
+        foreach it in this.map.files
+        {
+            /*
+             * If the syntax throws an error, catch it here.
+             */
+                if (rtxType_Parse<it.key()>(src, out))
+                {
+                        //traceLine("Found TYPE:" + toString(out));
+                        return true;
+                }
+        }
+        return false;
+}
+
+function        rtxType_Load(out : node)
+{
+        local   theDir;
+        insert  out.map;
+        insert  out.scripts_path = this.scripts_path;
+        if !scanDirectories(theDir, this.scripts_path+"typing/rules_types/", "*.inc.cws")
+        { error("unable to load rules_types directory"); }
+        foreach f in theDir.files
+        {
+                traceLine("Load:" + f);
+                local content = loadFile(theDir + f);
+                extendExecutedScript(content);
+                insert out.map.files[f] = true;
+        }
+}
+
+#end

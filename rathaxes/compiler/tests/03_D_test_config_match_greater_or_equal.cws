@@ -1,0 +1,147 @@
+#include "misc/colors.cws"
+#include "cnorm.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+local source;
+rtxType_Load(source);
+
+// Used to build things bit by bit
+local tmp;
+local config;
+local with;
+
+function build_version(local_node : node, v1 : value, v2 : value, v3 : value)
+{
+    local unit;
+    rtxNodeSerial(local_node);
+    rtxNodeSerialUnit(unit, v1);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    unit = "";
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    unit = "";
+    rtxNodeSerialUnit(unit, v2);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    unit = "";
+    rtxNodeSerialSep(unit, ".");
+    rtxNodeSerial_AddUnit(local_node, unit);
+    unit = "";
+    rtxNodeSerialUnit(unit, v3);
+    rtxNodeSerial_AddUnit(local_node, unit);
+    unit = "";
+}
+
+function build_builtin(local_node : node, name : value, val : value)
+{
+    local dummy;
+    local   id;
+    rtxNodeIdentifier(id, name, "Builtin");
+    rtxNodeRType(local_node.rtype, id, dummy);
+    insert local_node.val = val;
+}
+
+config = "";
+with = "";
+build_version(config, "2", "6", "34");
+build_version(with, "2", "6", "35");
+// Is config < with ? Should be.
+if (rtxLink_CompareValues<">=">(with, config) == true)
+{
+    traceLine("Type " + config.type
+              + ": With and config should not match : config < with");
+    exit 1;
+}
+
+
+config = "";
+with = "";
+build_version(config, "2", "6", "35");
+build_version(with, "2", "6", "35");
+// Is config < with ? Should not be, ==
+if (rtxLink_CompareValues<">=">(with, config) == false)
+{
+    traceLine("Type " + config.type
+              + ": With and config should match : config == with");
+    exit 1;
+}
+
+// Now make with a bit longer... (config < with)
+rtxNodeSerialSep(tmp, ".");
+rtxNodeSerial_AddUnit(with, tmp);
+tmp = "";
+rtxNodeSerialUnit(tmp, "1");
+rtxNodeSerial_AddUnit(with, tmp);
+if (rtxLink_CompareValues<">=">(with, config) == true)
+{
+    traceLine("Type " + config.type
+              + ": With and config should not match : config < with(longer)");
+    exit 1;
+}
+
+
+config = "";
+with = "";
+build_version(config, "2", "6", "35");
+build_version(with, "2", "6", "34");
+// Is config < with ? Should not be, >
+if (rtxLink_CompareValues<">=">(with, config) == false)
+{
+    traceLine("Type " + config.type
+              + ": With and config should match : config > with");
+    exit 1;
+}
+
+config = "";
+with = "";
+build_builtin(config, "number", "1");
+build_builtin(with, "number", "2");
+if (rtxLink_CompareValues<">=">(with, config) == true)
+{
+    traceLine("Type " + config.type
+              + ": With and config should not match : config < with");
+    exit 1;
+}
+
+config = "";
+with = "";
+build_builtin(config, "number", "1");
+build_builtin(with, "number", "1");
+if (rtxLink_CompareValues<">=">(with, config) == false)
+{
+    traceLine("Type " + config.type
+              + ": With and config should match : config == with");
+    exit 1;
+}
+
+config = "";
+with = "";
+build_builtin(config, "number", "2");
+build_builtin(with, "number", "1");
+if (rtxLink_CompareValues<">=">(with, config) == false)
+{
+    traceLine("Type " + config.type
+              + ": With and config should match : config > with");
+    exit 1;
+}
+
+
+config = "";
+with = "";
+build_builtin(config, "symbol", "Windows7");
+build_builtin(with, "symbol", "WindowsXP");
+try
+{
+    traceLine("rtxLink_CompareValues<\">=\">(with, config) = "
+              + rtxLink_CompareValues<">=">(with, config));
+    traceLine("Type " + config.type
+              + ": With and config should have thrown an error: type = "+with.type);
+}
+catch (sError)
+{
+    exit 0;
+}
+exit 1;

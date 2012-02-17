@@ -1,0 +1,32 @@
+---
+layout: post
+title: Rathaxes Development Goes Public
+lang: us
+---
+
+h1. {{ page.title }}
+
+Unveiled in 2008 at the RMLL and T-DOSE events Rathaxes is still an active project. A new team from the LSE (Epita/Epitech System and Security Laboratory) took over the project in fall 2010.
+
+The new team, much smaller than the previous one, is composed of five people:
+* David Pineau;
+* Thomas Sanchez;
+* Louis Opter;
+* Thomas Luquet;
+* Zoltan Konarzewski.
+
+This new team is still under the direction of Lionel Auroux. Less people helps us to be more agile and we decided to focus on two things only:
+* A new version of the Rathaxes DSL and its compiler;
+* Usable examples based on the state of the art in drivers programming.
+
+More important, Rathaxes is now an open project: the language and the compiler are licensed under the GPLv3 while the code templates, which are specific to an operating systems or peripheral are licensed under a 3 clauses BSD license.
+
+Openness means two things for us. First, we want to gather attention and raise awareness from the open source community and the smaller community of operating systems developers. Second, this helps us creating a more usable and more documented project since we always have users in mind.
+
+Looking forward to work with other people, we applied to the RMLL this summer in Strasbourg, France.
+
+Of course, expect very soon, some documentation releases and some previews on the new version of the language.
+
+Hope to see you soon.
+
+-- Louis Opter

@@ -1,0 +1,19 @@
+---
+layout: post
+title: Rathaxes est accepté pour les RMLL 2011
+lang: fr
+---
+
+h1. {{ page.title }}
+
+Notre candidature pour les "12es rencontres du logiciel libre":http://2011.rmll.info/?lang=fr (RMLL) à été acceptée.
+
+Cela signifie que nous serons à Strasbourg en juillet du dimanche 9 jusqu’au mardi 14.
+
+David Pineau et moi-même animerons une présentation sur Rathaxes. L’équipe entière, excepté Thomas Sanchez (qui sera aux Sessions d’été de Berkeley), sera disponible sur le stand durant tout l’événement.
+
+Si vous êtes intéressé par Rathaxes, n’hésitez pas à venir et discuter : les boissons seront pour nous !
+
+Nous posterons la date de notre présentation.
+
+-- Louis Opter

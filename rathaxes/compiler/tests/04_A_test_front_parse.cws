@@ -1,0 +1,246 @@
+/*
+	TEST for template code parsing
+*/
+#include "misc/colors.cws"
+#include "02_C_test_middle_check_inheritance.cws"
+traceLine("ITF:" + toString(this));
+
+local working_directory = "../__04_A_test_front_parse";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+local dummy;
+local input;
+generateString({    
+
+	device RS232
+	use LKM
+	{
+		register byte rcv_buf mode R like (........) at 0;
+		register byte snd_buf mode R like (........) at 0;
+		
+		register byte IER mode RW like (.........) at 1
+		{
+			[0] as data_available;
+			[1] as transmitter_empty;
+			[2] as line_status_change;
+			[3] as modem_status_change;
+			[4] as sleep_mode;
+			[5] as low_power_mode;
+		}
+
+		register byte LCR mode RW like (........) at 3
+		{
+			[0..1] as word_lengh
+			{
+				(00) -> _5bits;
+				(01) -> _6bits;
+				(10) -> _7bits;
+				(11) -> _8bits;
+			}
+
+			[2] as stop_bits
+			{
+				(0) -> _1stop_bits;
+				(1) -> _2stop_bits;
+			}
+
+			[3..5] as parity_type
+			{
+				(000) -> none;
+				(001) -> odd;
+				(011) -> even;
+				(101) -> high;
+				(111) -> low;
+			}
+
+			[6] as break_signal
+			{
+				(0) -> disable;
+				(1) -> enable;
+			}
+
+			[7] as dlab
+			{
+				(0) -> buffers;
+				(1) -> clock;
+			}
+		}
+
+		register byte MCR mode RW like (****.*..) at 4
+		{
+			[0] as dtr;
+			[1] as rts;
+			[2] as ao2;
+		}
+
+		register byte DLL mode RW like (........) at 0;
+
+		register byte DLM mode RW like (........) at 1;
+
+		register byte LSR mode RW like (........) at 5
+		{
+			[0] as data_available
+			{
+				(0) -> FALSE;
+				(1) -> TRUE;
+			}
+
+			[1] as overrun
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[2] as parity
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[3] as framing
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[4] as break_signal
+			{
+				(0) -> FALSE;
+				(1) -> TRUE;
+			}
+
+			[5] as thr_state
+			{
+				(0) -> transmitting;
+				(1) -> empty_idle;
+			}
+
+			[6] as thr_and_line
+			{
+				(0) -> transmitting;
+				(1) -> empty_idle;
+			}
+
+			[7] as data_fifo
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+		}
+
+
+		public property word divisor
+		{
+			set
+			{
+				SET(LCR->dlab.clock);
+				SET(DLL, value[0..7]);
+				SET(DLM, value[8..15]);
+				SET(LCR->dlab.buffers);
+			}
+	
+			get
+			{
+				SET(LCR->dlab.clock);
+				SET(value[0..7], DLM);
+				SET(value[8..15], DLL);
+				SET(LCR->dlab.buffers);
+			}
+		}
+
+		User::read(User::Context ctx, User::Buffer output)
+		{
+		    LOG("my RS232 [read]\n");
+		    CONCAT(output, rcv_buf)
+		    {
+		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
+		    }
+		}
+
+		User::write(User::Context ctx, User::Buffer input)
+		{
+			LOG("my RS232 [write]\n");
+			COPY(snd_buf, input)
+			{
+				PRECONDITION {WAIT(LSR->thr_state.empty);}
+			}
+		}
+
+		User::open(User::Context ctx, User::Buffer buf)
+		{
+			LOG("my RS232 [open]\n");
+		}
+
+		User::close(User::Context ctx, User::Buffer buf)
+		{
+			LOG("my RS232 [close]\n");
+		}
+
+		User::on_plug(User::Context ctx, User::Buffer buf)
+		{
+			LOG("my RS232 [on_plug]\n");
+			SET(divisor, 0x0C);
+			SET(LCR->word_lengh._8bits);
+		}
+
+	}
+
+    configuration
+    {
+        devices = RS232;
+        arch = x86;
+        OS = Linux
+        {
+            major = 2;
+            minor = 6;
+            patch = 24;
+        }
+
+        OS = Windows
+        {
+            version = XP;
+        }
+    }
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/front/rtxTypeCheck.inc.cws"
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+traceLine("input:\n" + input);
+saveToFile("INPUT.TXT", input);
+
+local source;
+cnormDialect<"__std__">(source);
+rtxType_Load(source);
+
+parseStringAsBNF("parse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("__04_rtx_parse__.tree", source);
+
+traceLine("====>Result of parsing: __04_rtx_parse__.tree");
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}

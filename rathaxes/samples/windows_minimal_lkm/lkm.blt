@@ -1,0 +1,50 @@
+with LKM
+{
+    /* Skel of the generated C file: */
+    ${pointcut LKM::includes};
+    ${pointcut LKM::prototypes};
+    ${pointcut LKM::data};
+    ${pointcut LKM::code};
+
+    template sequence   LKM::init()
+    {
+        chunk   LKM::includes()
+        {
+            #include <wdm.h>
+            #include <Wdf.h>
+            #include <ntddk.h>
+        }
+
+
+        chunk   LKM::code()
+        {
+            /* NTSTATUS */
+            long DriverEntry(/*IN PDRIVER_OBJECT*/ struct _DRIVER_OBJECT * DriverObject,
+                             /*IN*/ struct _UNICODE_STRING*  RegistryPath)
+            {
+                DriverObject->DriverUnload = &DriverExit;
+                ${pointcut ::IMPLEMENTATION};
+
+                return STATUS_SUCCESS;
+            }
+
+        }
+    }
+
+    template sequence   LKM::exit()
+    {
+        chunk   LKM::prototypes()
+        {
+            void DriverExit(/*IN*/ struct _DRIVER_OBJECT *DriverObject);
+        }
+
+        chunk   LKM::code()
+        {
+            void DriverExit(/*IN*/ struct _DRIVER_OBJECT *DriverObject)
+            {
+                ${pointcut ::IMPLEMENTATION};
+            }
+
+        }
+    }
+}

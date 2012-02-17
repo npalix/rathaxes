@@ -1,0 +1,234 @@
+/*
+ *
+ * Rules for the configuration block
+ *
+ */
+
+rtx_stmt_config_block(theBlock : node) ::=
+    [
+/**/    => local configField;
+/**/    => local theIdentifier;
+/**/    => local theValue;
+        #check(rtxNodeConfigField(configField, theIdentifier, theValue))
+        rtx_scoped_identifier(theIdentifier)
+/**/    #continue(sError, "Expected assignment operator '=' after"
+/**/                    + " configuration variable declaration.")
+        '='
+/**/    #continue(sError, "Expected value after configuration variable "
+/**/                    + "assignment.")
+        rtx_value(theValue)
+/**/    #continue(sError, "Expected extension block or "
+/**/                    + "';' after configuration variable assignment.")
+        [
+            /* Supports extension on this variable : block*/
+            '{'
+/**/            =>local theBody;
+/**/            #check(rtxNodeConfigField_Extend(configField, theBody))
+                rtx_stmt_config_block(theBody)
+/**/            #continue(sError, "Expected '}' closing block.")
+            '}'
+        |
+            /* Does not support extension */
+            ';'
+        ]
+/**/    #check(rtxNodeConfig_BodyAddField(theBlock, configField))
+    ]*
+;
+
+rtx_stmt<"configuration">(theBlock : node) ::=
+/**/#pushItem(theBlock.block)
+/**/=> local lastNode;
+/**/#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/=> local configBody;
+/**/#check(rtxNodeConfig(lastNode, configBody))
+/**/#continue(sError, "Expected block after configuration statement.")
+    '{'
+        rtx_stmt_config_block(configBody)
+/**/    #continue(sError, "Expected '}' closing configuration block.")
+    '}'
+;
+
+/*
+ *
+ *      Rules for devices block
+ *
+ */
+
+rtx_stmt<"device">(theBlock : node) ::=
+        #readIdentifier:device_name
+/**/    #pushItem(theBlock.block)
+/**/    => local lastNode;
+/**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/    => local deviceBody;
+/**/    #check(rtxNodeDevice(lastNode, device_name, deviceBody))
+        ["use"
+            #readIdentifier:itf
+/**/        #check(rtxNodeDevice_AddUseInterface(lastNode, itf))
+		    [
+                ','
+/**/            #continue(sError, "ITF FUCK")
+			    #readIdentifier:itf
+/**/            #check(rtxNodeDevice_AddUseInterface(lastNode, itf))
+		    ]*
+	    ]?
+/**/    #continue(sError, "Expected block after device statement.")
+        '{'
+                [rtx_stmt_device_block(deviceBody)]*
+/**/            #continue(sError, "Expected '}' closing device block.")
+        '}'
+;
+
+rtx_stmt_device_block(theBlock : node) ::=
+/**/    #pushItem(theBlock.block)
+/**/    => local lastNode;
+/**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+	[rtx_register(lastNode) | rtx_property(lastNode) | rtx_sequence(lastNode)]
+;
+
+
+/*
+ *
+ *      Rules for register
+ *
+ */
+
+rtx_register_like(theNode : node) ::= 
+        "mode" ["RW"|"R"|"W"]:mode
+        "like" 
+        ['(' ['.'|'0'|'1'|'*']+:pattern ')'] 
+        "at" #readInteger:offset
+/**/    #check(rtxNodeLike(theNode, mode, pattern, offset))
+;
+
+rtx_bit_range(theMap : node) ::= '[' #readInteger:theMap.begin [".." #readInteger:theMap.end]? ']'
+;
+
+rtx_bit_mask(theMask : node) ::= ['(' ['0'|'1']+:theMask.mask ')'] "->" #readIdentifier:theMask.name ';'
+;
+
+rtx_register_map(theBlock : node) ::= 
+/**/    #pushItem(theBlock.block)
+/**/    => local last_node;
+/**/    #check(cnormNodeBlock_GetLastNode(theBlock, last_node))
+/**/    => local map;
+        rtx_bit_range(map) "as" #readIdentifier:name
+/**/    => local listmask;
+/**/    #check(rtxNodeRegMap(last_node, name, map, listmask))
+        [';'
+        |
+                '{'
+                        [
+/**/                            #pushItem(listmask)
+                                rtx_bit_mask(listmask#back)
+                                #check(rtxNodeRegMap_addMask(listmask#back))
+                        ]+
+                '}'
+        ]
+;
+
+rtx_register(theNode : node) ::= "register" 
+/**/    => local type;
+/**/    => local like;
+/**/    => local body;
+/**/    #check(rtxNodeRegister(theNode, type, like, body))
+        rtx_scoped_identifier(type)
+        #readIdentifier:theNode.name
+        #check(rtxNodeRegister_addMap(theNode))
+        rtx_register_like(like)
+        [';'
+        | 
+                '{' [rtx_register_map(body)]+ '}'
+        ]
+;
+
+/*
+ *
+ *      Rules for property
+ *
+ */
+
+rtx_property(theNode : node) ::=
+        ["public"|"private"]?:visibility "property" 
+        => local rtype;
+        => local body;
+        #check(rtxNodeProperty(theNode, rtype, body, visibility))
+        => local typeNode;
+        => local dummy;
+        rtx_scoped_identifier(typeNode)
+        #check(rtxNodeRType(rtype, typeNode, dummy))
+        #readIdentifier:theNode.name
+        '{'
+                [
+                        rtx_sequence_call(theNode.body)
+                ]*
+        '}'
+;
+
+rtx_qualified_name ::= #!ignore [#readIdentifier:itf =>traceLine("i:" + itf); "::"]? #readIdentifier:seq_name
+;
+
+/*
+ *
+ *      Rules for sequence calling
+ *
+ */
+
+rtx_sequence_args(theArgs : node) ::=
+        '(' 
+                [
+                        #pushItem(theArgs)
+                        rtx_sequence_arg(theArgs#back) 
+                        [',' #pushItem(theArgs)
+                                rtx_sequence_arg(theArgs#back)
+                        ]*
+                ]?
+        ')'
+;
+
+rtx_sequence_arg(theArg : node) ::= [ #readCString | #readCChar | [~[','|')'|'{'|';']]+ ]:data
+                #check(rtxType_Search(data, theArg))
+;
+
+rtx_sequence_call(theBlock : node) ::=
+/**/    #pushItem(theBlock.block)
+/**/    => local lastNode;
+/**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+        rtx_scoped_identifier(lastNode.sequence)
+        [rtx_sequence_args(lastNode.args) ]?
+        #continue(sError, "Error in sequence call")
+        [';' 
+        |       '{'
+                #insert(lastNode.body)
+                #check(cnormNodeBlock(lastNode.body))
+                [rtx_sequence_call(lastNode.body)]*
+                '}'
+        ]
+;
+
+/*
+ *
+ *      Rules for sequence definition
+ *
+ */
+
+rtx_sequence(theNode : node) ::=
+/**/    => local seqRtype;
+/**/    => local seqParamName;
+/**/    => local body;
+        rtx_template_prototype(seqRtype, seqParamName)
+/**/    #check(rtxNodeSequence(theNode, seqRtype, seqParamName, body))
+        #continue(sError, "Expected sequence implementation block.")
+        '{'
+                [ rtx_sequence_call(body) ]*
+/**/            #continue(sError, "Expected '}' closing sequence "
+                          + rtxRTypeFullQualifiedName<"sequence">(seqRtype, seqParamName)
+                          + " implementation block.")
+        '}'
+;
+
+// conteneur de N device, mapper sur le block LKM globale
+rtx_stmt<"driver">(theBlock : node) ::=
+        #readIdentifier:driver_name
+        '{'
+        '}'
+;

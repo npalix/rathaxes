@@ -1,0 +1,82 @@
+#if !existFunction(rtxMid_TypeCheck_version)
+
+function rtxMid_TypeCheck_version()
+{ return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
+
+
+/*
+ * This function checks whether the interfaces inherited/depended on
+ * by the current interface exist. This is the firs step of the interface
+ * auto-validation mecanism.
+ *
+ * This is a templated walking function which aim is only to reach every
+ * interface or extension and to tell if it is dependency-valid.
+ *
+ * This default implementation returns true to avoid failing a test only
+ * because an unmanaged node was encountered.
+ */
+function        rtxItfCheckInheritance_walk<T>(local_node : node,
+                                       interfaces_list : node)
+{
+    traceLine("Unknown rtx_node :" + T);
+    return true;
+}
+
+function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
+                                                           interfaces_list : node)
+{
+    foreach inherited_interface in local_node.inheritance
+    {
+        local parentRef = false;
+        local parentName = key(inherited_interface);
+
+        // First, check if the interface was in the current file
+        // If not, check within the cache.
+        if (interfaces_list.findElement(parentName) == false
+            && rtxLink_findInterface(parentName, parentRef) == false)
+        {
+            traceLine(RED + "[Error] Unable to find interface ``" + parentName
+                      + "'' required by ``" + local_node.name + "''" + DEFAULT_COLOR);
+            return false;
+        }
+
+        // If any of the two attemps succeeded, then retrieve the node.
+        if (interfaces_list.findElement(parentName) != false)
+            ref local_node.inheritance[parentName] = interfaces_list[parentName];
+        else
+            rtxLink_LoadItem(parentRef, local_node.inheritance[parentName], false);
+    }
+
+    return true;
+}
+
+function        rtxItfCheckInheritance_walk<"__block__">(local_node : node,
+                                                         interfaces_list : node)
+{
+    local err_count = 0;
+    // Walk through a block.
+    foreach item in local_node.block
+    {
+        if (rtxItfCheckInheritance_walk<item.type>(item, interfaces_list) == false)
+            increment(err_count);
+    }
+    if (err_count != 0)
+        return false;
+    return true;
+}
+function rtxItfCheckInheritance_walk<"__rtx_with__">(local_node : node,
+                                                     interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node.body, interfaces_list);
+}
+
+function        rtxItfCheckInheritance_walk<"__root_block__">(local_node : node,
+                                                              interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node, interfaces_list);
+}
+
+
+#end

@@ -1,0 +1,44 @@
+/*
+	TEST for template code placeHolder meta (parsing)
+*/
+
+#include  "01_B_test_back_compile.cws"
+
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_C_test_back_meta";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+// Walk through the AST in order to parse each placeholder
+// and to save their AST into the .compile node.
+#include "passes/back/rtxMeta.inc.cws"
+
+local has_error = false;
+foreach item in source.block
+{
+    if (rtxMeta_walk<item.type>(item) == false)
+    {
+        if (!isEmpty(item.error))
+        {
+            traceLine("Item of type '"+item.type+"' could not be parsed :"
+                      + endl() + item.error);
+        }
+        has_error = true;
+    }
+}
+traceLine("====>Result of placeHolder Analyse : __03_rtx_compil_tplnode__.tree");
+saveProject("__03_rtx_compil_tplnode__.tree", source);
+if (has_error)
+{
+    exit (1);
+}
+

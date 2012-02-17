@@ -1,0 +1,20 @@
+with Builtin
+{
+    /* Repeat "Builtin::" to work-around limitations in the compiler. */
+    template type Builtin::integer()
+    {
+        chunk ::decl()
+        {
+            typedef int t_integer;
+        }
+
+        chunk ::set(value)
+        {
+            ${self} = ${value};
+        }
+
+        map
+        {
+        }
+    }
+}

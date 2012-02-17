@@ -1,0 +1,3 @@
+# Warnings suppression files
+
+.* : .*Ignore the warning on captions in frenchb.ldf.*

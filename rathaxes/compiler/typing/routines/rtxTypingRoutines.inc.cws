@@ -1,0 +1,1128 @@
+#if !existFunction(rtxInterfaces_version)
+
+#include "misc/colors.cws"
+#include "misc/rtxTools.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+function        rtxInterfaces_version()
+{ return "1.0"; }
+
+
+function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
+{
+    local dummy_out_ref;
+
+    rtxNodeRType(rtypeNode, idNode, dummy_out_ref);
+}
+
+/*
+ * This function checks whether an interface contains a type described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+{
+    if (rtypeNode.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + rtypeNode.type);
+
+    local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+    // Unkown scope and not explicit global ?
+    if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
+    {
+        // We are searching for qualified items, thus set the scope before checking.
+        rtypeNode.name.scope = interfaceNode.name;
+        name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+        // Check current interface.
+        if (findElement(name + "{}", interfaceNode.types) == true)
+        {
+            rtypeNode.name.scope = interfaceNode.name;
+            return true;
+        }
+        rtypeNode.name.scope = "";
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+            {
+                // then set the interface's name
+                rtypeNode.name.scope = parentInterface.name;
+                return true;
+            }
+        }
+    }
+    else if (rtypeNode.name.global == false) // known scope
+    {
+        if (rtypeNode.name.scope != interfaceNode.name)
+        {
+            // If it's not a direct inheritance, try out by going through the parent first to find the itf...
+            if (!findElement(rtypeNode.name.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+                        return true;
+                }
+                traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree." + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
+                return true;
+        }
+        else if (findElement(name + "{}", interfaceNode.types) == true)
+            return true;
+    }
+    else // explicit global == true
+    {
+        // XXX FIXME TODO
+        // builtin item management.
+        if (rtypeNode.name.name == "register")
+            return true;
+        if (rtypeNode.name.name == "register_field")
+            return true;
+        if (rtypeNode.name.name == "register_value")
+            return true;
+        if (rtypeNode.name.name == "string")
+            return true;
+        if (rtypeNode.name.name == "number")
+            return true;
+        if (rtypeNode.name.name == "numser")
+            return true;
+    }
+
+    return false;
+}
+
+
+/*
+ * This function checks whether the pointcut is declared by the itfTree.
+ */
+function        rtxTypeCheck_ItfDefinesPointcut(pointcutId : node, itfTree : node)
+{
+    // Then check if the pointcut is defined within the interface
+    // (global or inside a sequence)
+    foreach def in itfTree.body.block
+    {
+        // Check global pointcuts...
+        if (def.type == "__rtx_itf_decl__" && def.specifier == "pointcut")
+        {
+            if (def.body.name.name == pointcutId.name)
+                return true;
+        }
+        // type templates dont matter here, they should not define pointcuts.
+        // So, check only sequence templates...
+        else if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        {
+            // In which, check every poincut...
+            foreach item in def.body.block
+            {
+                if (item.type == "__rtx_itf_decl__" && item.specifier == "pointcut"
+                    && item.body.name.name == pointcutId.name)
+                    return true;
+            }
+        }
+    }
+}
+
+
+/*
+ * This function checks whether an interface declares a pointcut described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode : node)
+{
+    if (pointcutId.type != "__rtx_id__")
+        error("Bad node type. Received: " + pointcutId.type);
+
+    // Unkown scope and not explicit global ?
+    if (pointcutId.scope == "" && pointcutId.global == false)
+    {
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode) == true)
+        {
+            // then set the interface's name
+            pointcutId.scope = interfaceNode.name;
+            return true;
+        }
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            if (rtxTypeCheck_ItfCheckPointcut(pointcutId, parentInterface) == true)
+            {
+                // then set the interface's name
+                pointcutId.scope = parentInterface.name;
+                return true;
+            }
+        }
+    }
+    else if (pointcutId.global == false) // known scope
+    {
+        if (pointcutId.scope != interfaceNode.name && !isEmpty(interfaceNode.inheritance))
+        {
+            if (!findElement(pointcutId.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxTypeCheck_ItfCheckPointcut(pointcutId, parentInterface) == true)
+                        return true;
+                }
+                traceLine(RED + "[Error] The interface "+interfaceNode.name
+                          +" does not depend on interface '"+pointcutId.scope
+                          +"': The pointcut cannot be declared." + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode.inheritance[pointcutId.scope]) == true)
+                return true;
+        }
+        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode) == true)
+            return true;
+
+    }
+    else // explicit global == true
+    {
+        // XXX TODO FIXME
+        // builtin item management.
+        if (pointcutId.name == "CALL"
+            || pointcutId.name == "IMPLEMENTATION")
+            return true;
+    }
+    return false;
+}
+
+
+/*
+ *
+ * The set of functions rtxItfCheckTypesDeclarations<T> walk through a tree
+ * and help check whether a type used for a parameter of a template is defined
+ * in the associated interface. They also allow to check whether an interface
+ * provides a pointcut to be used by the checked one.
+ *
+ */
+function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
+                                                currentInterface : node,
+                                                interfacesList : node)
+{
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
+                                                     currentInterface : node,
+                                                     interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"builtintype">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local varname = currentDeclaration.identifiers.scope + "::" + currentDeclaration.identifiers.name;
+    local ret = false;
+
+    if (scope == "" && currentDeclaration.rtype.name.global == false)
+    {
+        traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace." + DEFAULT_COLOR);
+        ret = true;
+    }
+    else
+    {
+        ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
+        if (ret == false)
+            traceLine(RED + "[Error] Type ``" + typeName + "''"
+                      + " could not be found for variable ``" + varname + "''." + DEFAULT_COLOR);
+    }
+    return ret;
+}
+
+function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local errcount = 0;
+
+    // First, check the types of the parameters.
+    foreach entry in currentDeclaration.rtype.params
+    {
+        local rtypeNode;
+        rtxItfIdNodeToRType(entry, rtypeNode);
+        if (rtxInterfaceHasType(rtypeNode, currentInterface) == false)
+        {
+            traceLine(RED + "[Error] Parameter type ``"
+                      + rtypeNode.name.scope + "::" + rtypeNode.name.name + "''"
+                      + " could not be found for sequence ``"
+                      + typeName + "''." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+        else // Success -> update the rtypeNode
+        {
+            entry.scope = rtypeNode.name.scope;
+            if (entry.scope == "")
+                entry.global = true;
+        }
+    }
+
+    // Second, check that the pointcuts to be implemented exist.
+    foreach decl in currentDeclaration.body.block
+    {
+        if (decl.type == "__rtx_itf_decl__" && decl.specifier == "chunk")
+        {
+            if (rtxTypeCheck_ItfCheckPointcut(decl.body.pointcut, currentInterface) == false)
+            {
+                traceLine(RED + "[Error] Pointcut '"
+                          + rtxRTypeName<decl.body.pointcut.type>(decl.body.pointcut)
+                          +"' is not declared." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            // In the case of success, the scoped identifier is already updated.
+        }
+    }
+    if (errcount != 0)
+        return false;
+
+    // It's all good, so make sure that the scope is set.
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.name);
+
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"__rtx_itf__">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    local errcount = 0;
+    foreach decl in currentDeclaration.body.block
+    {
+        if (rtxItfCheckTypesDeclarations<decl.specifier>(decl, currentDeclaration, interfacesList) == false)
+            increment(errcount);
+    }
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration : node,
+                                                          currentInterface : node,
+                                                          interfacesList : node)
+{
+    local errcount = 0;
+    foreach item in currentDeclaration.block
+    {
+        if (rtxItfCheckTypesDeclarations<item.type>(item,
+                                                    currentInterface,
+                                                    interfacesList) == false)
+            increment(errcount);
+    }
+    if(errcount != 0)
+        return false;
+    return true;
+}
+function        rtxItfCheckTypesDeclarations<"__rtx_with__">(currentDeclaration : node,
+                                                             currentInterface : node,
+                                                             interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+function        rtxItfCheckTypesDeclarations<"__root_block__">(currentDeclaration : node,
+                                                               currentInterface : node,
+                                                               interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+
+function        rtxItfCheckTypesDeclarations_walk(local_node : node,
+                                                  interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<local_node.type>(local_node, local_node, interfacesList);
+}
+
+
+
+/******************************************************************************
+ *
+ * The functions that helps checking a tpl's coherence against an itf and rev.
+ *
+ *****************************************************************************/
+
+/**
+ *
+ * This function takes a RType node for a pointcut and the name of the itf to
+ * search into.
+ *
+ * It then checks whether the pointcut was defined within the interface or not.
+ *
+ */
+function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
+{
+    local pointcutName = rtxRTypeName<pointcutId.type>(pointcutId);
+    local itfNode;
+    local itfTree;
+
+    // If there is no explicit interface, we must check each interface in the dependencies.
+    // First, load the interface's tree...
+    if (itfName != "")
+    {
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree) != false)
+        {
+            pointcutId.scope = itfName;
+            return true;
+        }
+    }
+
+    // If test did not succeed  AND the interface is not explicitly given:
+    if (pointcutId.scope == "")
+    {
+        if (pointcutId.global == false)
+        {
+            // Then, check for the parent interfaces.
+            foreach parent in itfTree.inheritance
+            {
+                local name = key(parent);
+                if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutId, name) != false)
+                {
+                    pointcutId.scope = name;
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            if (pointcutId.name == "CALL"
+                || pointcutId.name == "IMPLEMENTATION")
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
+////////// TO CHECK
+function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_error : node)
+{
+    // A builtin chunk should be written as "::Something"
+    if (pointcut.global == true && pointcut.scope == "")
+    {
+        if (   (pointcut.name == "CALL" && tplNode.specifier == "sequence") // code of the call of a sequence
+            || (pointcut.name == "decl" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // code of type declaration for a rathaxes type
+            || (pointcut.name == "init" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // init code for a rathaxes type
+            || (pointcut.name == "fini" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // end code for a rathaxes type
+           )
+        {
+            if (tplNode.qualifier != "provided")
+            {
+                traceLine(RED + "[Error] Builtin pointcut implemented in not provided template." + DEFAULT_COLOR);
+                out_ref_error = true;
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+ * This function takes a Rtype node for a chunk and a template tree,
+ * and checks whether the chunk was implemented within the template.
+ *
+ * XXX TODO FIXME
+ * The function does not check if the statement is ambiguous:
+ * if two interfaces define "PLOP", then defining the chunk "PLOP" will
+ * not result in an ambiguous statement, but resolve as the first pointcut
+ * encountered.
+ */
+function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
+{
+    local fullPointcut = rtxRTypeName<chunkId.type>(chunkId);
+    foreach item in tpl.body.block
+    {
+        // If Fully-qulified equals, or if only name matches and not fully qualified
+        if (fullPointcut == rtxRTypeName<item.pointcut.type>(item.pointcut)
+            || (chunkId.name == item.pointcut.name && item.pointcut.scope == ""))
+        {
+            // Then qualify it.
+            item.pointcut.scope = chunkId.scope;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+/*
+ * This function takes a Rtype node for a pointcut and a template tree,
+ * and checks whether the pointcut was defined within the template.
+ *
+ * XXX TODO FIXME
+ * The function does not check if the statement is ambiguous:
+ * if the interface declare two "PLOP" for a same template but different scopes,
+ * then defining the pointcut "PLOP" will not result in an ambiguous statement,
+ * but resolve as the first pointcut encountered.
+ */
+function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
+{
+    local fullPointcut = rtxRTypeName<pointcutId.type>(pointcutId);
+    foreach chunk in tpl.body.block
+    {
+        foreach placeHolder in chunk.body.compile
+        {
+            localref body = placeHolder.node.body;
+            if (body.type == "__rtx_pointcut__")
+            {
+                local fullTplPointcut = rtxRTypeName<body.name.type>(body.name);
+                if (fullTplPointcut == fullPointcut
+                    || (body.name.name == pointcutId.name && body.name.scope == ""))
+                {
+                    // Then qualify it
+                    body.name.scope = pointcutId.scope;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/*
+ * This function checks, depending on the type of dependency on the template,
+ * that the required builtin chunks are implemented.
+ */
+function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, itfTplNode : node)
+{
+    // Here, check the builtin pointcuts.
+    if (itfTplNode.qualifier == "required" || itfTplNode.qualifier == "optional")
+    {
+        local identifier;
+        rtxNodeIdentifier(identifier, "IMPLEMENTATION", "", true);
+        if (rtxTypeCheck_TemplateHasPointcut(identifier, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    else // case of provided
+    {
+        local identifier;
+        rtxNodeIdentifier(identifier, "CALL", "", true);
+        if (rtxTypeCheck_TemplateHasChunk(identifier, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+
+declare function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
+                                              itfTplNode : node);
+function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
+                                      itfTplNode : node)
+{
+    error("Function rtxTypeCheck_TemplateSpec<'"+T+"'> is not implemented.");
+}
+
+/**
+ *
+ * This function takes a template rtype, a template tree, and the associated
+ * node within the interface.
+ *
+ * Its role is to check that the mapping indicated in the interface is properly
+ * respected in the type template's implementation. This also checks that every
+ * mapping implemented inside the template is required by the interface.
+ *
+ * XXX FIXME TODO
+ * Currently, we do not manage the chunks in a type template, we'll hade to
+ * Think and design this properly.
+ *
+ */
+function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
+                                           itfTplNode : node)
+{
+    local errcount = $0$;
+    localref tpl_mapping = tplTree.mapping.body.block;
+    local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+
+    // If there are builtin chunks mandatory, check them here.
+    // Now, check that every mapping is provided by the template,
+    foreach mapId in itfTplNode
+    {
+        // The mapping ids are the keys in tpl.mapping.body.block
+        if (!findElement(mapId, tpl_mapping))
+        {
+            traceLine(RED + "[Error] Type template " + tplName
+                      +" does not implement the required mapping: '"
+                      + mapId + "'." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+    // and finally check that no mapping provided is unknown to the interface.
+    foreach mapping in tpl_mapping
+    {
+        local check = false;
+        foreach mapId in itfTplNode
+        {
+            if (mapId == key(mapping))
+            {
+                check = true;
+                break ;
+            }
+        }
+        if (check != true)
+        {
+            traceLine(RED + "[Error] Type template " + tplName
+                      + " implements an unknown mapping: '"
+                      + key(mapping) + "'." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+
+/**
+ *
+ * This function takes a template rtype, a template tree, and the associated
+ * node within the interface.
+ *
+ * This function checks that a sequence template implements all the required
+ * pointcuts and chunks.
+ * It also checks that the chunks implemented are linked to valid pointcuts
+ * (Meaning that the pointcuts must be defined in the current interface, or
+ * in a parent interface. This must not be defined in a child interface).
+ *
+ * XXX TODO FIXME
+ * We still do not know how to manage not-required pointcuts...
+ *
+ */
+function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
+                                               itfTplNode : node)
+{
+    local errcount = $0$;
+    local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+
+    // First, check that the template respects what's imposed by the interface
+    foreach item in itfTplNode.body.block
+    {
+        if (item.type == "__rtx_itf_decl__")
+        {
+            if (item.specifier == "chunk"
+                && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
+                && item.qualifier == "provided")
+            {
+                traceLine(RED + "[Error] Sequence template '" + tplName
+                          + "' does not provide the chunk '"
+                          + rtxRTypeName<item.body.pointcut.type>(item.body.pointcut) + "'" + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            if (item.specifier == "pointcut"
+                && item.qualifier == "provided"
+                && rtxTypeCheck_TemplateHasPointcut(item.body.name, tplTree) == false)
+            {
+                traceLine(RED + "[Error] Sequence template '" + tplName
+                          + "' does not provide the pointcut '"
+                          + rtxRTypeName<item.body.name.type>(item.body.name) + "'" + DEFAULT_COLOR);
+                    increment(errcount);
+            }
+        }
+    }
+    // This function checks the builtin chunks/pointcuts to be implemented depending on required/optional/provided
+    if (rtxTypeCheck_TemplateBuiltinItems(tplRtype, tplTree, itfTplNode) == false)
+        increment(errcount);
+
+    // Next, we need to check that every non-mandatory chunk actually exists.
+    // But... What about non-mandatory pointcuts ?
+    foreach chunk in tplTree.body.block
+    {
+        local builtinCheckError = false;
+
+        // manage not-builtin chunks
+        if (rtxTypeCheck_ChunkIsBuiltin(chunk.pointcut, itfTplNode, builtinCheckError) == false
+            && builtinCheckError != true)
+        {
+            local name = chunk.pointcut.scope;
+            if (name == "" && chunk.pointcut.global == false)
+            {
+                name = tplTree.prototype.rtype.name.scope;
+                traceLine("Setting default itf to "+name);
+            }
+            else if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name) == false)
+            {
+                traceLine(RED + "[Error] Pointcut '"
+                          + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                          + "' has never been defined." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+        }
+        else if (builtinCheckError == true) // builtinCheck detected an error.
+        {
+            increment(errcount);
+        }
+    }
+
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+
+/**
+ *
+ * This function takes a Rtype node and a template's tree as parameters.
+ *
+ * Then it checks whether the template complies to the constraints
+ * put upon it by the associated interface:
+ *  - For a type : is the mapping fully compliant ?
+ *                 Are all the implemented mappings valid (for the itf) ?
+ *  - For a sequence : Are the mandatory chunks/pointcuts implemented ?
+ *                     Are the non-mandatory chunks valid in the context ?
+ *
+ *      UNKOWN : How to manage non-mandatory pointcuts ?
+ *
+ */
+function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
+{
+    local spec = tplTree.prototype.tpl_type;
+    local dummy;
+    local fullTplProto = rtxRTypeFullQualifiedName<spec>(tplRtype, dummy);
+    local itfName = tplRtype.name.scope;
+    local itfNode;
+    local itfTree;
+
+    // Load the itf's tree...
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"+itfName+"' tree." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // For each template in interface, check it.
+    foreach item in itfTree.body.block
+    {
+        // Then it's either : a type, a sequence or a builtintype
+        if (existVariable(item.rtype))
+        {
+            local fullItfProto = rtxRTypeFullQualifiedName<spec>(item.rtype, dummy);
+            if (fullTplProto == fullItfProto)
+            {
+                return rtxTypeCheck_TemplateSpec<item.specifier>(tplRtype, tplTree,
+                                                                 item);
+            }
+        }
+    }
+    /// XXX TODO FIXME
+    // WE NEED ABSOLUTELY TO BE ABLE TO RESOLVE THE SCOPES OF THE TEMPLATE's PARAMETERS
+    /// XXX TODO FIXME
+    traceLine(RED + "[Error] Could not find template '" + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
+    return false;
+}
+
+
+
+/*****************************************************************************\
+*                                                                             *
+*  The following functions help checking the front-end against the interface  *
+*                                                                             *
+\*****************************************************************************/
+
+
+/*
+ *
+ * This function searches the declaration of the sequence matching theSequence
+ * inside the interface named by 'itfName'. If itfName has no value, then the
+ * function tries to find the sequence in any of the interfaces present in
+ * interface_list.
+ *
+ *
+ * XXX TODO FIXME
+ * The function currently does not manage ambiguous declarations, and accepts
+ * the first possibility matched (ie: if two interface define the sequence, and
+ * it does not explicit its containing interface, then the first one matched
+ * will be seend a the right one, instead of giving an ambiguous error).
+ *
+ */
+function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
+                                             interface_list : node, out_qualifier : node)
+{
+    local itfNode;
+    local itfTree;
+
+    if (itfName != "")
+    {
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the sequence"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        foreach def in itfTree.body.block
+        {
+            // type templates dont matter here, they should not define pointcuts.
+            // So, check only sequence templates...
+            if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+            {
+                local scope_save = theSequence.rtype.name.scope;
+                if (scope_save == "")
+                    theSequence.rtype.name.scope = itfName;
+                local dummy;
+                local seqProto = rtxRTypeFullQualifiedName<"sequence">(theSequence.rtype, dummy);
+                local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(def.rtype, dummy);
+                // Is it it ? If yes, return after setting the qualifier in the return param.
+                if (seqProto == itfSeqProto)
+                {
+                    out_qualifier = def.qualifier;
+                    return true;
+                }
+                if (scope_save == "")
+                    theSequence.rtype.name.scope = "";
+            }
+        }
+    }
+    else
+    {
+        foreach itf in interface_list
+        {
+            // if it's the right one then qualify the sequence and return true.
+            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, itf, interface_list, out_qualifier) != false)
+            {
+                theSequence.rtype.name.scope = itf;
+                return true;
+            }
+        }
+        traceLine(RED + "[Error] Declaration of sequence '"
+                  + rtxRTypeName<theSequence.rtype.type>(theSequence.rtype)
+                  + "' could not be found in any interface." + DEFAULT_COLOR);
+    }
+
+    return false;
+}
+
+
+/*
+ *
+ * This function checks if a sequence matching itfSeqNode is implemented
+ * inside the device block.
+ *
+ */
+function rtxTypeCheck_DeviceHasSequence(theDevice : node, itfSeqNode : node)
+{
+    local dummy;
+    local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(itfSeqNode.rtype, dummy);
+    foreach item in theDevice.body.block
+    {
+        if (item.type == "__rtx_sequence__"
+            && itfSeqProto == rtxRTypeFullQualifiedName<"sequence">(item.rtype, dummy))
+            return true;
+    }
+    return false;
+}
+
+
+/*
+ * This function loads the tree of the interface given in itfName from the cache,
+ * and checks that every 'required' sequence is defined in the Device.
+ */
+function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
+{
+    local itfNode;
+    local itfTree;
+    local errcount = 0;
+
+    if (itfName == "")
+    {
+        traceLine(RED + "[Error] No interface given to respect for"
+                  + " the device." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName
+                  + "' could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '" + itfName
+                  + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // now iterate on the itf, to check for every sequence.
+    foreach item in itfTree.body.block
+    {
+        if (item.type == "__rtx_itf_decl__"
+            && item.specifier == "sequence" && item.qualifier == "required")
+        {
+            if (item.rtype.name.scope == "")
+                item.rtype.name.scope = itfTree.name;
+            if (rtxTypeCheck_DeviceHasSequence(theDevice, item) == false)
+            {
+                traceLine(RED + "[Error] Sequence '"
+                          + rtxRTypeName<item.rtype.type>(item.rtype)
+                          + "' not implemented in device block." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+        }
+    }
+    if (errcount != "0")
+        return false;
+
+    return true;
+}
+
+
+
+/*
+ *
+ * This function checks whether the described register is coherent or not
+ * (Masks, values, etc...)
+ *
+ */
+function rtxTypeCheck_Register(theRegister : node)
+{
+        // get the pattern in usefull way
+        local   likePattern;
+        stringToArray(theRegister.like.pattern, likePattern);
+        local   bitsize = getArraySize(likePattern);
+        insert theRegister.bitsize = bitsize;
+        // TODO: check that the pattern match the bitsize of the register type
+        //...
+        // foreach fields
+        foreach field in theRegister.body.block
+        {
+                // check that begin and end are ordered
+                if (existVariable(field.map.end) && $field.map.begin >= field.map.end$)
+                {
+                        local tmp = field.map.end;
+                        field.map.end = field.map.begin;
+                        field.map.begin = tmp;
+                }
+                // check that the field is in the pattern
+                if (
+                        ($field.map.begin < 0$ || $field.map.begin > bitsize - 1$)
+                        || (existVariable(field.map.end) && $field.map.end > bitsize - 1$)
+                )
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                + "[" + field.map.begin + ".." + field.map.end + "] is outside range 0.." + $bitsize - 1$ + "\n"
+                                + DEFAULT_COLOR);
+                        return false;
+                }
+                // calc the size of the field in bitsize
+                local field_bitsize = 1;
+                if (existVariable(field.map.end))
+                {       field_bitsize = $1 + field.map.end - field.map.begin$;}
+                insert field.bitsize = field_bitsize;
+                // check that the range don't have * and calc the mask
+                insert field.maskPattern;
+                local end = field.map.begin;
+                if (existVariable(field.map.end))
+                {       end = field.map.end;}
+                if (!bitArrayExtractMask(likePattern, field.map.begin, end, field.maskPattern))
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                        + "Can't extract * value in pattern :" + likePattern 
+                                        + " for range [" + field.map.begin + ".." + end + "]\n"
+                                        + DEFAULT_COLOR);
+                        return false;
+                }
+                // foreach value in field
+                foreach value in field.listmask
+                {
+                        local   valuePattern;
+                        stringToArray(value.mask, valuePattern);
+                        local   value_bitsize = getArraySize(valuePattern);
+                        // check that the value_bitsize == field_bitsize
+                        if (value_bitsize != field_bitsize)
+                        {
+                                traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                                + "the value " + value.mask + " is outside the range value for the field\n"
+                                                + DEFAULT_COLOR);
+                                return false;
+                        }
+                        insert  value.bitsize = value_bitsize;
+                        insert  value.value = $bitArrayValue(valuePattern) << field.map.begin$;
+                        // TODO: ... duplicate value, completude, value inclusion
+                }
+        }
+        return true;
+}
+
+/*
+ *
+ * This function checks whether the front implementation of a sequence is okay
+ * (prototype and implementation)
+ *
+ * It first checks if the prototype is defined in the associated interface,
+ * And next checks the prototypes and types of each call in the implementation code.
+ *
+ */
+function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
+{
+    local dummy;
+    local errcount = 0;
+    local prototype = rtxRTypeFullQualifiedName<"sequence">(theSequence.rtype, dummy);
+    local qualifier = "";
+
+    // Check that the prototype exists...
+    if (rtxTypeCheck_ItfNameDefinesSequence(theSequence,
+                                            theSequence.rtype.name.scope,
+                                            interface_list, qualifier) == false
+        || qualifier == "provided")
+    {
+        if (qualifier == "provided")
+            traceLine(RED + "[Error] A provided sequence cannot be implemented." + DEFAULT_COLOR);
+        else
+            traceLine(RED + "[Error] Sequence " + prototype
+                      + " does not comply to the available interfaces." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Now
+    foreach call in theSequence.body.block
+    {
+        rtxNodeCall_toRtype(call, theSequence, call.rtype);
+        local dummy;
+        local cFullName = rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy);
+        if (rtxTypeCheck_ItfNameDefinesSequence(call, call.rtype.name.scope,
+                                                interface_list, qualifier) == false
+            || qualifier != "provided")
+        {
+            if (qualifier != "provided")
+                traceLine(RED + "[Error] A sequence not provided cannot be called ("+cFullName+")." + DEFAULT_COLOR);
+            else
+                traceLine(RED + "[Error] The call " + cFullName + " in sequence " + prototype
+                          + " does not comply to the available interfaces ->"+toString(call,true) + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+/*
+ * This function checks wether the device offered all required implementations
+ * depending on the "use" statement that defines which interfaces are implemented.
+ *
+ * XXX TODO FIXME
+ * This function does not manage the checks over interfaces extensions, depending
+ * on the configuration, since it was not implemented when this function was coded.
+ */
+function rtxTypeCheck_Device(theDevice : node)
+{
+    local errcount = "0";
+
+    // Then, check wether every sequence required by the interfaces
+    // are implemented
+    foreach itfName in theDevice.use
+    {
+        if (rtxTypeCheck_DeviceRespectsItf(theDevice, itfName) == false)
+        {
+            traceLine(RED + "[Error] Device " + theDevice.name
+                      + " does not comply to the requirements of interface "
+                      + itfName + "." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+
+/*
+ * This function checks wether the config offers all required variable values.
+ * We check whether each variable exists, and for each interface used, whether
+ * every required variable was defined with a value or not.
+ *
+ * XXX TODO FIXME
+ * This function does not manage the checks over interfaces extensions, since it
+ * was not implemented when this function was coded.
+ */
+function rtxTypeCheck_Config(theConfig : node)
+{
+    local interfaces;
+
+    foreach item in theConfig.body.block
+    {
+//       if (!findElement(###, interfaces))
+//       {
+//           pushItem interfaces;
+//           interfaces#back = ###;
+//       }
+    }
+
+    // FIXME For now, return true to avoid error because not implemented.
+    return true;
+}
+
+
+
+
+
+
+
+#end    /* !existFunction(rtxInterfaces_version) */

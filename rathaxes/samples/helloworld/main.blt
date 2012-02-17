@@ -1,0 +1,92 @@
+with Main
+{
+    /* File structure declaration */
+    ${pointcut Main::include_headers};
+    ${pointcut Main::main};
+
+    /* Definitions */
+    template type Main::Arguments()
+    {
+        chunk ::decl()
+        {
+            struct rtx_args
+            {
+                int     argc;
+                char    **argv;
+                char    **env;
+            };
+        }
+
+        chunk ::init(argc, argv, env)
+        {
+            ${self}.argc = argc;
+            ${self}.argv = argv;
+            ${self}.env = env;
+        }
+
+        chunk ::log()
+        {
+            puts("Arguments:");
+            {
+                int i;
+                i = 0;
+                for (; i != ${self}.argc; i++)
+                    printf("- [%d]: %s\n", i, ${self}.argv[i]);
+            }
+
+            puts("Environment:");
+            {
+                int i;
+                i = 0;
+                for (; ${self}.env[i]; i++)
+                    printf("- %s\n", ${self}.env[i]);
+            }
+        }
+
+        map
+        {
+        }
+    }
+
+    template sequence Main::start(Main::Arguments args)
+    {
+        chunk Main::include_headers
+        {
+            #include <stdlib.h>
+        }
+
+        chunk Main::main()
+        {
+            int main(int argc, char *argv[], char *env[])
+            {
+                /*
+                 * Do this typedef here to work-around a bug in CNorm __std__
+                 * dialect.
+                 */
+                typedef int ${Main::Arguments};
+
+                ${Main::Arguments}  args;
+
+                ${args.init(argc, argv, env)};
+
+                ${pointcut ::IMPLEMENTATION};
+            }
+        }
+    }
+
+    template sequence Main::log(Main::Arguments args)
+    {
+        chunk   ::CALL
+        {
+            ${args.log()};
+        }
+    }
+
+    template sequence Main::exit(Builtin::number status)
+    {
+        chunk   ::CALL
+        {
+            exit(${status});
+        }
+    }
+}

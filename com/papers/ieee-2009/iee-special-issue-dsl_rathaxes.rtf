@@ -1,0 +1,185 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf320
+{\fonttbl\f0\fnil\fcharset0 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;\red109\green109\blue109;\red0\green0\blue255;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker -}{\leveltext\leveltemplateid1\'01-;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker -}{\leveltext\leveltemplateid101\'01-;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
+\margl1440\margr1440\margb1800\margt1800
+\deftab708
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\f0\b\fs32 \cf0 \expnd0\expndtw0\kerning0
+\up0 \nosupersub \ulnone \outl0\strokewidth0 \strokec0 Rathaxes: a device driver DSL creation Case study\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\qc\pardirnatural
+
+\b0\fs24 \expnd0\expndtw0\kerning0
+\'93An example why the creation of a DSL is a meaningful answer to a real world problematic\'94\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\fs22 \expnd0\expndtw0\kerning0
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa240\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+Abstract: 
+\b0\fs22 \expnd0\expndtw0\kerning0
+\uc0\u8232 Using as an example a device driver generator project called Rathaxes, this article will discuss why the creation of a Domain Specific Language (DSL) is a meaningful answer to a real world problematic.  It is interesting to study Rathaxes as it uses a language approach to their problematic by designing two DSL and one meta-language. This project offers an adequate answer to common IT issues such as portability, robustness and ease of use and the writers feel the experience and methods used on Rathaxes can be generalized to other fields plagued by the same issues.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+Introduction:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\b0\fs22 \expnd0\expndtw0\kerning0
+The goal of this article is to give some insight on the creation of Domain specific languages by the study of a project called Rathaxes. Rathaxes is an open source generator for cross-platform and robust device drivers.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa240\pardirnatural
+\expnd0\expndtw0\kerning0
+What we have here is a tentative to address a very specific issue and we choose a DSL approach because it satisfied the requirements of our objectives, actually we even decided to create two DSL in the end. As we based our work on Doctor Laurent Reveillere\'92s thesis, we already had a proof of concept and had to focus on our own design more than wonder if it was feasible. \uc0\u8232 Subsequently, this article will be an inner look on why a DSL can be a useful IT solution and how much easier it can be in the end compared to classic development. Using Rathaxes as an example, we will give the logic we used to determine why and how we used a DSL approach. We will then explain the design process we used for our DSLs while trying to extract both the benefits and the drawbacks of this approach. \u8232 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+The problem:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\b0\fs22 \expnd0\expndtw0\kerning0
+Before talking directly about what Rathaxes is, let\'92s take some time to explain what issue this project is addressing.\
+Whether by working in this field or by just using a computer, we all have come across device drivers. It is a necessary feature of every Operating system since they are the piece of software handling the communication between the system and any device you want to use. Statistic studies have determined that nearly 70% of the code of any OS is composed exclusively of device drivers. They are also a critical component of your system as an error in handling hardware can lead to your system crashing. A recent bug report article form Microsoft stated that 28.8% of Windows Vista crashes are due to nVidia drivers and 9.3% to ATI drivers.\
+Moreover, their development is a tedious process, and errors are common. Studies revealed that device driver code is 7 times more prone to bugs than any other software. Finally, driver development also requires at least a double knowledge: one must know how the hardware works and how each operating system handle drivers.\
+At a first glance it seems to be a very specific issue and there is definitely room for improvement here. But by looking more into it, we think it is interesting to reflect upon this for anyone not involved in the industry.\
+When looking more into it, you can extract requirements that are common in the IT field. Requirements for an adequate solution would be:\
+\pard\tx360\tx708\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\li720\fi-720\sl276\slmult1\sa200\pardirnatural
+\ls1\ilvl0\expnd0\expndtw0\kerning0
+{\listtext	-	}Portability\
+{\listtext	-	}Robustness\
+{\listtext	-	}Ease of use\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+\expnd0\expndtw0\kerning0
+Those problematic are present in most of the projects you can think of, and if an approach can work in one case, answering efficiently to these requirements, it could be useful to reuse it on other applications.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+Our idea:
+\b0\fs22 \expnd0\expndtw0\kerning0
+\uc0\u8232 Well at least that is what we think. Bear with us while we use Rathaxes as a general example to this approach. Why should we use DSL in this kind of practice?\
+Let us go through our requirements, and one after another, understand the path to our complete solution.\
+First of all, it was important to understand the industry and its issues to provide a specific solution adapted to the needs of the different actors in the field. \cf2 \expnd0\expndtw0\kerning0
+\strokec2 Our task was Domain specific. \cf0 \expnd0\expndtw0\kerning0
+\strokec0 Once the field of study understood, it was necessary to make an abstraction of those needs into features.  These features can be seen as concepts representing the needs of developers, \cf2 \expnd0\expndtw0\kerning0
+\strokec2 and concepts in a language are easily represented by the mean of keywords. \cf0 \expnd0\expndtw0\kerning0
+\strokec0 Those concepts are shared on most OSes but are implemented in different flavors; we needed a solution negating the learning curve between OSes. A language can implement concepts and hide the implementation to the developer. \cf2 \expnd0\expndtw0\kerning0
+\strokec2 The language doesn't change, only the backend\cf0 \expnd0\expndtw0\kerning0
+\strokec0 . Also, there are domains, such as OSes, where you just can\'92t reinvent the wheel. But since most OSes kernel APIs are written in C, we can generate this code without doing any changes to the system. \cf2 \expnd0\expndtw0\kerning0
+\strokec2 We have a generic and portable solution. \cf0 \expnd0\expndtw0\kerning0
+\strokec0 OSes tend to evolves with time, or new ones appear, our solution needed to be scalable on this regard. This means that, in fact, we had two issues at hand: describe drivers and OSes. We used the same approach and thought that another DSL was the right solution, but this time to describe OSes APIs templates related to the field concepts. \cf2 \expnd0\expndtw0\kerning0
+\strokec2 The use of a DSL in this case ensures scalability with new evolutions.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+\cf0 \expnd0\expndtw0\kerning0
+\strokec0 That was our answer to our portability requirement, but we still had to find out how we could have a robust solution. Developers won\'92t use a solution cutting the quality of their work, as it is already a field prone to produce critical code. A way a language and a compilation may answer part of this problematic as it is easy to \cf2 \expnd0\expndtw0\kerning0
+\strokec2 include syntax protections providing high fault tolerance\cf0 \expnd0\expndtw0\kerning0
+\strokec0 . As our language is specific to one domain, developers won\'92t have access to general purpose mechanics that could lead to collateral damages; we present \cf2 \expnd0\expndtw0\kerning0
+\strokec2 features confined to a simple purpose well handled by the mechanics of the language\cf0 \expnd0\expndtw0\kerning0
+\strokec0 . Also a way to fail proof a solution is to reuse code. With a language and code generation, the templates used by the backend are always used over and over, hence assuring that \cf2 \expnd0\expndtw0\kerning0
+\strokec2 bugs in templates code are easier to spot than in hand written programs.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa240\pardirnatural
+\cf0 \expnd0\expndtw0\kerning0
+\strokec0 Finally, our solution needed to be an improvement over classic development, making it somewhat easier. Kernel APIs are often a huge set of functions sometimes with similar uses. By making the concepts clear as keywords and language mechanics, less redundant code is written and \cf2 \expnd0\expndtw0\kerning0
+\strokec2 it is possible to improve development speed. \cf0 \expnd0\expndtw0\kerning0
+\strokec0 Also, we aimed to create a complete solution instead of a middleware or framework to really \cf2 \expnd0\expndtw0\kerning0
+\strokec2 extract the developer from the burden of writing unrelated code and concentrate on the domain\cf0 \expnd0\expndtw0\kerning0
+\strokec0 , describing the piece of hardware.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+Details:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\b0\fs22 \expnd0\expndtw0\kerning0
+Now that you get the general idea of our approach, let\'92s talk about the implementation details, and what creating DSLs implied for us.\
+Rathaxes is a young project started less than 2 years ago. We had an extremely wide issue at hand but Rathaxes is already a functional project, even if it's only at the proof of concept stage, it is able to generate driver code for three OSes : Linux 2.6, Windows XP and OpenBSD  4.2.\
+To achieve this, our first task was to study the domain. Studying a domain can take some time, and we chose to develop drivers ourselves on each OS. We selected those OSes for their differences; our opinion is that if a solution works on those three OSes, it will work on most OSes out there. We started with the implementation of a simple hello world driver and worked our way through more and more complex driver. For each step taken, we wrote an inside paper to formalize what part of the field we were working on.\
+These paper written, we\'92ve tried to extract concepts shared by our OS selection, and our first conclusion was that there were 7 layers in a driver, encapsulated like the layers of the OSI model. We divided those 7 layers in two groups, all that were relative to the OS, and all that were relative to the device.\
+From there on, we\'92ve been able to set the few first stones of our solution. The design of the frontend language, describing the devices, could start. With this first draft, we chose the architecture that we considered the most meaningful for our problematic:\
+- A frontend DSL, to describe devices.\
+- A BackEnd DSL, to describe the generation process.\
+- A backend library of templates, containing each piece of code in our meta-language instrumenting C code representing one of our concepts on each OS.\
+- A compiler that translates the FrontEnd DSl in C; weaving templates from the OSes library using our BackEnd DSL to generate the code.\
+We chose to work by short iterations and incremental research. While we were experimenting with more and more complex drivers, we tried implementing them as soon as possible in our solution. This provided a way to test our language and improve it by comparing it to the classic way of developing in the field. This feedback is necessary to prove that each feature included in the language is useful and well thought.\
+For example, the 7 layers implementation gave us our first proof of concept, as it was already functional with basic features. It also gave us the chance to observe the mistakes we\'92ve done in our field study. By trying to implement in Rathaxes the drivers we\'92ve studied, we were able to have a direct feedback. Our first conception of the language was not necessarily adapted to the vision developers could have of their task. Our solution wasn\'92t ergonomic enough.\
+This observation led us to look again through our conception of the components of a driver, and we saw we could simplify our vision to only 4 layers, still divided in two groups. It was a real improvement that we couldn\'92t have done later in the project. And since then, we had several more occasions to break and rebuild everything, getting closer and closer each time to our objectives.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa240\pardirnatural
+\expnd0\expndtw0\kerning0
+We are now working on a public release that will have enough features to be really useful in the industry. As it took us more time to develop drivers in the optic of describing the field, it is hard to give any improvement metrics on this matter. But what is certain is that a device described in our language is 5 times smaller than the C code needed for the same driver. We truly feel that the language approach to our subject led us to success, with an adequate solution to the device driver development field issues.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+Conclusion:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\b0\fs22 \expnd0\expndtw0\kerning0
+Working with DSLs is an adequate answer to our issue, and we think the DSL approach can be generalized to any field. \uc0\u8232 It is our opinion that the creation of a Domain Specific Language well suites any problematic where you need:\
+\pard\tx360\tx708\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\li720\fi-720\sl276\slmult1\sa200\pardirnatural
+\ls2\ilvl0\expnd0\expndtw0\kerning0
+{\listtext	-	}a generic solution over different backends\
+{\listtext	-	}to adapt to complex fields and want  them to be easier\
+{\listtext	-	}secure coding without actually thinking actively about it\'a0\'a0\'a0 \
+{\listtext	-	}a reusable solution\'a0\'a0\'a0 \
+{\listtext	-	}to prove your solution is adequate, as a language can be proved effective\
+{\listtext	-	}A scalable solution adapting to the evolution of the field\uc0\u8232 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+\expnd0\expndtw0\kerning0
+Although there are no real drawbacks for creating a DSL, there are some difficulties inherent to the process. If your problem needs to be specific, the study of a field can prove to be a hard and tedious task not suited to one shot solutions or when you are under time pressure.  Also, there are some projects that might not need such a solution, why would you build a bulldozer when you only needed a barrow? Following the same logic, a DSL is supposed to be specific. We consider it to be a mistake to give it features outside the scope of the targeted field. A couple extra features might turn your DSL in a General Purpose Language, it is important to narrow down your features to a very specific set of things your language handles, and clearly state from start what it doesn\'92t.\
+Some advices we can give from our experience:  In order to create efficiently a DSL, you need to work in very short functional iterations. It is better to work on adaptable and efficient tools, keep in mind that your view of the field, hence your language, can be changed at any time. You need to implement these changes quickly to always be as close as possible to the developer who will use you language and his real functional needs. Even if your study of the field might look correct, it has to reflect exactly how the domain behaves to have a really adequate language.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa240\pardirnatural
+\expnd0\expndtw0\kerning0
+Eventually, you will surely find a way for DSLs to improve your life as a developer, whether by creating one or just using one.  Anyway, we wish you good luck in the marvelous world of domain specific languages and thank you for following us this far.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b\fs26 \expnd0\expndtw0\kerning0
+\uc0\u8232 Related work and bibliography:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\b0\fs24 \expnd0\expndtw0\kerning0
+Codeworker: a parsing tool and a source code generator.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\fs22 \expnd0\expndtw0\kerning0
+Codeworker is a wonderful tool created by Cedric Lemaire. His work saved us a huge amount of time. \uc0\u8232 http://codeworker.free.fr\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\fs24 \expnd0\expndtw0\kerning0
+Doctor Laurent R\'e9veill\'e8re: Devil\uc0\u8232 Doctor R\'e9veill\'e8re\'92s thesis is the single work that inspired us the most. He proved that it was possible to describe the lower layer of a device driver on Linux with a DSL. \u8232 http://www.labri.fr/perso/reveille/index.php?menu=home\
+\
+Win Driver:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\fs22 \expnd0\expndtw0\kerning0
+A device driver development toolkit based on windows. This a toolkit which provides an abstraction of the windows kernel internals allowing developers to focus on their driver\'92s added-value functionality.\uc0\u8232 {\field{\*\fldinst{HYPERLINK "http://www.jungo.com/st/windriver_usb_pci_driver_development_software.html"}}{\fldrslt \cf3 \expnd0\expndtw0\kerning0
+\ul \ulc3 \strokec3 http://www.jungo.com/st/windriver_usb_pci_driver_development_software.html}}\uc0\u8232 \u8232 
+\fs24 \expnd0\expndtw0\kerning0
+Other projects:
+\fs22 \expnd0\expndtw0\kerning0
+\uc0\u8232 There has been several projects using the same approach, but closed sources or not sufficiently documented for us to talk about. The one we could find documentation about is:\u8232 NDL : {\field{\*\fldinst{HYPERLINK "http://www1.cs.columbia.edu/~sedwards/papers/conway2004ndl.pdf"}}{\fldrslt \cf3 \expnd0\expndtw0\kerning0
+\ul \ulc3 \strokec3 http://www1.cs.columbia.edu/~sedwards/papers/conway2004ndl.pdf}}\uc0\u8232 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa60\pardirnatural
+
+\fs24 \expnd0\expndtw0\kerning0
+Microsoft vista bug report:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+{\field{\*\fldinst{HYPERLINK "http://www.downloadsquad.com/2008/03/28/29-of-windows-vista-crashes-caused-by-nvidia-drivers/"}}{\fldrslt 
+\fs22 \cf3 \expnd0\expndtw0\kerning0
+\ul \ulc3 \strokec3 http://www.downloadsquad.com/2008/03/28/29-of-windows-vista-crashes-caused-by-nvidia-drivers/}}
+\fs22 \expnd0\expndtw0\kerning0
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab708\sl276\slmult1\sa200\pardirnatural
+
+\fs24 \expnd0\expndtw0\kerning0
+LSE: Epitech \'96 Epita System and Security Laboratory
+\fs22 \expnd0\expndtw0\kerning0
+\uc0\u8232 The project is under the supervision of this laboratory and its director, Lionel Auroux. \u8232 https://www.lse.epita.fr/wiki/main/home-en.html\
+
+\fs24 \expnd0\expndtw0\kerning0
+Rathaxes main site:
+\fs22 \expnd0\expndtw0\kerning0
+\uc0\u8232 www.rathaxes.org\
+\
+}
