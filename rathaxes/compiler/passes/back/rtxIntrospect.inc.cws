@@ -220,6 +220,7 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
     // A template type or not. -> Then add it to type_map.
     //TODO FIXME XXX FIXME TODO
     //TODO FIXME XXX FIXME TODO
+
     // Next, check if the VARIABLE's name is a placeHolder ?
     ref placeHolder = dummy;
     if (existVariable(local_node.name))
@@ -240,6 +241,10 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
     }
 
     // And check each of the possible members...
+    // The body for a function...
+    if (existVariable(local_node.body))
+        rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk,
+                                                 blockIds);
     // the colon expression for C++ ctor init list and bitfields
     if (existVariable(local_node.colon_expr))
         rtxIntrospect_code<local_node.colon_expr.type>(local_node.colon_expr,
