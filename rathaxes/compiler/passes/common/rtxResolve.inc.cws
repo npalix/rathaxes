@@ -343,8 +343,8 @@ function rtxResolve_BuildFrontResVals(src_resVals   : node,
 
     if (getArraySize(src_params) != getArraySize(dst_params))
     {
-        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params)
-                  +", got "+getArraySize(src_params)+")." + DEFAULT_COLOR);
+        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "
+                  + getArraySize(dst_params) + ", got "+getArraySize(src_params)+")." + DEFAULT_COLOR);
         return false;
     }
 
@@ -380,12 +380,19 @@ function rtxResolve_BuildFrontResVals(src_resVals   : node,
         else
         {
             // Then we're building a node leaf from another thing
-            local translatedParam;
-            if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
-                error("Could not translate rathaxes node "
-                      + toString(theParam, true) + " to cnorm node.");
-            rtxNodeResValLeaf(newValue, translatedParam);
-            ref theValue = newValue;
+            if (findElement(theParam.val, theValue))
+            {
+                ref theValue = theValue[theParam.val];
+            }
+            else
+            {
+                local translatedParam;
+                if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
+                    error("Could not translate rathaxes node "
+                          + toString(theParam, true) + " to cnorm node.");
+                rtxNodeResValLeaf(newValue, translatedParam);
+                ref theValue = newValue;
+            }
         }
         insert dst_resVals[dst_param];
         setall dst_resVals[dst_param] = theValue;
@@ -976,8 +983,30 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                 if (decl.type == "__rtx_sequence__"
                     && rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) == local_node#parent.tpl_hash)
                 {
+                    local resVals;
+                    local parameters;
+                    local theVar;
+                    local curId;
+                    rtxNodeVarList(parameters);
+                    foreach param in decl.seqParamName
+                    {
+                        clearVariable(curId);
+                        rtxNodeIdentifier(curId, param, "");
+                        rtxNodeVar(theVar, curId);
+                        //foreach id in ???
+                        //{
+                        //    rtxNodeVar_AddIdentifier(theVar, curId);
+                        //}
+                        rtxNodeVarList_AddNode(parameters, theVar);
+                    }
+
+                    rtxResolve_BuildParameterResVals(resolverValues, 
+                                                     local_node.body.parameters,
+                                                     resVals, parameters);
+
+
                     // Then replace each Tpl CALL by the CALL chunks associated.
-                    if (rtxResolve_replaceCall(decl, resolverValues) == false)
+                    if (rtxResolve_replaceCall(decl, resVals) == false)
                     {
                         traceLine(YELLOW + "Could not resolve ::IMPLEMENTATION pointcut for template '" + local_node#parent.tpl_hash + "'."+ DEFAULT_COLOR);
                         return false;
@@ -1141,7 +1170,6 @@ function type_map<T>(resolverValues : node,
         // Now that we have selected an unique template, load the tree+script
         local   subtree;
         rtxLink_LoadItem(templates, subtree);
-        traceLine(toString(subtree.mapping.body.block,true));
         localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
 
         // Call the right mapping function (based on hash + identifier mapped).
