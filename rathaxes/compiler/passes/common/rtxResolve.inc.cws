@@ -1120,7 +1120,7 @@ function type_map<T>(resolverValues : node,
                      theRtype : node, mappedIds : node,
                      placeHolder : node, out_node : node)
 {
-    traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedIds#[1]+"' in variable '"+mappedIds#[0]+"'");
+    traceLine("rtxResolve:<LOG> type_map<"+T+"> for variable '"+mappedIds#[0]+"' ("+toString(mappedIds)+")");
     // First we must select an unique template matching the rtype and config
     local   templates;
     if (!rtxLink_findTemplates(theRtype, templates))
@@ -1136,22 +1136,36 @@ function type_map<T>(resolverValues : node,
         return false;
     }
 
-    // Now that we have selected an unique template, load the tree+script
-    local   subtree;
-    rtxLink_LoadItem(templates, subtree);
-    localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
-
-    // Call the right mapping function (based on hash + identifier mapped).
-    traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
-              + theMapping.instanceKey);
-
-    if (instanceMapping<theMapping.instanceKey>(resolverValues, subtree) == false)
+    if (getArraySize(mappedIds) > 1)
     {
-        traceLine("type_map<"+T+">:<ERROR> instanceMapping<\""+theMapping.instanceKey+"\"> failed.");
-        return false;
-    }
+        // Now that we have selected an unique template, load the tree+script
+        local   subtree;
+        rtxLink_LoadItem(templates, subtree);
+        traceLine(toString(subtree.mapping.body.block,true));
+        localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
 
-    setall out_node = theMapping.body.expr;
+        // Call the right mapping function (based on hash + identifier mapped).
+        traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
+                  + theMapping.instanceKey);
+
+        if (instanceMapping<theMapping.instanceKey>(resolverValues, subtree) == false)
+        {
+            traceLine("type_map<"+T+">:<ERROR> instanceMapping<\""+theMapping.instanceKey+"\"> failed.");
+            return false;
+        }
+
+        setall out_node = theMapping.body.expr;
+    }
+    else
+    {
+        //error(BLUE + "Trying value mapping here..." + DEFAULT_COLOR);
+        local identifiers;
+        foreach n in mappedIds { pushItem identifiers; rtxNodeIdentifier(identifiers#back, n); }
+        local val;
+        if (rtxNodeResVal_GetField(resolverValues, identifiers, val) == false)
+            error("Could not get value...");
+        setall out_node = val;
+    }
 
     return true;
 }
