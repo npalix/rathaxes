@@ -288,7 +288,6 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                         local mapping;
                         local subParam;
                         setall subParam = theParam.identifiers;
-                        removeFirstElement(subParam);
                         local subidentifiers;
                         select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
@@ -612,7 +611,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local    mapping;
             local subParam;
             setall subParam = local_node.body.identifiers;
-            removeFirstElement(subParam);
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
@@ -651,7 +649,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
 
             local subParam;
             setall subParam = local_node.body.identifiers;
-            removeFirstElement(subParam);
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
@@ -1123,7 +1120,7 @@ function type_map<T>(resolverValues : node,
                      theRtype : node, mappedIds : node,
                      placeHolder : node, out_node : node)
 {
-    traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedIds#[0]+"'");
+    traceLine("rtxResolve:<LOG> type_map<"+T+"> for identifier '"+mappedIds#[1]+"' in variable '"+mappedIds#[0]+"'");
     // First we must select an unique template matching the rtype and config
     local   templates;
     if (!rtxLink_findTemplates(theRtype, templates))
@@ -1142,7 +1139,7 @@ function type_map<T>(resolverValues : node,
     // Now that we have selected an unique template, load the tree+script
     local   subtree;
     rtxLink_LoadItem(templates, subtree);
-    localref theMapping = subtree.mapping.body.block[mappedIds#[0]];
+    localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
 
     // Call the right mapping function (based on hash + identifier mapped).
     traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
@@ -1189,6 +1186,7 @@ function type_map<"Builtin::local">(resolverValues : node,
     local data;
     localref theChunk = placeHolder#root;
 
+    removeFirstElement(mappedIds); // remove the "local."
     if (!findElement(mappedIds#[0], theChunk.variables))
     {
         traceLine(RED + "[ERROR] Could not find local variable '" + mappedIds#[0] + "' in block." + DEFAULT_COLOR);
@@ -1214,7 +1212,6 @@ function type_map<"Builtin::local">(resolverValues : node,
             setall resVal = resolverValues;
             insert resVal["self"];
             rtxNodeResValLeaf(resVal["self"], mappedIds#[0]);
-            removeFirstElement(mappedIds);
             return type_map<rtxRTypeName<rtype.type>(rtype)>(resVal, rtype, mappedIds, placeHolder, out_node);
         }
         else
@@ -1229,6 +1226,7 @@ function type_map<"Builtin::config">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
                                      placeHolder : node, out_node : node)
 {
+    removeFirstElement(mappedIds); // remove the "config."
     foreach itf in this.config
     {
         if (findElement(mappedIds#[0], itf))
