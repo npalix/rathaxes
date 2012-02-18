@@ -31,7 +31,7 @@ function type_map<"Builtin::number">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
                                      placeHolder : node, out_node : node)
 {
-    if (getArraySize(mappedIds) == 0)
+    if (getArraySize(mappedIds) == 1)
     {
         // Here, the data should already be a cnorm Literal node.
         local tplVarName = resolverValues["self"].body;
