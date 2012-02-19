@@ -107,19 +107,6 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
                                  OUTPUTS
                                  "${SYSTEMS}")
 
-    # Create a list of the compiler files, we will use them as dependencies of
-    # the target we are going to add. This way, when we modify the compiler the
-    # target goes out of date and will be rebuilt at the next "make".
-    FILE(GLOB_RECURSE COMPILER_FILES
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/misc/*.cw[sp]"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/parse/*.cwp"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/node/*.cws"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/typing/*.cws"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/linker/*.cws"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*.cws"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/passes/*/*.cws"
-         "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/rathaxes.cws")
-
     # ADD_CUSTOM_COMMAND + ADD_CUSTOM_TARGET is a CMake idiom to add a target
     # that should be rebuilt automatically when its sources change.
     STRING(REPLACE ";" ", " SYSTEMS "${SYSTEMS}")
@@ -129,7 +116,7 @@ FUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
                        ${GENERATE_COMMANDS}
                        COMMENT "Building Rathaxes target ${OUT_NAME} for ${SYSTEMS}"
                        VERBATIM
-                       DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES} ${COMPILER_FILES})
+                       DEPENDS ${RTX_FILE} ${RTI_FILES} ${BLT_FILES} ${_USE_RATHAXES_COMPILER_FILES})
 
     ADD_CUSTOM_TARGET(${OUT_NAME} ALL DEPENDS ${OUTPUTS})
 ENDFUNCTION(ADD_RATHAXES_SOURCES OUT_NAME RTX_FILE)
@@ -259,6 +246,18 @@ ENDFUNCTION(FIND_RATHAXES_PACKAGE NAME)
 # of CMake >= 2.8.3.
 GET_FILENAME_COMPONENT(_USE_RATHAXES_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH CACHE)
 MARK_AS_ADVANCED(_USE_RATHAXES_LIST_DIR)
+
+# Create a list of the compiler files, we will use them as dependencies of
+# the target we are going to add. This way, when we modify the compiler the
+# target goes out of date and will be rebuilt at the next "make".
+FILE(GLOB_RECURSE _USE_RATHAXES_COMPILER_FILES "${RATHAXES_SOURCE_DIR}/rathaxes/compiler/*.cw[sp]")
+FOREACH(I ${_USE_RATHAXES_COMPILER_FILES})
+    IF (${I} MATCHES "/tests/")
+        LIST(REMOVE_ITEM _USE_RATHAXES_COMPILER_FILES ${I})
+    ENDIF (${I} MATCHES "/tests/")
+ENDFOREACH(I ${_USE_RATHAXES_COMPILER_FILES})
+SET(_USE_RATHAXES_COMPILER_FILES ${_USE_RATHAXES_COMPILER_FILES}
+    CACHE INTERNAL "List of the Rathaxes compiler files to force the rebuild of every Rathaxes target when the compiler is modified")
 
 # Find additional dependencies:
 
