@@ -18,7 +18,7 @@ interface PCI : LKM
         provided chunk  LKM::deinit_bus_hook;
     }
 
-    provided sequence   PCI::probe(PCI::Device)
+    provided sequence   PCI::probe()
     {
         provided chunk  LKM::prototypes;
         provided chunk  LKM::code;
@@ -26,11 +26,11 @@ interface PCI : LKM
         provided pointcut   PCI::pci_probe_hook;
     }
 
-    provided sequence   PCI::remove(PCI::Device)
+    provided sequence   PCI::remove()
     {
         provided chunk  LKM::prototypes;
         provided chunk  LKM::code;
 
-        provided pointcut   PCI::pci_remove_hook;
+        provided pointcut   PCI::pci_remove_hook; /* Should take a PCI::Device arg */
     }
 }

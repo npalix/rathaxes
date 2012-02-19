@@ -4,7 +4,7 @@ with Log
     {
         chunk   ::CALL
         {
-            pr_info("%s\n", ${msg});
+            pr_info("%s: %s\n", ${config.name}, ${msg});
         }
     }
 }

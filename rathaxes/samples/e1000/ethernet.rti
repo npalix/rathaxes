@@ -28,19 +28,17 @@ interface Ethernet : Socket, PCI, LKM
         provided chunk  LKM::code;
     }
 
-    provided sequence   Ethernet::init(PCI::Device)
+    provided sequence   Ethernet::init()
     {
         provided chunk  LKM::data;
-        provided chunk  PCI::pci_probe_hook;
-        provided chunk  ::CALL;
+        provided chunk  PCI::pci_probe_hook; /* should take a PCI::Device arg */
 
         provided pointcut   Ethernet::create_device;
     }
 
-    provided sequence   Ethernet::exit(PCI::Device)
+    provided sequence   Ethernet::exit()
     {
-        provided chunk  ::CALL;
-        provided chunk  PCI::pci_remove_hook;
+        provided chunk  PCI::pci_remove_hook; /* should take a PCI::Device arg */
 
         provided pointcut   Ethernet::destroy_device;
     }
