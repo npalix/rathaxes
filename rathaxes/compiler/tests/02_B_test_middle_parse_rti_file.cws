@@ -2,7 +2,7 @@
 	TEST GENERAL DU MIDDLE
 */
 
-local sourceFile = "full_lkm/simplified_lkm.rti";
+local sourceFile = "simplified_lkm.rti"; // From samples/rs232_mockup
 local input = loadFile(sourceFile);
 
 /* Switch to a tmp dir */

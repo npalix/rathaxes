@@ -20,8 +20,8 @@ ADD_RATHAXES_CWS_TEST(02_B_test_middle_parse_rti_file.cws)
 ADD_RATHAXES_CWS_TEST(02_C_test_middle_check_inheritance.cws)
 ADD_RATHAXES_CWS_TEST(02_D_test_middle_check_types_declaration.cws)
 
-# Required for test 2_B
-FILE_COPY(full_lkm/simplified_lkm.rti full_lkm/simplified_lkm.rti)
+# Required for test 2_B and the tests which depend on it
+FILE_COPY(../../samples/rs232_mockup/simplified_lkm.rti simplified_lkm.rti)
 
 # Tests for configuration matching (against with blocks)
 ADD_RATHAXES_CWS_TEST(03_A_test_config_match_lesser.cws)
