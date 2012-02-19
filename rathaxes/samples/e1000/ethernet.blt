@@ -1,5 +1,10 @@
 with Ethernet, PCI, LKM, Log
 {
+    /*
+     * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
+     * from Linux. Ethernet::Device is the type that we use in the private
+     * field of the struct net_device.
+     */
     template type   Ethernet::Device()
     {
         chunk LKM::includes()
@@ -10,7 +15,14 @@ with Ethernet, PCI, LKM, Log
 
         chunk ::decl()
         {
-            struct rtx_ethernet_dev
+            /*
+             * So, at first sight, it sucks to typedef it as pointer but (for
+             * now) it makes sense for two reasons:
+             * - This structure will always be used through a pointer;
+             * - This remove the ambiguity of pointer/not-pointer in the
+             * ::init() chunk.
+             */
+            typedef struct rtx_ethernet_dev
             {
                 /*
                  * I think it's useless to use the ${PCI::Device} "abstraction"
@@ -21,12 +33,18 @@ with Ethernet, PCI, LKM, Log
 
                 /* while waiting on issue #8 */
                 struct rtx_e1000_ctx    hw_ctx;
-            };
+            } *rtx_ethernet_dev_p;
         }
 
-        chunk ::init(net_dev)
+        chunk ::init(net_dev, pci_dev)
         {
-            ${self} = ${net_dev};
+            ${self} = netdev_priv(${net_dev});
+            /*
+             * We can use -> because we know that ${self} will be always a
+             * pointer ("thanks" to the typedef)
+             */
+            ${self}->pci_dev = ${pci_dev};
+            ${self}->net_dev = ${net_dev};
         }
 
         map
@@ -45,10 +63,10 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_open(struct net_device *dev)
             {
-                struct rtx_ethernet_dev* rtx_ether_dev =  netdev_priv(dev);
+                struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
                 struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
 
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
             }
@@ -66,7 +84,7 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_xmit(struct sk_buff* skb, struct net_device *dev)
             {
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION(local.dev, local.skb)};
 
                 return 0;
             }
@@ -87,7 +105,7 @@ with Ethernet, PCI, LKM, Log
                 struct rtx_ethernet_dev* rtx_ether_dev =  netdev_priv(dev);
                 struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
 
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
             }
@@ -114,14 +132,14 @@ with Ethernet, PCI, LKM, Log
 
                 rtx_ether_dev = dev_id;
                 ctx = &rtx_ether_dev->hw_ctx;
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return IRQ_NONE;
             }
         }
     }
 
-    template sequence   Ethernet::init(PCI::Device pdev)
+    template sequence   Ethernet::init()
     {
         chunk LKM::data()
         {
@@ -133,83 +151,75 @@ with Ethernet, PCI, LKM, Log
             };
         }
 
-        chunk PCI::pci_probe_hook()
+        /* For now the type is not handled, so we just omit it (see #17) */
+        chunk PCI::pci_probe_hook(/* PCI::Device */ pdev)
         {
             /*
              * This typedef is needed to workaround a bug in CNorm __std__
              * dialect.
              */
             typedef int ${Ethernet::Device};
-            ${Ethernet::Device} *rtx_ether_ctx;
-            struct net_device   *net_dev;
+
+            ${Ethernet::Device} rtx_ether_ctx;
+            struct net_device *net_dev;
             int error;
 
-            error = 0;
+            /* Initialize the net_device structure */
             net_dev = alloc_etherdev(sizeof(*rtx_ether_ctx));
             if (net_dev == 0)
             {
-                ${Log::info("Cannot allocate memory")};
+                ${Log::info("cannot allocate memory")};
                 /*
                  * Again, the error should be "raised" in the parent context.
                  *
-                 * Here we know that we should return ENOMEM because *we* wrote
+                 * Here we know that we can return ENOMEM because *we* wrote
                  * the parent context.
                  */
                 return -ENOMEM;
             }
+            SET_NETDEV_DEV(net_dev, &${pdev}->dev);
             strlcpy(net_dev->name, ${config.ifname}, sizeof(net_dev->name));
-            net_dev->irq = pdev->irq;
-            // Maybe we should try ${rtx_ether_ctx.init()} here:
-            rtx_ether_ctx = netdev_priv(net_dev);
-            //rtx_ether_ctx->pci_dev = ${pdev};
-            rtx_ether_ctx->pci_dev = pdev; // In the meantime do it directly
-            rtx_ether_ctx->net_dev = net_dev;
-
-            /*
-             * The substitution of ${pdev} fails here. I also tried to add a
-             * "substitute method" to the PCI::Device that was just doing
-             * "${self}" but it didn't work either (it was subsituted by a
-             * placeholder, e.g: _1).
-             *
-             * That's why we cheated a bit and named all the arguments pdev.
-             */
-            //SET_NETDEV_DEV(net_dev, &${pdev}->dev);
-            SET_NETDEV_DEV(net_dev, &pdev->dev);
+            net_dev->irq = ${pdev}->irq;
             net_dev->netdev_ops = &rtx_ether_ops;
-            if ((error = register_netdev(net_dev)))
+
+            error = register_netdev(net_dev);
+            if (error)
             {
-                ${Log::info("Cannot register the driver")};
+                ${Log::info("cannot register the driver in the net subsystem")};
                 return error;
             }
 
-            /* same problem as above with ${pdev} */
-            //pci_set_drvdata(${pdev}, net_dev);
-            pci_set_drvdata(pdev, net_dev);
+            /* Initialize our context held by the net_device structure */
+            ${rtx_ether_ctx.init(local.net_dev, pdev)};
 
-            ${pointcut Ethernet::create_device};
+            pci_set_drvdata(${pdev}, net_dev);
+
+            ${pointcut Ethernet::create_device(pdev, local.rtx_ether_ctx)};
         }
 
+        /* This chunk should be removed (see #26) */
         chunk   ::CALL
         {
         }
     }
 
-    template sequence   Ethernet::exit(PCI::Device pdev)
+    template sequence   Ethernet::exit()
     {
-        chunk   PCI::pci_remove_hook()
+        chunk   PCI::pci_remove_hook(/* PCI::Device */ pdev)
         {
-            struct net_device *net_dev = pci_get_drvdata(pdev);
+            /* workaround for cnorm unstrict */
+            typedef int ${Ethernet::Device};
 
-            ${pointcut Ethernet::destroy_device};
+            struct net_device *net_dev = pci_get_drvdata(${pdev});
+            ${Ethernet::Device} rtx_ether_ctx = netdev_priv(net_dev);
+
+            ${pointcut Ethernet::destroy_device(pdev, local.rtx_ether_ctx)};
 
             unregister_netdev(net_dev);
-            /*
-             * If we had some cleanup todo with struct rtx_ether_ctx we would
-             * do a netdev_priv(net_dev) here and do it.
-             */
             free_netdev(net_dev);
         }
 
+        /* This chunk should be removed (see #26) */
         chunk ::CALL
         {
         }

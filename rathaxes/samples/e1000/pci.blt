@@ -22,7 +22,7 @@ with PCI, LKM, Log
         }
     }
 
-    template sequence   PCI::probe(PCI::Device pdev)
+    template sequence   PCI::probe()
     {
         chunk LKM::prototypes()
         {
@@ -41,7 +41,8 @@ with PCI, LKM, Log
                 if (err < 0)
                     goto fail;
 
-                ${pointcut PCI::pci_probe_hook};
+                /* Use local. to reference a local C variable: */
+                ${pointcut PCI::pci_probe_hook(local.pdev)};
 
                 return 0;
 
@@ -50,12 +51,13 @@ with PCI, LKM, Log
             }
         }
 
+        /* This chunk should be remove (see #26) */
         chunk   ::CALL
         {
         }
     }
 
-    template sequence   PCI::remove(PCI::Device pdev)
+    template sequence   PCI::remove()
     {
         chunk LKM::prototypes()
         {
@@ -66,12 +68,13 @@ with PCI, LKM, Log
         {
             static void rtx_pci_remove(struct pci_dev *pdev)
             {
-                ${pointcut PCI::pci_remove_hook};
+                ${pointcut PCI::pci_remove_hook(local.pdev)};
 
                 pci_disable_device(pdev);
             }
         }
 
+        /* This chunk should be remove (see #26) */
         chunk   ::CALL()
         {
         }
@@ -125,6 +128,8 @@ with PCI, LKM, Log
              * This sequence is just "intermediate" code that will just inject
              * itself in the hook LKM::init_bus_hook for which this sequence
              * has a chunk (see above chunk).
+             *
+             * -> Should be removed see #26
              */
         }
     }
@@ -136,6 +141,7 @@ with PCI, LKM, Log
             pci_unregister_driver(&rtx_pci_driver);
         }
 
+        /* This chunk should be removed */
         chunk ::CALL
         {
         }

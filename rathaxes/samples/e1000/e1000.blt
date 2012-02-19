@@ -15,18 +15,20 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
         chunk   ::decl()
         {
-            struct rtx_e1000_ctx
+            /*
+             * Yes, this typedef looks ugly but read the remark about
+             * Ethernet::Device in ethernet.blt.
+             */
+            typedef struct rtx_e1000_ctx
             {
                 int                             bars;
                 unsigned char /* __iomem */     *ioaddr;
                 int                             irq;
-            };
+            } *rtx_e1000_ctx_p;
         }
 
-        chunk   ::init(bars, ioaddr)
+        chunk   ::init()
         {
-            ${self}.bars = ${bars};
-            ${self}.ioaddr = ${ioaddr};
         }
 
         map
@@ -136,58 +138,74 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::create_device()
     {
-        chunk Ethernet::create_device()
+        chunk Ethernet::create_device(/* PCI::Device */ pdev, /* Ethernet::Device */ rtx_ether_ctx)
         {
-            rtx_ether_ctx->hw_ctx.irq = pdev->irq;
-            rtx_ether_ctx->hw_ctx.bars = pci_select_bars(pdev, IORESOURCE_MEM);
-            if (pci_enable_device_mem(pdev))
+            /*
+             * PCI init stuff:
+             *
+             * Some of that code should certainly be moved in the PCI/Ethernet
+             * blts, also at some point maybe we could do that completely
+             * automatically in the PCI/Ethernet blts.
+             */
+
+            /*
+             * We could have used an init function here but since we can't init
+             * all the fields at once (see, ioaddr) and cannot call a C
+             * function within a placeholder (${}), it wasn't really worth it.
+             */
+            ${rtx_ether_ctx}->hw_ctx.bars = pci_select_bars(${pdev}, IORESOURCE_MEM);
+            ${rtx_ether_ctx}->hw_ctx.irq = ${pdev}->irq;
+
+            if (pci_enable_device_mem(${pdev}))
             {
                 ${Log::info("e1000::create: pci_enable_device_mem failed")};
             }
-
-            if (pci_request_selected_regions(pdev, rtx_ether_ctx->hw_ctx.bars, ${config.name}))
+            if (pci_request_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars, ${config.name}))
             {
                 ${Log::info("e1000::create: pci_request_selected_regions failed")};
             }
-
             if (${config.set_master})
             {
-                pci_set_master(pdev);
+                pci_set_master(${pdev});
             }
 
             /* 0 here is for BAR_0: */
-            rtx_ether_ctx->hw_ctx.ioaddr = pci_ioremap_bar(pdev, 0);
-            if (!rtx_ether_ctx->hw_ctx.ioaddr)
+            ${rtx_ether_ctx}->hw_ctx.ioaddr = pci_ioremap_bar(${pdev}, 0);
+            if (!${rtx_ether_ctx}->hw_ctx.ioaddr)
             {
                 ${Log::info("e1000::create: pci_ioremap_bar failed")};
             }
 
+            /*
+             * The really device specific algorithm starts here (so it should
+             * certainly be written in the frontend):
+             */
+
             /* Reset the card */
-            rtx_e1000_register_write32(&rtx_ether_ctx->hw_ctx, E1000_CTRL, E1000_CMD_RST);
+            rtx_e1000_register_write32(&${rtx_ether_ctx}->hw_ctx, E1000_CTRL, E1000_CMD_RST);
             udelay(10);
 
-            /* Now we can load its mac address */
+            /* Now we can load its mac address (thanks minix code) */
             int i = 0;
-            for (i = 0 /* < this is not generated! */; i < 3; ++i)
+            for (i = 0 /* < this is not generated! (cnorm bug) */; i < 3; ++i)
             {
-                rtx_e1000_register_write32(&rtx_ether_ctx->hw_ctx, E1000_EEPROM_READ, (i << 8) | 1);
+                rtx_e1000_register_write32(&${rtx_ether_ctx}->hw_ctx, E1000_EEPROM_READ, (i << 8) | 1);
 
                 int value;
-                /* Should be a do { } while(); but the compiler doesn't do { } while(); yet. */
-                value = rtx_e1000_register_read32(&rtx_ether_ctx->hw_ctx, E1000_EEPROM_READ);
-                while ((value & (1 << 4)) == 0)
-                    value = rtx_e1000_register_read32(&rtx_ether_ctx->hw_ctx, E1000_EEPROM_READ);
+                do
+                    value = rtx_e1000_register_read32(&${rtx_ether_ctx}->hw_ctx, E1000_EEPROM_READ);
+                while ((value & (1 << 4)) == 0);
                 value >>= 16;
 
-                rtx_ether_ctx->net_dev->dev_addr[i * 2] = value & 0xff;
-                rtx_ether_ctx->net_dev->dev_addr[i * 2 + 1] = (value >> 8) & 0xff;
+                ${rtx_ether_ctx}->net_dev->dev_addr[i * 2] = value & 0xff;
+                ${rtx_ether_ctx}->net_dev->dev_addr[i * 2 + 1] = (value >> 8) & 0xff;
             }
 
-            memcpy(rtx_ether_ctx->net_dev->perm_addr,
-                   rtx_ether_ctx->net_dev->dev_addr,
-                   rtx_ether_ctx->net_dev->addr_len);
+            memcpy(${rtx_ether_ctx}->net_dev->perm_addr,
+                   ${rtx_ether_ctx}->net_dev->dev_addr,
+                   ${rtx_ether_ctx}->net_dev->addr_len);
 
-            { /* < mais lol. */
+            { /* < See #10 */
                 ${Log::info("e1000::create: mac address loaded from the EEPROM")};
             }
         }
@@ -199,15 +217,14 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::destroy_device()
     {
-        chunk   Ethernet::destroy_device
+        chunk   Ethernet::destroy_device(/* PCI::Device */ pdev, /* Ethernet::Device */ rtx_ether_ctx)
         {
             /*
              * Here, we should have some checks to avoid to free resources that
              * haven't been allocated. (e.g: in case of previous errors).
              */
-            struct rtx_ethernet_dev* rtx_ether_ctx = netdev_priv(net_dev);
-            iounmap(rtx_ether_ctx->hw_ctx.ioaddr);
-            pci_release_selected_regions(pdev, rtx_ether_ctx->hw_ctx.bars);
+            iounmap(${rtx_ether_ctx}->hw_ctx.ioaddr);
+            pci_release_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars);
         }
 
         chunk   ::CALL
@@ -215,7 +232,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::print_status()
+    template sequence   e1000::print_status(Ethernet::Device ctx)
     {
         chunk   LKM::prototypes()
         {
@@ -227,7 +244,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             static void rtx_e1000_print_status(struct rtx_e1000_ctx *ctx)
             {
                 unsigned int status = rtx_e1000_register_read32(ctx, E1000_STATUS);
-                pr_info("rtx_e1000 status: \n");
+                pr_info("card status: \n");
                 pr_info("\tRegister value: 0x%x\n", status);
                 pr_info("\tMode: %s\n", (status & 1) ? "Full": "Half");
                 pr_info("\tLink: %s\n", (status & 2) ? "Up" : "Down");
@@ -238,6 +255,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
         chunk   ::CALL
         {
+            rtx_e1000_print_status(&${ctx}->hw_ctx);
         }
     }
 
@@ -273,9 +291,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL()
+        chunk   ::CALL
         {
-            rtx_e1000_register_read32(&${ctx}, ${reg_offset});
+            rtx_e1000_register_read32(${ctx}, ${reg_offset});
         }
     }
 
@@ -294,9 +312,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL()
+        chunk   ::CALL
         {
-            rtx_e1000_register_write32(&${ctx}, ${reg_offset});
+            rtx_e1000_register_write32(${ctx}, ${reg_offset}, ${value});
         }
     }
 
@@ -315,17 +333,19 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL()
+        chunk   ::CALL
         {
+            rtx_e1000_register_set32(${ctx}, ${reg_offset}, ${value});
         }
     }
 
-    template sequence   e1000::setup_interrupt_handler()
+    template sequence   e1000::setup_interrupt_handler(Ethernet::Device ctx)
     {
         chunk   LKM::includes()
         {
             #include <linux/interrupt.h>
         }
+
         chunk   LKM::prototypes()
         {
             static int e1000_setup_interrupt_handler(struct rtx_ethernet_dev *);
@@ -345,20 +365,20 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
                 if (error)
                 {
-                    ${Log::info("Cannot register the interruption")};
+                    ${Log::info("cannot register the interrupt handler")};
                 }
 
                 return error;
             }
         }
 
-        chunk   ::CALL()
+        chunk   ::CALL
         {
             // this is an hack for the scope
             (void)1;
             {
                 int error;
-                error = e1000_setup_interrupt_handler(rtx_ether_dev);
+                error = e1000_setup_interrupt_handler(${ctx});
                 if (error)
                 {
                     return error;
@@ -367,7 +387,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::free_interrupt_handler()
+    template sequence   e1000::free_interrupt_handler(Ethernet::Device ctx)
     {
         chunk   LKM::prototypes()
         {
@@ -378,22 +398,21 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         {
             static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx)
             {
-
                 free_irq(ethernet_ctx->hw_ctx.irq, ethernet_ctx);
             }
         }
 
-        chunk ::CALL()
+        chunk ::CALL
         {
-            e1000_free_interrupt_handler(rtx_ether_dev);
+            e1000_free_interrupt_handler(${ctx});
         }
     }
 
-    template sequence   e1000::activate_device_interruption()
+    template sequence   e1000::activate_device_interruption(Ethernet::Device ctx)
     {
-        chunk  ::CALL()
+        chunk  ::CALL
         {
-            rtx_e1000_register_write32(ctx, E1000_IMS,
+            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_IMS,
                                        E1000_INTR_TXDW |
                                        E1000_INTR_TXQE |
                                        E1000_INTR_LSC  |
@@ -402,11 +421,11 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::set_up_device()
+    template sequence   e1000::set_up_device(Ethernet::Device ctx)
     {
-        chunk  ::CALL()
+        chunk  ::CALL
         {
-            rtx_e1000_register_set32(ctx, E1000_CTRL,
+            rtx_e1000_register_set32(&${ctx}->hw_ctx, E1000_CTRL,
                                      E1000_CMD_ASDE |
                                      E1000_CMD_SLU  |
                                      E1000_CMD_LRST |
@@ -414,20 +433,20 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::handle_intr()
+    template sequence   e1000::handle_interrupt(Ethernet::Device ctx)
     {
-        chunk   ::CALL()
+        chunk   ::CALL
         {
             int intr;
 
-            intr = rtx_e1000_register_read32(ctx, E1000_ICR);
-            if (intr & E1000_INTR_LSC)
-            {
-                ${Log::info("Link status changed")};
-            }
-
+            intr = rtx_e1000_register_read32(&${ctx}->hw_ctx, E1000_ICR);
             if (intr)
             {
+                if (intr & E1000_INTR_LSC)
+                {
+                    ${Log::info("cable link status changed")};
+                }
+
                 return IRQ_HANDLED;
             }
         }

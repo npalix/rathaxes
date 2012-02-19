@@ -1,25 +1,22 @@
 interface e1000 : Socket, Ethernet, PCI, LKM
 {
     provided type   e1000::Context;
+    /*
+     * These two types should actually be registers definitions in the frontend:
+     */
     provided type   e1000::Register;
     provided type   e1000::Commands;
 
-    /*
-     * This sequence should receive an argument like Ethernet::Device, but it is
-     * unclear about how this argument should be bound to a variable/argument in
-     * the instrumented C code.
-     *
-     * Here again, we rely on the fact that *we* wrote the parent context and
-     * named the C variables we need/use with the same name everywhere.
-     */
     provided sequence   e1000::create_device()
     {
+        /* should take PCI::Device and Ethernet::Device args: */
         provided chunk  Ethernet::create_device;
         provided chunk  ::CALL;
     }
 
     provided sequence   e1000::destroy_device()
     {
+        /* should take PCI::Device and Ethernet::Device args: */
         provided chunk  Ethernet::destroy_device;
         provided chunk  ::CALL;
     }
@@ -28,43 +25,42 @@ interface e1000 : Socket, Ethernet, PCI, LKM
      * This should take an e1000::Context as the first argument but this was
      * not working as wished.
      */
-    provided sequence   e1000::print_status()
+    provided sequence   e1000::print_status(Ethernet::Device)
     {
         provided chunk  LKM::prototypes;
         provided chunk  LKM::code;
         provided chunk  ::CALL;
     }
 
-    provided sequence   e1000::setup_interrupt_handler()
+    provided sequence   e1000::setup_interrupt_handler(Ethernet::Device)
     {
-        provided chunk  LKM::includes; // work without this one
+        provided chunk  LKM::includes; // works without this one
         provided chunk  LKM::prototypes;
         provided chunk  LKM::code;
         provided chunk  ::CALL;
     }
 
-    provided sequence   e1000::free_interrupt_handler()
+    provided sequence   e1000::free_interrupt_handler(Ethernet::Device)
     {
         provided chunk  LKM::prototypes;
         provided chunk  LKM::code;
         provided chunk  ::CALL;
     }
 
-    provided sequence   e1000::activate_device_interruption()
+    provided sequence   e1000::activate_device_interruption(Ethernet::Device)
     {
         provided chunk  ::CALL;
     }
 
-    provided sequence   e1000::set_up_device()
+    provided sequence   e1000::set_up_device(Ethernet::Device)
     {
         provided chunk  ::CALL;
     }
 
-    provided sequence   e1000::handle_intr()
+    provided sequence   e1000::handle_interrupt(Ethernet::Device)
     {
         provided chunk  ::CALL;
     }
-
 
     provided sequence   e1000::register_read32(e1000::Context, e1000::Register)
     {
