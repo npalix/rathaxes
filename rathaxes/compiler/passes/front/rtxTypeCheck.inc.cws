@@ -18,6 +18,15 @@ declare function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node);
 function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node)
 { error("rtxFront_TypeCheckNode<"+T+"> not implemented."); }
 
+/* Allow middle or back code portion in one big RTX file */
+function rtxFront_TypeCheckNode<"__rtx_itf__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxFront_TypeCheckNode<"__rtx_tpl__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxFront_TypeCheckNode<"__rtx_with__">(local_node : node, itf_list : node)
+{       return true;}
+/**/
+
 function rtxFront_TypeCheckNode<"__rtx_register__">(local_node : node, itf_list : node)
 {
     return rtxTypeCheck_Register(local_node);
