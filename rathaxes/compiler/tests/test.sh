@@ -1,2 +1,5 @@
 #!/bin/sh
-codeworker --quiet -I $CNORM_PATH/src -I `pwd`/../ -script $1 -args $PWD/../../
+cd `dirname $0`
+export HERE=`pwd`
+echo $HERE
+codeworker --quiet -I $CNORM_PATH/src -I $HERE/../ -I $HERE/../../samples -script $1 -args $HERE/../..
