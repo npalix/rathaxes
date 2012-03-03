@@ -21,8 +21,9 @@
 #include "linker/rtxLink.inc.cws"
 
 /*
- * Include the backend annotation passes for the AST.
+ * Include Parse and Passes routines
  */
+#include "parse/rtxParse.inc.cws"
 #include "passes/rtxPasses.inc.cws"
 
 function usage()
@@ -38,33 +39,6 @@ function usage()
                 + "    or rathaxes blt-register (file.blt|file.rtx)" + endl()
                 + "    or cache install" + endl()
                 + "    or cache clear");
-}
-
-function rtxError2String(errnode : node, with_stack : value = true)
-{
-        local out = "An error Occured while parsing :" + endl();
-        if (with_stack != false)
-        {
-            out = out + "Trace:" + endl();
-            foreach stack_line in errnode[0].trace
-                out += stack_line;
-            out += endl();
-        }
-        out += "Error: " + errnode[0].msg;
-        return out;
-}
-
-function rtxParse(inputFile : value, source : node)
-{
-    // First setup cnorm...
-    cnormDialect<"__std__">(source);
-    parseAsBNF("parse/rtx.cwp", source, inputFile);
-    removeVariable(source.dialect);
-    if (!isEmpty(source.error))
-    {
-        traceLine(rtxError2String(source.error));
-        exit(-1);
-    }
 }
 
 function rtxParseGenerateOptions(argv : node, options : node)
@@ -131,10 +105,12 @@ if (toLowerString(this.operation) == "generate")
 
     insert this.front;
     insert this.c_types;
-
+/*
     cnormDialect<"__std__">(this.front);
     rtxType_Load(this.front);
     rtxParse(inputFile, this.front);
+*/
+        rtxParseFile(this.front, inputFile);
 
     saveProject("front_end.tree", this.front);
 
@@ -217,9 +193,10 @@ else if (   toLowerString(this.operation) == "blt-check"
     if (rtxLink_LoadCache() == false)
         traceLine("Could not load cache. Trying to do without it...");
 
-    rtxType_Load(source);
+    //rtxType_Load(source);
     traceLine("READ:" + inputFile);
-    rtxParse(inputFile, source);
+    //rtxParse(inputFile, source);
+    rtxParseFile(source, inputFile);
 
     // Compile the Meta Instructions aka ${}
     if (!rtxMeta(source))
@@ -272,8 +249,9 @@ else if (toLowerString(this.operation) == "rti-check"
     if (rtxLink_LoadCache() == false)
         traceLine("Could not load cache. Trying to do without it...");
 
-    rtxType_Load(source);
-    rtxParse(inputFile, source);
+    //rtxType_Load(source);
+    //rtxParse(inputFile, source);
+    rtxParseFile(source, inputFile);
 
     // XXX TODO FIXME
     // This snippet of code does not manage interfaces extensions.

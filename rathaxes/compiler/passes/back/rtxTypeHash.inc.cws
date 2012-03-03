@@ -68,6 +68,18 @@ function rtxTypeHash_placeHolder<"__rtx_tpl_sequence_call__">(local_node : node,
 }
 
 
+function rtxTypeHash_walk<T>(local_node : node, type_map : node)
+{ error(RED + "rtxTypeHash_walk<" + T + "> not implemented yet." + DEFAULT_COLOR); }
+
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxTypeHash_walk<"__rtx_itf__">(local_node : node, type_map : node)
+{       return true;}
+function rtxTypeHash_walk<"__rtx_device__">(local_node : node, type_map : node)
+{       return true;}
+function rtxTypeHash_walk<"__rtx_config__">(local_node : node, type_map : node)
+{       return true;}
+/**/
 
 function rtxTypeHash_walk<"__root_block__">(local_node : node, type_map : node)
 {

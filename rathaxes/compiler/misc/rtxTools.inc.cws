@@ -4,9 +4,12 @@
 
 #if !existFunction(rtxTools_version)
 
+#include "cwTool.inc.cws"
+
 function        rtxTools_version()
 {       return "1.0";}
 
+declare function        rtxError2String(errnode : node, with_stack : value = true);
 declare function        stringToArray(str : value, list : node);
 declare function        bitArrayValue(list : node);
 declare function        bitToValue(str : value);
@@ -14,6 +17,19 @@ declare function        valueToHex(num : value);
 declare function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference);
 
 
+function rtxError2String(errnode : node, with_stack : value = true)
+{
+        local out = "An error Occured while parsing :" + endl();
+        if (with_stack != false)
+        {
+            out = out + "Trace:" + endl();
+            foreach stack_line in errnode[0].trace
+                out += stack_line;
+            out += endl();
+        }
+        out += "Error: " + errnode[0].msg;
+        return out;
+}
 
 // transform a string into his array representation
 function        stringToArray(str : value, list : node)

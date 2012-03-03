@@ -1035,7 +1035,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
  * resolve.
  *
  * This specialization takes care of the resolution of a pointcut, and manages
- * builtin pointcuts (like the ::algo pointcut for required/optional templates).
+ * builtin pointcuts (like the ::CALL, ::IMPLEMENTATION pointcut for required/optional templates).
  *
  */
 function    inject<"__rtx_pointcut__">(resolverValues   : node,

@@ -34,6 +34,13 @@ function rtxLink_SessionRegister<T>(local_node : node, with_values : node,
     error("rtxLink:<ERROR> Registration not implemented for node type "+T);
 }
 
+/* Allow middle or back code portion in one big RTX file */
+function rtxLink_SessionRegister<"__rtx_device__">(local_node : node, with_values : node, out_ref_id : reference)
+{       return true;}
+function rtxLink_SessionRegister<"__rtx_config__">(local_node : node, with_values : node, out_ref_id : reference)
+{       return true;}
+/**/
+
 /*
  *
  * This function caches the with as follows :

@@ -3,6 +3,9 @@
 function rtxGen_version()
 {return "1.0";}
 
+// facade for rtxGen
+declare function rtxGenerate(local_node : node);
+
 // Generated the key for the template function to be generated
 declare function rtxGenInstanceKey<T>(local_node : node);
 // Generates a CodeWorker call to resolve ONE placeHolder
@@ -13,6 +16,19 @@ declare function generateCodeWorker<T>(local_node : node, uid : value);
 declare function gencodeworker<T>(blt_node : node, theBlock : node, uid : node);
 // Walker function.
 declare function rtxGen<T>(local_node : node, uid : node);
+
+/*
+        Iterate a tree a generate all stuff
+*/
+function rtxGenerate(local_node : node)
+{
+	local uid = 0;
+        foreach item in local_node.block
+        {
+        	rtxGen<item.type>(item, uid);
+        	uid = $uid + 1$;
+        }
+}
 
 /*
  * Tool functions
@@ -385,6 +401,15 @@ function	rtxGen<T>(local_node : node, uid : node)
 {
 	error("unknown type for generation:" + T);
 }
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxGen<"__rtx_device__">(local_node : node, uid : node)
+{       return true;}
+function rtxGen<"__rtx_itf__">(local_node : node, uid : node)
+{       return true;}
+function rtxGen<"__rtx_config__">(local_node : node, uid : node)
+{       return true;}
+/**/
 
 function	rtxGen<"__rtx_with__">(local_node : node, uid : node)
 {

@@ -1,9 +1,14 @@
 #if !existFunction(rtxGenerate_version)
 
+#include "cnorm2c/cnorm2c.inc.cws"
+
 function rtxGenerate_version()
 { return "1.0"; }
 
-
+/*
+        Entry point for front end generation
+*/
+declare function rtxFrontGenerate(local_node : node);
 
 declare function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node);
 declare function rtxFrontGen_Itf(itfName : node, itfUsedList : node);
@@ -11,6 +16,54 @@ declare function rtxFrontGen_Device(theDevice : node);
 declare function rtxFrontGen_iterate<T>(local_node : node);
 
 
+function rtxFrontGenerate(local_node : node)
+{
+    insert local_node.c_types;
+
+    if (rtxFrontGen_iterate<local_node.type>(local_node) == false)
+    {
+        traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
+        exit(6);
+    }
+
+    /*
+     * For the code to compile, we need to have the types declared.
+     * Here is the "include" code generation:
+     */
+
+   /*  
+    local include;
+    cnormNodeRoot(include);
+    foreach  item in this.c_types
+    {
+        if (existVariable(item.c_decl))
+        {
+            pushItem include.block;
+            setall include.block#back = item.c_decl;
+        }
+        else // specifier sublist
+        {
+            foreach  specitem in item
+            {
+                pushItem include.block;
+                setall include.block#back = specitem.c_decl;
+            }
+        }
+    }
+*/
+
+    /*
+     * This is our final code, tell cnorm2c that this is a root block,
+     * otherwise it will scope the whole thing inside braces.
+     */
+/*
+    this.c_tree.c_block.type = "__root_block__";
+    local include_code = cnorm2c(include);
+    local code = cnorm2c(this.c_tree.c_block);
+    traceLine("Resulting include:" + include_code);
+    traceLine("Resulting code: " + code);
+*/
+}
 
 function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node)
 {
@@ -88,15 +141,15 @@ function rtxFrontGen_Device(theDevice : node)
     local withNode;
     local resVals;
     
-    if (rtxLink_findGlobalCode(this.config, withNode) == false)
+    if (rtxLink_findGlobalCode(theDevice#root.config, withNode) == false)
     {
         traceLine(RED + "[Error] Could not find global code to start"
                   + " generation for device '" + theDevice.name + "'." + DEFAULT_COLOR);
         return false;
     }
 
-    insert this.c_tree;
-    if (rtxLink_LoadItem(withNode, this.c_tree) == false)
+    insert theDevice#root.c_tree;
+    if (rtxLink_LoadItem(withNode, theDevice#root.c_tree) == false)
     {
         traceLine(RED + "[Error] Could not load script for global code generation." + DEFAULT_COLOR);
         return false;
@@ -105,7 +158,7 @@ function rtxFrontGen_Device(theDevice : node)
     rtxFrontGen_BuildResValFromDevice(resVals, theDevice);
 
     //its an interface, so we should use the c_block field.
-    if (instanceChunk<this.c_tree.instanceKey>(resVals, this.c_tree.c_block) == false)
+    if (instanceChunk<theDevice#root.c_tree.instanceKey>(resVals, theDevice#root.c_tree.c_block) == false)
     {
         traceLine(RED + "[Error] Could not resolve global code." + DEFAULT_COLOR);
         return false;
@@ -118,22 +171,30 @@ function rtxFrontGen_Device(theDevice : node)
     return true;
 }
 
+function rtxFrontGen_iterate<T>(local_node : node)
+{ error("rtxFrontGen_iterate<"+T+"> not implemented."); }
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxFrontGen_iterate<"__rtx_itf__">(local_node : node)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_tpl__">(local_node : node)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_with__">(local_node : node)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
+{ return true; }
+/**/
 
 /*
  *
- * The iterating functions allow to generate a pilot for each device described
+ * The iterating functions allow to generate a pilot for each device described/
  * in the front-end.
  *
  */
-declare function rtxFrontGen_iterate<T>(local_node : node);
-
 function rtxFrontGen_iterate<"__rtx_device__">(local_node : node)
 {
     return rtxFrontGen_Device(local_node);
 }
-
-function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
-{ return true; }
 
 function rtxFrontGen_iterate<"__block__">(local_node : node)
 {

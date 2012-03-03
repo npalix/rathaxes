@@ -36,6 +36,14 @@ rtx_stmt_template_content<"sequence">(theTemplate : node, theBlock : node) ::=
         ]*
 ;
 
+// TEMPLATE BUILTIN TYPE
+rtx_stmt_template_content<"builtintype">(theTemplate : node, theBlock : node) ::=
+/**/    =>traceLine("Template builtintype block!");
+        [
+                "chunk" rtx_stmt<"chunk">(theBlock)
+        ]*
+;
+
 // TEMPLATE TYPE
 rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 /**/    =>traceLine("Template type block!");

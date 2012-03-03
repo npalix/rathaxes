@@ -22,11 +22,11 @@ traceLine("Checking inheritance");
 
 foreach itf_node in source.block
 {
-    if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
-    {
-        traceLine("Error while checking inheritance");
-        exit 1;
-    }
+        if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
+        {
+                traceLine("Error while checking inheritance");
+                exit 1;
+        }
 }
 
 local savePath = "__02_rtx_parse__.tree";

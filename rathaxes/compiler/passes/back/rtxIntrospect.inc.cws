@@ -55,6 +55,8 @@ declare function rtxIntrospect(local_node : node);
 
 
 // Basic implementations of the introspection pass
+function rtxIntrospect_walk<T>(local_node : node)
+{ error("rtxIntrospect_walk<"+T+"> is not implemented."); }
 function rtxIntrospect_code<T>(local_node : node, theChunk : node, blockIds : node)
 { error("rtxIntrospect_code<"+T+"> is not implemented."); }
 function rtxIntrospect_decl<T>(local_node : node, theChunk : node, blockIds : node)
@@ -612,7 +614,14 @@ function rtxIntrospectChunk(theChunk : node)
     removeLastElement(blockIds);
 }
 
-
+/* Allow middle or back code portion in one big RTX file */
+function rtxIntrospect_walk<"__rtx_device__">(local_node : node)
+{       return true;}
+function rtxIntrospect_walk<"__rtx_itf__">(local_node : node)
+{       return true;}
+function rtxIntrospect_walk<"__rtx_config__">(local_node : node)
+{       return true;}
+/**/
 
 function    rtxIntrospect_walk<"__block__">(local_node : node)
 {
