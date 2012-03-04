@@ -16,4 +16,21 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             my_logger(${str});
         }
     }
+
+
+    template type Algorithms::Buffer()
+    {
+        chunk ::decl()
+        {
+            struct buf
+            {
+                char *ptr;
+                int sz;
+            };
+        }
+
+        map
+        {
+        }
+    }
 }

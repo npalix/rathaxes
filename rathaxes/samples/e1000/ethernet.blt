@@ -66,6 +66,7 @@ with Ethernet, PCI, LKM, Log
                 struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
                 struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
 
+                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
@@ -84,6 +85,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_xmit(struct sk_buff* skb, struct net_device *dev)
             {
+                ${cast local.dev as Ethernet::Device};
+                ${cast local.skb as Socket::SKBuff};
                 ${pointcut ::IMPLEMENTATION(local.dev, local.skb)};
 
                 return 0;
@@ -105,6 +108,7 @@ with Ethernet, PCI, LKM, Log
                 struct rtx_ethernet_dev* rtx_ether_dev =  netdev_priv(dev);
                 struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
 
+                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
@@ -132,6 +136,7 @@ with Ethernet, PCI, LKM, Log
 
                 rtx_ether_dev = dev_id;
                 ctx = &rtx_ether_dev->hw_ctx;
+                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return IRQ_NONE;

@@ -9,6 +9,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 
             int ${config.devices}_open(dev_t *ctx)
             {
+                ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx)};
             }
         }
@@ -21,6 +22,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             typedef void dev_t;
             int ${config.devices}_open(dev_t *ctx)
             {
+                ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx)};
 
 
@@ -50,6 +52,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             {
                 typedef int ${Algorithms::Buffer};
                 ${Algorithms::Buffer}   buf;
+                ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
                 return (0);
             }
@@ -71,6 +74,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             {
                 typedef int ${Algorithms::Buffer};
                 ${Algorithms::Buffer}   buf;
+                ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
                 return (0);
             }
