@@ -161,7 +161,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/          	                #ignore
 /**/                            #check(rtxNodePlaceHolder(this))
                                 [
-                                        rtx_tpl_pointcut(this)
+                                        rtx_placeholder_noconcat(this)
                                         |
                                         rtx_place_holder(this)
                                 ]
@@ -170,7 +170,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/                            #catch (sError)
 /**/                            | #check(cnormLogError(this, sError))
                 ;
-
+        
 
                 // read all ${...} forms
                 rtx_place_holder(theNode : node) ::=
@@ -287,8 +287,21 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         [ tpl_pointcut_default(theDefault) ]?
                 ;
 
-                rtx_tpl_pointcut(theNode : node) ::=
-                        "${" tpl_pointcut(theNode.body) '}' 
+                // Here, we allow casting a local C variable into a rathaxes type. This casts lasts for the current chunk's scope.
+                tpl_cast(theCast : node) ::=
+                        "cast"
+                        => local typeId;
+                        #continue(sError, "A cast can only be applied to a local variable (\"local.\" is expected).")
+                        "local" '.' rootidentifier:varName
+                        #continue(sError, "Expected 'as' token for a rathaxes cast.")
+                        "as"
+                        #continue(sError, "Expected Type name for casting type.")
+                        rtx_scoped_identifier(typeId)
+                        #check(rtxNodeCast(theCast, varName, typeId))
+                ;
+
+                rtx_placeholder_noconcat(theNode : node) ::=
+                        "${" [ tpl_pointcut(theNode.body) | tpl_cast(theNode.body) ] '}' 
                         [ ';' ]? //>>>????
                 ;
 

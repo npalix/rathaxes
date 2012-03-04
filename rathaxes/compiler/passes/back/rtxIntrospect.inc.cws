@@ -603,6 +603,8 @@ function rtxIntrospect_expr<"__compound__">(local_node : node, theChunk : node,
 /*
  * These functions infer the types of the placeHolders' parameters from the
  * informations retrieved by the Introspect pass.
+ *
+ * The function nmust return TRUE to tell the calling one to remove the placeHodler from the .compile node.
  */
 function rtxIntrospect_InferPlaceHolderTypes<T>(local_node : node, theChunk : node)
 {
@@ -661,6 +663,7 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : no
         pushItem param_types;
         setall param_types#back = paramType;
     }
+    return true;
 }
 
 function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_node : node, theChunk : node)
@@ -669,6 +672,7 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_
     {
         // TODO XXX FIXME
     }
+    return true;
 }
 
 function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_chunk_call__">(local_node : node, theChunk : node)
@@ -684,8 +688,33 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_chunk_call__">(local_nod
     {
         setall local_node.rtype = theChunk.type_map[theVar.name];
     }
+    return true;
 }
 
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_cast__">(local_node : node, theChunk : node)
+{
+    // First add the new type-mapping into the variables hashmap of theChunk.
+    clearVariable(theChunk.variables[local_node.variable]);
+    insert theChunk.variables[local_node.variable].type = "rtxtype";
+    insert theChunk.variables[local_node.variable].type_node;
+    setall theChunk.variables[local_node.variable].type_node = local_node.rtype;
+
+    // Next remove the expr from the code (should only be used as a lone expr)
+    localref theBlock = local_node#parent#parent.ref_placeholder;
+    while (theBlock#parent.type != "__block__")
+    {
+        ref theBlock = theBlock#parent;
+    }
+    // now remove...
+
+    if (!existVariable(theBlock.modifier))
+        insert theBlock.modifier = 0;
+    removeElement(theBlock, local_node#parent#parent.block_idx);
+    decrement(theBlock.modifier);
+
+    // And finally, tell the chunk's iterating function to remove the placeHolder from the .compile too
+    return false;
+}
 
 
 
@@ -746,9 +775,19 @@ function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
 
     // Now that we retrieved every template type used for each variable,
     // let's check/save the types into the placeHolders associated
+    local to_remove;
     foreach placeHolder in local_node.body.compile
     {
-        rtxIntrospect_InferPlaceHolderTypes<placeHolder.node.body.type>(placeHolder.node.body, local_node);
+        if (rtxIntrospect_InferPlaceHolderTypes<placeHolder.node.body.type>(placeHolder.node.body, local_node) == false)
+        {
+            pushItem to_remove;
+            to_remove#back = key(placeHolder);
+        }
+    }
+
+    foreach item in to_remove
+    {
+        removeElement(local_node.body.compile, item);
     }
 }
 

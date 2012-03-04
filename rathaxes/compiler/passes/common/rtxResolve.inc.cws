@@ -322,6 +322,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
             ref theValue = newValue;
         }
 
+        if (existVariable(dst_param.type) && dst_param.type == "__rtx_var__")
+            ref dst_param = dst_param.identifiers#[0].name;
         insert dst_resVals[dst_param];
         setall dst_resVals[dst_param] = theValue;
         increment(idx);
@@ -635,7 +637,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
 
             // Here, the interesting thing to replace is the id's parent.
             localref theNode = local_node#parent.ref_placeholder#parent;
-            if (theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
+            if (!existVariable(mapping.type)
+                && theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
             { setall theNode.id = mapping; }
             else if (theNode.type == "__expr__")
             { setall theNode = mapping; }
@@ -672,10 +675,11 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
 
             // Here, the interesting thing to replace is the id's parent.
             localref theNode = local_node#parent.ref_placeholder#parent;
-            if (theNode.type == "__expr__")
-            { setall theNode = mapping; }
-            else if (theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
+            if (!existVariable(mapping.type)
+                && theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
             { setall theNode.id = mapping; }
+            else if (theNode.type == "__expr__")
+            { setall theNode = mapping; }
             else if (theNode.type == "__decl__")
             { setall theNode.name = mapping; }
             else
@@ -1006,7 +1010,6 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                                                      local_node.body.parameters,
                                                      resVals, parameters);
 
-
                     // Then replace each Tpl CALL by the CALL chunks associated.
                     if (rtxResolve_replaceCall(decl, resVals) == false)
                     {
@@ -1188,9 +1191,11 @@ function type_map<T>(resolverValues : node,
     }
     else
     {
-        //error(BLUE + "Trying value mapping here..." + DEFAULT_COLOR);
+        // just conform to the called function's interface...
         local identifiers;
         foreach n in mappedIds { pushItem identifiers; rtxNodeIdentifier(identifiers#back, n); }
+        //traceLine(BLUE + "Trying value mapping here..." +toString(resolverValues,true) + toString(identifiers,true)+ DEFAULT_COLOR);
+
         local val;
         if (rtxNodeResVal_GetField(resolverValues, identifiers, val) == false)
             error("Could not get value...");

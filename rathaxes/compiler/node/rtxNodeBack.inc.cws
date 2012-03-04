@@ -19,6 +19,7 @@ declare function rtxNodePointcut_Raw(local_node : node, out_ref_placeHolder : re
 declare function rtxNodePlaceHolder(local_node : node);
 declare function rtxNodeCall(local_node : node, theVars : node, theChunk : node, out_ref_params : reference);
 declare function rtxNodeSequenceCall(local_node : node, name : node, args : node);
+declare function rtxNodeCast(local_node : node, varName : value, typeId : node);
 // Tool functions for the resolution/generation
 declare function rtxNodeResVal_GetField(resolver_values : node, idList : node, out_ref : reference);
 declare function rtxNodeResVal(local_node : node);
@@ -227,6 +228,21 @@ function rtxNodeSequenceCall(local_node : node, name : node, args : node)
         setall local_node.seqArgs = args;
 
         return true;
+}
+
+function rtxNodeCast(local_node : node, varName : value, typeId : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_cast__";
+
+    insert local_node.variable;
+    local_node.variable = varName;
+
+    local dummy;
+    if (rtxNodeRType(local_node.rtype, typeId, dummy) == false)
+        return false;
+
+    return true;
 }
 
 /*
