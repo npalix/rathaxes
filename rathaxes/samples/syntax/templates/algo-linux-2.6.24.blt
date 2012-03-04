@@ -3,7 +3,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 {
     template sequence   Algorithms::log(Builtin::string str)
     {
-        chunk LKM::GLOBAL_CODE_DEFINITION
+        chunk LKM::GLOBAL_CODE_DEFINITION()
         {
             int my_logger(const char *str)
             {
@@ -11,7 +11,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             }
         }
 
-        chunk::CALL
+        chunk::CALL()
         {
             my_logger(${str});
         }

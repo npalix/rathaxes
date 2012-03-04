@@ -245,6 +245,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
     {
         traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
                   +", got "+getArraySize(src_params.list)+")." + DEFAULT_COLOR);
+        traceLine(toString(dst_params, true)+toString(src_params, true));
+        error("test");
         return false;
     }
 
@@ -320,8 +322,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
             ref theValue = newValue;
         }
 
-        insert dst_resVals[dst_param.identifiers[0].name];
-        setall dst_resVals[dst_param.identifiers[0].name] = theValue;
+        insert dst_resVals[dst_param];
+        setall dst_resVals[dst_param] = theValue;
         increment(idx);
     }
 
@@ -633,10 +635,10 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
 
             // Here, the interesting thing to replace is the id's parent.
             localref theNode = local_node#parent.ref_placeholder#parent;
-            if (theNode.type == "__expr__")
-            { setall theNode = mapping; }
-            else if (theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
+            if (theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
             { setall theNode.id = mapping; }
+            else if (theNode.type == "__expr__")
+            { setall theNode = mapping; }
             else if (theNode.type == "__decl__")
             { setall theNode.name = mapping; }
             else

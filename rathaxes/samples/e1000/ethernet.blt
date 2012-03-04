@@ -36,7 +36,7 @@ with Ethernet, PCI, LKM, Log
             } *rtx_ethernet_dev_p;
         }
 
-        chunk ::init(net_dev, pci_dev)
+        chunk ::init(Ethernet::Device net_dev, PCI::Device pci_dev)
         {
             ${self} = netdev_priv(${net_dev});
             /*
@@ -152,7 +152,7 @@ with Ethernet, PCI, LKM, Log
         }
 
         /* For now the type is not handled, so we just omit it (see #17) */
-        chunk PCI::pci_probe_hook(/* PCI::Device */ pdev)
+        chunk PCI::pci_probe_hook(PCI::Device pdev)
         {
             /*
              * This typedef is needed to workaround a bug in CNorm __std__
@@ -198,14 +198,14 @@ with Ethernet, PCI, LKM, Log
         }
 
         /* This chunk should be removed (see #26) */
-        chunk   ::CALL
+        chunk   ::CALL()
         {
         }
     }
 
     template sequence   Ethernet::exit()
     {
-        chunk   PCI::pci_remove_hook(/* PCI::Device */ pdev)
+        chunk   PCI::pci_remove_hook(PCI::Device pdev)
         {
             /* workaround for cnorm unstrict */
             typedef int ${Ethernet::Device};
@@ -220,7 +220,7 @@ with Ethernet, PCI, LKM, Log
         }
 
         /* This chunk should be removed (see #26) */
-        chunk ::CALL
+        chunk ::CALL()
         {
         }
     }

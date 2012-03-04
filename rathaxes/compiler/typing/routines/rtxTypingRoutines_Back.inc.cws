@@ -5,6 +5,7 @@ function rtxTypingRoutines_Back_version()
 
 #include "typing/routines/rtxTypingRoutines_Common.inc.cws"
 
+
 /**
  *
  * This function takes a RType node for a pointcut and the name of the itf to
@@ -13,9 +14,9 @@ function rtxTypingRoutines_Back_version()
  * It then checks whether the pointcut was defined within the interface or not.
  *
  */
-function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
+function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : node)
 {
-    local pointcutName = rtxRTypeName<pointcutId.type>(pointcutId);
+    local pointcutName = rtxRTypeName<pointcutRtype.type>(pointcutRtype);
     local itfNode;
     local itfTree;
 
@@ -35,33 +36,33 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutId : node, itfName : node)
                       + "' tree." + DEFAULT_COLOR);
             return false;
         }
-        if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, itfTree) != false)
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, itfTree) != false)
         {
-            pointcutId.scope = itfName;
+            pointcutRtype.name.scope = itfName;
             return true;
         }
     }
 
     // If test did not succeed  AND the interface is not explicitly given:
-    if (pointcutId.scope == "")
+    if (pointcutRtype.name.scope == "")
     {
-        if (pointcutId.global == false)
+        if (pointcutRtype.name.global == false)
         {
             // Then, check for the parent interfaces.
             foreach parent in itfTree.inheritance
             {
                 local name = key(parent);
-                if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutId, name) != false)
+                if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype, name) != false)
                 {
-                    pointcutId.scope = name;
+                    pointcutRtype.name.scope = name;
                     return true;
                 }
             }
         }
         else
         {
-            if (pointcutId.name == "CALL"
-                || pointcutId.name == "IMPLEMENTATION")
+            if (pointcutRtype.name.name == "CALL"
+                || pointcutRtype.name.name == "IMPLEMENTATION")
                 return true;
         }
     }
@@ -105,17 +106,17 @@ function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_er
  * not result in an ambiguous statement, but resolve as the first pointcut
  * encountered.
  */
-function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
+function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
 {
-    local fullPointcut = rtxRTypeName<chunkId.type>(chunkId);
+    local fullPointcut = rtxRTypeName<chunkRtype.type>(chunkRtype);
     foreach item in tpl.body.block
     {
         // If Fully-qulified equals, or if only name matches and not fully qualified
         if (fullPointcut == rtxRTypeName<item.pointcut.type>(item.pointcut)
-            || (chunkId.name == item.pointcut.name && item.pointcut.scope == ""))
+            || (chunkRtype.name.name == item.pointcut.name.name && item.pointcut.name.scope == ""))
         {
             // Then qualify it.
-            item.pointcut.scope = chunkId.scope;
+            item.pointcut.name.scope = chunkRtype.name.scope;
             return true;
         }
     }
@@ -133,9 +134,10 @@ function rtxTypeCheck_TemplateHasChunk(chunkId : node, tpl : node)
  * then defining the pointcut "PLOP" will not result in an ambiguous statement,
  * but resolve as the first pointcut encountered.
  */
-function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
+function rtxTypeCheck_TemplateHasPointcut(pointcutRtype : node, tpl : node)
 {
-    local fullPointcut = rtxRTypeName<pointcutId.type>(pointcutId);
+    local dummy;
+    local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype,dummy);
     foreach chunk in tpl.body.block
     {
         foreach placeHolder in chunk.body.compile
@@ -143,12 +145,32 @@ function rtxTypeCheck_TemplateHasPointcut(pointcutId : node, tpl : node)
             localref body = placeHolder.node.body;
             if (body.type == "__rtx_pointcut__")
             {
-                local fullTplPointcut = rtxRTypeName<body.name.type>(body.name);
-                if (fullTplPointcut == fullPointcut
-                    || (body.name.name == pointcutId.name && body.name.scope == ""))
+                local fullTplPointcut = rtxRTypeFullQualifiedName<"pointcut">(body.rtype,dummy);
+                if (body.rtype.name.name == pointcutRtype.name.name && body.rtype.name.scope == "")
+                {
+                    local result = true;
+                    foreach param in pointcutRtype.params
+                    {
+                        localref pRtype = body.rtype.params#[index(param)];
+                        local nameTpl = rtxRTypeName<pRtype.type>(pRtype);
+                        local nameItf = rtxRTypeName<param.type>(param);
+
+                        if (nameTpl != nameItf)
+                        {
+                            result = false;
+                            break ;
+                        }
+                    }
+                    if (result == true)
+                    {
+                        body.name.scope = pointcutRtype.name.scope;
+                        return true;
+                    }
+                }
+                else if (fullTplPointcut == fullPointcut)
                 {
                     // Then qualify it
-                    body.name.scope = pointcutId.scope;
+                    body.name.scope = pointcutRtype.name.scope;
                     return true;
                 }
             }
@@ -167,8 +189,11 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
     if (itfTplNode.qualifier == "required" || itfTplNode.qualifier == "optional")
     {
         local identifier;
+        local rtype;
+        local dummy;
         rtxNodeIdentifier(identifier, "IMPLEMENTATION", "", true);
-        if (rtxTypeCheck_TemplateHasPointcut(identifier, tplTree) == false)
+        rtxNodeRType(rtype, identifier, dummy);
+        if (rtxTypeCheck_TemplateHasPointcut(rtype, tplTree) == false)
         {
             traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
                       + ": It does not provide the necessary pointcut: '"
@@ -179,16 +204,97 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
     else // case of provided
     {
         local identifier;
+        local rtype;
+        local dummy;
         rtxNodeIdentifier(identifier, "CALL", "", true);
-        if (rtxTypeCheck_TemplateHasChunk(identifier, tplTree) == false)
+        rtxNodeRType(rtype, identifier, dummy);
+        if (rtxTypeCheck_TemplateHasChunk(rtype, tplTree) == false)
         {
             traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
                       + ": It does not provide the necessary pointcut: '"
-                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+                      + rtxRTypeName<rtype.type>(rtype) + "'" + DEFAULT_COLOR);
             return false;
         }
     }
     return true;
+}
+
+
+
+/*
+ *
+ * This pack of functions check each type of placeHolder that the Meta pass can analyze
+ *
+ */
+declare function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node);
+
+function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node)
+{
+    traceLine(RED + "[Error] rtxTypeCheck_CheckPlaceholder: Placeholder type '"+T+"' not type-checked." + DEFAULT_COLOR);
+    return false;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChunk : node, itfTree : node)
+{
+    return true;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : node, theChunk : node, itfTree : node)
+{
+    traceLine(YELLOW + "[Warning] Function not implemented : rtxType_CheckPlaceholder<\"__rtx_tpl_chunk_call__\">()."+ DEFAULT_COLOR);
+    return true;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder : node, theChunk : node, itfTree : node)
+{
+    local rtype;
+    local param_types;
+    rtxNodeRType(rtype, placeHolder.seqName, param_types);
+    select type in placeHolder.seqArgs[].rtype
+    {
+        pushItem param_types;
+        setall param_types#back = type;
+    }
+    
+    local itfName;
+    if (rtype.name.scope == "")
+        itfName = theChunk.pointcut.name.scope;
+    else
+        itfName = rtype.name.scope;
+
+    local dummy_list;
+    local qualifier;
+    if (rtxTypeCheck_ItfNameDefinesSequence(rtype, itfName, dummy_list, qualifier) == true)
+    {
+        // We're trying to call the ::CALL  chunk, so it is mandatory that the sequence is provided
+        if (qualifier == "provided")
+            return true;
+        else
+            traceLine(RED + "[Error] The Sequence was found but is a '" + qualifier
+                      + "' and thus does not provide the '::CALL' chunk." + DEFAULT_COLOR);
+    }
+
+    return false;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, theChunk : node, itfTree : node)
+{
+    // 
+    // We need to catch the builtins before trying the generic solution
+    // 
+    localref id = placeHolder.rtype.name;
+    if (id.scope == "" && id.global == true)
+    {
+        switch (id.name)
+        {
+        case "IMPLEMENTATION":
+            localref tplRtype = theChunk#parent#parent#parent.prototype.rtype;
+            return rtxTypeCheck_ParametersMatch(tplRtype, placeHolder.rtype, "pointcut");
+            break ;
+        default:
+        }
+    }
+    return rtxTypeCheck_ItfDefinesPointcut(placeHolder.rtype, itfTree);
 }
 
 
@@ -224,6 +330,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
     local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
 
     // If there are builtin chunks mandatory, check them here.
+
     // Now, check that every mapping is provided by the template,
     foreach mapId in itfTplNode
     {
@@ -300,11 +407,12 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             }
             if (item.specifier == "pointcut"
                 && item.qualifier == "provided"
-                && rtxTypeCheck_TemplateHasPointcut(item.body.name, tplTree) == false)
+                && rtxTypeCheck_TemplateHasPointcut(item.rtype, tplTree) == false)
             {
+                local dummy;
                 traceLine(RED + "[Error] Sequence template '" + tplName
                           + "' does not provide the pointcut '"
-                          + rtxRTypeName<item.body.name.type>(item.body.name) + "'" + DEFAULT_COLOR);
+                          + rtxRTypeFullQualifiedName<"pointcut">(item.rtype,dummy) + "'" + DEFAULT_COLOR);
                     increment(errcount);
             }
         }
@@ -323,18 +431,31 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
         if (rtxTypeCheck_ChunkIsBuiltin(chunk.pointcut, itfTplNode, builtinCheckError) == false
             && builtinCheckError != true)
         {
-            local name = chunk.pointcut.scope;
-            if (name == "" && chunk.pointcut.global == false)
+            local name = chunk.pointcut.name.scope;
+            if (name == "" && chunk.pointcut.name.global == false)
             {
                 name = tplTree.prototype.rtype.name.scope;
                 traceLine("Setting default itf to "+name);
             }
-            else if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name) == false)
+            if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name) == false)
             {
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
                           + "' has never been defined." + DEFAULT_COLOR);
                 increment(errcount);
+            }
+
+            // The placeHolder checkers need the whole Interface tree, so unwind up to it...
+            localref itfTree = itfTplNode;
+            while (itfTree.type != "__rtx_itf__") { ref itfTree = itfTree#parent; }
+            // Now, in the chunk, let's check every placeHolder...
+            select ph in chunk.body.compile[].node
+            {
+                if (rtxTypeCheck_CheckPlaceholder<ph.body.type>(ph.body, chunk, itfTree) == false)
+                {
+                    traceLine(RED + "[Error] Placeholder '" + ph#parent.template_expr + "' could not be validated." + DEFAULT_COLOR);
+                    increment(errcount);
+                }
             }
         }
         else if (builtinCheckError == true) // builtinCheck detected an error.

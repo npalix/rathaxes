@@ -4,14 +4,14 @@ values LKM::OS=Linux, LKM::version >= 2.6.24
     template sequence LKM::load()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
-        chunk GLOBAL_DATA_DECLARATION
+        chunk GLOBAL_DATA_DECLARATION()
         {
             struct module myModule = {
-                ${ pointcut INIT_LKM_FPTRS default: .open = NULL }
+                ${ pointcut INIT_LKM_FPTRS() default: .open = NULL }
             };
         }
 
-        chunk GLOBAL_CODE_DEFINITION
+        chunk GLOBAL_CODE_DEFINITION()
         {
             int rtxModuleInit(void)
             {
@@ -20,14 +20,14 @@ values LKM::OS=Linux, LKM::version >= 2.6.24
             module_init(rtxModuleInit);
         }
 
-        chunk ::CALL
+        chunk ::CALL()
         { }
     }
 
     template sequence LKM::unload()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
-        chunk GLOBAL_DATA_DECLARATION
+        chunk GLOBAL_DATA_DECLARATION()
         {
             int rtxModuleExit(void)
             {
@@ -35,12 +35,12 @@ values LKM::OS=Linux, LKM::version >= 2.6.24
             }
         }
 
-        chunk GLOBAL_CODE_DEFINITION
+        chunk GLOBAL_CODE_DEFINITION()
         {
             module_exit(rtxModuleExit);
         }
 
-        chunk ::CALL
+        chunk ::CALL()
         { }
     }
 }

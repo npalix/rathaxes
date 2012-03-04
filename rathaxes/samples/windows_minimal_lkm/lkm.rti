@@ -1,10 +1,10 @@
 interface LKM
 {
-    provided pointcut   LKM::includes;
+    provided pointcut   LKM::includes();
     /* maybe it should be possible to use chunk ::decl in sequence templates? */
-    provided pointcut   LKM::prototypes;
-    provided pointcut   LKM::data;
-    provided pointcut   LKM::code;
+    provided pointcut   LKM::prototypes();
+    provided pointcut   LKM::data();
+    provided pointcut   LKM::code();
 
     required variable ::string  LKM::author;
     required variable ::string  LKM::description;
@@ -12,12 +12,12 @@ interface LKM
 
     required sequence   LKM::init()
     {
-        provided chunk      LKM::includes;
-        provided chunk      LKM::code;
+        provided chunk      LKM::includes();
+        provided chunk      LKM::code();
     }
 
     required sequence   LKM::exit()
     {
-        provided chunk      LKM::code;
+        provided chunk      LKM::code();
     }
 }

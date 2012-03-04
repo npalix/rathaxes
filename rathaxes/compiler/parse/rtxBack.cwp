@@ -195,23 +195,19 @@ rtx_stmt<"chunk">(theBlock : node) ::=
         // Optional Joinpoint (argument of the pointcut)
         // Build the chunk node, and retrieve the references to it's internals
         // (body and parameters)
-/**/    => local parameters;
+/**/    => local pointcutId;
+/**/    => local param_types;
+/**/    => local param_ids;
 /**/    => local body;
 /**/    => local pointcut;
-/**/    #check(rtxNodeChunk(lastNode, pointcut, parameters, body))
-        rtx_scoped_identifier(pointcut)
-/**/      #check(rtxNodeVarList(parameters))
-        [ rtx_stmt_chunk_params(parameters) ]?
+/**/    #check(rtxNodeChunk(lastNode, pointcut, param_ids, body))
+        rtx_scoped_identifier(pointcutId)
+        #check(rtxNodeRType(pointcut, pointcutId, param_types))
+
+        #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<pointcut.type>(pointcut)+"'.")
+        rtx_parameter_list(param_types, param_ids)
 /**/    #continue(sError, "Expected block after chunk declaration.")
         rtx_chunk_body(body)
-;
-
-// If there is any parameters to the chunk, we push it into a param list
-rtx_stmt_chunk_params(theParams : node) ::=
-        '('
-        [ rtx_var_list(theParams) ]?
-/**/    #continue(sError, "Expected ')' to end parameter list.")
-        ')'
 ;
 
 // Chunk body

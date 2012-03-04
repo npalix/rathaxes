@@ -5,68 +5,8 @@ function rtxTypeHash_version()
 {return "1.0";}
 
 
-declare function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node);
 declare function rtxTypeHash_walk<T>(local_node : node, type_map : node);
 declare function rtxTypeHash(local_node : node);
-
-
-
-
-function rtxTypeHash_placeHolder<phType>(local_node : node, type_map : node)
-{ error(RED + "rtxTypeHash_placeHolder<"+phType+"> not implemented yet."+ DEFAULT_COLOR); }
-
-
-function rtxTypeHash_placeHolder<"__rtx_var__">(local_node : node, type_map : node)
-{
-}
-
-function rtxTypeHash_placeHolder<"__rtx_pointcut__">(local_node : node, type_map : node)
-{
-}
-
-function rtxTypeHash_placeHolder<"__rtx_tpl_chunk_call__">(local_node : node, type_map : node)
-{
-}
-
-/*
- * In the case of a call, if the param's type is a symbol, let's check if its type is a rtype or a ctype.
- * If it's a rtype, retrieve it now.
- */
-function rtxTypeHash_placeHolder<"__rtx_tpl_sequence_call__">(local_node : node, type_map : node)
-{
-    foreach arg in local_node.seqArgs
-    {
-        // If it's a builtin type...
-        if (findElement(arg.type+".inc.cws", local_node#root.rtxTypes))
-        {
-            if (arg.type == "symbol")
-            {
-                // Search for a rtype in the type_map of the chunk
-                localref refRtype = arg;
-                while (refRtype.type != "__rtx_chunk__")
-                {
-                    ref refRtype = refRtype#parent;
-                }
-                ref refRtype = refRtype.type_map;
-                if (findElement(arg.val, refRtype))
-                {
-                    insert arg.rtype;
-                    setall arg.rtype = refRtype[arg.val];
-                }
-            }
-            else
-            {
-                local theId;
-                local dummy;
-
-                insert arg.rtype;
-                rtxNodeIdentifier(theId, arg.type, "", true);
-                rtxNodeRType(arg.rtype, theId, dummy);
-            }
-        }
-    }
-}
-
 
 function rtxTypeHash_walk<T>(local_node : node, type_map : node)
 { error(RED + "rtxTypeHash_walk<" + T + "> not implemented yet." + DEFAULT_COLOR); }
@@ -131,9 +71,17 @@ function rtxTypeHash_walk<"__rtx_chunk__">(local_node : node, type_map : node)
     insert local_node.type_map;
     setall local_node.type_map = type_map;
 
-    foreach ph in local_node.body.compile
+    // Useless, now...
+    //foreach ph in local_node.body.compile
+    //{
+    //    rtxTypeHash_placeHolder<ph.node.body.type>(ph.node.body, type_map);
+    //}
+
+    foreach type in local_node.pointcut.params
     {
-        rtxTypeHash_placeHolder<ph.node.body.type>(ph.node.body, type_map);
+        local id = local_node.parameters.list#[index(type)];
+        insert local_node.type_map[id];
+        setall local_node.type_map[id] = type;
     }
 }
 

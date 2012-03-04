@@ -9,16 +9,14 @@ interface e1000 : Socket, Ethernet, PCI, LKM
 
     provided sequence   e1000::create_device()
     {
-        /* should take PCI::Device and Ethernet::Device args: */
-        provided chunk  Ethernet::create_device;
-        provided chunk  ::CALL;
+        provided chunk  Ethernet::create_device(PCI::Device, Ethernet::Device);
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::destroy_device()
     {
-        /* should take PCI::Device and Ethernet::Device args: */
-        provided chunk  Ethernet::destroy_device;
-        provided chunk  ::CALL;
+        provided chunk  Ethernet::destroy_device(PCI::Device, Ethernet::Device);
+        provided chunk  ::CALL();
     }
 
     /*
@@ -27,59 +25,59 @@ interface e1000 : Socket, Ethernet, PCI, LKM
      */
     provided sequence   e1000::print_status(Ethernet::Device)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::setup_interrupt_handler(Ethernet::Device)
     {
-        provided chunk  LKM::includes; // works without this one
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::includes(); // works without this one
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::free_interrupt_handler(Ethernet::Device)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::activate_device_interruption(Ethernet::Device)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::set_up_device(Ethernet::Device)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::handle_interrupt(Ethernet::Device)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::register_read32(e1000::Context, e1000::Register)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::register_write32(e1000::Context, e1000::Register, ::number)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 
     provided sequence   e1000::register_set32(e1000::Context, e1000::Register, ::number)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
-        provided chunk  ::CALL;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
     }
 }

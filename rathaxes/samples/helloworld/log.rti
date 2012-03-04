@@ -2,6 +2,6 @@ interface Log : Builtin, Main /* Log needs types */
 {
     provided sequence Log::info(Builtin::string)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 }

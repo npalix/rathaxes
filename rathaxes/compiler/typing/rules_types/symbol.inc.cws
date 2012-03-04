@@ -113,6 +113,23 @@ function type_map<"Builtin::symbol">(resolverValues : node,
         traceLine("Resolve Value:" + toString(resolverValues));
         traceLine("RType:" + toString(theRtype));
         traceLine("PH:" + toString(placeHolder));
+
+        
+
+        traceLine(toString(resolverValues,true));
+        local tplVarName = resolverValues["self"].body;
+        localref data = resolverValues[tplVarName].body;
+
+        // Here, we only need the pure literal data
+        if (existVariable(data.type))
+        {
+            if (!existVariable(data.operator) || data.operator != "__id__")
+                error("Injection not managed for type_map<Builtin::symbol>()");
+            setall out_node = data.id;
+        }
+        else
+            setall out_node = data;
+
         return true;
 }
 

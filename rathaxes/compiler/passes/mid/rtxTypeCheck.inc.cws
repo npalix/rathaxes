@@ -28,7 +28,7 @@ function rtxMiddle_TypeCheck(local_node : node)
                 traceLine("Error while checking types.");
                 error("Error while checking types.");
         }
-
+     
 }
 
 /* Allow middle or back code portion in one big RTX file */
@@ -214,8 +214,9 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
         {
             if (rtxTypeCheck_ItfCheckPointcut(decl.body.pointcut, currentInterface) == false)
             {
+                local dummy;
                 traceLine(RED + "[Error] Pointcut '"
-                          + rtxRTypeName<decl.body.pointcut.type>(decl.body.pointcut)
+                          + rtxRTypeFullQualifiedName<"pointcut">(decl.body.pointcut, dummy)
                           +"' is not declared." + DEFAULT_COLOR);
                 increment(errcount);
             }

@@ -96,53 +96,54 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
  * This function checks whether an interface declares a pointcut described
  * by a RType node, by checking inside its tree.
  */
-function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode : node)
+function        rtxTypeCheck_ItfCheckPointcut(pointcutRtype : node, interfaceNode : node)
 {
-    if (pointcutId.type != "__rtx_id__")
-        error("Bad node type. Received: " + pointcutId.type);
+    if (pointcutRtype.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + pointcutRtype.type);
+
 
     // Unkown scope and not explicit global ?
-    if (pointcutId.scope == "" && pointcutId.global == false)
+    if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
     {
-        if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode) == true)
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
         {
             // then set the interface's name
-            pointcutId.scope = interfaceNode.name;
+            pointcutRtype.name.scope = interfaceNode.name;
             return true;
         }
 
         // Recursive check in parents interfaces.
         foreach parentInterface in interfaceNode.inheritance
         {
-            if (rtxTypeCheck_ItfCheckPointcut(pointcutId, parentInterface) == true)
+            if (rtxTypeCheck_ItfCheckPointcut(pointcutRtype, parentInterface) == true)
             {
                 // then set the interface's name
-                pointcutId.scope = parentInterface.name;
+                pointcutRtype.name.scope = parentInterface.name;
                 return true;
             }
         }
     }
-    else if (pointcutId.global == false) // known scope
+    else if (pointcutRtype.name.global == false) // known scope
     {
-        if (pointcutId.scope != interfaceNode.name && !isEmpty(interfaceNode.inheritance))
+        if (pointcutRtype.name.scope != interfaceNode.name && !isEmpty(interfaceNode.inheritance))
         {
-            if (!findElement(pointcutId.scope, interfaceNode.inheritance))
+            if (!findElement(pointcutRtype.name.scope, interfaceNode.inheritance))
             {
                 foreach parentInterface in interfaceNode.inheritance
                 {
-                    if (rtxTypeCheck_ItfCheckPointcut(pointcutId, parentInterface) == true)
+                    if (rtxTypeCheck_ItfCheckPointcut(pointcutRtype, parentInterface) == true)
                         return true;
                 }
                 traceLine(RED + "[Error] The interface "+interfaceNode.name
-                          +" does not depend on interface '"+pointcutId.scope
+                          +" does not depend on interface '"+pointcutRtype.name.scope
                           +"': The pointcut cannot be declared." + DEFAULT_COLOR);
                 return false;
             }
 
-            if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode.inheritance[pointcutId.scope]) == true)
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode.inheritance[pointcutRtype.name.scope]) == true)
                 return true;
         }
-        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutId, interfaceNode) == true)
+        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
             return true;
 
     }
@@ -150,11 +151,16 @@ function        rtxTypeCheck_ItfCheckPointcut(pointcutId : node, interfaceNode :
     {
         // XXX TODO FIXME
         // builtin item management.
-        if (pointcutId.name == "CALL"
-            || pointcutId.name == "IMPLEMENTATION")
+        if (pointcutRtype.name.name == "CALL"
+            || pointcutRtype.name.name == "IMPLEMENTATION")
             return true;
     }
     return false;
 }
+
+
+
+
+
 
 #end

@@ -21,17 +21,17 @@ generateString({
     with LKM, Userland
     values LKM::OS=pigeonMouette, LKM::maj=0, LKM::min=1
     {
-        ${pointcut Userland::theTestPointcut(config.plop)
+        ${pointcut Userland::theTestPointcut(config.plop.name)
          default:
              NULL;
         };
-        ${pointcut Userland::defaulted_pointcut
+        ${pointcut Userland::defaulted_pointcut()
          default:
              test = 3;
         };
         template sequence Userland::open(Context ctx)
         {
-            chunk LKM::typedefs_declaration
+            chunk LKM::typedefs_declaration()
             {
                 typedef int ${KK};
                 typedef int ${TYPE};
@@ -44,7 +44,7 @@ generateString({
                 //${TYPE} bla;
             }
 
-            chunk LKM::function_declaration
+            chunk LKM::function_declaration()
             {
                 int    module_open(int a)
                 {
@@ -59,17 +59,17 @@ generateString({
                 
             }
 
-            chunk LKM::init_fptrs(symbol)
+            chunk LKM::init_fptrs(Builtin::symbol symbol)
             {
-                ${symbol.name}.open = &module_open;
+                ${symbol}.open = &module_open;
             }
 
-            chunk Userland::theTestPointcut(OneRandomSymbol)
+            chunk Userland::theTestPointcut(Builtin::symbol OneRandomSymbol)
             {
-                ${OneRandomSymbol.name} |= 1;
+                ${OneRandomSymbol} |= 1;
             }
 
-            chunk ::CALL
+            chunk ::CALL()
             {
                 void fake_func()
                 {
@@ -80,7 +80,7 @@ generateString({
 
         template sequence LKM::test(Context ctx)
         {
-            chunk LKM::function_declaration
+            chunk LKM::function_declaration()
             {
                 int test_${ctx.name}(void)
                 {
@@ -89,12 +89,12 @@ generateString({
                 }
             }
 
-            chunk Userland::theTestPointcut(OneRandomSymbol)
+            chunk Userland::theTestPointcut(Builtin::symbol OneRandomSymbol)
             {
-                ${OneRandomSymbol.name} |= 2;
+                ${OneRandomSymbol} |= 2;
             }
 
-            chunk ::type_call
+            chunk ::type_call()
             {
                 // Soon the unstrict cnorm...
                 typedef int ${Builtin::Buffer};
@@ -102,7 +102,7 @@ generateString({
                 ${local.buf.init(42)};
             }
 
-            chunk ::CALL
+            chunk ::CALL()
             {
                 // Soon the unstrict cnorm...
                 typedef int ${Builtin::Buffer};
@@ -128,7 +128,7 @@ generateString({
 
         template sequence LKM::test_call(Context ctx)
         {
-            chunk ::CALL
+            chunk ::CALL()
             {
                 ${LKM::test(ctx)};
             }
@@ -136,7 +136,7 @@ generateString({
 
         template type Builtin::Buffer()
         {
-            chunk ::decl
+            chunk ::decl()
             {
                 typedef struct rtxBuiltinBuffer
                 {
@@ -144,12 +144,12 @@ generateString({
                     char                    *buf;
                 } t_rtxBltinBuf;
             }
-            chunk ::init(size)
+            chunk ::init(Builtin::number size)
             {
                 ${self}.sz = ${size};
                 ${self}.buf = kmalloc(${self}.sz * sizeof(*${self}.buf));
             }
-            chunk ::clean
+            chunk ::clean()
             {
                 kfree(${self}.buf);
             }
@@ -167,9 +167,9 @@ generateString({
         template type ::Context()
         {
             /*
-            chunk ::decl { }
-            chunk ::init { }
-            chunk ::clean { }
+            chunk ::decl() { }
+            chunk ::init() { }
+            chunk ::clean() { }
             //*/
             map
             {

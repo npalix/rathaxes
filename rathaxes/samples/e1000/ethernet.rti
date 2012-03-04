@@ -6,40 +6,40 @@ interface Ethernet : Socket, PCI, LKM
 
     required sequence   Ethernet::open(Ethernet::Device)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
     }
 
     required sequence   Ethernet::send(Ethernet::Device dev, Socket::SKBuff skb)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
     }
 
     required sequence   Ethernet::close(Ethernet::Device)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
     }
 
     required sequence   Ethernet::interrupt_handler(Ethernet::Device)
     {
-        provided chunk  LKM::prototypes;
-        provided chunk  LKM::code;
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
     }
 
     provided sequence   Ethernet::init()
     {
-        provided chunk  LKM::data;
-        provided chunk  PCI::pci_probe_hook; /* should take a PCI::Device arg */
+        provided chunk  LKM::data();
+        provided chunk  PCI::pci_probe_hook(PCI::Device);
 
-        provided pointcut   Ethernet::create_device;
+        provided pointcut   Ethernet::create_device(PCI::Device, Ethernet::Device);
     }
 
     provided sequence   Ethernet::exit()
     {
-        provided chunk  PCI::pci_remove_hook; /* should take a PCI::Device arg */
+        provided chunk  PCI::pci_remove_hook(PCI::Device);
 
-        provided pointcut   Ethernet::destroy_device;
+        provided pointcut   Ethernet::destroy_device(PCI::Device, Ethernet::Device);
     }
 }

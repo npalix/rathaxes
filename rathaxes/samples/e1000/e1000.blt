@@ -62,7 +62,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init(value)
+        chunk   ::init(Builtin::number value)
         {
             ${self} = ${value};
         }
@@ -138,7 +138,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::create_device()
     {
-        chunk Ethernet::create_device(/* PCI::Device */ pdev, /* Ethernet::Device */ rtx_ether_ctx)
+        chunk Ethernet::create_device(PCI::Device pdev, Ethernet::Device rtx_ether_ctx)
         {
             /*
              * PCI init stuff:
@@ -210,14 +210,14 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk ::CALL
+        chunk ::CALL()
         {
         }
     }
 
     template sequence   e1000::destroy_device()
     {
-        chunk   Ethernet::destroy_device(/* PCI::Device */ pdev, /* Ethernet::Device */ rtx_ether_ctx)
+        chunk   Ethernet::destroy_device(PCI::Device pdev, Ethernet::Device rtx_ether_ctx)
         {
             /*
              * Here, we should have some checks to avoid to free resources that
@@ -227,7 +227,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             pci_release_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars);
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
         }
     }
@@ -253,7 +253,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             rtx_e1000_print_status(&${ctx}->hw_ctx);
         }
@@ -291,7 +291,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             rtx_e1000_register_read32(${ctx}, ${reg_offset});
         }
@@ -312,7 +312,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             rtx_e1000_register_write32(${ctx}, ${reg_offset}, ${value});
         }
@@ -333,7 +333,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             rtx_e1000_register_set32(${ctx}, ${reg_offset}, ${value});
         }
@@ -372,7 +372,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             // this is an hack for the scope
             (void)1;
@@ -402,7 +402,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk ::CALL
+        chunk ::CALL()
         {
             e1000_free_interrupt_handler(${ctx});
         }
@@ -410,7 +410,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::activate_device_interruption(Ethernet::Device ctx)
     {
-        chunk  ::CALL
+        chunk  ::CALL()
         {
             rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_IMS,
                                        E1000_INTR_TXDW |
@@ -423,7 +423,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::set_up_device(Ethernet::Device ctx)
     {
-        chunk  ::CALL
+        chunk  ::CALL()
         {
             rtx_e1000_register_set32(&${ctx}->hw_ctx, E1000_CTRL,
                                      E1000_CMD_ASDE |
@@ -435,7 +435,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::handle_interrupt(Ethernet::Device ctx)
     {
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             int intr;
 

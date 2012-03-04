@@ -34,10 +34,10 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided pointcut           LKM::includes;
-            provided pointcut           LKM::prototypes;
-            provided pointcut           LKM::data;
-            provided pointcut           LKM::code;
+            provided pointcut           LKM::includes();
+            provided pointcut           LKM::prototypes();
+            provided pointcut           LKM::data();
+            provided pointcut           LKM::code();
         
         
             required sequence           LKM::open();
@@ -56,13 +56,13 @@ generateString({
         with LKM {
 
         /* AUTO GENERATED FILE*/
-                ${pointcut      LKM::includes};
+                ${pointcut      LKM::includes()};
 
-                ${pointcut      LKM::prototypes};
+                ${pointcut      LKM::prototypes()};
                 
-                ${pointcut      LKM::data};
+                ${pointcut      LKM::data()};
                 
-                ${pointcut      LKM::code};
+                ${pointcut      LKM::code()};
         /* END*/
 
         template sequence LKM::open()

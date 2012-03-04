@@ -62,22 +62,32 @@ rtx_type_list(theDecl : node, theRtype : node) ::=
 
 rtx_itf_stmt<"pointcut">(theDecl : node, nameList : node, theQualif : value) ::=
     => local nameNode;
-    => local params;
+    => local param_types;
+    => local dummy_ids; // actually ignored in the interface
     => local default; // Actually unused in the interface.
 
-    #continue(sError, "Expected pointcut name after declaration type.")
+    #continue(sError, "Expected pointcut name after pointcut declaration.")
     rtx_scoped_identifier(nameNode)
-    #check(rtxNodeItfPointcutDeclaration(theDecl, theQualif, nameNode, params))
-    #continue(sError, "Expected parameters to pointcut '"+nameNode.name+"'")
-    [rtx_pointcut_parameter(params)]?
+    #check(rtxNodeItfPointcutDeclaration(theDecl, theQualif, nameNode, param_types))
+
+    #continue(sError, "Expected parameters to pointcut '"+rtxRTypeName<nameNode.type>(nameNode)+"'.")
+    rtx_parameter_list(param_types, dummy_ids)
+
     #continue(sError, "Missing ';' ending pointcut declaration.")
     ';'
 ;
 
 rtx_itf_stmt<"chunk">(theDecl : node, nameList : node, theQualif : value) ::=
     => local id;
+    => local param_types;
+    => local dummy_ids; // actually ignored in the interface
+
+    #continue(sError,  "Expected pointcut name after chunk declaration.")
     rtx_scoped_identifier(id)
-    #check(rtxNodeItfChunkDeclaration(theDecl, id, theQualif))
+    #check(rtxNodeItfChunkDeclaration(theDecl, id, param_types, theQualif))
+
+    #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<id.type>(id)+"'.")
+    rtx_parameter_list(param_types, dummy_ids)
     #continue(sError, "Missing ';' ending chunk declaration.")
     ';'
 ;

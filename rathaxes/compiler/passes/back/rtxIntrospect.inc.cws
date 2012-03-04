@@ -46,6 +46,8 @@ declare function rtxIntrospect_checkPlaceHolder(identifier : node, theChunk : no
 declare function rtxIntrospect_TypeRType(identifier : node, rtype : node);
 declare function rtxIntrospect_copyBlockList(dst : node, src : node);
 declare function rtxIntrospect_registerVar(identifier : value, theNode : node, theChunk : node, blockIds : node);
+
+declare function rtxIntrospect_InferPlaceHolderTypes<T>(local_node : node, theChunk : node);
 declare function rtxIntrospectChunk(theChunk : node);
 
 declare function rtxIntrospect_walk<T>(local_node : node);
@@ -74,7 +76,7 @@ function rtxIntrospect_expr<T>(local_node : node, theChunk : node, blockIds : no
  * Identifier : value of the identifier to test.
  * theChunk : node of the chunk
  * 
- * Checks wether the identifier seems liek a placeHolder and then check
+ * Checks wether the identifier seems like a placeHolder and then check
  * wether it really is or not. If it is, create a reference to the pH node.
  */
 function rtxIntrospect_checkPlaceHolder(identifier : node, theChunk : node, out_ref_pHNode : reference)
@@ -597,6 +599,98 @@ function rtxIntrospect_expr<"__compound__">(local_node : node, theChunk : node,
 
 
 
+
+/*
+ * These functions infer the types of the placeHolders' parameters from the
+ * informations retrieved by the Introspect pass.
+ */
+function rtxIntrospect_InferPlaceHolderTypes<T>(local_node : node, theChunk : node)
+{
+    error(RED + "[Error] rtxIntrospect_InferPlaceHolderTypes<'"+T+"'> is not implemented." + DEFAULT_COLOR);
+}
+
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_var__">(local_node : node, theChunk : node)
+{
+    return true;
+}
+
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : node, theChunk : node)
+{
+    local param_types;
+
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, local_node.name, param_types);
+    foreach param in local_node.parameters.list
+    {
+        local   paramType;
+        // XXX TODO FIXME
+        // We may have some multiple dereferencing types (i.e.: ${pointcut test::ptcut(local.buf.ptr)} )
+        localref theVar = param.identifiers#[0];
+        if (theVar.name == "local")
+        {
+            ref theVar = param.identifiers#[1];
+            // Local, so should be a local C variable.
+            if (findElement(theVar.name, theChunk.variables))
+            {
+                if (theChunk.variables[theVar.name].type == "rtxtype")
+                    ref paramType = theChunk.variables[theVar.name].type_node;
+                else
+                {
+                    // That's it : It's a Builtin::Symbol, then.
+                    local id;
+                    local dummy;
+                    rtxNodeIdentifier(id, "Symbol", "Builtin");
+                    rtxNodeRType(paramType, id, dummy);
+                }
+            }
+            else
+            {
+                error(RED + "[Error] The type of parameter number " + $index(param) + 1$
+                      + " of pointcut '" + local_node#parent.template_expr
+                      + "' could not be identified." + DEFAULT_COLOR);
+            }
+        }
+        else // should be a template argument then
+        {
+            if (findElement(theVar.name, theChunk.type_map))
+            {
+                ref paramType = theChunk.type_map[theVar.name];
+            }
+        }
+
+        pushItem param_types;
+        setall param_types#back = paramType;
+    }
+}
+
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_node : node, theChunk : node)
+{
+    foreach param in local_node.seqArgs
+    {
+        // TODO XXX FIXME
+    }
+}
+
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_chunk_call__">(local_node : node, theChunk : node)
+{
+    // XXX TODO FIXME
+    // We may have some multiple dereferencing types (i.e.: ${local.buf.init()})
+    localref theVar = local_node.vars#[0];
+    if (theVar.name == "local")
+    {
+        ref theVar = local_node.vars#[1];
+    }
+    if (findElement(theVar.name, theChunk.type_map))
+    {
+        setall local_node.rtype = theChunk.type_map[theVar.name];
+    }
+}
+
+
+
+
+
+
 function rtxIntrospectChunk(theChunk : node)
 {
     insert theChunk.variables;
@@ -654,25 +748,7 @@ function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
     // let's check/save the types into the placeHolders associated
     foreach placeHolder in local_node.body.compile
     {
-        localref nodeBody = placeHolder.node.body;
-        // We Need to have the type stored for the calls...
-        if (nodeBody.type == "__rtx_tpl_chunk_call__")
-        {
-            // XXX TODO FIXME
-            // Here we need some function to instrument this,
-            // so that we avoid breaking everything at every change
-            // XXX TODO FIXME
-            // We may have some multiple dereferencing types (i.e.: ${local.buf.init()})
-            localref theVar = nodeBody.vars#[0];
-            if (theVar.name == "local")
-            {
-                ref theVar = nodeBody.vars#[1];
-            }
-            if (findElement(theVar.name, local_node.type_map))
-            {
-                setall nodeBody.rtype = local_node.type_map[theVar.name];
-            }
-        }
+        rtxIntrospect_InferPlaceHolderTypes<placeHolder.node.body.type>(placeHolder.node.body, local_node);
     }
 }
 

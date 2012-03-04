@@ -1,10 +1,10 @@
 with LKM
 {
     /* Skel of the generated C file: */
-    ${pointcut LKM::includes};
-    ${pointcut LKM::prototypes};
-    ${pointcut LKM::data};
-    ${pointcut LKM::code};
+    ${pointcut LKM::includes()};
+    ${pointcut LKM::prototypes()};
+    ${pointcut LKM::data()};
+    ${pointcut LKM::code()};
 
     template sequence   LKM::init()
     {
@@ -23,7 +23,7 @@ with LKM
                              /*IN*/ struct _UNICODE_STRING*  RegistryPath)
             {
                 DriverObject->DriverUnload = &DriverExit;
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION()};
 
                 return STATUS_SUCCESS;
             }
@@ -42,7 +42,7 @@ with LKM
         {
             void DriverExit(/*IN*/ struct _DRIVER_OBJECT *DriverObject)
             {
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION()};
             }
 
         }

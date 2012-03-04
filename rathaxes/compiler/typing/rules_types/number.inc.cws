@@ -36,7 +36,12 @@ function type_map<"Builtin::number">(resolverValues : node,
         // Here, the data should already be a cnorm Literal node.
         local tplVarName = resolverValues["self"].body;
         localref data = resolverValues[tplVarName].body;
-        setall out_node = data;
+
+        // Here, we only need the pure literal data
+        if (existVariable(data.operator) && data.operator == "__id__")
+            setall out_node = data.id;
+        else
+            setall out_node = data.literal;
         return true;
     }
     else

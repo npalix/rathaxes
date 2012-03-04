@@ -2,7 +2,7 @@ with Log
 {
     template sequence   Log::info(Builtin::string msg)
     {
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             pr_info("%s: %s\n", ${config.name}, ${msg});
         }

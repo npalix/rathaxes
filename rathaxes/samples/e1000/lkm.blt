@@ -1,10 +1,10 @@
 with LKM
 {
     /* Skel of the generated C file: */
-    ${pointcut LKM::includes};
-    ${pointcut LKM::prototypes};
-    ${pointcut LKM::data};
-    ${pointcut LKM::code};
+    ${pointcut LKM::includes()};
+    ${pointcut LKM::prototypes()};
+    ${pointcut LKM::data()};
+    ${pointcut LKM::code()};
 
     template sequence   LKM::init()
     {
@@ -29,8 +29,8 @@ with LKM
              */
             static int __attribute__((__section__(".init.text")))  rtx_module_init(void)
             {
-                ${pointcut ::IMPLEMENTATION};
-                ${pointcut LKM::init_bus_hook};
+                ${pointcut ::IMPLEMENTATION()};
+                ${pointcut LKM::init_bus_hook()};
 
                 return 0;
             }
@@ -45,8 +45,8 @@ with LKM
         {
             static void __attribute__((__section__(".exit.text")))   rtx_module_exit(void)
             {
-                ${pointcut ::IMPLEMENTATION};
-                ${pointcut LKM::deinit_bus_hook};
+                ${pointcut ::IMPLEMENTATION()};
+                ${pointcut LKM::deinit_bus_hook()};
             }
 
             module_exit(rtx_module_exit);

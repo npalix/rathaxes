@@ -131,19 +131,24 @@ rtx_value(theValue : node) ::=
  *
  */
 
-rtx_seq_param(theParams : node, theIdentifiers : node) ::=
+rtx_param(theParams : node, theIdentifiers : node) ::=
     #pushItem(theIdentifiers)
     #pushItem(theParams)
     rtx_scoped_identifier(theParams#back)
     [    #readIdentifier:theIdentifiers#back ]?
 ;
 
-rtx_seq_parameter(theParams : node, theIdentifiers : node) ::=
+rtx_parameter_list(theParams : node, theIdentifiers : node) ::=
     '('
-    [
-        rtx_seq_param(theParams, theIdentifiers)
-        [ ',' rtx_seq_param(theParams, theIdentifiers) ]*
-    ]?
+        [
+            rtx_param(theParams, theIdentifiers)
+            [
+                ','
+                #continue(sError, "Expected parameter after ',' in parameter list.")
+                rtx_param(theParams, theIdentifiers)
+            ]*
+        ]?
+        #continue(sError, "Expected parenthesis closing the parameter list.")
     ')'
 ;
 
@@ -152,5 +157,5 @@ rtx_template_prototype(theRtype : node, theIdentifiers : node) ::=
 /**/=> local params;
     rtx_scoped_identifier(nameNode)
     #check(rtxNodeRType(theRtype, nameNode, params))
-    rtx_seq_parameter(params, theIdentifiers)
+    rtx_parameter_list(params, theIdentifiers)
 ;

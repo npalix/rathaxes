@@ -1,15 +1,15 @@
 interface Main : Builtin
 {
-    provided pointcut   Main::include_headers;
-    provided pointcut   Main::main;
+    provided pointcut   Main::include_headers();
+    provided pointcut   Main::main();
 
     provided type       Main::Arguments;
 
     /* This sequence is required, i.e: its implementation is in the .rtx */
     required sequence   Main::start(Main::Arguments)
     {
-        provided chunk  Main::include_headers;
-        provided chunk  Main::main;
+        provided chunk  Main::include_headers();
+        provided chunk  Main::main();
     }
 
     /*
@@ -18,11 +18,11 @@ interface Main : Builtin
      */
     provided sequence   Main::log(Main::Arguments)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 
     provided sequence   Main::exit(Builtin::number)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 }

@@ -23,7 +23,7 @@ generateString({
             provided    type            BaseInterface::a_type;
             provided    type            BaseInterface::type1;
             provided    type            BaseInterface::type2;
-            provided    pointcut        BaseInterface::a_pointcut;
+            provided    pointcut        BaseInterface::a_pointcut();
             provided    pointcut        BaseInterface::foo(bar);
 
         }
@@ -40,9 +40,9 @@ generateString({
                                                                        Userland::some_type c);
             provided            sequence        Userland::seq()
             {
-                provided chunk foo::some_pointcut;
+                provided chunk foo::some_pointcut();
                 /* provided pointcut other_pointcut(JoinPointType); */
-                provided chunk ::some_chunk;
+                provided chunk ::some_chunk();
             }
         }
 

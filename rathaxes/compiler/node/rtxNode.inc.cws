@@ -406,6 +406,22 @@ function        rtxRTypeFullQualifiedName<"sequence">(rTypeNode : node,
     return fullString;
 }
 
+function        rtxRTypeFullQualifiedName<"pointcut">(rTypeNode : node,
+                                                      identifiers : node)
+{
+    local       fullString;
+    local       paramsNameList;
+
+    fullString = rtxRTypeName<rTypeNode.type>(rTypeNode) + "(";
+    foreach entry in rTypeNode.params
+    {
+        pushItem paramsNameList;
+        paramsNameList#back = rtxRTypeName<entry.type>(entry);
+    }
+    fullString += joinStrings(paramsNameList, ",") + ")";
+    return fullString;
+}
+
 function rtxNodePointcut(local_node         : node,
                          out_ref_pointcut   : reference,
                          out_ref_params     : reference,
@@ -443,14 +459,14 @@ function rtxNodeChunk(local_node        : node,
     local_node.type = "__rtx_chunk__";
 
     insert local_node.pointcut;
-    insert local_node.parameters;
+    insert local_node.parameters.list;
     insert local_node.body;
     cnormNodeBlock(local_node.body);
     insert local_node.body.compile;
     insert local_node.body.compile.nbplaceholder = 0;
 
     ref out_ref_pointcut = local_node.pointcut;
-    ref out_ref_params = local_node.parameters;
+    ref out_ref_params = local_node.parameters.list;
     ref out_ref_body = local_node.body;
 
     return true;

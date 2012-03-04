@@ -12,7 +12,7 @@ with PCI, LKM, Log
             struct pci_dev;
         }
 
-        chunk   ::init(pci_dev)
+        chunk   ::init(PCI::Device pci_dev)
         {
             ${self} = ${pci_dev};
         }
@@ -52,7 +52,7 @@ with PCI, LKM, Log
         }
 
         /* This chunk should be remove (see #26) */
-        chunk   ::CALL
+        chunk   ::CALL()
         {
         }
     }
@@ -142,7 +142,7 @@ with PCI, LKM, Log
         }
 
         /* This chunk should be removed */
-        chunk ::CALL
+        chunk ::CALL()
         {
         }
     }

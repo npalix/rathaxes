@@ -2,6 +2,6 @@ interface Log : Builtin
 {
     provided sequence   Log::info(Builtin::string)
     {
-        provided chunk  ::CALL;
+        provided chunk  ::CALL();
     }
 }

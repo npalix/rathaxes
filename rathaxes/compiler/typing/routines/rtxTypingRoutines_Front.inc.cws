@@ -7,82 +7,6 @@
 function        rtxTypingRoutines_Front_version()
 { return "1.0"; }
 
-/*
- *
- * This function searches the declaration of the sequence matching theSequence
- * inside the interface named by 'itfName'. If itfName has no value, then the
- * function tries to find the sequence in any of the interfaces present in
- * interface_list.
- *
- *
- * XXX TODO FIXME
- * The function currently does not manage ambiguous declarations, and accepts
- * the first possibility matched (ie: if two interface define the sequence, and
- * it does not explicit its containing interface, then the first one matched
- * will be seend a the right one, instead of giving an ambiguous error).
- *
- */
-function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
-                                             interface_list : node, out_qualifier : node)
-{
-    local itfNode;
-    local itfTree;
-
-    if (itfName != "")
-    {
-        if (rtxLink_findInterface(itfName, itfNode) == false)
-        {
-            traceLine(RED + "[Error] Interface '" + itfName + "' containing the sequence"
-                      + " could not be found within the cache." + DEFAULT_COLOR);
-            return false;
-        }
-        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
-        {
-            traceLine(RED + "[Error] Could not load interface's '" + itfName
-                      + "' tree." + DEFAULT_COLOR);
-            return false;
-        }
-        foreach def in itfTree.body.block
-        {
-            // type templates dont matter here, they should not define pointcuts.
-            // So, check only sequence templates...
-            if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
-            {
-                local scope_save = theSequence.rtype.name.scope;
-                if (scope_save == "")
-                    theSequence.rtype.name.scope = itfName;
-                local dummy;
-                local seqProto = rtxRTypeFullQualifiedName<"sequence">(theSequence.rtype, dummy);
-                local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(def.rtype, dummy);
-                // Is it it ? If yes, return after setting the qualifier in the return param.
-                if (seqProto == itfSeqProto)
-                {
-                    out_qualifier = def.qualifier;
-                    return true;
-                }
-                if (scope_save == "")
-                    theSequence.rtype.name.scope = "";
-            }
-        }
-    }
-    else
-    {
-        foreach itf in interface_list
-        {
-            // if it's the right one then qualify the sequence and return true.
-            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, itf, interface_list, out_qualifier) != false)
-            {
-                theSequence.rtype.name.scope = itf;
-                return true;
-            }
-        }
-        traceLine(RED + "[Error] Declaration of sequence '"
-                  + rtxRTypeName<theSequence.rtype.type>(theSequence.rtype)
-                  + "' could not be found in any interface." + DEFAULT_COLOR);
-    }
-
-    return false;
-}
 
 
 /*
@@ -252,7 +176,7 @@ function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
     local qualifier = "";
 
     // Check that the prototype exists...
-    if (rtxTypeCheck_ItfNameDefinesSequence(theSequence,
+    if (rtxTypeCheck_ItfNameDefinesSequence(theSequence.rtype,
                                             theSequence.rtype.name.scope,
                                             interface_list, qualifier) == false
         || qualifier == "provided")
@@ -271,7 +195,7 @@ function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
         rtxNodeCall_toRtype(call, theSequence, call.rtype);
         local dummy;
         local cFullName = rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy);
-        if (rtxTypeCheck_ItfNameDefinesSequence(call, call.rtype.name.scope,
+        if (rtxTypeCheck_ItfNameDefinesSequence(call.rtype, call.rtype.name.scope,
                                                 interface_list, qualifier) == false
             || qualifier != "provided")
         {

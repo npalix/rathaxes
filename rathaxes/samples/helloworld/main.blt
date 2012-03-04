@@ -1,8 +1,8 @@
 with Main
 {
     /* File structure declaration */
-    ${pointcut Main::include_headers};
-    ${pointcut Main::main};
+    ${pointcut Main::include_headers()};
+    ${pointcut Main::main()};
 
     /* Definitions */
     template type Main::Arguments()
@@ -17,7 +17,7 @@ with Main
             };
         }
 
-        chunk ::init(argc, argv, env)
+        chunk ::init(Builtin::number argc, Builtin::symbol argv, Builtin::symbol env)
         {
             ${self}.argc = ${argc};
             ${self}.argv = ${argv};
@@ -50,7 +50,7 @@ with Main
 
     template sequence Main::start(Main::Arguments args)
     {
-        chunk Main::include_headers
+        chunk Main::include_headers()
         {
             #include <stdlib.h>
         }
@@ -69,14 +69,14 @@ with Main
 
                 ${local.args.init(local.argc, local.argv, local.env)};
 
-                ${pointcut ::IMPLEMENTATION};
+                ${pointcut ::IMPLEMENTATION(local.args)};
             }
         }
     }
 
     template sequence Main::log(Main::Arguments args)
     {
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             ${args.log()};
         }
@@ -84,7 +84,7 @@ with Main
 
     template sequence Main::exit(Builtin::number status)
     {
-        chunk   ::CALL
+        chunk   ::CALL()
         {
             exit(${status});
         }

@@ -10,7 +10,7 @@ declare function addRTypeToItfDeclaration(declaration_node : node, rtype : node)
 declare function addSequenceBody(theSequence : node, theBody : node);
 declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
 declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
-declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, qualifier : value);
+declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, paramtypes_out_ref : reference, qualifier : value);
 
 
 
@@ -85,38 +85,34 @@ function        rtxNodeItfPointcutDeclaration(local_node : node,
                                               identifier : node,
                                               out_ref_params : reference)
 {
-    local dummy_default;
-    local id_out_ref;
-
     insert local_node.type = "__rtx_itf_decl__";
     insert local_node.qualifier = qualifier;
     insert local_node.specifier = "pointcut";
 
-    insert local_node.body;
-    rtxNodePointcut(local_node.body, id_out_ref, out_ref_params, dummy_default);
-
-    setall id_out_ref = identifier;
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, identifier, out_ref_params);
 
     return true;
 }
 
-function        rtxNodeItfChunkDeclaration(local_node : node,
-                                           identifier : node,
-                                           qualifier : value)
+function        rtxNodeItfChunkDeclaration(local_node           : node,
+                                           identifier           : node,
+                                           paramtypes_out_ref   : reference,
+                                           qualifier            : value)
 {
-    local dummy_param;
+    local dummy_paramids;
     local dummy_body;
-    local id_out_ref;
+    local rtype_out_ref;
 
     insert local_node.type = "__rtx_itf_decl__";
     insert local_node.qualifier = qualifier;
     insert local_node.specifier = "chunk";
 
     insert local_node.body;
-    rtxNodeChunk(local_node.body, id_out_ref, dummy_param, dummy_body);
+    rtxNodeChunk(local_node.body, rtype_out_ref, dummy_paramids, dummy_body);
     clearVariable(dummy_body);
 
-    setall id_out_ref = identifier;
+    rtxNodeRType(rtype_out_ref, identifier, paramtypes_out_ref);
 
     return true;
 }
