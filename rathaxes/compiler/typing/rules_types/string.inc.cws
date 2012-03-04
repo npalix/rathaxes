@@ -26,7 +26,7 @@ function        rtxNode2cnormNode<"__rtx_string__">(in_param : node, out_param :
 
 function type_map<"Builtin::string">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
-                                     placeHolder : node, out_node : node)
+                                     placeHolder : node, out_node : node, source_tree : reference)
 {
     if (getArraySize(mappedIds) == 1)
     {

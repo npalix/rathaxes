@@ -105,12 +105,7 @@ if (toLowerString(this.operation) == "generate")
 
     insert this.front;
     insert this.c_types;
-/*
-    cnormDialect<"__std__">(this.front);
-    rtxType_Load(this.front);
-    rtxParse(inputFile, this.front);
-*/
-        rtxParseFile(this.front, inputFile);
+    rtxParseFile(this.front, inputFile);
 
     saveProject("front_end.tree", this.front);
 

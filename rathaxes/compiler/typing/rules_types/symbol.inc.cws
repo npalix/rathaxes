@@ -1,3 +1,6 @@
+// mappings function for virtual property
+declare function        rtxType_regMap<T>(resolverValues : node, theRtype : node, mappedIds : node, pH : node, out_node : node, source_tree : reference);
+
 function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
 {
         try {
@@ -107,7 +110,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
 
 function type_map<"Builtin::symbol">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
-                                     placeHolder : node, out_node : node)
+                                     placeHolder : node, out_node : node, source_tree : reference)
 {
         traceLine("Builtin SYMBOL:(s)" + toString(mappedIds));
         traceLine("Resolve Value:" + toString(resolverValues));
@@ -118,18 +121,104 @@ function type_map<"Builtin::symbol">(resolverValues : node,
 
 function type_map<"Builtin::register_value">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
-                                     placeHolder : node, out_node : node)
+                                     placeHolder : node, out_node : node, source_tree : reference)
 {
-        traceLine("Builtin REGFIELDVALUE(s):" + toString(mappedIds));
-        traceLine("Resolve Value:" + toString(resolverValues));
-        traceLine("RType:" + toString(theRtype));
-        traceLine("PH:" + toString(placeHolder));
-        return true;
+        traceLine("Builtin REGFIELDVALUE(s):" + toString(mappedIds, true));
+        traceLine("Resolve Value:" + toString(resolverValues, true));
+        traceLine("RType:" + toString(theRtype, true));
+        traceLine("PH:" + toString(placeHolder, true));
+        if ($getArraySize(mappedIds) == 2$)
+               return rtxType_regMap<mappedIds[1]>(resolverValues, theRtype, mappedIds, placeHolder, out_node, source_tree);
+        //error("No traduction for register_value");
+        return false;
 }
+
+
+function        rtxType_regMap<T>(resolverValues : node, theRtype : node, mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        error("Unknown property:" + T);
+}
+
+function        rtxType_regMap<"value">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regval = source_tree.map.registers[regdescr[0]].map[regdescr[1]].map[regdescr[2]].ref;
+        traceLine("get register value");
+        traceLine(":" + regval.value);
+        return cnormNode_TerminalId(out_node, regval.value);
+}
+
+function        rtxType_regMap<"and_mask">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regfield = source_tree.map.registers[regdescr[0]].map[regdescr[1]].ref;
+        traceLine("get register field MASK AND");
+        traceLine(":" + regfield.maskPattern.and_hex);
+        return cnormNode_TerminalId(out_node, regfield.maskPattern.and_hex);
+}
+
+function        rtxType_regMap<"or_mask">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regfield = source_tree.map.registers[regdescr[0]].map[regdescr[1]].ref;
+        traceLine("get register field MASK OR");
+        traceLine(":" + regfield.maskPattern.or_hex);
+        return cnormNode_TerminalId(out_node, regfield.maskPattern.or_hex);
+}
+
+function        rtxType_regMap<"valuename">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register value");
+        traceLine(":" + regdescr[2]);
+        return cnormNode_TerminalId(out_node, regdescr[2]);
+}
+
+function        rtxType_regMap<"regname">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register name");
+        traceLine(":" + regdescr[0]);
+        return cnormNode_TerminalId(out_node, regdescr[0]);
+}
+
+function        rtxType_regMap<"fieldname">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register field");
+        traceLine(":" + regdescr[1]);
+        return cnormNode_TerminalId(out_node, regdescr[1]);
+}
+
+function        rtxType_regMap<"offset">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref reg = source_tree.map.registers[regdescr[0]].ref;
+        traceLine("get offset");
+        traceLine("offset:" + reg.like.offset);
+        return cnormNode_TerminalId(out_node, reg.like.offset);
+}
+
 
 function        rtxNode2cnormNode<"__rtx_symbol__">(in_param : node, out_param : node)
 {
     return cnormNode_TerminalId(out_param, in_param.val);
+}
+
+function        rtxNode2cnormNode<"__rtx_register_value__">(in_param : node, out_param : node)
+{
+        traceLine("Receive:" + toString(in_param, true));
+        traceLine("out:" + toString(out_param, true));
+        // is just a virtual variable (no correspondant C code) so...
+        setall out_param = in_param;
+        return true;
 }
 
 /*
