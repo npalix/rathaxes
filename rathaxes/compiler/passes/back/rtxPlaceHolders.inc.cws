@@ -29,10 +29,10 @@ function        rtxPH_walk<T>(local_node : node)
 // Template 
 function        rtxPH_walk<"__rtx_tpl__">(local_node : node)
 {
-        traceLine("template! walk on " + local_node.prototype);
+        traceLine("template ("+local_node.prototype.tpl_type+")! walk on " + local_node.prototype);
         // walk on all subitems
         foreach chunk in local_node.body.block
-        { rtxPH_walk<chunk.type>(chunk);}
+        { rtxPH_walk<chunk.type>(chunk); }
         // go thru type mapping
         if (existVariable(local_node.mapping))
         {
@@ -138,6 +138,10 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
         localref ctype_ref = local_node.ctype;
         do
         {
+                // If it's a type definition, recurse over it.
+                if (existVariable(ctype_ref.body))
+                { rtxPH_compile<ctype_ref.body.type>(ctype_ref.body, compile, node_idx); }
+
                 // name of a type
                 if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
                 {
@@ -158,6 +162,7 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 // deref
                 ref ctype_ref = ctype_ref.pointer.ctype;
         } while(true);
+
 
         // variable name
         if (existVariable(local_node.name) && rtxPH_havePlaceHolder(local_node.name))
