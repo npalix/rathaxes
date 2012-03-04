@@ -29,7 +29,7 @@ function        rtxNode2cnormNode<"__rtx_number__">(in_param : node, out_param :
 
 function type_map<"Builtin::number">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
-                                     placeHolder : node, out_node : node)
+                                     placeHolder : node, out_node : node, source_tree : reference)
 {
     if (getArraySize(mappedIds) == 1)
     {
