@@ -1,0 +1,310 @@
+#if !existFunction(rtxNodeBack_version)
+
+function rtxNodeBack_version()
+{return "1.0";}
+
+
+// Template nodes
+declare function rtxNodeTpl(local_node : node, out_ref_proto : reference, out_ref_block : reference);
+declare function rtxNodeTplPrototype(local_node : node, tpl_type : value, out_ref_rtype : reference, out_ref_ids : reference);
+// Type template specific nodes
+declare function rtxNodeTpl_HasMapping(local_node : node);
+declare function rtxNodeIdentifierMapping(local_node : node, identifier : value, out_ref_body : reference);
+declare function rtxNodeTpl_AddMapping(local_node : node, out_ref_mapping : reference);
+declare function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference);
+declare function rtxNodeTplTypeMapping_HasIdentifier(local_node : node, identifier : value);
+declare function rtxNodeTplTypeMapping_AddIdentifier(local_node : node, identifier : value, mapped_body : reference);
+// PlaceHolder-related nodes
+declare function rtxNodePointcut_Raw(local_node : node, out_ref_placeHolder : reference);
+declare function rtxNodePlaceHolder(local_node : node);
+declare function rtxNodeCall(local_node : node, theVars : node, theChunk : node, out_ref_params : reference);
+declare function rtxNodeSequenceCall(local_node : node, name : node, args : node);
+// Tool functions for the resolution/generation
+declare function rtxNodeResVal_GetField(resolver_values : node, idList : node, out_ref : reference);
+declare function rtxNodeResVal(local_node : node);
+declare function rtxNodeResValLeaf(local_node : node, theValue : node);
+declare function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node);
+
+
+
+
+function	rtxNodeTpl(local_node : node,
+                       out_ref_proto : reference,
+                       out_ref_block : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl__";
+
+    insert local_node.prototype;
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+
+    ref out_ref_block = local_node.body;
+    ref out_ref_proto = local_node.prototype;
+
+    return true;
+}
+
+function    rtxNodeTplPrototype(local_node      : node,
+                                tpl_type        : value,
+                                out_ref_rtype   : reference,
+                                out_ref_ids     : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_proto__";
+
+    insert local_node.tpl_type = tpl_type;
+
+    insert local_node.rtype;
+    ref out_ref_rtype = local_node.rtype;
+    insert local_node.identifiers;
+    ref out_ref_ids = local_node.identifiers;
+
+    return true;
+}
+
+function rtxNodePointcut_Raw(local_node             : node,
+                             out_ref_placeHolder    : reference)
+{
+    insert local_node.type = "__rtx_pointcut_raw__";
+
+    insert local_node.id;
+    
+    ref out_ref_placeHolder = local_node.id;
+    
+    return true;
+}
+
+// Manipulates the template node
+function rtxNodeTpl_HasMapping(local_node : node)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false;
+    if (!existVariable(local_node.mapping))
+        return false;
+
+    return true;
+}
+
+function rtxNodeIdentifierMapping(local_node : node,
+                                  identifier : value,
+                                  out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_id_map__";
+
+    insert local_node.id = identifier;
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    insert local_node.body.compile;
+
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+// Adds a mapping node into a template node
+function rtxNodeTpl_AddMapping(local_node : node,
+                               out_ref_mapping : reference)
+{
+    if (local_node.type != "__rtx_tpl__")
+        return false ;
+
+    if (rtxNodeTpl_HasMapping(local_node))
+        return false;
+
+    insert local_node.mapping;
+    ref out_ref_mapping = local_node.mapping;
+
+    return true;
+}
+
+function rtxNodeTplTypeMapping(local_node : node, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_tpl_type_map__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+
+    ref out_ref_body = local_node.body;
+    return true;
+}
+
+// manipulates a TplTypeMapping
+function rtxNodeTplTypeMapping_HasIdentifier(local_node : node,
+                                             identifier : value)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    if (findElement(identifier, local_node.body.block))
+        return true;
+
+    return false;
+}
+
+function rtxNodeTplTypeMapping_AddIdentifier(local_node : node,
+                                             identifier : value,
+                                             mapped_body : reference)
+{
+    if (local_node.type != "__rtx_tpl_type_map__")
+        return false;
+
+    // Check the node does not already have the identifier mapped
+    if (rtxNodeTplTypeMapping_HasIdentifier(local_node, identifier))
+        return false;
+
+    // Then map it
+    insert local_node.body.block[identifier];
+    rtxNodeIdentifierMapping(local_node.body.block[identifier], identifier, mapped_body);
+
+    return true;
+}
+
+/*
+ *
+ * The following function are functions made to build rathaxes-specific
+ * nodes to be used for the template compilation and instanciation.
+ *
+ * Therefore, it does not have any need to depend on the cnormNode functions
+ *
+ */
+
+function rtxNodePlaceHolder(local_node   : node)
+{
+    insert local_node.type = "__rtx_tpl_placeHolder__";
+
+    // The potential concatenation prefix
+    insert local_node.prefix;
+    // The content of the placeHolder (between "${" and '}')
+    insert local_node.body;
+    // The potential concatenation sufix
+    insert local_node.sufix;
+
+    return true;
+}
+
+// chunk call (ex : ${local.buf.init(params)})
+function rtxNodeCall(local_node     : node,
+                     theVars        : node,
+                     theChunk       : node,
+                     out_ref_params : reference)
+{
+    insert local_node.type = "__rtx_tpl_chunk_call__";
+
+    // the identifier list indicating the variable
+    insert local_node.vars;
+    setall local_node.vars = theVars;
+
+    // The name of the chunk (simple value)
+    insert local_node.chunk;
+    setall local_node.chunk = theChunk;
+
+    // And then the parameter list.
+    insert local_node.parameters;
+    rtxNodeVarList(local_node.parameters);
+
+    // Add a rtype node for future filling (Gen/resolve)
+    insert local_node.rtype;
+
+    ref out_ref_params = local_node.parameters;
+
+    return true;
+}
+
+function rtxNodeSequenceCall(local_node : node, name : node, args : node)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_tpl_sequence_call__";
+
+        insert local_node.seqName;
+        setall local_node.seqName = name;
+
+        insert local_node.seqArgs;
+        setall local_node.seqArgs = args;
+
+        return true;
+}
+
+/*
+ *
+ * The following functions are used to build the variable hashtable called
+ * ResolverValues (ResVal for short) transmitted to each inject function, from
+ * the current context and the variables list
+ *
+ * The module rtxTpl () actually creates it and fills it in order to give
+ * it to the instanceTpl<T> function, that will match the template
+ * variables used in the template's code with the hashes in this hashtable.
+ *
+ */
+function rtxNodeResVal_GetField(resolver_values : node,
+                                idList          : node,
+                                out_ref         : reference)
+{
+    local listIt;
+    if (createIterator(listIt, idList) == false)
+        error("[ERROR] Could not iterate on the argument list !");
+
+    localref path = resolver_values;
+    do
+    {
+        if (!findElement(listIt.name, path))
+            error("Element ->" + listIt.name
+                  + "<- from "+toString(idList,true)+" could not be found in the ResolverValues : "
+                  + toString(resolver_values,true));
+        ref path = path[listIt.name];
+    } while next(listIt);
+
+    // Here we could do some checks on whether the node is a leaf or not.
+    if (path.type == "__rtx_resval_node__")
+        error("BAD ACCESS : Mapped node is not a leaf : " + toString(path, true));
+
+    ref out_ref = path.body;
+
+    return true;
+}
+
+// Build a node identified as a ResolverValue and
+// set it as a Node (not a leaf)
+function rtxNodeResVal(local_node : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_resval_node__";
+}
+
+// Build a node identified as a ResolverValue and
+// Abstracts the fact that it is a collection or a value.
+function rtxNodeResValLeaf(local_node : node, theValue : node)
+{
+    insert local_node.type;
+    local_node.type = "__rtx_resval_leaf__";
+
+    insert local_node.body;
+    setall local_node.body = theValue;
+}
+
+
+
+/*
+ *
+ * Translate rathaxes basic nodes to cnorm basic nodes,
+ * in order to keep consistency while generating some resolved chunks.
+ *
+ */
+
+function rtxNode2cnormNode<T>(rtxNode : node, cnormNode : node)
+{
+    error("Translation for rathaxes node of type " + T
+          + " not implemented yet !");
+}
+
+function rtxNode2cnormNode<"__rtx_nb__">(rtxNode : node, cnormNode : node)
+{
+    return cnormNode_TerminalLiteral(cnormNode, rtxNode.val);
+}
+
+
+#end

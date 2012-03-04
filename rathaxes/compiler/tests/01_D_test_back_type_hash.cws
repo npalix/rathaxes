@@ -1,0 +1,59 @@
+
+#include  "01_C_test_back_meta.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_D_test_back_type_hash";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+#include "passes/back/rtxTypeHash.inc.cws"
+
+// Apply the pass...
+rtxTypeHash(source);
+
+
+// Now check that each chunk was altered with the right templates parameters.
+// Iterate on the templates...
+local ret = 0;
+foreach template in source.block[0].body.block
+{
+    local tpl_nbargs = getArraySize(template.prototype.rtype.params);
+    foreach chunk in template.body.block
+    {
+        local nbargs = $tpl_nbargs + getArraySize(chunk.pointcut.params)$;
+        if (!existVariable(chunk.type_map))
+        {
+            traceLine("<ERROR>: The chunk" + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                      + " does not contain a field type_map.");
+            increment(ret);
+        }
+        else if (getArraySize(chunk.type_map) == nbargs)
+        {
+             traceLine("<SUCCESS>: The chunk's type_map " + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                      + " contains the right number" +" of template parameters types.");
+        }
+        else
+        {
+            traceLine("<ERROR>: The chunk's type_map " + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                      + " does not contain the right"
+                      +" type number !");
+            increment(ret);
+        }
+    }
+}
+
+saveProject("type_hashed.tree", source);
+
+if (ret != 0)
+{
+    traceLine("FAILURE!!");
+    exit(ret);
+}
+traceLine("====>Result of Type Hash pass : __01_D_test_back_type_hash/*.tree");

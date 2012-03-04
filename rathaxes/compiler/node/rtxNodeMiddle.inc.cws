@@ -1,0 +1,121 @@
+#if !existFunction(rtxNodeMiddle_version)
+
+function rtxNodeMiddle_version()
+{return "1.0";}
+
+
+declare function rtxNodeItf(local_node : node, itf_name : value, out_ref_inherit : reference, out_ref_body : reference);
+declare function rtxNodeItfDeclaration(local_node : node, qualifier : value, dtype : value);
+declare function addRTypeToItfDeclaration(declaration_node : node, rtype : node);
+declare function addSequenceBody(theSequence : node, theBody : node);
+declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
+declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
+declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, paramtypes_out_ref : reference, qualifier : value);
+
+
+
+
+function        rtxNodeItf(local_node      : node,
+                           itf_name        : value,
+                           out_ref_inherit : reference,
+                           out_ref_body    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    insert local_node.name = itf_name;
+    insert local_node.inheritance;
+    insert local_node.types;
+
+    /* XXX: Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    ref out_ref_inherit = local_node.inheritance;
+    return true;
+}
+
+function        rtxNodeItfDeclaration(local_node        : node,
+                                      qualifier         : value,
+                                      dtype             : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_decl__";
+
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = dtype;
+    insert local_node.identifiers;
+
+    return true;
+}
+
+function        addRTypeToItfDeclaration(declaration_node : node,
+                                         rtype : node)
+{
+    insert declaration_node.rtype;
+    setall declaration_node.rtype = rtype;
+}
+
+function        addSequenceBody(theSequence : node, theBody : node)
+{
+    insert theSequence.body;
+    insert theSequence.body.type = "__block__";
+    insert theSequence.body.block;
+    setall theSequence.body.block = theBody;
+
+    return true;
+}
+
+function        rtxItfAddTypeToList(theNode : node, nameList : reference)
+{
+    if (theNode.specifier == "variable")
+    {
+        traceLine("A variable shouldn't be in the types list.");
+        error("A variable shouldn't be in the types list.");
+    }
+
+    local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
+                                                                  theNode.identifiers);
+    insert nameList[fullName];
+    ref nameList[fullName] = theNode;
+}
+
+
+function        rtxNodeItfPointcutDeclaration(local_node : node,
+                                              qualifier : value,
+                                              identifier : node,
+                                              out_ref_params : reference)
+{
+    insert local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "pointcut";
+
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, identifier, out_ref_params);
+
+    return true;
+}
+
+function        rtxNodeItfChunkDeclaration(local_node           : node,
+                                           identifier           : node,
+                                           paramtypes_out_ref   : reference,
+                                           qualifier            : value)
+{
+    local dummy_paramids;
+    local dummy_body;
+    local rtype_out_ref;
+
+    insert local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "chunk";
+
+    insert local_node.body;
+    rtxNodeChunk(local_node.body, rtype_out_ref, dummy_paramids, dummy_body);
+    clearVariable(dummy_body);
+
+    rtxNodeRType(rtype_out_ref, identifier, paramtypes_out_ref);
+
+    return true;
+}
+
+
+#end

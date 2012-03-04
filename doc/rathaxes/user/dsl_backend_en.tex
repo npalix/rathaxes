@@ -1,0 +1,720 @@
+\documentclass[american]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{David Pineau}
+
+\title{Language Documentation: Backend}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{Documentation}
+\rtxdocref{backend\_documentation}
+\rtxdocversion{0.3}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.1 & 07/04/2011 & David Pineau & First Draft of the documentation \\
+\hline
+0.2 & 09/04/2011 & David Pineau & Update to simplify some parts of the doc \\
+\hline
+0.3 & 08/06/2011 & David Pineau & Adding aspectual notions \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}
+{
+    morekeywords={},
+	sensitive=true,
+	morecomment=[l][\color{rRed}]{//},
+	morecomment=[s][\color{rRed}]{/*}{*/},
+	morestring=[b][\color{rGreen}]",
+	morestring=[b][\color{rGreen}]',
+	keywordstyle={\color{rBlue}},
+    commentstyle={\color{rRed}},
+    moredirectives={import}
+}[comments,strings,directives]
+
+\lstdefinelanguage[front]{rathaxes}
+{
+}[keywords,comments,strings]
+
+\lstdefinelanguage[middle]{rathaxes}
+{
+	morekeywords={interface, provided, required, optional, type, sequence,
+                  variable},
+    otherkeywords={::}
+}[keywords,comments,strings]
+
+\lstdefinelanguage[back]{rathaxes}
+{
+	morekeywords={with, template, type, sequence, decl, stmt, link, to, each},
+	morecomment=[s][\color{rBlue}]{\$\{}{\}}
+}[keywords,comments,strings]
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        language=rathaxes,
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\lstset{alsolanguage={[back]rathaxes}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{
+Rathaxes is a Domain Specific Language (DSL) and a compiler allowing to
+describe a device in order to generate its driver's C code for multiple
+operating systems.
+
+Developing a driver means writing code specific to the device, as well as
+writing code specific to the target operating system. The backend part of the
+\rtx language aims to facilitate operating system specific code writing.
+
+By allowing the separation of OS-specific code and device-specific code, \rtx
+can transparently generate the final driver's C code for any operating system
+supported.
+}
+
+\chapter{Aspectual oriented programming}
+
+First of all, the backend part of the DSL of \rtx\ implements a programming
+paradigm called ``Aspect-Oriented programming''.
+
+\section{General concept}
+
+Aspect-oriented programming entails breaking down program logic into distinct
+parts (so-called concerns, cohesive areas of functionality). Nearly all
+programming paradigms support some level of grouping and encapsulation of
+concerns into separate, independent entities by providing abstractions (e.g.,
+procedures, modules, classes, methods) that can be used for implementing,
+abstracting and composing these concerns.
+
+But some concerns defy these forms of implementation and are called
+crosscutting concerns because they "cut across" multiple abstractions in a
+program.
+
+Logging exemplifies a crosscutting concern because a logging strategy
+necessarily affects every logged part of the system. Logging thereby crosscuts
+all logged classes and methods.
+
+AOP (Aspect Oriented Programming) addresses these kinds of problems by allowing
+the programmer to express cross-cutting concerns in stand-alone modules called
+\emph{aspects}. Aspects can contain \emph{advice} (code joined to specified
+points in the program) and \emph{inter-type} declarations(structural member
+added to other classes or structures). For example, an aspect could define
+several advices to perform logging anywhere within the program. The pointcut
+(place of injection of the advice) defines the times (join point) where one
+wants to log something, and the code in the associated advice defines how is
+the logging implemented. This way, both the logging and the main code can be
+maintained separately.
+
+\section{Terminology}
+In the context of the project, the terminology used for Aspect-oriented
+programming includes:
+
+\begin{itemize}
+    \item \textbf{Cross-cutting concerns}: Even though most classes in an
+        Object-Oriented model will perform a single, specific function, they
+        often share common, secondary requirements with other classes. For
+        example, we may want to add logging to functions within the data-access
+        layer and also to functions in the system API layer whenever a thread
+        enters or exits a function. Even though each class has a very different
+        primary functionality, the code needed to perform the secondary
+        functionality is often identical.
+    \item \textbf{Advice}: This is the additional code that you want to apply
+        to your existing model. In our example, this is the logging code that
+        we want to apply whenever the thread enters or exits a function. Inside
+        of \rtx\ we may call it a ``chunk''.
+    \item \textbf{Pointcut}: This is the term given to the point of execution
+        in the application at which cross-cutting concern needs to be applied.
+        In our example, a pointcut is reached when the thread enters a
+        function, and another pointcut is reached when the thread exits the
+        function.
+    \item \textbf{Aspect}: The combination of the pointcut and the advice is
+        termed an aspect. In the example above, we add a logging aspect to our
+        application by defining a pointcut and giving the correct advice.
+\end{itemize}
+
+\section{Join-Point Model}
+
+\subsection{Defining a pointcut}
+
+\rtx\ offers a simple way to define a pointcut. It actually defines a place in
+the code where the associated advices'code can be injected. Several advices can
+be injected into a same pointcut. It can be written either inside of a ``with''
+block of inside of a chunk (the \rtx\ advice).  Those will be described later.
+
+
+Since this is used for the C code generation, it also offers a way to define a
+default code to be inserted if no joinpoint could be created. The default part
+is optionnal, meaning that if no joinpoint could be created, and if there is no
+default statement, the pointcut will simply disappear while generating the C
+code.
+
+The pointcut must be written between ``\${'' and ``}''.  Inside of the braces,
+the first thing to write is the keyword ``pointcut'' followed by an identifier
+which will be used as the pointcut's name. One may give an argument to the
+pointcut between parenthesis, though the argument must be a C symbol (This will
+be explained in a later section of the document).
+
+Next is the optional default statement, with the "default" keyword followed by
+a colon, and a single C statement.
+
+Here are some examples to highlight the possibilities offered :
+\begin{lstlisting}
+${pointcut thePointcut(aSymbol, anotherSymbol)};
+struct blob item =
+{
+    ${pointcut theInit default: .first = NULL; },
+};
+${pointcut anotherPointcut};
+\end{lstlisting}
+
+\subsubsection{Builtin pointcuts}
+
+There are some pointcuts that cannot be defined by the user, because they are
+used in specific and implicit mecanisms of the language. Here is the list of
+pointcuts that cannot be defined :
+\begin{itemize}
+    \item call: no parameter, replaces a call of the template it is contained
+        by when it is called from the frontend called from the frontend;
+    \item type\_decl: no parameter, replaces a declaration where the template
+        (type) is used;
+    \item type\_def: no parameter, included in the part of the generated code
+        where the types are defined.
+\end{itemize}
+
+
+\subsection{Defining a chunk}
+
+A chunk is a \rtx\ equivalent of an advice. It contains the code that will be
+injected in place of the associated pointcut. It can be written either inside
+of a ``with'' block or inside of a ``template'' block. Those will be described
+later.
+
+
+A chunk is introduced by the keyword ``chunk'' followed by the associated
+pointcut's name, with optional parenthesis and received parameters. The
+received parameter are simple identifiers separated by comas. They must be used
+in the same way as the template variables (See the chapter about Using template
+variables).
+
+Next is the instrumented C code between two braces. This is actually some C
+code with pointcuts and template variables. This will be explained in a more
+detailed manner in the chapter about using template variables.
+
+Here is a short example with only C code and pointcuts without parameters :
+\begin{lstlisting}
+chunk global
+{
+    int main()
+    {
+        int a;
+        printf("a = %i\n", a);
+        ${pointcut thePointcut default: printf("Hello World\n");};
+    }
+}
+
+chunk thePointcut
+{
+    printf("I am part of the chosen ones !\n");
+}
+\end{lstlisting}
+
+In the event the chunk was selected and created a joinpoint, it's code would
+replace the pointcut of the global chunk.
+
+
+\chapter{The ``with'' block}
+
+The ``with'' statement describes the conditions to be matched in order to select
+the specific implementation written inside its block.
+
+These conditions will for example allow one to tell the compiler that the code
+that the ``with'' block contains is to be used only for a specific operating
+system (e.g. Linux), with conditions over the version (e.g. version > 2.6.24).
+
+The code contained in the block of this statement will be described in a later
+chapter, though it is useful to know that it can contain code that we will
+qualify as ``global code'' and template statements.
+
+\section{The configuration variables}
+
+The middle-end part of the language, constituted of interfaces, declares
+different variables. We will call those variables the \emph{configuration
+variables}. Those variables are the elements that define which system-specific
+implementation can be used or not. Indeed, since the ``with'' block content's
+aim is to implement OS-specific code, they can't be used for every operating
+system.  Thus, the selection process is built around those configuration
+variables.
+
+The ``with'' block tells for which values of which configuration variables the
+templates are to be activated and possibly used.  
+
+While writing a system-specific code for \rtx, you \emph{have to consider}
+the target of your code. Will it be for this OS? or that one? Which version?
+Which sub-system? All those are relevant informations contained by the proper
+\emph{configuration variables}, and can impact greatly the code generation
+process.
+
+Now, how can I write it? It is actually quite simple:
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // Put some templates here.
+}
+\end{lstlisting}
+
+As you can read, the keyword "with" is to be written first of all things. It is
+then followed by a coma-separated list of \emph{configuration variables} and
+their matching conditions. Three main rules are to be respected:
+\begin{itemize}
+    \item The configuration variable's name must match \emph{exactly} the one
+          written in the interface the ``with'' block wishes to implement
+          (fully or partially).
+    \item The condition (or comparison) can be one of the 5 following: 
+        \begin{itemize}
+            \item <: only valid for numbers and versions,
+            \item <=: only valid for numbers and versions,
+            \item =: valid for strings, numbers and versions,
+            \item >=: valid only for numbers and versions,
+            \item >: valid only for numbers and versions.
+        \end{itemize}
+    \item The values can be of on of these three types:
+        \begin{itemize}
+            \item string: Written as an identifier, without any kind of quote
+                           (e.g. Linux, Windows),
+            \item number: simple number (e.g. 243, 7623, 1, 0),
+            \item version: a suite of numbers separated by points (e.g. 2.6.24).
+        \end{itemize}
+\end{itemize}
+
+With this, you should be able to write a proper ``with'' statement that will
+allow the compiler to select your system-specific for the right C code
+generation.
+
+\section{Content}
+
+The ``with'' block can contain three kind of statements. It can contain some
+pointcuts (each one must be followed by a semicolon), some chunks, and/or
+finally some templates. The templates are detailed in the next section, but
+we'll describe the effect of the pointcuts and the chunks inside this block.
+
+\subsection{Global Pointcut}
+
+The pointcuts written inside a ``with'' block are called ``global pointcuts''
+in reference to the way they are managed during the C code generation step.
+
+Actually, a pointcut contained in such a block will be automatically inserted
+into the generated code at a global scope level (after the previous selected
+global pointcuts). The reason of this mecanism being that this is the best way
+that could be found to define how is the generated code globally organized.
+Since the generation goes from the top-level subsystem (the Loadable kernel
+module one) to the lowest subsystem (any really specific subsystem used in the
+driver's code), the first to be selected would be something like this:
+\begin{lstlisting}
+with LKM // Select as soon as the LKM system is to be used (always the case)
+{
+    // Includes first
+    ${pointcut include_dependencies};
+
+    // Next, the globals and prototypes...
+    ${pointcut global_data_declaration};
+    ${pointcut global_code_declaration};
+    // Followed by the functions...
+    ${pointcut global_code_definition};
+    // And finally the base for the lkm.
+    ${pointcut lkm_base_code_definition};
+};
+\end{lstlisting}
+
+This way, it is possible to define the global structure of the generated code.
+This mecanism, interfering with the code generation, should be used with much
+care and precautions.
+
+
+\subsection{Global Chunk}
+
+The chunks written inside a ``with'' block are called ``global chunks'' for the
+same reason the pointcuts are called ``global pointcuts''.
+
+The global chunk will be inserted in the associated pointcut (if it was
+selected and inserted in the generated code) whenever the block is selected for
+the generation. For example, this can be used to solve the include dependencies
+of a template. Here is a code example:
+
+\begin{lstlisting}
+with LKM
+{
+    ${pointcut include_dependencies};
+}
+
+with LKM
+values OS=windows, version=7
+{
+    chunk include_dependencies
+    {
+        #include "windows.h"
+    }
+}
+\end{lstlisting}
+
+
+\chapter{Defining a template}
+
+The content of a template is the very code that will be part (after full
+template resolution) of the final generated C code. The template itself
+describes either a type or a sequence (\rtx function), and how it
+will really be implemented. We will not describe the templated C code here
+(ie: the content of the template block), since it will be described in the next
+section, but know that it is some instrumentalized C code
+
+Since the type template is a bit specific, we will describe its content in a
+later section.
+
+\section{The template's prototype}
+
+In order to write a template, one must first write the "template" keyword.
+Then, this keyword is followed by a type keyword, describing the kind of
+template that is being written. Next comes what we'll call the \emph{template
+prototype}. This prototype includes the name of the ``sequence'' or ``type''
+and its parameters' types and names.
+
+The template's prototype is the part that identifies a specific templates.
+Be careful, though, not to confuse a template and its implementation: a
+template may not necessarily transcribe itself into a C function.
+
+The name of the template is a simple alphanumeric identifier (this can include
+underscores too). The parameters of the template are actually \rtx types and
+variables to be used in the template's code in order to generate valid and
+coherent C code.
+
+Here is how you can write a sequence template:
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // here we can identify the bnf structure: 
+//  pkeyword skeyword name(ParamType1 param1, ParamType2 param2)
+    template sequence foo(Context ctx, register reg)
+    {
+        // put the template's code here'
+    }
+}
+\end{lstlisting}
+
+\section{Template overloading}
+
+\rtx supports template overloading, meaning that one sequence or type
+(identified through the template's name, an identifier) can be parametered with
+different types of variables. You could then write two templates named "foo",
+that receive different types of parameters:
+
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // this one here manipulates a register
+    template sequence foo(Context ctx, register reg)
+    {
+        // put the template's code here'
+    }
+
+    // This one only uses context's informations
+    template sequence foo(Context ctx)
+    {
+        // put the template's code here'
+    }
+}
+\end{lstlisting}
+
+\section{Content}
+
+A template block can contain only one kind of statement : the chunk statement.
+Inside the chunks of a template, one can use the template parameters'type.
+
+The template's block can contain any number of chunk, included the chunks
+associated to the builtin pointcuts (note the ``call'' pointcut used when
+calling a template from the frontend).
+
+
+\chapter{Using template variables}
+
+Well, we can write templates. Cool. Now, we need to use those as real templates
+of code, that will result in different generated codes. That is the very reason
+of the existence of the template's parameters. They can be manipulated in the
+blocks of code delimited by "\$\{" and "\}", and there are three uses of this
+syntax. Let's see what are those uses.
+
+\section{Template variable structure}
+
+First of all, each template variable is structured in a specific way. For
+example, the register type contains a name, an address, and possibly a
+collection of named fields. The mapping of each template type is described in
+the specific type template. Please refer to the associated template to obtain
+more information about any template variable mapping.
+
+\section{Identifier concatenation}
+
+The first and simplest way to use a template variable is to use it in order to
+create C identifiers containing the name associated with the template variable.
+Take the example of the buffer type. We could be using different buffers with
+different names in the front-end of Rathaxes, but that should not hamper the
+process of generation of the C code. Actually, if we did use the same generated
+name of manipulation function for both buffers, we could in the end have an
+improper (and even undefined), unwanted behaviour. We may then want to use the
+variable's contained name to generate identifiers.
+
+That is why the syntax accepts prefixes and postfixes to the "\$\{"\ldots"\}"
+syntax. Thus, writing the following template with a register named "eeprm":
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    // this one here manipulates a register
+    template sequence foo(Context ctx, register reg)
+    {
+        int     the_${reg.name}_flag;
+    }
+}
+\end{lstlisting}
+
+could then generate (for the right \emph{configuration variables}):
+\lstset{language=C}
+\begin{lstlisting}
+int the_eeprm_flag;
+\end{lstlisting}
+\lstset{language={[back]rathaxes}}
+
+This technique can of course be used for any identifier, be it a function
+identifier, a macro name, a typedef, etc.
+
+\section{Using a template from another}
+
+Sometimes, there is a need to separate some functionnalities or templates into
+many much tinier ones (maybe for reusability ?). There is also sometimes a need
+to use a template that we know exists, and we do not want to rewrite it
+completely inside our own one. Thus, we need a way to call or use a template
+from another.
+
+In order to do that, here is the general syntax:
+\begin{lstlisting}
+${link template_variable_list to template_prototype};
+\end{lstlisting}
+
+The template variable list is a coma-separated list of template variables that
+are currently accessible within the template. The template prototype is as
+described earlier, what identifies the template to be linked to the current
+one.
+
+The effect is that the linked template's code will be included after resolution
+through the template variables given as parameters. The variables in the
+variable list must match the number and types of parameters in the linked
+template prototype.
+
+Thus, we could write: 
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    template sequence foo(Context ctx, register reg)
+    {
+        ${link reg to bar(register)};
+    }
+
+    template sequence bar(register reg)
+    {
+        int     the_${reg.name}_flag;
+    }
+}
+\end{lstlisting}
+
+
+%% TODO FIXME
+%% The rest of the "EACH" syntax is to be defined and then
+%% the documentation written....
+EACH SYNTAX TBD
+%%The ``each'' syntax is based on the same model as the ``link'' syntax, but allows to
+%%link each element of a collection to the same template. This prevents writing
+%%loops that would be error-prone. It would be written like this:
+
+%%\begin{lstlisting}
+%%${each template_variable as alias to template_prototype};
+%%\end{lstlisting}
+
+
+\subsection{Inheritance of the configuration variables}
+
+Now we can both create identifiers with our template variables, and link
+templates one to another. But there is an obvious limitation: the configuration
+variables. Indeed, since a template is selected by the \emph{configuration
+variables}, it would be inconsistent to allow using different ones for the
+linked template. Thus, linking to another template means that this template
+must be compatible with the current \emph{configuration variables}.
+
+
+\chapter{Accessible template variables from a template block}
+
+We know that we can use the template parameters inside the template's block.
+Good. But there are times when we would want to use either C-declared variables
+or \emph{configuration variables}' values. So the variables may not be enough.
+That is why the language offers contextual template variables.
+
+\section{Contextual template variables}
+
+The contextual template variables can be separated into two categories:
+\begin{enumerate}
+    \item Global variables,
+    \item Local variables.
+\end{enumerate}
+
+The global variable contains every configuration variable. Each one is to be
+accessed as fields of the template variable named "global", with their own
+names.
+
+The local variable contains every C variable declared in the block of the
+template. This allows using algorithms on those variables, and you may find it
+quite useful. It is accessible through the template variable named "local", and
+have to be accessed through the variable's name.
+
+For example, in order to give a C variable to a linked template, one would
+write:
+\begin{lstlisting}
+with os=Linux, version >= 2.6.24
+{
+    template sequence multiset(register reg)
+    {
+        {
+            // declare a tmp variable of the same type as "reg"
+            ${register}     tmp;
+            // Here we use "local.tmp" meaning we use the C variable tmp
+            tmp = ${link reg to get(register)};
+            tmp |= (val & mask);
+            ${link reg, local.tmp to set(register, register)};
+        }
+    }
+
+    template sequence get(register reg)
+    {
+        // read a byte
+        inb(${reg.addr})
+    }
+
+    template sequence set(register rreg, register lreg)
+    {
+        // Set the real register to the temporary one's value.
+        outb(${rreg.addr}, ${lreg.name})
+    }
+}
+\end{lstlisting}
+
+Those features imply that one can not name his template's parameters "global"
+or "local". The compiler would greet one with a nice error in those cases.
+
+
+\section{Annex : BNF}
+
+To sum up the syntax of the backend of \rtx, here is a BNF that describes it
+in a relatively complete fashion:
+
+\lstset{}
+\begin{lstlisting}
+// This is the root entry point of the BNF
+
+with_block ::= "with" config_value_list
+                '{' [ "${" tpl_pointcut '}' ';' | chunk | template_block ]* '}'
+
+config_value_list ::= [ config_value ]*
+
+config_value ::= config_variable config_condition config_value
+
+config_variable ::= identifier
+
+config_condition ::= "<=" | '=' | ">=" | '<' | '>'
+
+config_value ::= identifier | version
+
+template_block ::= "template" type_key template_prototype
+                    '{' [ chunk ]* '}'
+
+chunk ::= "chunk" identifier [ '(' tpl_var_id ')']?
+            '{' [ C | template_placeholder ]* '}'
+
+C ::= // this is the whole C syntax that we wont define here...
+
+type_key ::= "type" | "sequence"
+
+template_prototype ::= identifier '(' [tpl_var_list]? ')'
+
+tpl_var_list ::= tpl_var_type tpl_var_id [ ',' tpl_var_type tpl_var_id ]*
+
+template_placeholder ::= [ prefix ]? [ template_braced_code ]+ [ postfix ]?
+
+template_braced_code ::= "${" tpl_each | tpl_link | tpl_var | tpl_pointcut '}'
+
+tpl_pointcut ::= "pointcut" identifier['(' tpl_var ')'] [ "default" ':' C ]?
+
+tpl_each ::= "each" tpl_var "as" alias "in" tpl_proto
+
+tpl_link ::= "link" tpl_var_list "to" tpl_proto
+
+tpl_var ::= identifier [ '.' tpl_var_field ]*
+
+tpl_var_field ::= identifier
+
+tpl_proto ::= identifier '(' [tpl_proto_var_list]? ')'
+
+tpl_proto_var_list ::= tpl_var_type [ ',' tpl_var_type ]*
+
+tpl_var_type ::= identifier
+
+tpl_var_id ::= identifier
+
+version ::= number [ '.' number ]*
+
+number ::= [ '0'..'9' ]*
+
+identifier ::= [ 'a'..'z' | 'A'..'Z' | '_' ]
+               [ '0'..'9' | 'a'..'z' | 'A'..'Z' | '_' ]*
+
+\end{lstlisting}
+
+
+
+
+
+\end{document}

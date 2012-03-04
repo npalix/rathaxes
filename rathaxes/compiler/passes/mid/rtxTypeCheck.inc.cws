@@ -1,0 +1,289 @@
+#if !existFunction(rtxMid_TypeCheck_version)
+
+function rtxMid_TypeCheck_version()
+{ return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
+
+declare function rtxMiddle_TypeCheck(local_node : node);
+declare function rtxItfCheckInheritance_walk<T>(local_node : node, interfaces_list : node);
+declare function rtxItfCheckTypesDeclarations_walk(local_node : node, interfacesList : node);
+declare function rtxItfCheckTypesDeclarations<T>(currentDeclaration : node, currentInterface : node, interfacesList : node);
+
+/*
+ Entry point for middle type checking
+*/
+function rtxMiddle_TypeCheck(local_node : node)
+{
+        foreach itf_node in local_node.block
+        {
+                if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, local_node.interfaces) == false)
+                {
+                        traceLine("Error while checking inheritance");
+                        exit 1;
+                }
+        }
+        if (rtxItfCheckTypesDeclarations_walk(local_node, local_node.interfaces) == false)
+        {
+                traceLine("Error while checking types.");
+                error("Error while checking types.");
+        }
+     
+}
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxItfCheckInheritance_walk<"__rtx_device__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxItfCheckInheritance_walk<"__rtx_config__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxItfCheckInheritance_walk<"__rtx_tpl__">(local_node : node, itf_list : node)
+{       return true;}
+/**/
+
+/*
+ * This function checks whether the interfaces inherited/depended on
+ * by the current interface exist. This is the firs step of the interface
+ * auto-validation mecanism.
+ *
+ * This is a templated walking function which aim is only to reach every
+ * interface or extension and to tell if it is dependency-valid.
+ *
+ * This default implementation returns true to avoid failing a test only
+ * because an unmanaged node was encountered.
+ */
+function        rtxItfCheckInheritance_walk<T>(local_node : node,
+                                       interfaces_list : node)
+{
+    traceLine("Unknown rtx_node :" + T);
+    return true;
+}
+
+function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
+                                                           interfaces_list : node)
+{
+    foreach inherited_interface in local_node.inheritance
+    {
+        local parentRef = false;
+        local parentName = key(inherited_interface);
+
+        // First, check if the interface was in the current file
+        // If not, check within the cache.
+        if (interfaces_list.findElement(parentName) == false
+            && rtxLink_findInterface(parentName, parentRef) == false)
+        {
+            traceLine(RED + "[Error] Unable to find interface ``" + parentName
+                      + "'' required by ``" + local_node.name + "''" + DEFAULT_COLOR);
+            return false;
+        }
+
+        // If any of the two attemps succeeded, then retrieve the node.
+        if (interfaces_list.findElement(parentName) != false)
+            ref local_node.inheritance[parentName] = interfaces_list[parentName];
+        else
+            rtxLink_LoadItem(parentRef, local_node.inheritance[parentName], false);
+    }
+
+    return true;
+}
+
+function        rtxItfCheckInheritance_walk<"__block__">(local_node : node,
+                                                         interfaces_list : node)
+{
+    local err_count = 0;
+    // Walk through a block.
+    foreach item in local_node.block
+    {
+        if (rtxItfCheckInheritance_walk<item.type>(item, interfaces_list) == false)
+            increment(err_count);
+    }
+    if (err_count != 0)
+        return false;
+    return true;
+}
+function rtxItfCheckInheritance_walk<"__rtx_with__">(local_node : node,
+                                                     interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node.body, interfaces_list);
+}
+
+function        rtxItfCheckInheritance_walk<"__root_block__">(local_node : node,
+                                                              interfaces_list : node)
+{
+    return rtxItfCheckInheritance_walk<"__block__">(local_node, interfaces_list);
+}
+
+
+/*
+ *
+ * The set of functions rtxItfCheckTypesDeclarations<T> walk through a tree
+ * and help check whether a type used for a parameter of a template is defined
+ * in the associated interface. They also allow to check whether an interface
+ * provides a pointcut to be used by the checked one.
+ *
+ */
+function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
+                                                currentInterface : node,
+                                                interfacesList : node)
+{
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
+                                                     currentInterface : node,
+                                                     interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"builtintype">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local varname = currentDeclaration.identifiers.scope + "::" + currentDeclaration.identifiers.name;
+    local ret = false;
+
+    if (scope == "" && currentDeclaration.rtype.name.global == false)
+    {
+        traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace." + DEFAULT_COLOR);
+        ret = true;
+    }
+    else
+    {
+        ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
+        if (ret == false)
+            traceLine(RED + "[Error] Type ``" + typeName + "''"
+                      + " could not be found for variable ``" + varname + "''." + DEFAULT_COLOR);
+    }
+    return ret;
+}
+
+function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    local scope = currentDeclaration.rtype.name.scope;
+    local name = currentDeclaration.rtype.name.name;
+    local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
+    local errcount = 0;
+
+    // First, check the types of the parameters.
+    foreach entry in currentDeclaration.rtype.params
+    {
+        local rtypeNode;
+        rtxItfIdNodeToRType(entry, rtypeNode);
+        if (rtxInterfaceHasType(rtypeNode, currentInterface) == false)
+        {
+            traceLine(RED + "[Error] Parameter type ``"
+                      + rtypeNode.name.scope + "::" + rtypeNode.name.name + "''"
+                      + " could not be found for sequence ``"
+                      + typeName + "''." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+        else // Success -> update the rtypeNode
+        {
+            entry.scope = rtypeNode.name.scope;
+            if (entry.scope == "")
+                entry.global = true;
+        }
+    }
+
+    // Second, check that the pointcuts to be implemented exist.
+    foreach decl in currentDeclaration.body.block
+    {
+        if (decl.type == "__rtx_itf_decl__" && decl.specifier == "chunk")
+        {
+            if (rtxTypeCheck_ItfCheckPointcut(decl.body.pointcut, currentInterface) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Pointcut '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(decl.body.pointcut, dummy)
+                          +"' is not declared." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            // In the case of success, the scoped identifier is already updated.
+        }
+    }
+    if (errcount != 0)
+        return false;
+
+    // It's all good, so make sure that the scope is set.
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
+    rtxItfAddTypeToList(currentDeclaration, currentInterface.name);
+
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"__rtx_itf__">(currentDeclaration : node,
+                                                            currentInterface : node,
+                                                            interfacesList : node)
+{
+    local errcount = 0;
+    foreach decl in currentDeclaration.body.block
+    {
+        if (rtxItfCheckTypesDeclarations<decl.specifier>(decl, currentDeclaration, interfacesList) == false)
+            increment(errcount);
+    }
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration : node,
+                                                          currentInterface : node,
+                                                          interfacesList : node)
+{
+    local errcount = 0;
+    foreach item in currentDeclaration.block
+    {
+        if (rtxItfCheckTypesDeclarations<item.type>(item,
+                                                    currentInterface,
+                                                    interfacesList) == false)
+            increment(errcount);
+    }
+    if(errcount != 0)
+        return false;
+    return true;
+}
+function        rtxItfCheckTypesDeclarations<"__rtx_with__">(currentDeclaration : node,
+                                                             currentInterface : node,
+                                                             interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+function        rtxItfCheckTypesDeclarations<"__root_block__">(currentDeclaration : node,
+                                                               currentInterface : node,
+                                                               interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration, currentInterface, interfacesList);
+}
+
+function        rtxItfCheckTypesDeclarations_walk(local_node : node,
+                                                  interfacesList : node)
+{
+    return rtxItfCheckTypesDeclarations<local_node.type>(local_node, local_node, interfacesList);
+}
+
+#end
