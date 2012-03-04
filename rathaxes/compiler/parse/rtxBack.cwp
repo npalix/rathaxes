@@ -36,14 +36,6 @@ rtx_stmt_template_content<"sequence">(theTemplate : node, theBlock : node) ::=
         ]*
 ;
 
-// TEMPLATE BUILTIN TYPE
-rtx_stmt_template_content<"builtintype">(theTemplate : node, theBlock : node) ::=
-/**/    =>traceLine("Template builtintype block!");
-        [
-                "chunk" rtx_stmt<"chunk">(theBlock)
-        ]*
-;
-
 // TEMPLATE TYPE
 rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 /**/    =>traceLine("Template type block!");
@@ -233,21 +225,27 @@ rtx_chunk_compound_statement(theBlock : node) ::=
 '}'
 ;
 
+// for DEFINE
+#ignore["define"] ::= '\\' [' '|'\t']* '\n'
+;
+
 // chunk encapsulate C CODE
 rtx_chunk_block_item_list(theBlock : node) ::=
 [
 	line_of_code(theBlock)
         | '#' 
-        [// TODO: Add Define with chunks variables detections/substitutions
-        "include" 
-                [
-                ['"' -> '"' | '<' -> '>' ]:sFile
-                ]
-/**/    #pushItem(theBlock.block)
-/**/    => local lastNode;
-/**/	#check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/    => local sData = "\n#include " + sFile + " \n";
-/**/    => cnormNode_Raw(lastNode, sData);
+        [
+          "include" ['"' -> '"' | '<' -> '>' ]:sFile
+/**/            #pushItem(theBlock.block)
+/**/            => local lastNode;
+/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/            => local sData = "\n#include " + sFile + " \n";
+/**/            => cnormNode_Raw(lastNode, sData);
+        | "define" #ignore("define") -> "\n":sData
+/**/            #pushItem(theBlock.block)
+/**/            => local lastNode;
+/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/            => cnormNode_Raw(lastNode, "\n#define "+sData);
         ]
 ]*
 ;

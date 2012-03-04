@@ -29,68 +29,110 @@ generateString({
             provided builtintype        register;
             provided builtintype        register_field;
             provided builtintype        register_value;
-
+            provided builtintype        base_adr;
         }
 
         interface LKM : Builtin
         {
-            provided pointcut           LKM::includes();
-            provided pointcut           LKM::prototypes();
-            provided pointcut           LKM::data();
-            provided pointcut           LKM::code();
+            provided pointcut           LKM::includes;
+            provided pointcut           LKM::prototypes;
+            provided pointcut           LKM::data;
+            provided pointcut           LKM::code;
+
+            provided type               LKM::Context;
         
-        
-            required sequence           LKM::open();
+            required sequence           LKM::open(LKM::Context);
             required sequence           LKM::close();
         }
 
-        with Builtin {
-        template builtintype Builtin::register()
+        interface Generic : LKM
         {
-                chunk           LKM::prototypes()
-                {
-                        int     register; 
-                }
-        }}
+            provided sequence           Generic::set(LKM::Context, Builtin::register_value)
+            {
+                    provided chunk              ::CALL;
+            }
+        }
 
-        with LKM {
-
-        /* AUTO GENERATED FILE*/
-                ${pointcut      LKM::includes()};
-
-                ${pointcut      LKM::prototypes()};
-                
-                ${pointcut      LKM::data()};
-                
-                ${pointcut      LKM::code()};
-        /* END*/
-
-        template sequence LKM::open()
+        with Generic
         {
-                chunk           LKM::code()
+                template sequence Generic::set(LKM::Context ctx, Builtin::register_value  regval)
                 {
-                        int     main(int ac, char **av)
+                
+                        chunk           LKM::prototypes()
                         {
-                                f1();
+                                #define REG_ADDR(base, reg) \
+                                        ((uint32_t *) (base + reg))
+	
+                        	#define REG_READ(base, reg) (pio_read_32(REG_ADDR(base, reg)))
+                        	
+                        	#define REG_WRITE(base, reg, value) (pio_write_32(REG_ADDR(base, reg), value))
+                        
+                        }
+                        
+                        chunk           ::CALL
+                        {
+                                        typedef         unsigned int    uint32_t; // to put in proto :(
+                                {
+                                        printf("PLOP");
+                                        uint32_t       reg_${regval.regname} = REG_READ(${ctx}, ${regval.offset});
+                                        reg_${regval.regname} |= ${regval.value};
+                                        REG_WRITE(${ctx}, ${regval.offset}, reg_${regval.regname});
+                                }
                         }
                 }
         }
 
-        template sequence LKM::close()
+        with LKM 
         {
-                chunk           LKM::includes()
+                /* AUTO GENERATED FILE*/
+                        ${pointcut      LKM::includes};
+        
+                        ${pointcut      LKM::prototypes};
+                        
+                        ${pointcut      LKM::data};
+                        
+                        ${pointcut      LKM::code};
+                /* END*/
+        
+                template sequence LKM::open(LKM::Context ctx)
                 {
-                        #include <stdio.h>
-                }
-
-                chunk           LKM::code()
-                {
-                        int     f1()
+                        chunk           LKM::code()
                         {
-                                printf("tata");
+                                int     main(int ac, char **av)
+                                {
+                                        f1();
+                                        int     base_addr = 0x1234;
+                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
+                                }
                         }
                 }
-        }}
+        
+                template sequence LKM::close()
+                {
+                        chunk           LKM::includes()
+                        {
+                                #include <stdio.h>
+                        }
+        
+                        chunk           LKM::code()
+                        {
+                                int     f1()
+                                {
+                                        printf("tata");
+                                        int     base_addr = 0x1234;
+                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
+                                }
+                        }
+                }
+
+                template type LKM::Context()
+                {
+                        map
+                        {
+                                name : ${self};
+                        }
+                }
+        }
 
 	device RS232
 	use LKM
@@ -247,9 +289,10 @@ generateString({
 			}*/
 		//}
 
-		LKM::open(/*LKM::Context ctx, LKM::Buffer buf*/)
+		LKM::open(LKM::Context ctx)
 		{
 			//LOG("my RS232 [open]\n");
+			Generic::set(ctx, LCR->dlab.clock);
 		}
 
 		LKM::close(/*LKM::Context ctx, LKM::Buffer buf*/)
@@ -297,26 +340,25 @@ traceLine("====>MIDDLE TYPE CHECK");
 rtxMiddle_TypeCheck(source);
 saveProject("__04_C_rtx_02_midpass__.tree", source);
 
+
 // BACK PASS
 traceLine("====>BACK META,TH,Intro,Gen");
 rtxMeta(source);
 rtxTypeHash(source);
 rtxIntrospect(source);
-/*
+rtxGenerate(source);
+saveProject("__04_C_rtx_03_back.tree", source);
+
+// CACHE LOADING
+traceLine("====>REGISTER CACHE 1");
+if (rtxLink_RegisterToCache(source) == false)
+{       error("Can't REGISTER CACHE");}
+saveProject("__04_C_rtx_04_cache1.tree", this);
 if (rtxTpl_TypeCheck(source) == false)
 {
         traceLine("Template Type Checking failed. Stopping template compilation.");
         exit(1);
 }
-*/
-rtxGenerate(source);
-saveProject("__04_C_rtx_03_back.tree", source);
-
-// CACHE LOADING
-traceLine("====>REGISTER CACHE");
-if (rtxLink_RegisterToCache(source) == false)
-{       error("Can't REGISTER CACHE");}
-saveProject("__04_C_rtx_04_cache.tree", this);
 
 // FRONT PASS
 traceLine("====>FRONT TYPE CHECK");
@@ -339,6 +381,7 @@ if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
 
 traceLine("====>GENERATE");
 rtxFrontGenerate(source);
+traceLine(" CTYPES:\n" + toString(source.c_types));
 saveProject("__04_C_rtx_06_frontgen.tree", source);
 
 traceLine("====>CODE");
