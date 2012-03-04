@@ -103,50 +103,62 @@ if (toLowerString(this.operation) == "generate")
     if (rtxLink_LoadCache() == false)
         traceLine("Could not load cache. Trying to do without it...");
 
-    insert this.front;
-    insert this.c_types;
-    rtxParseFile(this.front, inputFile);
+//
+local source;
+// PARSING PASS
+traceLine("====>PARSE");
+rtxParseFile(source, inputFile);
 
-    saveProject("front_end.tree", this.front);
+// MIDDLE PASS
+traceLine("====>MIDDLE TYPE CHECK");
+rtxMiddle_TypeCheck(source);
 
-    if (rtxFront_TypeCheck(this.front) == false)
-    {
-        traceLine(RED + "[Error] Front-end implementation type"
-                  + " checking failed. Stopping compilation." + DEFAULT_COLOR);
-        exit (3);
-    }
+// BACK PASS
+traceLine("====>BACK META,TH,Intro,Gen");
+rtxMeta(source);
+rtxTypeHash(source);
+rtxIntrospect(source);
+rtxGenerate(source);
 
-    if (rtxFront_RetrieveConfig(this.front, this.config_block) == false)
-    {
-        traceLine(RED + "[Error] Front-end configuration could not be"
-                  + " transformed for use in generation." + DEFAULT_COLOR);
-        exit(4);
-    }
+// CACHE LOADING
+traceLine("====>REGISTER CACHE 1");
+if (rtxLink_RegisterToCache(source) == false)
+{       error("Can't REGISTER CACHE");}
+/*
+if (rtxTpl_TypeCheck(source) == false)
+{
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
+}*/
 
-    if (rtxNodeWith_BuildFromConfig(this.config_block, this.config) == false)
-    {
+// FRONT PASS
+traceLine("====>FRONT TYPE CHECK");
+rtxFront_TypeCheck(source);
+
+traceLine("====>CONF RETRIEVE");
+if (rtxFront_RetrieveConfig(source, source.config_block) == false)
+{
+        traceLine(RED + "[Error] Front-end configuration could not be" + " transformed for use in generation." + DEFAULT_COLOR);
+        exit(-1);
+}
+
+traceLine("====>CONF BUILD");
+if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
+{
         traceLine(RED + "[Error] Could not build Constraint node from configuration." + DEFAULT_COLOR);
-        exit(5);
-    }
+        exit(-1);
+}
 
-    if (rtxFrontGen_iterate<this.front.type>(this.front) == false)
-    {
-        traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
-        exit(6);
-    }
-
-    //traceLine(BLUE + toString(this.c_tree.c_block,true) + DEFAULT_COLOR);
-    //removeElement(this.c_tree.c_block.block, "_3_8");
-    //removeVariable(this.c_tree.c_block.compile);
-    //traceLine(PURPLE + toString(this.c_tree.c_block,true) + DEFAULT_COLOR);
-
+traceLine("====>GENERATE");
+rtxFrontGenerate(source);
+// TODO: Soon In rtxFrontGenerate
     /*
      * For the code to compile, we need to have the types declared.
      * Here is the "include" code generation:
      */
     local include;
     cnormNodeRoot(include);
-    foreach  item in this.c_types
+    foreach  item in source.c_types
     {
         if (existVariable(item.c_decl))
         {
@@ -166,9 +178,8 @@ if (toLowerString(this.operation) == "generate")
      * This is our final code, tell cnorm2c that this is a root block,
      * otherwise it will scope the whole thing inside braces.
      */
-    this.c_tree.c_block.type = "__root_block__";
     local include_code = cnorm2c(include);
-    local code = cnorm2c(this.c_tree.c_block);
+    local code = cnorm2c(source.c_tree.c_block);
     traceLine("Resulting include:" + include_code);
     traceLine("Resulting code: " + code);
 

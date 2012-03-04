@@ -84,7 +84,7 @@ insert resVals["symbol"]["name"];
 curvalue = "global_init.open";
 rtxNodeResValLeaf(resVals["symbol"]["name"], curvalue);
 
-instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
+instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source);
 traceLine("INSTANCIATING TEMPLATE[CALL]: "+rtxRTypeName<theRtype.type>(theRtype));
 traceLine("Template resolved : The call will be replaced by :"
           + cnorm2c(c_tree.body));
