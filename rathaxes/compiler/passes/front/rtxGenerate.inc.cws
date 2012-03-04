@@ -12,29 +12,27 @@ declare function rtxFrontGenerate(local_node : node);
 
 declare function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node);
 declare function rtxFrontGen_Itf(itfName : node, itfUsedList : node);
-declare function rtxFrontGen_Device(theDevice : node);
-declare function rtxFrontGen_iterate<T>(local_node : node);
+declare function rtxFrontGen_Device(theDevice : node, source_tree : reference);
+declare function rtxFrontGen_iterate<T>(local_node : node, source_tree : reference);
 
 
 function rtxFrontGenerate(local_node : node)
 {
     insert local_node.c_types;
 
-    if (rtxFrontGen_iterate<local_node.type>(local_node) == false)
+    if (rtxFrontGen_iterate<local_node.type>(local_node, local_node) == false)
     {
         traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
         exit(6);
     }
+    // correct this block to be the root block
+    local_node.c_tree.c_block.type = "__root_block__";
 
-    /*
-     * For the code to compile, we need to have the types declared.
-     * Here is the "include" code generation:
-     */
-
+        // TODO: Translate the following code
    /*  
     local include;
     cnormNodeRoot(include);
-    foreach  item in this.c_types
+    foreach  item in local_node.c_types
     {
         if (existVariable(item.c_decl))
         {
@@ -52,17 +50,6 @@ function rtxFrontGenerate(local_node : node)
     }
 */
 
-    /*
-     * This is our final code, tell cnorm2c that this is a root block,
-     * otherwise it will scope the whole thing inside braces.
-     */
-/*
-    this.c_tree.c_block.type = "__root_block__";
-    local include_code = cnorm2c(include);
-    local code = cnorm2c(this.c_tree.c_block);
-    traceLine("Resulting include:" + include_code);
-    traceLine("Resulting code: " + code);
-*/
 }
 
 function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node)
@@ -116,7 +103,7 @@ function rtxFrontGen_Itf(itfName : node, itfUsedList : node)
  * used or not, and on the qualifiers (provided, auto, required, optional).
  *
  */
-function rtxFrontGen_Device(theDevice : node)
+function rtxFrontGen_Device(theDevice : node, source_tree : reference)
 {
     local errcount = 0;
     local itfList;
@@ -158,7 +145,7 @@ function rtxFrontGen_Device(theDevice : node)
     rtxFrontGen_BuildResValFromDevice(resVals, theDevice);
 
     //its an interface, so we should use the c_block field.
-    if (instanceChunk<theDevice#root.c_tree.instanceKey>(resVals, theDevice#root.c_tree.c_block) == false)
+    if (instanceChunk<theDevice#root.c_tree.instanceKey>(resVals, theDevice#root.c_tree.c_block, theDevice#root) == false)
     {
         traceLine(RED + "[Error] Could not resolve global code." + DEFAULT_COLOR);
         return false;
@@ -171,17 +158,17 @@ function rtxFrontGen_Device(theDevice : node)
     return true;
 }
 
-function rtxFrontGen_iterate<T>(local_node : node)
+function rtxFrontGen_iterate<T>(local_node : node, source_tree : reference)
 { error("rtxFrontGen_iterate<"+T+"> not implemented."); }
 
 /* Allow middle or back code portion in one big RTX file */
-function rtxFrontGen_iterate<"__rtx_itf__">(local_node : node)
+function rtxFrontGen_iterate<"__rtx_itf__">(local_node : node, source_tree : reference)
 {       return true;}
-function rtxFrontGen_iterate<"__rtx_tpl__">(local_node : node)
+function rtxFrontGen_iterate<"__rtx_tpl__">(local_node : node, source_tree : reference)
 {       return true;}
-function rtxFrontGen_iterate<"__rtx_with__">(local_node : node)
+function rtxFrontGen_iterate<"__rtx_with__">(local_node : node, source_tree : reference)
 {       return true;}
-function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
+function rtxFrontGen_iterate<"__rtx_config__">(local_node : node, source_tree : reference)
 { return true; }
 /**/
 
@@ -191,18 +178,18 @@ function rtxFrontGen_iterate<"__rtx_config__">(local_node : node)
  * in the front-end.
  *
  */
-function rtxFrontGen_iterate<"__rtx_device__">(local_node : node)
+function rtxFrontGen_iterate<"__rtx_device__">(local_node : node, source_tree : reference)
 {
-    return rtxFrontGen_Device(local_node);
+    return rtxFrontGen_Device(local_node, source_tree);
 }
 
-function rtxFrontGen_iterate<"__block__">(local_node : node)
+function rtxFrontGen_iterate<"__block__">(local_node : node, source_tree : reference)
 {
     local errcount = 0;
 
     foreach item in local_node.block
     {
-        if (rtxFrontGen_iterate<item.type>(item) == false)
+        if (rtxFrontGen_iterate<item.type>(item, source_tree) == false)
             increment(errcount);
     }
 
@@ -211,8 +198,8 @@ function rtxFrontGen_iterate<"__block__">(local_node : node)
     return true;
 }
 
-function rtxFrontGen_iterate<"__root_block__">(local_node : node)
-{ return rtxFrontGen_iterate<"__block__">(local_node); }
+function rtxFrontGen_iterate<"__root_block__">(local_node : node, source_tree : reference)
+{ return rtxFrontGen_iterate<"__block__">(local_node, source_tree); }
 
 
 #end
