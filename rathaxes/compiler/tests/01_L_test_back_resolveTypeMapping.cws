@@ -77,7 +77,7 @@ insert resVals["ctx"]["name"];
 curvalue = "theContextValue";
 rtxNodeResValLeaf(resVals["ctx"]["name"], curvalue);
 
-instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
+instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source);
 traceLine("INSTANCIATING TEMPLATE[CALL]: LKM::test(Context ctx)");
 traceLine("Template resolved : The call will be replaced by :"
           + cnorm2c(c_tree.body));

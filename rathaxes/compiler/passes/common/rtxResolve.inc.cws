@@ -242,6 +242,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                                           source_tree : reference)
 {
     local idx = $0$;
+    // TODO: failed to get the param from ::IMPLEM
+    /* 
     if (getArraySize(src_params.list) != getArraySize(dst_params.list))
     {
         traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
@@ -249,7 +251,7 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         traceLine(toString(dst_params, true)+toString(src_params, true));
         error("test");
         return false;
-    }
+    }*/
 
     foreach dst_param in dst_params.list
     {

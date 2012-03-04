@@ -60,7 +60,7 @@ rtxNodeResValLeaf(resVals["config"]["plop"]["name"], curvalue);
 // We have a pointcut node that should be resolved, try to resolve it !
 inject<"__rtx_pointcut__">(resVals,
                            c_tree.c_block.compile["_1"].node,
-                           c_tree.c_block.compile["_1"].node);
+                           c_tree.c_block.compile["_1"].node, source);
 
 traceLine("Pointcut resolved : The pointcut will be replaced by :"
           + cnorm2c(c_tree.c_block.block["_1_0"])

@@ -34,10 +34,10 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided pointcut           LKM::includes;
-            provided pointcut           LKM::prototypes;
-            provided pointcut           LKM::data;
-            provided pointcut           LKM::code;
+            provided pointcut           LKM::includes();
+            provided pointcut           LKM::prototypes();
+            provided pointcut           LKM::data();
+            provided pointcut           LKM::code();
 
             provided type               LKM::Context;
         
@@ -49,7 +49,7 @@ generateString({
         {
             provided sequence           Generic::set(LKM::Context, Builtin::register_value)
             {
-                    provided chunk              ::CALL;
+                    provided chunk              ::CALL();
             }
         }
 
@@ -69,7 +69,7 @@ generateString({
                         
                         }
                         
-                        chunk           ::CALL
+                        chunk           ::CALL()
                         {
                                         typedef         unsigned int    uint32_t; // to put in proto :(
                                 {
@@ -85,13 +85,13 @@ generateString({
         with LKM 
         {
                 /* AUTO GENERATED FILE*/
-                        ${pointcut      LKM::includes};
+                        ${pointcut      LKM::includes()};
         
-                        ${pointcut      LKM::prototypes};
+                        ${pointcut      LKM::prototypes()};
                         
-                        ${pointcut      LKM::data};
+                        ${pointcut      LKM::data()};
                         
-                        ${pointcut      LKM::code};
+                        ${pointcut      LKM::code()};
                 /* END*/
         
                 template sequence LKM::open(LKM::Context ctx)
@@ -354,11 +354,11 @@ traceLine("====>REGISTER CACHE 1");
 if (rtxLink_RegisterToCache(source) == false)
 {       error("Can't REGISTER CACHE");}
 saveProject("__04_C_rtx_04_cache1.tree", this);
-if (rtxTpl_TypeCheck(source) == false)
+/*if (rtxTpl_TypeCheck(source) == false)
 {
         traceLine("Template Type Checking failed. Stopping template compilation.");
         exit(1);
-}
+}*/
 
 // FRONT PASS
 traceLine("====>FRONT TYPE CHECK");

@@ -5,6 +5,7 @@
 #include  "01_G_test_back_registerToCache.cws"
 
 #include "passes/common/rtxResolve.inc.cws"
+#include "node/rtxNode.inc.cws"
 
 // Load the template :
 // First, hash the prototype, then find every template matching it,
@@ -18,6 +19,9 @@ rtxNodeIdentifier(name, "open", "Userland");
 rtxNodeRType(theRtype, name, params);
 pushItem params;
 rtxNodeIdentifier(params#back, "Context");
+
+local dummy;
+local theProto = rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy);
 
 local theWith;
 local theTemplates;
@@ -83,7 +87,7 @@ insert resVals["symbol"]["name"];
 curvalue = "global_init.open";
 rtxNodeResValLeaf(resVals["symbol"]["name"], curvalue);
 
-instanceChunk<c_tree.instanceKey>(resVals, c_tree.body);
+instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source);
 traceLine("INSTANCIATING TEMPLATE[CALL]: open(Context ctx)");
 traceLine("Template resolved : The call will be replaced by :"
           + cnorm2c(c_tree.body));
