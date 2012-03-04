@@ -52,6 +52,8 @@ interface Algorithms : Builtin
         provided chunk  ::CALL(); // use current namespace/template from frontend
     }
     //...
+
+    required variable Builtin::number size;
 }
 
 interface User : LKM

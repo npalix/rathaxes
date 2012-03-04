@@ -179,6 +179,8 @@ configuration
         LKM::version = 2.6.24;
     }
 
+    Algorithm::size = 32;
+
     // Currently, defining a variable twice creates an error.
     //LKM::OS = Windows
     //{

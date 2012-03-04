@@ -24,7 +24,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
         {
             struct buf
             {
-                char *ptr;
+                char ptr[${config.size}];
                 int sz;
             };
         }
