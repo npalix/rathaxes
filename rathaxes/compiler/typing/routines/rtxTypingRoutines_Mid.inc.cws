@@ -1,0 +1,166 @@
+#if !existFunction(rtxTypingRoutines_Mid_version)
+
+function rtxTypingRoutines_Mid_version()
+{ return "1.0"; }
+
+#include "typing/routines/rtxTypingRoutines_Common.inc.cws"
+
+function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
+{
+    local dummy_out_ref;
+
+    rtxNodeRType(rtypeNode, idNode, dummy_out_ref);
+}
+
+/*
+ * This function checks whether an interface contains a type described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+{
+    if (rtypeNode.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + rtypeNode.type);
+
+    local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+    // Unkown scope and not explicit global ?
+    if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
+    {
+        // We are searching for qualified items, thus set the scope before checking.
+        rtypeNode.name.scope = interfaceNode.name;
+        name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+        // Check current interface.
+        if (findElement(name + "{}", interfaceNode.types) == true)
+        {
+            rtypeNode.name.scope = interfaceNode.name;
+            return true;
+        }
+        rtypeNode.name.scope = "";
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+            {
+                // then set the interface's name
+                rtypeNode.name.scope = parentInterface.name;
+                return true;
+            }
+        }
+    }
+    else if (rtypeNode.name.global == false) // known scope
+    {
+        if (rtypeNode.name.scope != interfaceNode.name)
+        {
+            // If it's not a direct inheritance, try out by going through the parent first to find the itf...
+            if (!findElement(rtypeNode.name.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+                        return true;
+                }
+                traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree." + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
+                return true;
+        }
+        else if (findElement(name + "{}", interfaceNode.types) == true)
+            return true;
+    }
+    else // explicit global == true
+    {
+        // XXX FIXME TODO
+        // builtin item management.
+        if (rtypeNode.name.name == "register")
+            return true;
+        if (rtypeNode.name.name == "register_field")
+            return true;
+        if (rtypeNode.name.name == "register_value")
+            return true;
+        if (rtypeNode.name.name == "string")
+            return true;
+        if (rtypeNode.name.name == "number")
+            return true;
+        if (rtypeNode.name.name == "numser")
+            return true;
+    }
+
+    return false;
+}
+
+
+
+/*
+ * This function checks whether an interface declares a pointcut described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxTypeCheck_ItfCheckPointcut(pointcutRtype : node, interfaceNode : node)
+{
+    if (pointcutRtype.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + pointcutRtype.type);
+
+
+    // Unkown scope and not explicit global ?
+    if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
+    {
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
+        {
+            // then set the interface's name
+            pointcutRtype.name.scope = interfaceNode.name;
+            return true;
+        }
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            if (rtxTypeCheck_ItfCheckPointcut(pointcutRtype, parentInterface) == true)
+            {
+                // then set the interface's name
+                pointcutRtype.name.scope = parentInterface.name;
+                return true;
+            }
+        }
+    }
+    else if (pointcutRtype.name.global == false) // known scope
+    {
+        if (pointcutRtype.name.scope != interfaceNode.name && !isEmpty(interfaceNode.inheritance))
+        {
+            if (!findElement(pointcutRtype.name.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxTypeCheck_ItfCheckPointcut(pointcutRtype, parentInterface) == true)
+                        return true;
+                }
+                traceLine(RED + "[Error] The interface "+interfaceNode.name
+                          +" does not depend on interface '"+pointcutRtype.name.scope
+                          +"': The pointcut cannot be declared." + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode.inheritance[pointcutRtype.name.scope]) == true)
+                return true;
+        }
+        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
+            return true;
+
+    }
+    else // explicit global == true
+    {
+        // XXX TODO FIXME
+        // builtin item management.
+        if (pointcutRtype.name.name == "CALL"
+            || pointcutRtype.name.name == "IMPLEMENTATION")
+            return true;
+    }
+    return false;
+}
+
+
+
+
+
+
+#end

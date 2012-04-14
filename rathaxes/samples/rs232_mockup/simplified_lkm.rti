@@ -1,0 +1,93 @@
+/* Used by the compiler test 02_B_test_middle_parse_rti_file.cws */
+
+interface LKM
+{
+    provided builtintype        LKM::Device_list;//??
+    provided builtintype        LKM::Symbol;
+    provided builtintype        LKM::string;
+    provided builtintype        LKM::number;
+    provided builtintype        LKM::numser;
+
+    provided pointcut           LKM::INCLUDE_DEPENDENCIES();
+    provided pointcut           LKM::GLOBAL_DATA_DECLARATION();
+    provided pointcut           LKM::GLOBAL_CODE_DEFINITION();
+
+    provided sequence           LKM::load()
+    {
+        provided pointcut       LKM::INIT_LKM_FPTRS();
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+    }
+
+    provided sequence           LKM::unload()
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+    }
+
+    required variable LKM::Device_list  LKM::Devices;
+    required variable LKM::string       LKM::OS;
+    optional variable LKM::numser       LKM::version;
+    optional variable LKM::numser       LKM::arch;
+}
+
+interface Algorithms : LKM
+{
+    provided builtintype        Algorithms::register; //collection?
+    provided builtintype        Algorithms::register_field;
+    provided type               Algorithms::Buffer;
+
+    provided sequence   log(LKM::string)
+    {
+        provided chunk   LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk   ::CALL(); // use current namespace/template from frontend
+    }
+
+    provided sequence   set(Algorithms::register,
+                            Algorithms::register_field) // should be in subsystem BUS
+    {
+        provided chunk  LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk  ::CALL(); // use current namespace/template from frontend
+    }
+    //...
+}
+
+interface User : Algorithms
+{
+    provided type                       User::Context;//why not device?
+    required variable LKM::Device_list  User::Devices;
+
+
+    required sequence           open(User::Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk          LKM::INIT_LKM_FPTRS();
+        provided pointcut       ::CALL();
+    }
+
+    required sequence           close(User::Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk          LKM::INIT_LKM_FPTRS();
+        provided pointcut       ::CALL();
+    }
+
+    required sequence           read(User::Context, Algorithms::Buffer)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk          LKM::INIT_LKM_FPTRS();
+        provided pointcut       ::CALL();
+    }
+
+    required sequence           write(User::Context, Algorithms::Buffer)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk          LKM::INIT_LKM_FPTRS();
+        provided pointcut       ::CALL();
+    }
+
+    required sequence           on_plug(User::Context)
+    {
+        provided chunk          LKM::GLOBAL_CODE_DEFINITION();
+        provided chunk          LKM::INIT_LKM_FPTRS();
+        provided pointcut       ::CALL();
+    }
+}

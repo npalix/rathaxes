@@ -1,0 +1,18 @@
+@echo off
+
+for /f "tokens=2,*" %%a in ('reg query HKLM\Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_NAME@ /ve ^| findstr "(Default)"') do set RATHAXES_PATH=%%b
+
+rem This variable is simply used as a shortcut to the Rathaxes install
+rem directory (since we never know where it can be on Windows). Useful to
+rem specify some paths in the documentation. This is also used by the
+rem FindCodeWorker CMake finder.
+set CNORM_PATH="%RATHAXES_PATH%@CNORM_PATH@"
+set RATHAXES_LIB="%RATHAXES_PATH%@RATHAXES_LIB@"
+set COMPILER_PATH="%RATHAXES_PATH%@RATHAXES_LIB@/compiler"
+set LOCAL_CACHE_PATH="%LOCALAPPDATA%\\Rathaxes\\cache\\"
+
+set INCLUDE_PATHS=-I %CNORM_PATH% -I %COMPILER_PATH%
+
+set CODEWORKER="%RATHAXES_PATH%@CODEWORKER_PATH@"
+
+%CODEWORKER% --quiet %INCLUDE_PATHS% -script %COMPILER_PATH%/rathaxes.cws -args %RATHAXES_LIB% %LOCAL_CACHE_PATH% %*

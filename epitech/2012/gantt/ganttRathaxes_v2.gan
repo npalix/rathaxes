@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Rathaxes" company="EIP-Rathaxes 2012" webLink="http://rathaxes.org" view-date="2011-02-13" view-index="0" gantt-divider-location="423" resource-divider-location="433" version="2.0">
+    <description/>
+    <view zooming-state="default:8" id="gantt-chart"/>
+    <view id="resource-table">
+        <field id="0" name="Name" width="53" order="0"/>
+        <field id="1" name="Default role" width="46" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <calendar id="1" name="default">
+                <default-week sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+                <overriden-day-types/>
+                <days/>
+            </calendar>
+        </day-types>
+    </calendars>
+    <tasks color="#8cb6ce">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="2" name="" color="#8cb6ce" meeting="false" start="2010-04-01" duration="73" complete="100" priority="1" expand="true"/>
+        <task id="0" name="Expérimentation et documentation sur les pilotes de périphérique" color="#8cb6ce" meeting="false" start="2010-01-01" duration="368" complete="0" priority="1" expand="true">
+            <task id="9" name="Mise en place de l'infrastructure Rathaxes" color="#8cb6ce" meeting="false" start="2010-09-01" duration="195" complete="0" priority="1" expand="true"/>
+            <task id="35" name="Analyse de pilote existant" color="#8cb6ce" meeting="false" start="2010-01-01" duration="368" complete="0" priority="1" expand="false"/>
+            <task id="10" name="Design language" color="#8cb6ce" meeting="false" start="2010-09-01" duration="87" complete="0" priority="1" expand="true"/>
+            <task id="11" name="Pilote de carte réseau" color="#8cb6ce" meeting="false" start="2010-09-01" duration="87" complete="0" priority="1" expand="true"/>
+        </task>
+        <task id="12" name="Intégration des changements dans rathaxes" color="#8cb6ce" meeting="false" start="2010-12-10" duration="235" complete="44" priority="1" expand="true">
+            <task id="17" name="Brainstorrming" color="#8cb6ce" meeting="false" start="2010-12-10" duration="66" complete="0" thirdDate="2010-07-17" thirdDate-constraint="0" priority="1" expand="true"/>
+            <task id="16" name="Implémentations des nouveaux concepts dans le DSL" color="#8cb6ce" meeting="false" start="2011-02-15" duration="142" complete="0" priority="1" expand="true"/>
+            <task id="31" name="Recherche et développement sur le Back-End" color="#8cb6ce" meeting="false" start="2011-02-15" duration="76" complete="0" priority="1" expand="false"/>
+            <task id="29" name="Recherche et développement sur le Middle-End" color="#8cb6ce" meeting="false" start="2011-05-02" duration="44" complete="0" priority="1" expand="false"/>
+            <task id="27" name="Recherche et développement sur le Front-End" color="#8cb6ce" meeting="false" start="2011-06-01" duration="43" complete="0" priority="1" expand="false"/>
+            <task id="15" name="Mise à jour de la documentation" color="#8cb6ce" meeting="false" start="2011-02-15" duration="188" complete="100" priority="1" expand="true"/>
+        </task>
+        <task id="14" name="Implémentation de nouveaux pilotes en Rathaxes" color="#8cb6ce" meeting="false" start="2011-04-06" duration="152" complete="100" priority="1" expand="true"/>
+        <task id="6" name="RMLL 2011" color="#8cb6ce" meeting="false" start="2011-06-09" duration="3" complete="0" priority="1" expand="true"/>
+        <task id="5" name="Forum EIP" color="#8cb6ce" meeting="false" start="2011-11-01" duration="1" complete="0" priority="1" expand="true"/>
+    </tasks>
+    <resources>
+        <resource id="0" name="Luquet Thomas" function="Default:0" contacts="luquet_t@epitech.net" phone="06 21 72 54 52"/>
+        <resource id="1" name="Thomas Sanchez" function="Default:0" contacts="sanchez_t@epitech.net" phone=""/>
+        <resource id="3" name="Pineau David" function="Default:0" contacts="pineau_d@epitech.net" phone=""/>
+        <resource id="4" name="Konarzewski zoltan" function="Default:0" contacts="konarz_z@epitech.net" phone=""/>
+        <resource id="5" name="Louis Opter" function="Default:0" contacts="opter_l@epitech.net" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="2" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="2" resource-id="0" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="2" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="2" resource-id="5" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="2" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="9" resource-id="5" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="35" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="10" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="11" resource-id="4" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="11" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="12" resource-id="3" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="12" resource-id="0" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="12" resource-id="4" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="12" resource-id="5" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="12" resource-id="1" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="17" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="17" resource-id="0" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="17" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="17" resource-id="5" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="17" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="16" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="16" resource-id="0" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="16" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="16" resource-id="5" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="31" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="29" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="27" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="5" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="15" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="14" resource-id="3" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="14" resource-id="0" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="14" resource-id="4" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="14" resource-id="5" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="14" resource-id="1" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="6" resource-id="3" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="6" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="6" resource-id="4" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="6" resource-id="5" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="6" resource-id="1" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="5" resource-id="3" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="5" resource-id="0" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="5" resource-id="4" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="5" resource-id="5" function="Default:0" responsible="false" load="100.0"/>
+        <allocation task-id="5" resource-id="1" function="Default:0" responsible="false" load="100.0"/>
+    </allocations>
+    <vacations/>
+    <taskdisplaycolumns>
+        <displaycolumn property-id="tpd3" order="0" width="270"/>
+        <displaycolumn property-id="tpd4" order="1" width="71"/>
+        <displaycolumn property-id="tpd5" order="2" width="70"/>
+    </taskdisplaycolumns>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>

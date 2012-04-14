@@ -1,0 +1,151 @@
+with PCI, LKM, Log
+{
+    template type   PCI::Device()
+    {
+        chunk   LKM::includes()
+        {
+            #include <linux/pci.h>
+        }
+
+        chunk   ::decl()
+        {
+            struct pci_dev;
+        }
+
+        chunk   ::init(PCI::Device pci_dev)
+        {
+            ${self} = ${pci_dev};
+        }
+
+        map
+        {
+        }
+    }
+
+    template sequence   PCI::probe()
+    {
+        chunk LKM::prototypes()
+        {
+            static int /* __devinit */  rtx_pci_probe(struct pci_dev *,
+                                                      const struct pci_device_id *);
+        }
+
+        chunk LKM::code()
+        {
+            static int /* __devinit */  rtx_pci_probe(struct pci_dev *pdev,
+                                                      const struct pci_device_id *pdev_id)
+            {
+                int             err;
+
+                err = pci_enable_device(pdev);
+                if (err < 0)
+                    goto fail;
+
+                /* Use local. to reference a local C variable: */
+                ${cast local.pdev as PCI::Device};
+                ${pointcut PCI::pci_probe_hook(local.pdev)};
+
+                return 0;
+
+                fail:
+                    return err;
+            }
+        }
+
+        /* This chunk should be remove (see #26) */
+        chunk   ::CALL()
+        {
+        }
+    }
+
+    template sequence   PCI::remove()
+    {
+        chunk LKM::prototypes()
+        {
+            static void rtx_pci_remove(struct pci_dev *);
+        }
+
+        chunk LKM::code()
+        {
+            static void rtx_pci_remove(struct pci_dev *pdev)
+            {
+                ${cast local.pdev as PCI::Device};
+                ${pointcut PCI::pci_remove_hook(local.pdev)};
+
+                pci_disable_device(pdev);
+            }
+        }
+
+        /* This chunk should be remove (see #26) */
+        chunk   ::CALL()
+        {
+        }
+    }
+
+    template sequence   PCI::register()
+    {
+        chunk LKM::data()
+        {
+            /*
+             * CNorm doesn't seem to like "dynamic" arrays (i.e: you always
+             * have to specify the exact size).
+             */
+            static struct pci_device_id rtx_pci_device_table[2] = {
+                { ${config.vendor_id}, ${config.product_id}, PCI_ANY_ID, PCI_ANY_ID },
+                { 0, }
+            };
+
+            static struct pci_driver rtx_pci_driver = {
+                .name = ${config.name},
+                .id_table = rtx_pci_device_table,
+                .probe = rtx_pci_probe,
+                .remove = rtx_pci_remove
+            };
+        }
+
+        chunk LKM::init_bus_hook()
+        {
+            int error;
+            if ((error = pci_register_driver(&rtx_pci_driver)))
+            {
+                 ${Log::info("Cannot register pci driver")};
+                 /*
+                  * So we catched the error but how do we return it to the
+                  * parent context?
+                  *
+                  * Here we know that we can just return error, but that's just
+                  * a coincidence (and, in this case, *we* wrote the parent
+                  * context).
+                  */
+                 return error;
+            }
+        }
+
+        chunk ::CALL()
+        {
+            /*
+             * The implementation of ::CALL is empty. This template sequence is
+             * actually not provided nor required.
+             *
+             * This sequence is just "intermediate" code that will just inject
+             * itself in the hook LKM::init_bus_hook for which this sequence
+             * has a chunk (see above chunk).
+             *
+             * -> Should be removed see #26
+             */
+        }
+    }
+
+    template sequence   PCI::unregister()
+    {
+        chunk   LKM::deinit_bus_hook()
+        {
+            pci_unregister_driver(&rtx_pci_driver);
+        }
+
+        /* This chunk should be removed */
+        chunk ::CALL()
+        {
+        }
+    }
+}

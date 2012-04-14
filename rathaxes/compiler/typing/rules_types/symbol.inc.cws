@@ -1,0 +1,247 @@
+// mappings function for virtual property
+declare function        rtxType_regMap<T>(resolverValues : node, theRtype : node, mappedIds : node, pH : node, out_node : node, source_tree : reference);
+
+function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
+{
+        try {
+                parseStringAsBNF({
+                        string ::=
+                                => local scope;
+                                => local sym;
+                                => local rfield;
+                                => local value;
+                                => local field;
+                                => local bitBegin;
+                                => local bitEnd;
+                                [#readIdentifier "::"]?:scope // scope
+                                #readIdentifier:sym 
+                                        [
+                                            "->" #readIdentifier:rfield // register rfield
+                                            ['.' #readIdentifier:value]? // register value
+                                        | 
+                                            '.'  #readIdentifier:field // variable field
+                                        |
+                                            '[' #readInteger:bitBegin [".." #readInteger:bitEnd]?
+                                            ']'
+                                        ]?
+                                #continue #empty
+                                =>{
+                                        this.rtype = "";
+                                        local nameId;
+                                        if (sym != "" && bitBegin != "")
+                                        {
+                                                if (bitEnd != "")
+                                                {
+                                                        insert this.type = "__rtx_symbol__";
+                                                        rtxNodeIdentifier(nameId, "array_range", "Builtin");
+                                                        local dummy;
+                                                        rtxNodeRType(this.rtype, nameId, dummy);
+                                                        insert this.val;
+                                                        pushItem this.val = sym;
+                                                        pushItem this.val = bitBegin;
+                                                        pushItem this.val = bitEnd;
+                                                }
+                                                else
+                                                {
+                                                        insert this.type = "__rtx_symbol__";
+                                                        rtxNodeIdentifier(nameId, "array_access", "Builtin");
+                                                        local dummy;
+                                                        rtxNodeRType(this.rtype, nameId, dummy);
+                                                        insert this.val;
+                                                        pushItem this.val = sym;
+                                                        pushItem this.val = bitBegin;
+                                                }
+                                        
+                                        }
+                                        else if (sym != "" && rfield != "" && value != "")
+                                        {
+                                                insert this.type = "__rtx_register_value__";
+                                                rtxNodeIdentifier(nameId, "register_value", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = rfield;
+                                                pushItem this.val = value;
+                                        }
+                                        else if (sym != "" && rfield != "")
+                                        {
+                                                insert this.type = "__rtx_register_field__";
+                                                rtxNodeIdentifier(nameId, "register_field", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = rfield;
+                                        }
+                                        else if (sym != "" && field != "") // its a rtx var field.
+                                        {
+                                                insert this.type = "__rtx_data_field__";
+                                                rtxNodeIdentifier(nameId, "data_field", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val;
+                                                pushItem this.val = sym;
+                                                pushItem this.val = field;
+                                        }
+                                        else if (sym != "")
+                                        {
+                                                // TODO: Add register identification in type checking
+                                                insert this.type = "__rtx_symbol__";
+                                                rtxNodeIdentifier(nameId, "symbol", "Builtin");
+                                                local dummy;
+                                                rtxNodeRType(this.rtype, nameId, dummy);
+                                                insert this.val = sym;
+                                        }
+                                }
+                        ;
+                }, out_type, src);
+        }
+        catch (sError)
+        {       
+                traceLine("PERROR:" + sError);
+                return false;
+        }
+        if (out_type.rtype == "unknown")
+        {       return false;}
+//        traceLine("FOUND:" + toString(out_type));
+        return true;
+}
+
+function type_map<"Builtin::symbol">(resolverValues : node,
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node, source_tree : reference)
+{
+        traceLine("Builtin SYMBOL:(s)" + toString(mappedIds));
+        traceLine("Resolve Value:" + toString(resolverValues));
+        traceLine("RType:" + toString(theRtype));
+        traceLine("PH:" + toString(placeHolder));
+
+        
+
+        traceLine(toString(resolverValues,true));
+        local tplVarName = resolverValues["self"].body;
+        localref data = resolverValues[tplVarName].body;
+
+        // Here, we only need the pure literal data
+        if (existVariable(data.type))
+        {
+            if (!existVariable(data.operator) || data.operator != "__id__")
+                error("Injection not managed for type_map<Builtin::symbol>()");
+            setall out_node = data.id;
+        }
+        else
+            setall out_node = data;
+
+        return true;
+}
+
+function type_map<"Builtin::register_value">(resolverValues : node,
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node, source_tree : reference)
+{
+        traceLine("Builtin REGFIELDVALUE(s):" + toString(mappedIds, true));
+        traceLine("Resolve Value:" + toString(resolverValues, true));
+        traceLine("RType:" + toString(theRtype, true));
+        traceLine("PH:" + toString(placeHolder, true));
+        if ($getArraySize(mappedIds) == 2$)
+               return rtxType_regMap<mappedIds[1]>(resolverValues, theRtype, mappedIds, placeHolder, out_node, source_tree);
+        //error("No traduction for register_value");
+        return false;
+}
+
+
+function        rtxType_regMap<T>(resolverValues : node, theRtype : node, mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        error("Unknown property:" + T);
+}
+
+function        rtxType_regMap<"value">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regval = source_tree.map.registers[regdescr[0]].map[regdescr[1]].map[regdescr[2]].ref;
+        traceLine("get register value");
+        traceLine(":" + regval.value);
+        return cnormNode_TerminalId(out_node, regval.value);
+}
+
+function        rtxType_regMap<"and_mask">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regfield = source_tree.map.registers[regdescr[0]].map[regdescr[1]].ref;
+        traceLine("get register field MASK AND");
+        traceLine(":" + regfield.maskPattern.and_hex);
+        return cnormNode_TerminalId(out_node, regfield.maskPattern.and_hex);
+}
+
+function        rtxType_regMap<"or_mask">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref regfield = source_tree.map.registers[regdescr[0]].map[regdescr[1]].ref;
+        traceLine("get register field MASK OR");
+        traceLine(":" + regfield.maskPattern.or_hex);
+        return cnormNode_TerminalId(out_node, regfield.maskPattern.or_hex);
+}
+
+function        rtxType_regMap<"valuename">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register value");
+        traceLine(":" + regdescr[2]);
+        return cnormNode_TerminalId(out_node, regdescr[2]);
+}
+
+function        rtxType_regMap<"regname">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register name");
+        traceLine(":" + regdescr[0]);
+        return cnormNode_TerminalId(out_node, regdescr[0]);
+}
+
+function        rtxType_regMap<"fieldname">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        traceLine("get register field");
+        traceLine(":" + regdescr[1]);
+        return cnormNode_TerminalId(out_node, regdescr[1]);
+}
+
+function        rtxType_regMap<"offset">(resolverValues : node, theRtype : node, 
+                                        mappedIds : node, pH : node, out_node : node, source_tree : reference)
+{
+        localref regdescr = resolverValues[mappedIds[0]].body.val;
+        localref reg = source_tree.map.registers[regdescr[0]].ref;
+        traceLine("get offset");
+        traceLine("offset:" + reg.like.offset);
+        return cnormNode_TerminalId(out_node, reg.like.offset);
+}
+
+
+function        rtxNode2cnormNode<"__rtx_symbol__">(in_param : node, out_param : node)
+{
+    return cnormNode_TerminalId(out_param, in_param.val);
+}
+
+function        rtxNode2cnormNode<"__rtx_register_value__">(in_param : node, out_param : node)
+{
+        traceLine("Receive:" + toString(in_param, true));
+        traceLine("out:" + toString(out_param, true));
+        // is just a virtual variable (no correspondant C code) so...
+        setall out_param = in_param;
+        return true;
+}
+
+/*
+ * The only comparison operator valid for a symbol is the equal.
+ */
+function rtxLink_CompareEqual<"Builtin::symbol">(ref : node, val : node)
+{
+    return (ref.val == val.val);
+}

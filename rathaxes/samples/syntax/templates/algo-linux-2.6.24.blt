@@ -1,0 +1,36 @@
+with LKM, User
+values LKM::OS=linux, LKM::version >= 2.6.24
+{
+    template sequence   Algorithms::log(Builtin::string str)
+    {
+        chunk LKM::GLOBAL_CODE_DEFINITION()
+        {
+            int my_logger(const char *str)
+            {
+                return kprintf(str);
+            }
+        }
+
+        chunk::CALL()
+        {
+            my_logger(${str});
+        }
+    }
+
+
+    template type Algorithms::Buffer()
+    {
+        chunk ::decl()
+        {
+            struct buf
+            {
+                char ptr[${config.size}];
+                int sz;
+            };
+        }
+
+        map
+        {
+        }
+    }
+}

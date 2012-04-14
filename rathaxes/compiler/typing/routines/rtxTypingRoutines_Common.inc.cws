@@ -1,0 +1,175 @@
+#if !existFunction(rtxTypingRoutines_Common_version)
+
+function rtxTypingRoutines_Common_version()
+{ return "1.0"; }
+
+
+function        rtxTypeCheck_ParametersMatch(rtype1 : node, rtype2 : node, qualifier : value)
+{
+    local tmp1;
+    local tmp2;
+    local dummy;
+
+    setall tmp1 = rtype1;
+    setall tmp2 = rtype2;
+
+    tmp1.name.scope = "";
+    tmp1.name.name = "InternalTest";
+    tmp1.name.global = true;
+    tmp2.name.scope = "";
+    tmp2.name.name = "InternalTest";
+    tmp2.name.global = true;
+
+    return (rtxRTypeFullQualifiedName<qualifier>(tmp1,dummy) == rtxRTypeFullQualifiedName<qualifier>(tmp2,dummy));
+}
+
+/*
+ * This function checks whether the pointcut is declared by the itfTree.
+ */
+function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node)
+{
+    local dummy_ids;
+    local scope_save = pointcutRtype.name.scope;
+
+    // WE NEED to have a __rtx_itf__ node for itfTree, here...
+    if (itfTree.type != "__rtx_itf__")
+        error("Wrong node type for itfTree to function rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node) ("+itfTree.type+")");
+
+    // Then check if the pointcut is defined within the interface
+    // (global or inside a sequence)
+    if (scope_save == "")
+        pointcutRtype.name.scope = itfTree.name;
+    foreach def in itfTree.body.block
+    {
+        // Check global pointcuts...
+        if (def.type == "__rtx_itf_decl__" && def.specifier == "pointcut")
+        {
+            if (rtxRTypeFullQualifiedName<"pointcut">(def.rtype, dummy_ids)
+                    == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+                return true;
+        }
+        // type templates dont matter here, they should not define pointcuts.
+        // So, check only sequence templates...
+        else if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        {
+            // In which, check every poincut...
+            foreach item in def.body.block
+            {
+                if (item.type == "__rtx_itf_decl__" && item.specifier == "pointcut"
+                    && rtxRTypeFullQualifiedName<"pointcut">(item.rtype, dummy_ids)
+                        == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+                    return true;
+            }
+        }
+    }
+    if (scope_save == "")
+        pointcutRtype.name.scope = "";
+    return false;
+}
+
+
+/*
+ * This function checks whether the sequence is declared by the itfTree.
+ */
+function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node, out_qualifier : node)
+{
+    local scope_save = prototype.name.scope;
+
+    foreach def in itfTree.body.block
+    {
+        // type templates dont matter here, they should not define pointcuts.
+        // So, check only sequence templates...
+        if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        {
+            if (scope_save == "")
+                prototype.name.scope = itfTree.name;
+            local dummy;
+            local seqProto = rtxRTypeFullQualifiedName<"sequence">(prototype, dummy);
+            local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(def.rtype, dummy);
+            // Is it it ? If yes, return after setting the qualifier in the return param.
+            if (seqProto == itfSeqProto)
+            {
+                out_qualifier = def.qualifier;
+                return true;
+            }
+            if (scope_save == "")
+                prototype.name.scope = "";
+        }
+    }
+    return false;
+}
+
+/*
+ *
+ * This function searches the declaration of the sequence matching theSequence
+ * inside the interface named by 'itfName'. If itfName has no value, then the
+ * function tries to find the sequence in any of the interfaces present in
+ * interface_list.
+ *
+ *
+ * XXX TODO FIXME
+ * The function currently does not manage ambiguous declarations, and accepts
+ * the first possibility matched (ie: if two interface define the sequence, and
+ * it does not explicit its containing interface, then the first one matched
+ * will be seend a the right one, instead of giving an ambiguous error).
+ *
+ */
+function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
+                                             interface_list : node, out_qualifier : node)
+{
+    local itfNode;
+    local itfTree;
+
+    if (itfName != "")
+    {
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the sequence"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxTypeCheck_ItfDefinesSequence(theSequence, itfTree, out_qualifier) != false)
+        {
+            theSequence.name.scope = itfName;
+            return true;
+        }
+    }
+    else
+    {
+        local dummy_list;
+        // First try out the inheritance tree...
+        foreach parent in itfTree.inheritance
+        {
+            // if it's the right one then qualify the sequence and return true.
+            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, parent, dummy_list, out_qualifier) != false)
+            {
+                theSequence.name.scope = itfName;
+                return true;
+            }
+        }
+        // If not, try the list of explicit interfaces...
+        foreach itf in interface_list
+        {
+            // if it's the right one then qualify the sequence and return true.
+            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, itf, dummy_list, out_qualifier) != false)
+            {
+                theSequence.name.scope = itf;
+                return true;
+            }
+        }
+    }
+
+    traceLine(RED + "[Error] Declaration of sequence '"
+              + rtxRTypeName<theSequence.type>(theSequence)
+              + "' could not be found in any interface." + DEFAULT_COLOR);
+
+    return false;
+}
+
+#end
