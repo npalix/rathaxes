@@ -70,17 +70,17 @@ function    rtxGenPlaceHolder<T>(item : node, theKey : value)
 function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
 {
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
-        insert item.cws_expr;
+        insert item.cws_expr = temp_expr;
         insert item.key = theKey;
         generateString({
             // Resolving VALUE (place Holder @this.key@)
                     traceLine("Generated Script : inject for key @this.key@ :"
-                      + " (@this.body.node.type@: @temp_expr@)");
+                      + " (@this.node.body.type@: @this.cws_expr@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node, source_tree) == false)
             {
-                traceLine(RED + "[Error] Could not resolve placeHolder '@temp_expr@'"
+                traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 traceLine("c_tree:" + toString(c_tree#root, true));
                 traceLine("resval:" + toString(resVals, true));
@@ -93,17 +93,17 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
 function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
 {
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
-        insert item.cws_expr;
+        insert item.cws_expr = temp_expr;
         insert item.key = theKey;
         generateString({
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ :"
-                      + " (@this.node.body.type@: @temp_expr@)");
+                      + " ( @this.node.body.type@ : @this.cws_expr@)");
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node, source_tree) == false)
             {
-                traceLine(RED + "[Error] Could not resolve pointcut '@temp_expr@'"
+                traceLine(RED + "[Error] Could not resolve pointcut '@this.temp_expr@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 traceLine("c_tree:" + toString(c_tree#root, true));
                 traceLine("resval:" + toString(resVals, true));
@@ -116,20 +116,20 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
 function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : value)
 {
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
-        insert item.cws_expr;
+        insert item.cws_expr = temp_expr;
         insert item.key = theKey;
         insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
         item.tpl_hash = rtxRTypeName<item.node.body.rtype.type>(item.node.body.rtype)+"_"+this.chunkName;
         generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
-                          + "(@this.node.body.type@: @temp_expr@)");
+                          + "(@this.node.body.type@: @this.cws_expr@)");
                 if (type_call<"@this.tpl_hash@">(
                             resVals,
                             "@this.chunkName@",
                             c_tree.compile["@this.key@"].node, source_tree) == false)
                 {
-                    traceLine(RED + "[Error] Could not resolve chunk call '@temp_expr@'"
+                    traceLine(RED + "[Error] Could not resolve chunk call '@this.cws_expr@'"
                               + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                     traceLine("c_tree:" + toString(c_tree#root, true));
                     traceLine("resval:" + toString(resVals, true));
@@ -143,17 +143,17 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
 function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey : value)
 {
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
-        insert item.cws_expr;
+        insert item.cws_expr = temp_expr;
         insert item.key = theKey;
         generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
-                          + "(@this.node.body.type@: @temp_expr@)");
+                          + "(@this.node.body.type@: @this.cws_expr@)");
                 if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                                                    c_tree,
                                                                    c_tree.compile["@this.key@"].node, source_tree) == false)
                 {
-                    traceLine(RED + "[Error] Could not resolve template call '@temp_expr@'"
+                    traceLine(RED + "[Error] Could not resolve template call '@this.cws_expr@'"
                               + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                     traceLine("c_tree:" + toString(c_tree#root, true));
                     traceLine("resval:" + toString(resVals, true));
@@ -172,8 +172,7 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                                                          theKey : value)
 {
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
-        local   cw_script;
-        insert item.cws_expr;
+        insert item.cws_expr = temp_expr;
         insert item.key = theKey;
         generateString({
             traceLine("Generated Script : inject for key @this.key@ in mapping for @this.id@");
@@ -183,7 +182,7 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                 c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node, source_tree
                 ) == false)
             {
-                traceLine(RED + "[Error] Could not resolve type mapping '@temp_expr@'"
+                traceLine(RED + "[Error] Could not resolve type mapping '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
                 traceLine("c_tree:" + toString(c_tree#root, true));
                 traceLine("resval:" + toString(resVals, true));
