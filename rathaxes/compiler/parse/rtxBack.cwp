@@ -1,3 +1,4 @@
+#include "rtxTemplatedLanguage.cwp"
 
 /////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
@@ -78,7 +79,7 @@ rtx_type_map_identifier(theMap : node) ::=
         ':'
         // C expression here.
 /**/    #continue(sError, "No C code defined for the mapping of identifier " + sId)
-        single_statement(mapped_body)
+        rtx_templatedLang_single_stmt<"C">(mapped_body)
 ;
 
 
@@ -90,7 +91,7 @@ rtx_pointcut(theBlock : node) ::=
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
 /**/    => local ph;
 /**/    #check(rtxNodePointcut_Raw(lastNode, ph))
-        rtx_template_code:sPlaceHolder
+        rtx_templatedLang_code:sPlaceHolder
 /**/    => ph = sPlaceHolder;
 /**/    #continue(sError, "Expected ';' after pointcut in with block.")
         ';'
@@ -199,75 +200,5 @@ rtx_stmt<"chunk">(theBlock : node) ::=
         #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<pointcut.type>(pointcut)+"'.")
         rtx_parameter_list(param_types, param_ids)
 /**/    #continue(sError, "Expected block after chunk declaration.")
-        rtx_chunk_body(body)
-;
-
-// Chunk body
-rtx_chunk_body(theBody : node) ::=
-	'{'
-/**/	        #check(cnormNodeDecl_Init(theBody))
-		initializer_list(theBody)
-                // last ',' but empty
-		[',']? 
-	'}'
-    |
-        // The two following lines prevent artefacts (by failing previous alternative) 
-/**/    => clearVariable(theBody);
-/**/    #check(cnormNodeBlock(theBody))
-        rtx_chunk_compound_statement(theBody)
-;
-
-// block of code of chunk
-rtx_chunk_compound_statement(theBlock : node) ::=
-'{'
-/**/	#check(cnormNodeBlock(theBlock, true))
-	rtx_chunk_block_item_list(theBlock) 
-'}'
-;
-
-// for DEFINE
-#ignore["define"] ::= '\\' [' '|'\t']* '\n'
-;
-
-// chunk encapsulate C CODE
-rtx_chunk_block_item_list(theBlock : node) ::=
-[
-	line_of_code(theBlock)
-        | '#' 
-        [
-          "include" ['"' -> '"' | '<' -> '>' ]:sFile
-/**/            #pushItem(theBlock.block)
-/**/            => local lastNode;
-/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/            => local sData = "\n#include " + sFile + " \n";
-/**/            => cnormNode_Raw(lastNode, sData);
-        | "define" #ignore("define") -> "\n":sData
-/**/            #pushItem(theBlock.block)
-/**/            => local lastNode;
-/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-/**/            => cnormNode_Raw(lastNode, "\n#define "+sData);
-        ]
-]*
-;
- 
-///// META-VARIABLE HOOK
-// Don't care... for now...
-rtx_template_code ::= #!ignore "${" #continue(sError, "Expected '}' after \"'${\"") [rtx_template_brace]* '}' 
-;
-
-// consume all and take account of {}
-rtx_template_brace ::=
-[#!ignore
-	'{' [rtx_template_brace]* '}'
-	| #readCString
-        | #readCChar
-	| #readChar:c #check(c != "{" && c != "}" && c != "\"" && c != "'")
-]
-;
-
-//This rule overload allows the template identifier concatenation for Rathaxes.
-#overload
-rootidentifier ::= #!ignore
-    [ 'a'..'z' | 'A'..'Z' | '_' | rtx_template_code ]
-    [ 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | rtx_template_code ]*
+        rtx_templatedLang_body<"C">(body)
 ;
