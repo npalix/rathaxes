@@ -31,7 +31,7 @@ declare function rtxResolve_insertTypeMap(theType : node, source_tree : referenc
 declare function rtxResolve_InsertType(theDecl : node, typeDeclBlock : node, source_tree : reference);
 declare function rtxResolve_BuildParameterResVals(src_resVals : node, src_params : node, dst_resVals : node, dst_params : node, source_tree : reference);
 declare function rtxResolve_BuildFrontResVals(src_resVals : node, src_params : node, dst_resVals : node, dst_params : node, source_tree : reference);
-declare function rtxResolve_replaceCall(theSeq : node, resolverValues : node, source_tree : reference);
+declare function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tree : reference);
 
 
 // TODO FIXME XXX WORKAROUND TO BE REMOVED.
@@ -417,7 +417,7 @@ function rtxResolve_BuildFrontResVals(src_resVals   : node,
  * This function must be use before inserting the implementation into
  * the backend implem of the sequence.
  */
-function rtxResolve_replaceCall(theSeq : node, resolverValues : node, source_tree : reference)
+function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tree : reference)
 {
     local   errcount = 0;
     local   dummy;
@@ -430,7 +430,7 @@ traceLine("REPLACE CALL sidx:" + startIdx);
 traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
 //////////
 
-    while (startIdx < getArraySize(theSeq.body.block))
+    while ($startIdx < getArraySize(theSeq.body.block)$)
     {
         localref call = theSeq.body.block#[startIdx];
         local   templateCache;
@@ -1021,13 +1021,14 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                                                      resVals, parameters, source_tree);
 
                     // Then replace each Tpl CALL by the CALL chunks associated.
-                    if (rtxResolve_replaceCall(decl, resVals, source_tree) == false)
+                    if (rtxResolve_replaceCalls(decl, resVals, source_tree) == false)
                     {
                         traceLine(YELLOW + "Could not replace Call for ::IMPLEMENTATION pointcut for template '" + local_node#parent.tpl_hash + "'."+ DEFAULT_COLOR);
                         return false;
                     }
 
-                    //traceLine(BLUE + "[Debug] Resolved implementation:"+toString(decl.body, true));
+                    //traceLine(BLUE + "[Debug] Resolved implementation call to " + rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) + ":" + toString(decl.body, true)+DEFAULT_COLOR);
+                    //traceLine(PURPLE + "[Debug] Resolved implementation:"+cnorm2c(decl.body)+DEFAULT_COLOR);
 
                     // Finally, insert the block in-place of the placeHolder.
                     insertModifier(theBlock, thePointcut);
