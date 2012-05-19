@@ -17,7 +17,7 @@ local params;
 rtxNodeIdentifier(name, "test_call", "LKM");
 rtxNodeRType(theRtype, name, params);
 pushItem params;
-rtxNodeIdentifier(params#back, "Context");
+rtxNodeIdentifier(params#back, "Context", "", true);
 
 local theWith;
 local theTemplates;

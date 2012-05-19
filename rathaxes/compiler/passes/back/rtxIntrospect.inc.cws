@@ -668,10 +668,31 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : no
 
 function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_node : node, theChunk : node)
 {
+    local seqRtype;
+    local params; // retrieve ref
+
+    rtxNodeRType(seqRtype, local_node.seqName, params);
+
     foreach param in local_node.seqArgs
     {
-        // TODO XXX FIXME
+        if (!existVariable(param.rtype))
+        {
+            localref theVar = param.identifiers#[0];
+            if (theVar.name == "local")
+            {
+                ref theVar = param.identifiers#[1];
+            }
+            local theType;
+            if (findElement(theVar.name, theChunk.type_map))
+                ref theType = theChunk.type_map[theVar.name];
+            insert param.rtype;
+            setall param.rtype = theType;
+        }
+        pushItem params;
+        setall params#back = param.rtype.name;
     }
+    insert local_node.rtype;
+    setall local_node.rtype = seqRtype;
     return true;
 }
 

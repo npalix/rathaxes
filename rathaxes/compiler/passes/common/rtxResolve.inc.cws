@@ -68,16 +68,8 @@ function insertModifier(theBlock : node, thePointcut : node)
         insert theBlock.modifier = 0;
     thePointcut.block_idx = $thePointcut.block_idx + theBlock.modifier$;
 
-    // Since removeElement uses the keys instead of indexes (what we store...), lets get an iterator at the right index.
     local iterator_id = thePointcut.block_idx;
-    local   it;
-    createIterator(it, theBlock);
-    while (iterator_id != 0)
-    {
-        next(it);
-        decrement(iterator_id);
-    }
-    removeElement(theBlock, key(it));
+    removeVariable(theBlock#[thePointcut.block_idx]);
     decrement(theBlock.modifier);
 }
 
@@ -122,11 +114,14 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
 
 function    rtxResolve_insertTypeMap(theType : node, source_tree : reference)
 {
+    if (!existVariable(source_tree.c_types))
+        insert source_tree.c_types;
+
     localref    mapping = source_tree.c_types;
 
     if (theType.ctype.storage != "typedef")
     {
-        // Check the specifier is not already inserted (struct, union, etc...)
+        // Check if the specifier is not already inserted (struct, union, etc...)
         if (!findElement(theType.ctype.specifier, mapping))
             insert mapping[theType.ctype.specifier];
         // Then it's already defined.
@@ -202,15 +197,15 @@ function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node, source_t
         // First, insert the type definition into a map of defined types.
         rtxResolve_insertTypeMap(typeDef, source_tree);
         // Then, replace the type by the typedef if there's one
-        theDecl.ctype.identifier = typeDef.name;
+        theDecl.identifier = typeDef.name;
     }
     else if (hasTypeDecl)
     {
         // One variable or one structure -> insert the type into the type map.
         rtxResolve_insertTypeMap(typeDecl, source_tree);
         // Now, set the type into the variable decl.
-        theDecl.ctype.specifier = typeDecl.ctype.specifier;
-        theDecl.ctype.identifier = typeDecl.ctype.identifier;
+        theDecl.specifier = typeDecl.ctype.specifier;
+        theDecl.identifier = typeDecl.ctype.identifier;
     }
     else
     {
@@ -542,7 +537,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     //traceLine("Injecting into var : "+toString(local_node));
     local curCtxNode;
 
-    traceLine("inject<\"__rtx_var__\">:<LOG> Injecting code into placeHolder "+local_node#parent.template_expr);
+    traceLine("inject<\"__rtx_var__\">:<LOG> Injecting code into placeHolder "
+              + local_node#parent.template_expr + ", target="+local_node#parent.type_target);
     /*
      *
      * This block of code has for role to check wether we're manipulating
@@ -558,25 +554,14 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     localref theChunk = local_node#parent#parent#parent#parent;
     localref varName = local_node.body.identifiers[0].name;
     // First, check that there is not prefix or suffix.
-    if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix))
+    switch (local_node#parent.type_target)
     {
-        // TODO FIXME XXX FIME TODO          A
-        // TODO FIXME XXX FIME TODO         / \
-        // TODO FIXME XXX FIME TODO        / | \
-        // TODO FIXME XXX FIME TODO       /  .  \
-        // TODO FIXME XXX FIME TODO      /_______\
-
-        // identify if it's a type declaration (i.e. "${Builtin::Buffer} buf;")
-        if (local_node#parent.weave_type == "__weave_type_id__")
+    case "target_decl": // it's a type declaration (i.e. "${Builtin::Buffer} buf;")
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name.");
             // first, retrieve the name of the variable associated to the type or pointer
-            localref theDecl = local_node#parent.ref_placeholder#parent#parent;
-            while (!existVariable(theDecl.name) && theDecl.type == "__decl__")
-            { ref theDecl = theDecl#parent#parent; }
-            local   varName = theDecl.name;
-            // go back to theDecl where we replace an identifier.
-            ref theDecl = local_node#parent.ref_placeholder#parent#parent;
+            // when pointing on a ctype, parent.name is the varName.
+            varName = local_node#parent.ref_placeholder#parent.name;
             local   theRtype;
             setall theRtype = theChunk.type_map[varName];
             // First we must select an unique template matching the rtype and config
@@ -608,14 +593,19 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local   subtree;
             rtxLink_LoadItem(declChunk, subtree);
 
-            if (rtxResolve_InsertType(theDecl, subtree.body, source_tree) == false)
+            if (rtxResolve_InsertType(local_node#parent.ref_placeholder, subtree.body, source_tree) == false)
                 return false;
-
-            return true;
         }
-        // If not, is it a variable of a rathaxes type : check in type_map ?
-        else if (existVariable(theChunk.type_map)
-                 && findElement(varName, theChunk.type_map))
+        break ;
+    case "target_identifier":
+    case "target_expr":
+        // Is it a variable of a rathaxes type : check in type_map ?
+        if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
+        {
+            local_node#parent.ref_placeholder = "TARTE";
+        }
+        else if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
+                 && existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping.");
             // Create the resolvervalues for the type resolution:
@@ -645,25 +635,29 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            // Here, the interesting thing to replace is the id's parent.
-            localref theNode = local_node#parent.ref_placeholder#parent;
-            if (!existVariable(mapping.type)
-                && theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
-            { setall theNode.id = mapping; }
-            else if (theNode.type == "__expr__")
-            { setall theNode = mapping; }
-            else if (theNode.type == "__decl__")
-            { setall theNode.name = mapping; }
-            else
+            //traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + mapping + DEFAULT_COLOR);
+
+            // Here, the mapping should always be an expression
+            if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
             {
-                traceLine(RED + "[Error] inject<\"__rtx_var__\">: Could not weave for node of type '"
-                          + theNode.type + "' not implemented." + DEFAULT_COLOR);
+                traceLine(RED + "[Error] inject<\"__rtx_var__\">: could not weave for node of type '"
+                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented." + DEFAULT_COLOR);
                 return false;
             }
 
-            return true;
+            if (isString(mapping))
+            {
+                local_node#parent.ref_placeholder.id = mapping;
+            }
+            else
+            {
+                setall local_node#parent.ref_placeholder = mapping;
+            }
+
+            //traceLine(BLUE + "[Debug] Type mapping resolution : resolved mapping = " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
+
         }
-        else if (isBuiltinVariable(varName))
+        else if (isBuiltinVariable(varName)) // Mapping for a  builtin type
         {
             local dummyResVal;
             local dummyRtype;
@@ -683,71 +677,61 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            // Here, the interesting thing to replace is the id's parent.
-            localref theNode = local_node#parent.ref_placeholder#parent;
-            if (!existVariable(mapping.type)
-                && theNode.type == "__expr__" && theNode.expr_type == "__terminal__")
-            { setall theNode.id = mapping; }
-            else if (theNode.type == "__expr__")
-            { setall theNode = mapping; }
-            else if (theNode.type == "__decl__")
-            { setall theNode.name = mapping; }
-            else
+            //traceLine(BLUE + "[Debug] Builtin type mapping resolution : mapping = " + toString(mapping,true) + DEFAULT_COLOR);
+
+            // Here, the mapping should always be an expression
+            if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
             {
-                traceLine(RED + "[Error] inject<\"__rtx_var__\">: Could not weave for node of type '"
-                          + theNode.type + "' (weaving "+toString(mapping)+"): not implemented." + DEFAULT_COLOR);
+                traceLine(RED + "[Error] inject<\"__rtx_var__\">: could not weave for node of type '"
+                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented." + DEFAULT_COLOR);
                 return false;
             }
 
-            return true;
+            if (isString(mapping))
+            {
+                local_node#parent.ref_placeholder.id = mapping;
+            }
+            else
+            {
+                setall local_node#parent.ref_placeholder = mapping;
+            }
+            //traceLine(BLUE + "[Debug] Builtin type mapping resolution : resolved mapping = " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
         }
+        // Mapping as a value
+        else
+        {
+            /*
+             * This block of code means to replace the placeHolder by a simple
+             * identifier in the code. (May be used for the self resolution)
+             */
+            local fieldValue;
+            local finalNode;
+            rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);
+            // The ResValLeaf is a whole node : setall it into the placeholder's parent
+            if (existVariable(fieldValue.type))
+            {
+                traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier : "+toString(local_node.body.identifiers));
+                setall local_node#parent.ref_placeholder = fieldValue;
+            }
+            else // or craft the expr node...
+            {
+                traceLine("inject<\"__rtx_var__\">:<LOG> Concatenating identifier : "+toString(local_node.body.identifiers));
+                // First concat prefix
+                finalNode = finalNode + local_node.prefix;
+                // Next resolve the value and concat it
+                finalNode = finalNode + fieldValue;
+                // Finally, concat suffix
+                finalNode = finalNode + local_node.sufix;
+                local_node#parent.ref_placeholder.id = finalNode;
+            }
+        }
+        break ;
+    default:
+        error(RED + "[Error] Target type " + local_node#parent.type_target + " is not managed." + toString(local_node#parent.ref_placeholder#parent,true) + DEFAULT_COLOR);
+        break ;
+    }
 
 
-        // If both of the conditionis weren't entered, then that means that
-        // it is a simple value weaving, and the next part takes care of it.
-    }
-    if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
-    {
-        local_node#parent.ref_placeholder = "TARTE";
-        return true;
-    }
-    traceLine("inject<\"__rtx_var__\">:<LOG> Could not find any type manipulation for injection.");
-    if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
-    {
-        local_node#parent.ref_placeholder = "TARTE";
-        return true;
-    }
-
-
-    /*
-     *
-     * This block of code means to replace the placeHolder by a simple
-     * identifier in the code. (May be used for the self resolution)
-     *
-     */
-    local fieldValue;
-    local finalNode;
-    rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);
-    // The ResValLeaf is a whole node : setall it into the placeholder's parent
-    if (existVariable(fieldValue.type))
-    {
-        traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier : "+toString(local_node.body.identifiers));
-        localref theId = local_node#parent.ref_placeholder;
-        //traceLine("So we have the resolver placeholders parent : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
-        setall theId#parent = fieldValue;
-        //traceLine("So we have the resolver placeholders parent resolved : "+toString(local_node#parent.ref_placeholder#parent#parent, true));
-    }
-    else
-    {
-        traceLine("inject<\"__rtx_var__\">:<LOG> Concatenating identifier : "+toString(local_node.body.identifiers));
-        // First concat prefix
-        finalNode = finalNode + local_node.prefix;
-        // Next resolve the value and concat it
-        finalNode = finalNode + fieldValue;
-        // Finally, concat suffix
-        finalNode = finalNode + local_node.sufix;
-        local_node#parent.ref_placeholder = finalNode;
-    }
     return true;
 }
 
@@ -778,10 +762,11 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     local       startIdx = 0;
     local       phName = "call";
     local       phIdx = 0;
-    localref    theBlock = local_node#parent.ref_placeholder#parent;
-    while (theBlock.type != "__block__")
+    localref    theParent = local_node#parent.ref_placeholder#parent;
+    if (local_node#parent.type_target != "target_pointcut")
     {
-        ref theBlock = theBlock#parent;
+        error(RED + "[Error] inject<\"__rtx_tpl_sequence_call__\">: Wrong target type ("
+              + local_node#parent.type_target + ")" + DEFAULT_COLOR);
     }
 
     // Two variables to create the rtype associated to the sequence call
@@ -795,6 +780,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
 
     // First, build the rtype node.
     rtxNodeRType(theRtype, local_node.body.seqName, paramTypes);
+    traceLine(toString(local_node.body,true));
     foreach param in local_node.body.seqArgs
     {
         if (existVariable(param.rtype))
@@ -850,10 +836,12 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     // And insert it in the sequence implem after having removed the original call node.
     local dummy;
     insert dummy.block_idx;
-    dummy.block_idx = $startIdx - theBlock.block.modifier$; // Compute current original index (alias the key).
-    insertModifier(theBlock.block, dummy);
+    dummy.block_idx = $startIdx - theParent.modifier$; // Compute current original index (alias the key).
+    insertModifier(theParent, dummy);
     startIdx = dummy.block_idx; // retrieve updated startIdx from dummy.
-    rtxResolve_InsertCode(theBlock.block, startIdx, phName, phIdx, chunkTree.body);
+    rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
+    traceLine(PURPLE+toString(chunkTree.body,true)+DEFAULT_COLOR);
+    traceLine(PURPLE+toString(theParent,true)+DEFAULT_COLOR);
 
     return true;
 }
@@ -868,11 +856,19 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
 function inject_pointcut<T>(resolverValues : node, treeNode : node,
                                     local_node : node, source_tree : reference)
 {
-    localref theBlock = local_node#parent.ref_placeholder#parent#parent;
+    if (local_node#parent.type_target != "target_expr"
+        && local_node#parent.type_target != "target_pointcut")
+    {
+        traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Injection target type "
+                  + local_node#parent.type_target + " not managed for a pointcut." + DEFAULT_COLOR);
+        return false;
+    }
+
+    localref theParent = local_node#parent.ref_placeholder#parent;
     localref thePointcut = local_node#parent;
     local pointcutName = rtxRTypeName<local_node.body.name.type>(local_node.body.name);
     // Variables for the node replacement
-    local phName = thePointcut.ref_placeholder#parent.id;
+    local phName = thePointcut.block_idx;
     local phIdx = 0;
     local startIdx = 0;
     // cache-related variable
@@ -881,49 +877,45 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
 
     // First, search every chunk associated to the pointcut...
     if (rtxLink_findChunks(local_node.body.name, chunks) == false)
-        traceLine("inject_pointcut<\""+T+"\">:<WARN> No chunk associated with"
-                  +" the pointcut "
-                  + pointcutName);
+        traceLine(YELLOW + "[Warning] inject_pointcut<\""+T+"\">: No chunk associated with"
+                  +" the pointcut " + pointcutName + DEFAULT_COLOR);
 
     // If we cannot find any chunk, let's use default behaviour (if there's one)
     if (isEmpty(chunks)
         || rtxLink_selectCompatibleChunks(chunks, source_tree.config) == false)
     {
-        traceLine("inject_pointcut<\""+T+"\">:<WARN> No valid chunk,"
-                  +" falling back to default behaviour.");
+        traceLine(YELLOW + "[Warning] inject_pointcut<T(\""+T+"\")>: No valid chunk,"
+                  +" falling back to default behaviour." + DEFAULT_COLOR);
         // If there's a default block inside the poincut, then insert it
         // instead of the resolved chunks : one setall is enough
         // to both remove the pointcut and insert the code.
         if (existVariable(local_node.body.default.body))
         {
-            if (theBlock#parent.type == "__block__")
+            if (theParent#parent.type == "__block__")
             {
-                if (getArraySize(theBlock) <= thePointcut.block_idx)
+                if (getArraySize(theParent) <= thePointcut.block_idx)
                 {
-                    error(RED+ "Trying to get index " + thePointcut.block_idx + " into block " +
-                          toString(theBlock,true) +DEFAULT_COLOR);
+                    error(RED+ "[Error] inject_pointcut<T(\""+T+"\")>: Trying to get index "
+                          + thePointcut.block_idx + " into block " +
+                          toString(theParent,true) +DEFAULT_COLOR);
                 }
-                setall theBlock#[thePointcut.block_idx] = local_node.body.default.body;
-            }
-            else if (theBlock.type == "__stmt__" && theBlock.stmt_type == "__expr__"
-                     && theBlock.expr.expr_type == "__terminal__")
-            {
-                setall theBlock = local_node.body.default.body;
+                setall theParent#[thePointcut.block_idx] = local_node.body.default.body;
             }
             else
-                error("Node type not supported for default resolution..");
+                error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Node type '" + theParent#parent.type
+                      + "' not supported for default resolution.." + DEFAULT_COLOR);
         }
         else
         {
-            if (theBlock.type == "__block__")
+            if (theParent.type == "__block__")
             {
                 // removes the current placeHolder and inserts the modifier
-                insertModifier(theBlock, thePointcut);
+                insertModifier(theParent.block, thePointcut);
             }
-            else if (theBlock#parent.type == "__block__")
+            else if (theParent#parent.type == "__block__")
             {
                 // removes the current placeHolder and inserts the modifier
-                insertModifier(theBlock, thePointcut);
+                insertModifier(theParent, thePointcut);
             }
         }
     }
@@ -931,20 +923,21 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     // and then insert them in-place of the pointcut.
     else
     {
-        // make sure it's the block.
-        while (theBlock.type != "__block__")
-            ref theBlock = theBlock#parent;
-        ref theBlock = theBlock.block;
+        if (theParent#parent.type != "__block__" && theParent#parent.type != "__block_init__")
+        {
+            error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: parent of placeholder is not a block." + DEFAULT_COLOR);
+        }
+
         // First, remove the current placeHolder, in case there was no statement
-        insertModifier(theBlock, thePointcut);
+        insertModifier(theParent, thePointcut);
         startIdx = thePointcut.block_idx;
         foreach chunk in chunks
         {
             local c_tree;
             if (rtxLink_LoadItem(chunk, c_tree) == false)
             {
-                traceLine("inject_pointcut<\""+T+"\">:<ERROR> Could not "
-                          +"load script for one chunk for pointcut "+pointcutName+".");
+                traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Could not "
+                          +"load script for one chunk for pointcut "+pointcutName+"." + DEFAULT_COLOR);
                 increment(errcount);
             }
             local resVals;
@@ -952,15 +945,18 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
                                                  local_node.body.parameters,
                                                  resVals, c_tree.parameters, source_tree) == false)
             {
-                traceLine(RED + "[Error] Wrong parameters given to pointcut '" + pointcutName + "'." + DEFAULT_COLOR);
+                traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Wrong parameters given to pointcut '"
+                          + pointcutName + "'." + DEFAULT_COLOR);
                 return false;
             }
 
             if (instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source_tree) != false)
-                rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, c_tree.body);
+            {
+                rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, c_tree.body);
+            }
             else
             {
-                traceLine("inject_pointcut<\""+T+"\">:<ERROR> Could not instanciate chunk '"+c_tree.instanceKey+"'.");
+                traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Could not instanciate chunk '"+c_tree.instanceKey+"'." + DEFAULT_COLOR);
                 increment(errcount);
             }
         }
@@ -975,7 +971,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
 {
     localref theBlock = local_node#parent.ref_placeholder#parent;
     // Make sure TheBlock references the parent block (should always be the case for this kind of pointcut).
-    while (theBlock.type != "__block__")
+    while (theBlock.type != "__block__" && theBlock.type != "__block_init__")
     {
         ref theBlock = theBlock#parent;
     }
@@ -983,7 +979,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
 
     localref thePointcut = local_node#parent;
     // Some variables for the InsertCode function
-    local phName = thePointcut.ref_placeholder#parent.id;
+    local phName = thePointcut.block_idx;
     local phIdx = 0;
     local startIdx = 0;
     local dummy;
@@ -1134,7 +1130,7 @@ function    type_call<T>(resolverValues : node,
     // Now, insert the subtree in place of the placeHolder !
     // placeHolder actually is : block.[idx].expr.id, so unwind until theBlock.type != "__block__".
     localref theBlock = placeHolder#parent.ref_placeholder;
-    do { ref theBlock = theBlock#parent; } while (theBlock.type != "__block__");
+    do { ref theBlock = theBlock#parent; } while (theBlock.type != "__block__" && theBlock.type != "__block_init__");
     localref theCall = placeHolder#parent;
     local phIdx = 0;
     // First, remove the current placeHolder, in case there was no statement
@@ -1264,7 +1260,7 @@ function type_map<"Builtin::local">(resolverValues : node,
     {
         if (theVar.type == "ctype") // the variable is a pure C type
         {
-            error(BLUE + toString(theChunk.variables[mappedIds#[0]],true)+ DEFAULT_COLOR);
+            error(RED + toString(theChunk.variables[mappedIds#[0]],true)+ DEFAULT_COLOR);
         }
         else if (theVar.type == "rtxtype")// the variable is a declared rathaxes type-> check for mapping
         {

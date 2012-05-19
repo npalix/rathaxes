@@ -62,7 +62,11 @@ inject<"__rtx_pointcut__">(resVals,
                            c_tree.c_block.compile["_1"].node,
                            c_tree.c_block.compile["_1"].node, source);
 
+traceLine("Resolved placeHolder: "+c_tree.c_block.compile["_1"].template_expr);
+
+traceLine(toString(c_tree.c_block.block,true));
+
 traceLine("Pointcut resolved : The pointcut will be replaced by :"
-          + cnorm2c(c_tree.c_block.block["_1_0"])
-          + cnorm2c(c_tree.c_block.block["_1_1"]));
+          + cnorm2c(c_tree.c_block.block["0_0"])
+          + cnorm2c(c_tree.c_block.block["0_1"]));
 
