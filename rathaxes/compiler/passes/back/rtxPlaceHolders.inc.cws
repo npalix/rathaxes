@@ -84,6 +84,8 @@ function	rtxPH_havePlaceHolder(ref_node : reference)
 // type_target:
 //      - target_identifier : accept only subsitution of targeted ref_placeholder by an identifier
 //      - target_expr : you must substitute the node of the targeted ref_placeholder
+//      - target_decl : accept substitution of the declaration members, identifier included.
+//      - target_pointcut : accept substitution of the whole statement/expression
 function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value)
 {
         // add the local counter for the chunk
@@ -107,8 +109,16 @@ function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : v
         { ref compile[sKey].ref_placeholder = ref_node;}
         else if (type_target == "target_expr")
         { ref compile[sKey].ref_placeholder = ref_node#parent;}
+        else if (type_target == "target_decl")
+        { ref compile[sKey].ref_placeholder = ref_node#parent; }
+        else if (type_target == "target_pointcut")
+        {
+            while (ref_node#parent#parent.type != "__block__")
+                ref ref_node = ref_node#parent;
+            ref compile[sKey].ref_placeholder = ref_node;
+        }
         else
-        { error("unknown type_target:" + type_target);}
+        { error("unknown type_target:" + type_target); }
 }
 
 ////////
@@ -157,12 +167,18 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
                 {
                         traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
-                        rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_identifier");
+                        rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl");
                 }
                 if (existVariable(ctype_ref.list))
                 {
                         foreach item in ctype_ref.list
-                        { rtxPH_compile<item.type>(item, compile, node_idx); }
+                        {
+                            // XXX TODO FIXME
+                            // This should not be needed, but the sample helloworld had an issue i didnt care about at the time.
+                            // XXX TODO FIXME
+                            if (existVariable(item.type))
+                                rtxPH_compile<item.type>(item, compile, node_idx);
+                        }
                 }
                 // recurse param list
                 if (existVariable(ctype_ref.param))
@@ -256,7 +272,18 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
 {
         // post expr
         if (existVariable(local_node.expr))
-        { rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx); }
+        {
+            if (existVariable(local_node.expr.id)) // terminal id, may be a pointcut/call
+            {
+                if (rtxPH_havePlaceHolder(local_node.expr.id))
+                {
+                    traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+                    rtxPH_mapPlaceHolder(local_node.expr.id, compile, node_idx, "target_pointcut");
+                }
+            }
+            else
+                rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+        }
         // TODO: cnorm fail
         // Label
         //if (existVariable(local_node.label) && rtxPH_havePlaceHolder(local_node.label))

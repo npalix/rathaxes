@@ -120,4 +120,14 @@ function        bitArrayExtractMask(list : node, begin : value, end : value, mas
         return true;
 }
 
+function isString(theNode : node)
+{
+    local attr_list;
+
+    getVariableAttributes(theNode, attr_list);
+    if ($getArraySize(theNode) == 0$ && $getArraySize(attr_list) == 0$)
+        return true; // Only have a string
+    return false;
+}
+
 #end

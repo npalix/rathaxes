@@ -48,11 +48,11 @@ function rtxLink_IsWithNodeCompatible(with : node, config : node)
     foreach interface in with
     {
         local itf_key = key(interface);
-        // Is the interface defined in the config ?
+        // Is the interface defined in the config ? If not, we won't filter over it...
         if (findElement(itf_key, config) == false)
         {
-            traceLine("Interface '"+itf_key+"' not defined in config.");
-            return false;
+            //traceLine(BLUE + "[Debug] Interface '"+itf_key+"' not defined in config." + DEFAULT_COLOR);
+            continue ;
         }
         foreach constraint in interface
         {

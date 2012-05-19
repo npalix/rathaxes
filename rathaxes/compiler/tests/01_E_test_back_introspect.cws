@@ -23,20 +23,37 @@ foreach template in source.block[0].body.block
 {
     foreach chunk in template.body.block
     {
-        foreach placeHolder in chunk.body.compile
+        select placeHolder in chunk.body.compile[].node.body
         {
-            if (existVariable(placeHolder.weave_type))
+            switch (placeHolder.type)
             {
+            case "__rtx_pointcut__":
+            case "__rtx_tpl_sequence_call__":
+            case "__rtx_tpl_chunk_call__":
+                if (existVariable(placeHolder.rtype))
+                {
+                    traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
+                              + " of chunk " + chunk.pointcut.name.scope + "::"
+                              + chunk.pointcut.name.name + " updated by introspection.");
+                }
+                else
+                {
+                    traceLine("<ERROR>:   PlaceHolder " +key(placeHolder)
+                              + " of chunk " + chunk.pointcut.name.scope + "::"
+                              + chunk.pointcut.name.name
+                              + " was not updated by introspection");
+                    traceLine(toString(placeHolder,true));
+                    increment(ret);
+                }
+                break ;
+            case "__rtx_var__": // always valid
                 traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
-                          + " of chunk " + chunk.pointcut.scope + "::"
-                          + chunk.pointcut.name + " updated by introspection.");
-            }
-            else
-            {
-                traceLine("<ERROR>:   PlaceHolder " +key(placeHolder)
-                          + " of chunk " + chunk.pointcut.scope + "::"
-                          + chunk.pointcut.name
-                          + " was not updated by introspection");
+                          + " of chunk " + chunk.pointcut.name.scope + "::"
+                          + chunk.pointcut.name.name + " updated by introspection.");
+                break ;
+            case "__rtx_tpl_cast__": // shouldnt be kept in the compile so error.
+            default:
+                traceLine("<ERROR>: unknown type of placeholder: "+placeHolder.node.type);
                 increment(ret);
             }
         }

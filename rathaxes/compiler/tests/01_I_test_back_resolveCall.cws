@@ -18,7 +18,7 @@ local params;
 rtxNodeIdentifier(name, "open", "Userland");
 rtxNodeRType(theRtype, name, params);
 pushItem params;
-rtxNodeIdentifier(params#back, "Context");
+rtxNodeIdentifier(params#back, "Context", "", true);
 
 local dummy;
 local theProto = rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy);
