@@ -1,6 +1,9 @@
 interface e1000 : Socket, Ethernet, PCI, LKM
 {
     provided type   e1000::Context;
+    provided type   e1000::RxDescriptor;
+    provided type   e1000::RxRing;
+
     /*
      * These two types should actually be registers definitions in the frontend:
      */
@@ -51,6 +54,11 @@ interface e1000 : Socket, Ethernet, PCI, LKM
     }
 
     provided sequence   e1000::set_up_device(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   e1000::free_rx_tx(Ethernet::Device dev)
     {
         provided chunk  ::CALL();
     }

@@ -1,5 +1,81 @@
 with e1000, Ethernet, Socket, PCI, LKM, Log
 {
+    template type   e1000::RxDescriptor()
+    {
+        chunk   LKM::includes()
+        {
+            typedef int ${e1000::RxDescriptor};
+
+            #include <linux/types.h>
+
+            static const ${e1000::RxDescriptor} force_rtx_e1000_rx_descriptor_decl;
+        }
+
+        chunk   ::decl()
+        {
+            typedef struct rtx_e1000_rx_descriptor
+            {
+                /* actual types are in comments */
+                unsigned long int   /* __le64 */    buff_addr;
+                unsigned short      /* __le16 */    length;
+                unsigned short      /* __le16 */    csum;
+                unsigned char                       status;
+                unsigned char                       errors;
+                unsigned short      /* __le16 */    special;
+            } *rtx_e1000_rx_descriptor_p;
+        }
+
+        chunk   ::init()
+        {
+        }
+
+        map
+        {
+        }
+    }
+
+    /*
+     * Ring of e1000::RxDescriptors and their corresponding skbuffs.
+     *
+     * - size: total size of the ring in bytes.
+     * - base: address of the ring (we can't use the typedef here until we get
+     *   CNorm unstrict);
+     * - dma_base: (physical) address of the ring where the device can access
+     *   the different descriptors;
+     * - skbuffs: array of the skbuffs associated with each descriptor;
+     * - dma_skbuffs: (physical) address of each skbuff where the device can
+     *   write the received packets;
+     */
+    template type   e1000::RxRing()
+    {
+        chunk   LKM::includes()
+        {
+            typedef int ${e1000::RxRing};
+
+            static const ${e1000::RxRing}   force_rtx_e1000_rx_ring_decl;
+        }
+
+        chunk   ::decl()
+        {
+            struct rtx_e1000_rx_ring
+            {
+                unsigned int                    size;
+                struct rtx_e1000_rx_descriptor  *base;
+                void*   /* dma_addr_t */        dma_base;
+                struct sk_buff                  *skbuffs[256 /* ${config.rx_ring_size} */];
+                void*   /* dma_addr_t */        dma_skbuffs[256 /* ${config.rx_ring_size} */];
+            };
+        }
+
+        chunk   ::init()
+        {
+        }
+
+        map
+        {
+        }
+    }
+
     template type   e1000::Context()
     {
         chunk   LKM::includes()
@@ -21,9 +97,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              */
             typedef struct rtx_e1000_ctx
             {
-                int                             bars;
-                unsigned char /* __iomem */     *ioaddr;
-                int                             irq;
+                int                         bars;
+                unsigned char /* __iomem */ *ioaddr;
+                int                         irq;
+
+                /* we can't use the Rathaxes type here (#8) */
+                struct rtx_e1000_rx_ring    rx_ring;
             } *rtx_e1000_ctx_p;
         }
 
@@ -34,6 +113,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         map
         {
         }
+
     }
 
     template type   e1000::Register()
@@ -62,8 +142,15 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_FCAL          = 0x00028, /* Flow Control Address Low */
                 E1000_FCAH          = 0x0002c, /* Flow Control Address High */
                 E1000_FCT           = 0x00030, /* Flow Control Type */
+                E1000_RCTL          = 0x00100, /* Receive Control */
                 E1000_FCTTV         = 0x00170, /* Flow Control Transmit Timer Value */
                 E1000_CRCERRS       = 0x04000, /* CRC Error Count (base address of the statistic register spaces) */
+                E1000_RAL           = 0x05400, /* Receive Address Low */
+                E1000_RAH           = 0x05404, /* Receive Address High */
+                E1000_MTA           = 0x05200, /* Multicast Table Array */
+                E1000_RDLEN         = 0x02808, /* Receive Descriptor Length */
+                E1000_RDH           = 0x02810, /* Receive Descriptor Head */
+                E1000_RDT           = 0x02818, /* Receive Descriptor Tail */
             };
         }
 
@@ -132,7 +219,17 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_INTR_RXDMT0               = 0x00000010, /* rx desc min. threshold (0) */
                 E1000_INTR_RXO                  = 0x00000040, /* rx overrun */
                 E1000_INTR_RXT0                 = 0x00000080, /* rx timer intr (ring 0) */
-                E1000_INTR_MDAC                 = 0x00000200  /* MDIO access complete */
+                E1000_INTR_MDAC                 = 0x00000200, /* MDIO access complete */
+                E1000_RAH_AV                    = (1 << 31),  /* Set the MAC Address as Valid */
+                E1000_RCTL_EN                   = (1 << 1),   /* Receiver Enable */
+                E1000_RCTL_BSEX                 = (1 << 25),  /* Buffer Size Extension */
+                E1000_RCTL_BSIZE_256            = ((1 << 16) | (1 << 17)),
+                E1000_RCTL_BSIZE_512            = (1 << 17),
+                E1000_RCTL_BSIZE_1024           = (1 << 16),
+                E1000_RCTL_BSIZE_2048           = 0,
+                E1000_RCTL_BSIZE_4096           = (E1000_RCTL_BSEX | (1 << 16) | (1 << 17)),
+                E1000_RCTL_BSIZE_8192           = (E1000_RCTL_BSEX | (1 << 17)),
+                E1000_RCTL_BSIZE_16384          = (E1000_RCTL_BSEX | (1 << 16)),
             };
         }
 
@@ -457,13 +554,25 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk  ::CALL()
         {
+            typedef unsigned long int   dma_addr_t;
+
             /*
-             * This is documented in the Intel Gigabit Ethernet Controller
-             * Software Developper manual.
+             * This part is documented in the Intel Gigabit Ethernet Controller
+             * Software Developper manual. (You can find it in the doc/hardware
+             * directory).
              *
              * Since this part is actually completely device specific it should
              * not be written here. (but in the front-end).
              */
+
+            /*
+             * shortcut hw_ctx... maybe we should directly take an
+             * e1000::Context? (but we would need to make it point back to
+             * the struct net_device)
+             */
+            typedef int       ${e1000::Context};
+            ${e1000::Context} hw_ctx;
+            hw_ctx = &${ctx}->hw_ctx;
 
             /*
              * "General Configuration" (section 14.3):
@@ -478,22 +587,211 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              * - Finally, initialize all the statistic registers from
              *   E1000_CRCERRS to E1000_TSCTFC.
              */
-            rtx_e1000_register_set32(&${ctx}->hw_ctx, E1000_CTRL,
+
+            rtx_e1000_register_set32(hw_ctx, E1000_CTRL,
                                      E1000_CMD_ASDE |
                                      E1000_CMD_SLU);
-            rtx_e1000_register_unset32(&${ctx}->hw_ctx, E1000_CTRL,
+            rtx_e1000_register_unset32(hw_ctx, E1000_CTRL,
                                        E1000_CMD_LRST    |
                                        E1000_CMD_FRCSPD  |
                                        E1000_CMD_PHY_RST |
                                        E1000_CMD_ILOS    |
                                        E1000_CMD_VME);
-            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCAH, 0);
-            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCAL, 0);
-            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCT, 0);
-            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCTTV, 0);
-            int i = 0;
+            rtx_e1000_register_write32(hw_ctx, E1000_FCAH, 0);
+            rtx_e1000_register_write32(hw_ctx, E1000_FCAL, 0);
+            rtx_e1000_register_write32(hw_ctx, E1000_FCT, 0);
+            rtx_e1000_register_write32(hw_ctx, E1000_FCTTV, 0);
+            int i = 0; /* CNorm workaround, the init part of for isn't generated */
             for (i = 0; i != 64; ++i)
-                rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_CRCERRS + i * 4, 0);
+                rtx_e1000_register_write32(hw_ctx, E1000_CRCERRS + i * 4, 0);
+
+            {
+                ${Log::info("setup_device: general configuration done")};
+            }
+
+            /*
+             * Receive initialization (section 14.4):
+             *
+             * 1. Program the receive address, in RAL/RAH;
+             * 2. Initialize the Multicast Table Array;
+             * 3. Program the interrupt mask register (done in
+             *    e1000::activate_device_interruption);
+             * 4. Allocate the receive descriptor ring and map it to make it
+             *    accessible by the device;
+             * 5. Set RDLEN (Receive Descriptor Length) to the size of the ring;
+             * 6. Set the RDH/RDT (Receive Descriptor Head/Tail) indexes to the
+             *    beginning and end of the ring;
+             * 7. Make sure that RCTL.BSIZE and .BSEX are at 0 to configure the
+             *    receive buffer size to 2048 bytes (e1000::rx_buffer_len).
+             * 8. Set RCTL.EN to enable the receiver.
+             *
+             * The ugly casts here are caused by the lack of CNorm unstrict.
+             */
+
+            /* 1. Program the receive address */
+
+            /* (We should use uint{32,16}_t but CNorm doesn't know them yet) */
+            rtx_e1000_register_write32(hw_ctx, E1000_RAL,
+                    *(unsigned int *)(${ctx}->net_dev->dev_addr));
+            /*
+             * The 16 upper bits of RAH also store the AS bits (which should be
+             * 0) and the AV bit (should be 1 to set the address as valid).
+             */
+            rtx_e1000_register_write32(hw_ctx, E1000_RAH,
+                    *(unsigned short *)(&${ctx}->net_dev->dev_addr[4]));
+            rtx_e1000_register_set32(hw_ctx, E1000_RAH, E1000_RAH_AV);
+
+            {
+                ${Log::info("setup_device: program receieve address done")};
+            }
+
+            /* 2. Initialize the MTA */
+
+            i = 0; /* CNorm workaround, the init part of for isn't generated */
+            for (i = 0; i != 128; ++i)
+                rtx_e1000_register_write32(hw_ctx, E1000_MTA + i * 4, 0);
+
+            {
+                ${Log::info("setup_device: MTA init done")};
+            }
+
+            /* 4. Setup the receive descriptor ring */
+
+            /* Allocate the descriptors */
+            hw_ctx->rx_ring.size = ${config.rx_ring_size} * sizeof(*hw_ctx->rx_ring.base);
+            hw_ctx->rx_ring.size = ALIGN(hw_ctx->rx_ring.size, 4096);
+            hw_ctx->rx_ring.base = dma_alloc_coherent(
+                    &${ctx}->pci_dev->dev,
+                    hw_ctx->rx_ring.size,
+                    (dma_addr_t *)&hw_ctx->rx_ring.dma_base,
+                    GFP_KERNEL);
+            if (!hw_ctx->rx_ring.base)
+            {
+                ${Log::info("cannot allocate the descriptors for the rx ring")};
+                goto err_rx_ring_alloc;
+            }
+
+            {
+                ${Log::info("setup_device: descriptors allocated")};
+            }
+
+            /*
+             * Allocate the skbuffs, map them for DMA, and write their address
+             * in the corresponding descriptor.
+             */
+            i = 0;
+            for (i = 0; i != ${config.rx_ring_size}; ++i)
+            {
+                hw_ctx->rx_ring.skbuffs[i] = netdev_alloc_skb(
+                        ${ctx}->net_dev,
+                        ${config.rx_buffer_len});
+                if (!hw_ctx->rx_ring.skbuffs[i])
+                {
+                    ${Log::info("cannot allocate a skbuff for the rx ring")};
+                    goto err_skbuffs_alloc;
+                }
+                hw_ctx->rx_ring.dma_skbuffs[i] = (void *)dma_map_single(
+                        &${ctx}->pci_dev->dev,
+                        hw_ctx->rx_ring.skbuffs[i]->data,
+                        ${config.rx_buffer_len},
+                        DMA_FROM_DEVICE);
+                /*
+                 * Either this fails because, when compiling with gcc because
+                 * the last argument is not of the correct type (dma_addr_t).
+                 * Or it fails because of the lack of CNorm Unstrict.
+                 */
+                if (dma_mapping_error(&${ctx}->pci_dev->dev, (dma_addr_t)hw_ctx->rx_ring.dma_skbuffs[i]))
+                {
+                    ${Log::info("cannot dma-map a skbuff for the rx ring")};
+                    goto err_skbuffs_map;
+                }
+                hw_ctx->rx_ring.base[i].buff_addr = (unsigned long int)cpu_to_le64(
+                        hw_ctx->rx_ring.dma_skbuffs[i]);
+            }
+
+            {
+                ${Log::info("setup_device: skbuffs allocated")};
+            }
+
+            /* 5. Save the size of the ring in RDLEN */
+            rtx_e1000_register_write32(hw_ctx, E1000_RDLEN, hw_ctx->rx_ring.size);
+
+            /* 6. Setup RDH/RDT */
+            rtx_e1000_register_write32(hw_ctx, E1000_RDH, 0);
+            rtx_e1000_register_write32(hw_ctx, E1000_RDT, hw_ctx->rx_ring.size - 1);
+
+            /* 7. Configure the buffer size, XXX: * E1000_RCTL_BSIZE_${config.rx_buffer_len} */
+            rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_BSIZE_2048);
+
+            /* 8. Enable the receiver */
+            rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_EN);
+
+            {
+                ${Log::info("setup_device: receive registers configured and receiver enabled")};
+            }
+
+            /*
+             * XXX: We can't return here since we are not in a function but in
+             * a chunk of code (injected in a function).
+             */
+            goto ok;
+
+            /*
+             * Likewise, always the same problem with error handling, we don't
+             * know where we are at in the "parent context":
+             */
+        err_skbuffs_alloc:
+            while (i--)
+            {
+                dma_unmap_single(
+                        &${ctx}->pci_dev->dev,
+                        (dma_addr_t)hw_ctx->rx_ring.dma_skbuffs[i],
+                        ${config.rx_buffer_len},
+                        DMA_FROM_DEVICE);
+        err_skbuffs_map:
+                dev_kfree_skb(hw_ctx->rx_ring.skbuffs[i]);
+            }
+
+            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->rx_ring.size,
+                    hw_ctx->rx_ring.base, (dma_addr_t)hw_ctx->rx_ring.dma_base);
+        err_rx_ring_alloc:
+            return -ENOMEM;
+
+        ok:
+        }
+    }
+
+    template sequence   e1000::free_rx_tx(Ethernet::Device ctx)
+    {
+        chunk   ::CALL()
+        {
+            typedef unsigned long int   dma_addr_t;
+
+            typedef int       ${e1000::Context};
+            ${e1000::Context} hw_ctx;
+            hw_ctx = &${ctx}->hw_ctx;
+
+            /*
+             * Free the rx ring:
+             * - Unmap and free the skbuffs;
+             * - Free the descriptors array.
+             */
+            int i = 0;
+            for (i = 0; i != ${config.rx_ring_size}; ++i)
+            {
+                dma_unmap_single(
+                        &${ctx}->pci_dev->dev,
+                        (dma_addr_t)hw_ctx->rx_ring.dma_skbuffs[i],
+                        ${config.rx_buffer_len},
+                        DMA_FROM_DEVICE);
+                dev_kfree_skb(hw_ctx->rx_ring.skbuffs[i]);
+            }
+            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->rx_ring.size,
+                    hw_ctx->rx_ring.base, (dma_addr_t)hw_ctx->rx_ring.dma_base);
+            {
+                ${Log::info("free_rx_tx: rx ring free'ed")};
+            }
+
         }
     }
 

@@ -64,7 +64,6 @@ with Ethernet, PCI, LKM, Log
             static int  rtx_ethernet_open(struct net_device *dev)
             {
                 struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
-                struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
 
                 ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
@@ -105,8 +104,7 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_close(struct net_device *dev)
             {
-                struct rtx_ethernet_dev* rtx_ether_dev =  netdev_priv(dev);
-                struct rtx_e1000_ctx* ctx = &rtx_ether_dev->hw_ctx;
+                struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
 
                 ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
