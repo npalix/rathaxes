@@ -43,13 +43,13 @@
 \lstdefinelanguage[middle]{rathaxes}
 {
 	morekeywords={interface, provided, required, optional, type, sequence,
-                  variable},
+                  variable, with, values},
     otherkeywords={::}
 }[keywords,comments,strings]
 
 \lstdefinelanguage[back]{rathaxes}
 {
-	morekeywords={with, template, type, sequence, decl, stmt, link, to, each},
+	morekeywords={with, values, template, type, sequence, decl, stmt, link, to, each},
 	morecomment=[s][\color{rBlue}]{\$\{}{\}}
 }[keywords,comments,strings]
 
@@ -186,7 +186,7 @@ it is not an easy thing to do, for two reasons:
             device
 \end{itemize}
 
-With \rtx\'s model, we can reuse the OS-specific implementation or the device
+With \rtx\'{}s model, we can reuse the OS-specific implementation or the device
 implementation (as well as extend it). This brought us to envision the
 distribution of a complete Back-End Library accompanying the compiler.
 
@@ -231,6 +231,7 @@ and devices descriptions, as well as telling us what's available in \rtx\ for
 use.
 
 \section{Elements of the Middle-End}
+\label{sec:MidElements}
 
 First and foremost, you need to know what is the Middle-End code composed of.
 The aim of the Middle-End is to describe the semantics of the subsystems that
@@ -320,7 +321,253 @@ sort of flexibility in the language, to evolve with more ease.
 
 \chapter{Diving into the Middle-End}
 
+%% In this chapter, every lstlisting will be middle-end code...
+\lstset{alsolanguage={[middle]rathaxes}, numbers=left, numberstyle=\tiny}
+
+Now that you've been introduced to our view of \rtx\, we can get into the
+flesh of things, and start thinking about understanding the middle-end, which
+is necessary to write either device driver implementations (front-end) or
+templates (back-end).
+
+So here we go. You are going to learn about the syntax and the meaning of
+the middle-end. This document goes from the big picture and zooms in to the
+little details of each element.
 
 
+\section{Interfaces: Bundle of semantics in a bigger concept}
+
+An interface is a block of types, prototypes and variables that represents
+a concept common to every Operating System. The big idea is that every
+OS offer the same functionalities through drivers to user processes. Each
+group of functionalities that can be assembled to represent a concept can be
+translated into an Interface of the \rtx\ language.
+
+An interface can represent a communication bus (PCI, for instance), as well as
+a more physical concept like the Network driver API in the kernel's library.
+
+An interface is written in a \rtx\ file, with this simple syntax:
+\begin{lstlisting}
+interface Name
+{
+}
+\end{lstlisting}
+
+As you can read, the keyword "interface" tells that you are going to describe
+an interface. It is followed by the interface's name. This name must be unique
+throughout the collection of interfaces offered by the compiler's library, and
+should by all means try to express the concept in a clear manner.
+
+Finally, a block, delimited by braces, contains all the declarations associated
+to the concept represented by the interface.
+
+When using an element defined by an interface, the interface behaves like a
+C++ namespace. Either it can be resolved by the compiler either you will have
+to explicit which interface the element comes from by prepending the name of
+the interface and the ``::'' operator before, thus giving:
+\begin{lstlisting}
+Interface::Element
+\end{lstlisting}
+This property will be used later in this document.
+
+
+\subsection{Dependency on Interfaces}
+
+When writing a device driver, we often encounter concepts that depend on
+another concept. This led \rtx\ to express this into a dependency declaration
+between multiple interfaces. The syntax of this declaration is alike to the
+inheritance declaration of a C++ class.
+
+For instance, in most OSes kernels, the concept of a Network driver is embedded
+into the PCI Bus. We can then represent the PCI Bus as an interface
+
+The syntax is the following:
+\begin{lstlisting}
+interface Network : PCI
+{
+}
+\end{lstlisting}
+
+We could read this declaration as: ``We declare an interface called Ethernet
+which depends on the interface called PCI''. This means that we will be able to
+use the types and sequences declared in the PCI interface and its dependencies.
+
+This creates a hierarchy in the interfaces offered to the developers. The basic
+idea is that you cannot use something that has not been declared in the
+interface's scope. For instance, a type declared in an interface not depended
+on by the current interface cannot be used in the latter. This prevents an
+interface from using types, data, or sequences it should not know: the PCI
+must not know anything about the Network layer, since the Network layer is
+a sort of specialization of the use of PCI. Thus, the Network interface
+depends on the PCI interface, meaning that the Network interface can use the
+PCI types, but that the reverse is forbidden.
+
+
+\section{Types: Data concept in \rtx}
+
+When writing a device driver, one often comes across ``standard'' data
+representations. In the case of a network driver, the developers often have
+to represent a packet's data. Since \rtx\ offers the possibility to manipulate
+data in order to write the driver's algorithm, it was necessary to provide
+some way to offer an abstraction over those kinds of common data structures.
+Thus, their real implementation (back-end) may differ, but what they expose
+for use and what functionalities they offer should stay common.
+
+This is why the interfaces can describe \rtx\ types. Those types are associated
+to a mapping which details what data members are accessible and what are the
+manipulation functions available for this type. As is every member of an
+interface, the type is preceded by one of the three qualifiers described in the
+introduction of this document: \emph{provided} or \emph{optional}.
+Their meaning and role are explained in the section~\ref{sec:MidElements}.
+Only those two are allowed, since the device driver developer should not need
+to provide information for a type, except the registers, which are a builtin
+type, and follow some specific rules.
+
+The way the types are used in the instrumented C code and in the \rtx\ code
+may remember a bit of object oriented programming, though this isn't the main
+aim of the syntaxes. Their use will be described in the back-end and front-end
+documentations.
+
+So here is an example of type in an interface:
+\begin{lstlisting}
+interface Network : Builtin
+{
+    provided type NameOfTheType {
+        field Builtin::bool     fragmented;
+        field Builtin::Ptr      data;
+        field Builtin::Number   size;
+        method                  init(Builtin::Number nbytes);
+    }
+}
+\end{lstlisting}
+
+As you can read from this example, declaring a type implies the use of one of
+the two qualifiers quoted above, followed by the keyword ``type'' and the name
+of the type. The type's detailed description is written afterwards inside a
+block delimited by two braces.
+
+This block contains the ``fields'' and ``methods'' that the type provides.
+Try not to confuse them with Object Oriented Programming attributes and member
+functions, since the fields exposed may not reflect the reality of the internal
+data of the type. Please bear in mind too that a \rtx\ ``method'' does not have
+any return type, and is actually a call that creates a target code substitution.
+In opposition to this, the fields exposed must be actual values of the
+specified type. This detailed description is used both as a contract between
+back-end implementation and front-end user, and as a documentation for the
+front-end user. This makes it easier to understand and use the types available.
+
+The current syntax described in this documentation is subject to changes.
+
+
+\section{Sequences: Algorithm concept in \rtx}
+
+In the \rtx\ language, we provide a way to abstract an algorithmic concept into
+an unity of code called a \emph{sequence}. A sequence can be seen as something
+similar to a function in other languages, but beware ! In opposition to a
+function in another language, the \emph{sequences} do not provide return types.
+This is because of the nature of \rtx: a code generator. Using a sequence
+actually means substituting its call by its internal code.
+
+As any typed language, \rtx\'{}s sequences take typed parameters. The types
+must be defined in either the current interface or one depended on.
+
+Let's assume that we have defined two types in the ``Builtin''' interface,
+called ``String'' and ``Number''. Let's write an interface named ``Log''
+that provides a ``Log\_number'' sequence taking both of the types asi
+parameters:
+\begin{lstlisting}
+interface Log : Builtin
+{
+    provided sequence Log_number(Builtin::String format, Builtin::Number val);
+}
+\end{lstlisting}
+
+This chunk of code tells us that the back-end implementation must provide
+a sequence ``Log::Log\_number'' taking a string format and a numeric value.
+Here, we don't ask for more from the template. Only that it must be callable
+by the front-end, whatever it's implementation. But we can also describe some
+more details as to how it must be implemented. For this example, you shall
+assume that you know what is a ``pointcut'' and a ``chunk'' in the \rtx\
+language. Those ideas and elements of the back-end are explained in the
+DSL back-end documentation, and are irrelevant to \rtx\ front-end users.
+This more of an back-end structural feature, but must be understood by all.
+
+\begin{lstlisting}
+interface Log : Builtin
+{
+    provided sequence Log_number(Builtin::String format, Builtin::Number val)
+    {
+        provided pointcut    justTryIt(Builtin::String);
+        provided chunk       heDidIt(Builtin::Number);
+    }
+}
+\end{lstlisting}
+As you can see, a sequence can only provide either chunks or pointcuts.
+For clarity, a chunk is a block of code that is to be inserted in-place in
+the associated defined pointcut.
+
+The pointcuts have prototypes much like the sequences, and this is what allows
+their identification: Their names and the types of their parameters. As you
+may have guessed, this allows some sort of overloading of the pointcuts,
+through different types and numbers of parameters.
+
+
+\section{Variables: Configuration associated to an interface}
+
+
+\section{Extending an Interface}
+
+There are cases where an interface provides more types or configuration values
+for a given configuration. As an example, we could use the Loadable kernel
+module as defined by Windows (with the Windows Driver Development Kit). It uses
+an UID to identify each driver. This behavior is specific to windows, and thus
+cannot be expressed in an interface, even though the information should be
+provided by the driver implementation. That is the reason why we chose to allow
+extending an interface for specific cases.
+
+As explained in the introductory part of this document, the aim is to generate
+drivers for a given configuration. The configuration expressed is mainly used
+to actually select the back-end templates that will be used for the generation,
+but it is also used to select the valid interfaces extensions. The selection
+over the configuration is done by the keyword ``with'' associated to one or
+more interfaces, with one or more conditions over the values of given
+configuration variables.
+
+A with block is written as the following:
+\begin{lstlisting}
+with LKM
+values OS=windows, version >= 7
+{
+}
+\end{lstlisting}
+
+With this example, you can see that the conditional expression of a with block
+can use the operators ``<'', ``<='', ``='', ``>='', and ``>''. Of course those
+operators are not valid for every type of variable. Actually, the string type
+is the only one which only supports the equality operator (``=''). Each
+condition is separated by a coma, and the conditions are preceded by the
+``values'' keyword.
+
+Here, we could read a with block selected for every configuration which target
+Windows from version 7 to later ones.
+
+Now, if we want to extend an interface, we use the extend keyword, followed by
+a classic interface declaration, except that it does not support dependencies
+and that it cannot redefine already defined types, sequences or variables.
+
+Here is an example of the extension syntax of an interface:
+\begin{lstlisting}
+with LKM
+values OS=windows, version >= 7
+{
+    extend interface LKM
+    {
+        required variable Serial    GUID;
+    }
+}
+\end{lstlisting}
+
+And thus, we require the GUID when generating a windows driver. This can be
+used for more specific cases, but bear in mind that it should not be the
+default solution, as it thwarts the raison d'etre of the interfaces.
 
 \end{document}
