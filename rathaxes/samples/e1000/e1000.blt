@@ -58,7 +58,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_MDIC          = 0x00020, /* MDI Control - RW */
                 E1000_IMS           = 0x000D0, /* Interrupt Mask Set */
                 E1000_IMC           = 0x000D8, /* Interrupt Mask Clear */
-                E1000_ICR           = 0x000C0  /* Interrupt Cause Read - R/clr */
+                E1000_ICR           = 0x000C0, /* Interrupt Cause Read - R/clr */
+                E1000_FCAL          = 0x00028, /* Flow Control Address Low */
+                E1000_FCAH          = 0x0002c, /* Flow Control Address High */
+                E1000_FCT           = 0x00030, /* Flow Control Type */
+                E1000_FCTTV         = 0x00170, /* Flow Control Transmit Timer Value */
+                E1000_CRCERRS       = 0x04000, /* CRC Error Count (base address of the statistic register spaces) */
             };
         }
 
@@ -446,11 +451,43 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk  ::CALL()
         {
+            /*
+             * This is documented in the Intel Gigabit Ethernet Controller
+             * Software Developper manual.
+             *
+             * Since this part is actually completely device specific it should
+             * not be written here. (but in the front-end).
+             */
+
+            /*
+             * "General Configuration" (section 14.3):
+             *
+             * - CTRL.ASDE/CTRL.SLU: Let the PHY handle the speed detection &
+             *   negociation;
+             * - CTRL.LRST/FRCSPD: Unset them to initiate the auto-negociation;
+             * - CTRL.PHY_RST: Unset it;
+             * - CTRL.ILOS: Unset it (ILOS is Invert Loss Of Signal);
+             * - CTRL.VME: Make sure it's not set to disable VLAN support;
+             * - Set the control flow registers to 0;
+	     * - Finally, initialize all the statistic registers from
+	     *   E1000_CRCERRS to E1000_TSCTFC.
+             */
             rtx_e1000_register_set32(&${ctx}->hw_ctx, E1000_CTRL,
                                      E1000_CMD_ASDE |
-                                     E1000_CMD_SLU  |
-                                     E1000_CMD_LRST |
-                                     E1000_CMD_PHY_RST);
+                                     E1000_CMD_SLU);
+            rtx_e1000_register_unset32(&${ctx}->hw_ctx, E1000_CTRL,
+                                       E1000_CMD_LRST    |
+                                       E1000_CMD_FRCSPD  |
+                                       E1000_CMD_PHY_RST |
+                                       E1000_CMD_ILOS    |
+                                       E1000_CMD_VME);
+            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCAH, 0);
+            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCAL, 0);
+            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCT, 0);
+            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_FCTTV, 0);
+            int i = 0;
+            for (i = 0; i != 64; ++i)
+                rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_CRCERRS + i * 4, 0);
         }
     }
 
