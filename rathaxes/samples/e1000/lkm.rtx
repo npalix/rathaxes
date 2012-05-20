@@ -24,7 +24,17 @@ device LKM use LKM, PCI, Ethernet, Log
     Ethernet::close(Ethernet::Device dev)
     {
         Log::info("closing the device");
+
+        /*
+         * Note: some calls to release resources must be done when IRQs are
+         * enabled (dma_free_coherent() for example). So we have to cleanup our
+         * stuff before free_interrupt_handler().
+         */
+        e1000::free_rx_tx(dev);
+        Log::info("free'ed up rx/tx resources");
+
         e1000::free_interrupt_handler(dev);
+        Log::info("interrupt handler free'ed");
     }
 
     Ethernet::interrupt_handler(Ethernet::Device dev)
@@ -61,4 +71,11 @@ configuration
     PCI::set_master = true;
 
     Ethernet::ifname = "rtx%d";
+
+    e1000::rx_ring_size = 256; /* Number of incoming packets we can buffer */
+    /*
+     * The e1000 supports seven receive buffer sizes: 256, 512, 1024, 2048,
+     * 4096, 8192 and 16384 bytes:
+     */
+    e1000::rx_buffer_len = 2048;
 }
