@@ -80,4 +80,11 @@ interface e1000 : Socket, Ethernet, PCI, LKM
         provided chunk  LKM::code();
         provided chunk  ::CALL();
     }
+
+    provided sequence   e1000::register_unset32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
 }

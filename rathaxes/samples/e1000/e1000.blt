@@ -339,6 +339,27 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
+    template sequence   e1000::register_unset32(e1000::Context ctx, e1000::Register reg_offset, ::number value)
+    {
+        chunk   LKM::prototypes()
+        {
+            static void rtx_e1000_register_unset32(struct rtx_e1000_ctx *, unsigned int, unsigned int);
+        }
+
+        chunk   LKM::code()
+        {
+            static void rtx_e1000_register_unset32(struct rtx_e1000_ctx *ctx, unsigned int reg_offset, unsigned int value)
+            {
+                iowrite32(rtx_e1000_register_read32(ctx, reg_offset) & ~value, ctx->ioaddr + reg_offset);
+            }
+        }
+
+        chunk   ::CALL()
+        {
+            rtx_e1000_register_unset32(${ctx}, ${reg_offset}, ${value});
+        }
+    }
+
     template sequence   e1000::setup_interrupt_handler(Ethernet::Device ctx)
     {
         chunk   LKM::includes()
