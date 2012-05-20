@@ -249,7 +249,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             static void rtx_e1000_print_status(struct rtx_e1000_ctx *ctx)
             {
                 unsigned int status = rtx_e1000_register_read32(ctx, E1000_STATUS);
-                pr_info("card status: \n");
+                { /* < workaround issue #10 */
+                    ${Log::info("card status:")};
+                }
+                /*
+                 * we can't use Log::info below because it just accept a string
+                 * (as opposed to a format string with its parameters).
+                 */
                 pr_info("\tRegister value: 0x%x\n", status);
                 pr_info("\tMode: %s\n", (status & 1) ? "Full": "Half");
                 pr_info("\tLink: %s\n", (status & 2) ? "Up" : "Down");
@@ -469,8 +475,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              * - CTRL.ILOS: Unset it (ILOS is Invert Loss Of Signal);
              * - CTRL.VME: Make sure it's not set to disable VLAN support;
              * - Set the control flow registers to 0;
-	     * - Finally, initialize all the statistic registers from
-	     *   E1000_CRCERRS to E1000_TSCTFC.
+             * - Finally, initialize all the statistic registers from
+             *   E1000_CRCERRS to E1000_TSCTFC.
              */
             rtx_e1000_register_set32(&${ctx}->hw_ctx, E1000_CTRL,
                                      E1000_CMD_ASDE |
