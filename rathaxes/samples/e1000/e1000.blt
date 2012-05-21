@@ -148,6 +148,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_RAL           = 0x05400, /* Receive Address Low */
                 E1000_RAH           = 0x05404, /* Receive Address High */
                 E1000_MTA           = 0x05200, /* Multicast Table Array */
+                E1000_RDBAL         = 0x02800, /* Receive Descriptor Base Address (Low 32 bits) */
+                E1000_RDBAH         = 0x02804, /* Receive Descriptor Base Address (High 32 bits) */
                 E1000_RDLEN         = 0x02808, /* Receive Descriptor Length */
                 E1000_RDH           = 0x02810, /* Receive Descriptor Head */
                 E1000_RDT           = 0x02818, /* Receive Descriptor Tail */
@@ -618,7 +620,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              *    e1000::activate_device_interruption);
              * 4. Allocate the receive descriptor ring and map it to make it
              *    accessible by the device;
-             * 5. Set RDLEN (Receive Descriptor Length) to the size of the ring;
+             * 5. Write the start address of the ring in RDBAL/RDBAH and set
+             *    RDLEN (Receive Descriptor Length) to the size of the ring;
              * 6. Set the RDH/RDT (Receive Descriptor Head/Tail) indexes to the
              *    beginning and end of the ring;
              * 7. Make sure that RCTL.BSIZE and .BSEX are at 0 to configure the
@@ -713,7 +716,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 ${Log::info("setup_device: skbuffs allocated")};
             }
 
-            /* 5. Save the size of the ring in RDLEN */
+            /* 5. Save the emplacement and the size of the ring in RDBA/RDLEN */
+            rtx_e1000_register_write32(hw_ctx, E1000_RDBAL, (dma_addr_t)hw_ctx->rx_ring.dma_base & 0xffffffff);
+            rtx_e1000_register_write32(hw_ctx, E1000_RDBAH, (dma_addr_t)hw_ctx->rx_ring.dma_base >> 32);
             rtx_e1000_register_write32(hw_ctx, E1000_RDLEN, hw_ctx->rx_ring.size);
 
             /* 6. Setup RDH/RDT */
