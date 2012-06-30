@@ -212,17 +212,32 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
     // Second, check that the pointcuts to be implemented exist.
     foreach decl in currentDeclaration.body.block
     {
+        local dummy;
         if (decl.type == "__rtx_itf_decl__" && decl.specifier == "chunk")
         {
             if (rtxTypeCheck_ItfCheckPointcut(decl.body.pointcut, currentInterface) == false)
             {
-                local dummy;
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeFullQualifiedName<"pointcut">(decl.body.pointcut, dummy)
                           +"' is not declared." + DEFAULT_COLOR);
                 increment(errcount);
             }
             // In the case of success, the scoped identifier is already updated.
+        }
+        else if (decl.type == "__rtx_itf_decl__" && decl.specifier == "pointcut")
+        {
+            // XXX TODO FIXME 
+            // We can't check that the pointcut is actually written from here,
+            // But we should check that the user does not define multiple times the same pointcut through
+            // different sequences.
+        }
+        else
+        {
+            traceLine(RED + "[Error] Declaration with type='" + decl.type
+                      + "', specifier='" + decl.specifier
+                      + "', qualifier='" + decl.qualifier
+                      + "' is forbidden in a sequence's body." + DEFAULT_COLOR);
+            increment(errcount);
         }
     }
     if (errcount != 0)

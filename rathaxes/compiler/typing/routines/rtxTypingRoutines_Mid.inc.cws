@@ -200,6 +200,7 @@ function        rtxTypeCheck_ItfCheckPointcut(pointcutRtype : node, interfaceNod
             || pointcutRtype.name.name == "IMPLEMENTATION")
             return true;
     }
+
     return false;
 }
 

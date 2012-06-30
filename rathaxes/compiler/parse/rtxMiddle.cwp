@@ -160,6 +160,8 @@ rtx_itf_sequence_body_declaration(theBlock : node) ::=
     =>local dummy;
     // let's parse
     rtx_itf_qualifier:sQualifier
+    #continue(sError, "Currently, only the qualifier 'provided' is supported in a sequence body.")
+    #check(sQualifier == "provided")
     rtx_itf_type:sStmt
     #continue(sError, "Only pointcut or chunk declarations are allowed in a sequence body.")
     #check(sStmt == "pointcut" || sStmt == "chunk")
