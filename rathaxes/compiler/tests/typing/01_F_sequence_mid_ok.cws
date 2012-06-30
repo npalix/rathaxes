@@ -51,17 +51,16 @@ generateString({
 
         interface LKM : Builtin
         {
-            required sequence           LKM::required_notype() { required pointcut testpointcut(); }
-            required sequence           LKM::required_notype(String) { required pointcut testpointcut(); }
-            required sequence           LKM::required_notype(Builtin::String) { required pointcut testpointcut(); }
-            
-            optional sequence           LKM::optional_notype() { required pointcut testpointcut(); }
-            optional sequence           LKM::optional_notype(String) { required pointcut testpointcut(); }
-            optional sequence           LKM::optional_notype(Builtin::String) { required pointcut testpointcut(); }
+            provided pointcut           testpointcut();
 
-            provided sequence           LKM::provided_notype() { required pointcut testpointcut(); }
-            provided sequence           LKM::provided_notype(String) { required pointcut testpointcut(); }
-            provided sequence           LKM::provided_notype(Builtin::String) { required pointcut testpointcut(); }
+            required sequence           LKM::required_notype() { provided chunk testpointcut(); }
+            required sequence           LKM::required_notype(String) { provided chunk testpointcut(); }
+
+            optional sequence           LKM::optional_notype() { provided chunk testpointcut(); }
+            optional sequence           LKM::optional_notype(String) { provided chunk testpointcut(); }
+
+            provided sequence           LKM::provided_notype() { provided chunk testpointcut(); }
+            provided sequence           LKM::provided_notype(String) { provided chunk testpointcut(); }
         }
 @}, dummy, input);
 

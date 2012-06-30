@@ -23,5 +23,7 @@ traceLine("Checking types declarations");
 if (rtxItfCheckTypesDeclarations_walk(source, source.interfaces) == false)
 {
     traceLine("Error while checking types.");
-    error("Error while checking types.");
+    exit(1);
 }
+
+exit(0);

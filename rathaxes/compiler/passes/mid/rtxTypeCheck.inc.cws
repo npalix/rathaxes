@@ -28,7 +28,7 @@ function rtxMiddle_TypeCheck(local_node : node)
                 traceLine("Error while checking types.");
                 error("Error while checking types.");
         }
-     
+
 }
 
 /* Allow middle or back code portion in one big RTX file */
@@ -137,6 +137,14 @@ function        rtxItfCheckTypesDeclarations<"pointcut">(currentDeclaration : no
     {
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
+
+    // This checks for multiple definition, avoiding failure with builtin things like "::X", "::CALL", etc..
+    if (!(currentDeclaration.rtype.name.global == true && currentDeclaration.rtype.name.scope == ""))
+    {
+        if (rtxItfAddTypeToList(currentDeclaration, currentInterface.pointcuts) == false)
+            return false;
+    }
+
     return true;
 }
 
@@ -148,7 +156,11 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
     {
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
-    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+
+    // This checks for multiple definition
+    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.types) == false)
+        return false;
+
     return true;
 }
 
@@ -160,7 +172,11 @@ function        rtxItfCheckTypesDeclarations<"builtintype">(currentDeclaration :
     {
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
-    rtxItfAddTypeToList(currentDeclaration, currentInterface.types);
+
+    // This checks for multiple definition
+    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.types) == false)
+        return false;
+
     return true;
 }
 
@@ -172,12 +188,11 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     local name = currentDeclaration.rtype.name.name;
     local typeName = rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype);
     local varname = currentDeclaration.identifiers.scope + "::" + currentDeclaration.identifiers.name;
-    local ret = false;
 
     if (scope == "" && currentDeclaration.rtype.name.global == false)
     {
         traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace." + DEFAULT_COLOR);
-        ret = true;
+        return false;
     }
     else
     {
@@ -188,7 +203,12 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
                           + "''." + DEFAULT_COLOR);
         }
     }
-    return ret;
+
+    // This checks for multiple definition
+    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.variables) == false)
+        return false;
+
+    return true;
 }
 
 function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : node,
@@ -239,13 +259,10 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
         }
         else if (decl.type == "__rtx_itf_decl__" && decl.specifier == "pointcut")
         {
-            // This call fully qaulifies the pointcut.
-            rtxItfCheckTypesDeclarations<"pointcut">(decl, currentInterface, interfacesList);
+            // This call fully qualifies the pointcut and checks for multiple definitions
+            if (rtxItfCheckTypesDeclarations<"pointcut">(decl, currentInterface, interfacesList) == false)
+                increment(errcount);
 
-            // XXX TODO FIXME 
-            // We can't check that the pointcut is actually written from here,
-            // But we should check that the user does not define multiple times the same pointcut through
-            // different sequences.
         }
         else
         {
@@ -264,7 +281,8 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
     {
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
-    rtxItfAddTypeToList(currentDeclaration, currentInterface.name);
+    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.sequences) == false)
+        return false;
 
     return true;
 }
@@ -274,13 +292,16 @@ function        rtxItfCheckTypesDeclarations<"__rtx_itf__">(currentDeclaration :
                                                             interfacesList : node)
 {
     local errcount = 0;
+
     foreach decl in currentDeclaration.body.block
     {
         if (rtxItfCheckTypesDeclarations<decl.specifier>(decl, currentDeclaration, interfacesList) == false)
             increment(errcount);
     }
+
     if (errcount != 0)
         return false;
+
     return true;
 }
 
@@ -289,6 +310,7 @@ function        rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration : n
                                                           interfacesList : node)
 {
     local errcount = 0;
+
     foreach item in currentDeclaration.block
     {
         if (rtxItfCheckTypesDeclarations<item.type>(item,
@@ -296,8 +318,10 @@ function        rtxItfCheckTypesDeclarations<"__block__">(currentDeclaration : n
                                                     interfacesList) == false)
             increment(errcount);
     }
-    if(errcount != 0)
+
+    if (errcount != 0)
         return false;
+
     return true;
 }
 function        rtxItfCheckTypesDeclarations<"__rtx_with__">(currentDeclaration : node,
