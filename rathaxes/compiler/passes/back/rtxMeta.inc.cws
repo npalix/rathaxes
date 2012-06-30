@@ -158,7 +158,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 #overload
                 translation_unit ::=
 /**/            #try
-/**/          	                #ignore
+/**/          	                #ignore("CNORM")
 /**/                            #check(rtxNodePlaceHolder(this))
                                 [
                                         rtx_placeholder_noconcat(this)
