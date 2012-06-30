@@ -1,4 +1,5 @@
 # Pure backend compilation and resolution tests
+# (without interaction with other parts of the language)
 ADD_RATHAXES_CWS_TEST(01_A_test_back_parse.cws)
 ADD_RATHAXES_CWS_TEST(01_B_test_back_compile.cws)
 ADD_RATHAXES_CWS_TEST(01_C_test_back_meta.cws)
@@ -33,7 +34,12 @@ ADD_RATHAXES_CWS_TEST(03_F_test_config_match.cws)
 
 # Tests for the Front-end
 ADD_RATHAXES_CWS_TEST(04_A_test_front_parse.cws)
+ADD_RATHAXES_CWS_TEST(04_B_test_front_parse_and_check.cws)
+ADD_RATHAXES_CWS_TEST(04_C_test_front_all.cws)
 
 # Tests for Link module
 ADD_RATHAXES_CWS_TEST(05_A_test_link_merge.cws)
 ADD_RATHAXES_CWS_TEST(05_B_test_link_merge_conflict.cws)
+
+# Tests for the typing system (should not do anymore than parsing/checking typing)
+ADD_SUBDIRECTORY(typing)
