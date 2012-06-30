@@ -47,17 +47,17 @@ generateString({
         {
             required sequence           LKM::required_notype()
             {
-                required pointcut       LKM::pouet();
+                provided chunk       LKM::pouet();
             }
 
             optional sequence           LKM::optional_notype()
             {
-                required pointcut       LKM::pouet();
+                provided chunk       LKM::pouet();
             }
 
             provided sequence           LKM::provided_notype()
             {
-                required pointcut       LKM::pouet();
+                provided chunk       LKM::pouet();
             }
         }
 @}, dummy, input);
