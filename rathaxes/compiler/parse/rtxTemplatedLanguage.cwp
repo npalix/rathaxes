@@ -67,7 +67,7 @@ rtx_templatedLang_C_block_item_list(theBlock : node) ::=
 ;
  
 ///// META-VARIABLE HOOK
-// Don't care... for now...
+// Don't care... for now...done in rtxMeta
 rtx_templatedLang_code ::= #!ignore "${" #continue(sError, "Expected '}' after \"'${\"") [rtx_templatedLang_brace]* '}' 
 ;
 

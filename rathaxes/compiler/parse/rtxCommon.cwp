@@ -36,7 +36,7 @@ rtx_composed_identifier(theNode : node) ::=
     // Create the node from
     #check(rtxNodeVar(theNode, theVar))
     [
-        '.' identifier:curField
+        '.' identifier(theNode):curField
         // add the field into the block
         #check(rtxNodeVar_AddIdentifier(theNode, curField))
     ]*
