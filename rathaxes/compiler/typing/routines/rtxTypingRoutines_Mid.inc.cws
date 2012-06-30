@@ -16,13 +16,15 @@ function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
  * This function checks whether an interface contains a type described
  * by a RType node, by checking inside its tree.
  */
-function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : node,
+                                              match_count : node, possibilities : node)
 {
     if (rtypeNode.type != "__rtx_rtype__")
         error("Bad node type. Received: " + rtypeNode.type);
 
     local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
     // Unkown scope and not explicit global ?
+    // In this case, we'll check ALL possibilities. and decide afterwards.
     if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
     {
         // We are searching for qualified items, thus set the scope before checking.
@@ -31,20 +33,20 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
         // Check current interface.
         if (findElement(name + "{}", interfaceNode.types) == true)
         {
-            rtypeNode.name.scope = interfaceNode.name;
-            return true;
+            increment(match_count);
+            // Add the interface possibility to the list.
+            pushItem possibilities;
+            possibilities#back = interfaceNode.name;
         }
         rtypeNode.name.scope = "";
 
         // Recursive check in parents interfaces.
         foreach parentInterface in interfaceNode.inheritance
         {
-            if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
-            {
-                // then set the interface's name
-                rtypeNode.name.scope = parentInterface.name;
-                return true;
-            }
+            // Here, we don't care about success or failure in the parent interfaces
+            // The wrapper function will sort out things depending
+            // on the variables 'match_count' and 'possibilities'
+            rtxInterfaceHasType_recursive(rtypeNode, parentInterface, match_count, possibilities);
         }
     }
     else if (rtypeNode.name.global == false) // known scope
@@ -56,15 +58,21 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
             {
                 foreach parentInterface in interfaceNode.inheritance
                 {
-                    if (rtxInterfaceHasType(rtypeNode, parentInterface) == true)
+                    if (rtxInterfaceHasType_recursive(rtypeNode, parentInterface,
+                                                      match_count, possibilities) == true)
+                    {
                         return true;
+                    }
                 }
                 traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree." + DEFAULT_COLOR);
                 return false;
             }
-
-            if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
-                return true;
+            // If it's a direct inheritance, snoop through the types list.
+            else
+            {
+                if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
+                    return true;
+            }
         }
         else if (findElement(name + "{}", interfaceNode.types) == true)
             return true;
@@ -90,7 +98,44 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
     return false;
 }
 
+/*
+ * This wrapper to rtxInterfaceHasType_recursive takes care of checking
+ * and ambiguous type use. Read code for more information.
+ */
+function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+{
+    local match_count = 0;
+    local possibilities;
+    local message;
 
+    if (rtxInterfaceHasType_recursive(rtypeNode, interfaceNode,
+                                      match_count, possibilities) == true)
+        return true;
+    
+    if (match_count == 1)
+    {
+        traceLine(PURPLE + "[Debug] Found one possibility for type identification."
+                  +" Validating interface " + toString(possibilities,true) + DEFAULT_COLOR);
+        rtypeNode.name.scope = possibilities#[0];
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach i in possibilities
+        {
+            message += i + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify type: No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
 
 /*
  * This function checks whether an interface declares a pointcut described
