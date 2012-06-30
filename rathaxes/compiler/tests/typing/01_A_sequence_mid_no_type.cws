@@ -50,9 +50,6 @@ generateString({
             required sequence           LKM::required_notype();
             optional sequence           LKM::optional_notype();
             provided sequence           LKM::provided_notype();
-            required sequence           LKM::required_notype(Builtin::Context);
-            optional sequence           LKM::optional_notype(Builtin::Context);
-            provided sequence           LKM::provided_notype(Builtin::Context);
             required sequence           LKM::required_notype(LKM::Context);
             optional sequence           LKM::optional_notype(LKM::Context);
             provided sequence           LKM::provided_notype(LKM::Context);

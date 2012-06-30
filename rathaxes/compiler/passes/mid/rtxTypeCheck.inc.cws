@@ -169,10 +169,12 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
     }
     else
     {
-        ret = rtxInterfaceHasType(currentDeclaration.rtype, currentInterface);
-        if (ret == false)
-            traceLine(RED + "[Error] Type ``" + typeName + "''"
-                      + " could not be found for variable ``" + varname + "''." + DEFAULT_COLOR);
+        if (rtxInterfaceHasType(currentDeclaration.rtype, currentInterface) == false)
+        {
+                traceLine(RED + "[Error] Type ``" + typeName + "''"
+                          + " could not be identified for variable ``" + varname
+                          + "''." + DEFAULT_COLOR);
+        }
     }
     return ret;
 }
@@ -194,8 +196,8 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
         if (rtxInterfaceHasType(rtypeNode, currentInterface) == false)
         {
             traceLine(RED + "[Error] Parameter type ``"
-                      + rtypeNode.name.scope + "::" + rtypeNode.name.name + "''"
-                      + " could not be found for sequence ``"
+                      + rtxRTypeName<rtypeNode.type>(rtypeNode) + "''"
+                      + " could not be identified for sequence ``"
                       + typeName + "''." + DEFAULT_COLOR);
             increment(errcount);
         }
