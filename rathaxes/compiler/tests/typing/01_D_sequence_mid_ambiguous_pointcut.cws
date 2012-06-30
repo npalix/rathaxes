@@ -46,7 +46,10 @@ generateString({
 
         interface Builtin
         {
-            provided pointcut           test_pointcut();
+            required sequence           test_sequence()
+            {
+                provided pointcut       test_pointcut();
+            }
         }
         interface LKM : Builtin
         {
@@ -54,17 +57,17 @@ generateString({
 
             required sequence           LKM::required_notype()
             {
-                required pointcut       test_pointcut();
+                provided chunk       test_pointcut();
             }
 
             optional sequence           LKM::optional_notype()
             {
-                required pointcut       test_pointcut();
+                provided chunk       test_pointcut();
             }
 
             provided sequence           LKM::provided_notype()
             {
-                required pointcut       test_pointcut();
+                provided chunk       test_pointcut();
             }
         }
 @}, dummy, input);
