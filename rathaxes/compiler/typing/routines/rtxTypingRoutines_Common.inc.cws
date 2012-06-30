@@ -46,7 +46,10 @@ function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : 
         {
             if (rtxRTypeFullQualifiedName<"pointcut">(def.rtype, dummy_ids)
                     == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+            {
+                pointcutRtype.name.scope = scope_save;
                 return true;
+            }
         }
         // type templates dont matter here, they should not define pointcuts.
         // So, check only sequence templates...
@@ -58,12 +61,16 @@ function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : 
                 if (item.type == "__rtx_itf_decl__" && item.specifier == "pointcut"
                     && rtxRTypeFullQualifiedName<"pointcut">(item.rtype, dummy_ids)
                         == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+                {
+                    pointcutRtype.name.scope = scope_save;
                     return true;
+                }
             }
         }
     }
-    if (scope_save == "")
-        pointcutRtype.name.scope = "";
+
+    pointcutRtype.name.scope = "";
+
     return false;
 }
 

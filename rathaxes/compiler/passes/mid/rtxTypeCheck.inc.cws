@@ -120,11 +120,23 @@ function        rtxItfCheckInheritance_walk<"__root_block__">(local_node : node,
  * in the associated interface. They also allow to check whether an interface
  * provides a pointcut to be used by the checked one.
  *
+ * During this pass, we fully qualify non-qualified items.
  */
 function        rtxItfCheckTypesDeclarations<T>(currentDeclaration : node,
                                                 currentInterface : node,
                                                 interfacesList : node)
 {
+    return true;
+}
+
+function        rtxItfCheckTypesDeclarations<"pointcut">(currentDeclaration : node,
+                                                         currentInterface : node,
+                                                         interfacesList : node)
+{
+    if (currentDeclaration.rtype.name.global == false)
+    {
+        currentDeclaration.rtype.name.scope = currentInterface.name;
+    }
     return true;
 }
 
@@ -209,7 +221,8 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
         }
     }
 
-    // Second, check that the pointcuts to be implemented exist.
+    // Second, check that the chunks to be implemented have existing pointcuts,
+    // And qualify provided pointcuts
     foreach decl in currentDeclaration.body.block
     {
         local dummy;
@@ -219,13 +232,16 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
             {
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeFullQualifiedName<"pointcut">(decl.body.pointcut, dummy)
-                          +"' is not declared." + DEFAULT_COLOR);
+                          +"' could not be identified or qualified." + DEFAULT_COLOR);
                 increment(errcount);
             }
             // In the case of success, the scoped identifier is already updated.
         }
         else if (decl.type == "__rtx_itf_decl__" && decl.specifier == "pointcut")
         {
+            // This call fully qaulifies the pointcut.
+            rtxItfCheckTypesDeclarations<"pointcut">(decl, currentInterface, interfacesList);
+
             // XXX TODO FIXME 
             // We can't check that the pointcut is actually written from here,
             // But we should check that the user does not define multiple times the same pointcut through
