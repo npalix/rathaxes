@@ -67,16 +67,28 @@ function        addSequenceBody(theSequence : node, theBody : node)
 
 function        rtxItfAddTypeToList(theNode : node, nameList : reference)
 {
+    local fullName;
+
     if (theNode.specifier == "variable")
     {
-        traceLine("A variable shouldn't be in the types list.");
-        error("A variable shouldn't be in the types list.");
+        fullName = theNode.identifiers.name;
+    }
+    else
+    {
+        fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
+                                                                theNode.identifiers);
     }
 
-    local fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
-                                                                  theNode.identifiers);
+    if (existVariable(nameList[fullName]))
+    {
+        traceLine(RED + "[Error] Element " + fullName
+                  + " is already defined." + DEFAULT_COLOR);
+        return false;
+    }
+
     insert nameList[fullName];
     ref nameList[fullName] = theNode;
+    return true;
 }
 
 

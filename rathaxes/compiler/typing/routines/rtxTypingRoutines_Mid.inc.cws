@@ -111,7 +111,7 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
     if (rtxInterfaceHasType_recursive(rtypeNode, interfaceNode,
                                       match_count, possibilities) == true)
         return true;
-    
+
     if (match_count == 1)
     {
         traceLine(PURPLE + "[Debug] Found one possibility for type identification."

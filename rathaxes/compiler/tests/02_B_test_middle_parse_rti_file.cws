@@ -19,6 +19,7 @@ changeDirectory(working_directory);
 
 local dummy;
 
+#include "misc/colors.cws"
 #include "cwTool.inc.cws"
 #include "cnorm.inc.cws"
 #include "cnorm2c/cnorm2c.inc.cws"
