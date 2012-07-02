@@ -114,8 +114,6 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
 
     if (match_count == 1)
     {
-        traceLine(PURPLE + "[Debug] Found one possibility for type identification."
-                  +" Validating interface " + toString(possibilities,true) + DEFAULT_COLOR);
         rtypeNode.name.scope = possibilities#[0];
         return true;
     }
@@ -220,8 +218,6 @@ function        rtxTypeCheck_ItfCheckPointcut(rtypeNode : node, interfaceNode : 
 
     if (match_count == 1)
     {
-        traceLine(PURPLE + "[Debug] Found one possibility for pointcut identification."
-                  +" Validating interface " + toString(possibilities,true) + DEFAULT_COLOR);
         rtypeNode.name.scope = possibilities#[0];
         return true;
     }
