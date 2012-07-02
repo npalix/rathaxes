@@ -36,10 +36,12 @@ function        rtxType_Load(out : node)
         { error("unable to load rules_types directory"); }
         foreach f in theDir.files
         {
+            try {
                 traceLine("Load:" + f);
                 local content = loadFile(theDir + f);
                 extendExecutedScript(content);
                 insert out.map.files[f] = true;
+            } catch (sError) { traceLine(YELLOW + "[Warning] Loading of file " + f + " failed:" + endl() + sError + DEFAULT_COLOR); }
         }
 }
 

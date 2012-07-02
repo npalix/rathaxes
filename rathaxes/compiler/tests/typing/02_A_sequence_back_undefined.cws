@@ -47,7 +47,13 @@ function checkInput(input : node, inputsave : value)
     { error("Can't REGISTER CACHE"); }
 
     traceLine("====>BACK TYPE CHECK");
-    try { rtxTpl_TypeCheck(source); }
+    try {
+        if (rtxTpl_TypeCheck(source) == false)
+        {
+            traceLine("Type Checking failed at BackEnd step.");
+            return 0;
+        }
+    }
     catch(sError) { traceLine("Type Checking failed at BackEnd step: "+sError); return 0; }
 
     return 1;

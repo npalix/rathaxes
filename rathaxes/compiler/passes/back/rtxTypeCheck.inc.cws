@@ -5,56 +5,57 @@ function rtxBack_TypeCheck_version()
 
 #include "typing/rtxTyping.inc.cws"
 
-declare function rtxTpl_TypeCheckFor<T>(local_node : node);
+declare function rtxTpl_TypeCheckFor<T>(local_node : node, interfaces : node);
 declare function rtxTpl_TypeCheck(local_node : node);
 
 
 
-function rtxTpl_TypeCheckFor<T>(local_node : node)
+function rtxTpl_TypeCheckFor<T>(local_node : node, interfaces : node)
 {
     error("rtxTpl_TypeCheck unmanaged type "+T);
 }
 
 /* Allow middle or back code portion in one big RTX file */
-function rtxTpl_TypeCheckFor<"__rtx_itf__">(local_node : node)
+function rtxTpl_TypeCheckFor<"__rtx_itf__">(local_node : node, interfaces : node)
 {       return true;}
-function rtxTpl_TypeCheckFor<"__rtx_device__">(local_node : node)
+function rtxTpl_TypeCheckFor<"__rtx_device__">(local_node : node, interfaces : node)
 {       return true;}
-function rtxTpl_TypeCheckFor<"__rtx_config__">(local_node : node)
+function rtxTpl_TypeCheckFor<"__rtx_config__">(local_node : node, interfaces : node)
 {       return true;}
 /**/
 
-function    rtxTpl_TypeCheckFor<"__rtx_tpl__">(local_node : node)
+function    rtxTpl_TypeCheckFor<"__rtx_tpl__">(local_node : node, interfaces : node)
 {
-    return rtxTypeCheck_Template(local_node.prototype.rtype, local_node);
+    return rtxTypeCheck_Template(local_node.prototype.rtype, local_node, interfaces);
 }
 
-function rtxTpl_TypeCheckFor<"__block__">(local_node : node)
+function rtxTpl_TypeCheckFor<"__block__">(local_node : node, interfaces : node)
 {
     local count;
     foreach item in local_node.block
     {
-        if (rtxTpl_TypeCheckFor<item.type>(item) == false)
+        if (rtxTpl_TypeCheckFor<item.type>(item, interfaces) == false)
             increment(count);
     }
     return count;
 }
 
-function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node)
+function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node, interfaces : node)
 {
-    return rtxTpl_TypeCheckFor<"__block__">(local_node.body);
+    return rtxTpl_TypeCheckFor<"__block__">(local_node.body, local_node.interfaces);
 }
 
-function rtxTpl_TypeCheckFor<"__root_block__">(local_node : node)
+function rtxTpl_TypeCheckFor<"__root_block__">(local_node : node, interfaces : node)
 {
-    return rtxTpl_TypeCheckFor<"__block__">(local_node);
+    return rtxTpl_TypeCheckFor<"__block__">(local_node, interfaces);
 }
 
 
 
 function rtxTpl_TypeCheck(local_node : node)
 {
-    return rtxTpl_TypeCheckFor<local_node.type>(local_node);
+    local dummy;
+    return rtxTpl_TypeCheckFor<local_node.type>(local_node, dummy);
 }
 
 
