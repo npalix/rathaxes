@@ -520,10 +520,12 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
             }
         }
     }
+
     /// XXX TODO FIXME
     // WE NEED ABSOLUTELY TO BE ABLE TO RESOLVE THE SCOPES OF THE TEMPLATE's PARAMETERS
     /// XXX TODO FIXME
-    traceLine(RED + "[Error] Could not find template '" + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
+    traceLine(RED + "[Error] Could not find " + spec + " template '"
+              + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
     return false;
 }
 

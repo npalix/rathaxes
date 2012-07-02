@@ -20,228 +20,68 @@ if (!existDirectory(working_directory))
 }
 changeDirectory(working_directory);
 
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+// This function returns 0 in case of failure, since we expected a failure.
+// Otherwise it returns 1.
+function checkInput(input : node, inputsave : value)
+{
+    traceLine("input:\n" + input);
+    saveToFile(inputsave, input);
+
+    local source;
+
+    // PARSING PASS
+    traceLine("====>PARSE");
+    rtxParseString(source, input);
+    saveProject("__04_C_rtx_01_parse__.tree", source);
+
+    // MIDDLE PASS
+    traceLine("====>MIDDLE TYPE CHECK");
+    try { rtxMiddle_TypeCheck(source); }
+    catch(sError) { traceLine("Type Checking failed at MiddleEnd step: "+sError); return 0; }
+
+
+    // Then register the interfaces into the cache...
+    traceLine("====>REGISTERING INTO CACHE (FOR BACK TYPE CHECK)");
+    if (rtxLink_RegisterToCache(source) == false)
+    { error("Can't REGISTER CACHE"); }
+    saveProject("__04_C_rtx_04_cache1.tree", this);
+
+    traceLine("====>BACK TYPE CHECK");
+    try { rtxTpl_TypeCheck(source); }
+    catch(sError) { traceLine("Type Checking failed at BackEnd step: "+sError); return 0; }
+
+    return 1;
+}
+
+
 local dummy;
 local input;
 generateString({
         interface Builtin
         {
-            provided builtintype        string;
-            provided builtintype        number;
-            provided builtintype        symbol;
-            provided builtintype        register;
-            provided builtintype        register_field;
-            provided builtintype        register_value;
-            provided builtintype        base_adr;
+            provided builtintype    String;
         }
 
         interface LKM : Builtin
         {
-            provided pointcut           LKM::includes();
-            provided pointcut           LKM::prototypes();
-            provided pointcut           LKM::data();
-            provided pointcut           LKM::code();
+            provided pointcut   test_pointcut();
 
-            provided type               LKM::Context;
-
-            required sequence           LKM::open(LKM::Context);
-            required sequence           LKM::close();
+            provided sequence DoSomething(String)
+            {
+                provided chunk  test_pointcut();
+            }
         }
 
         with LKM
         {
-                /* AUTO GENERATED FILE*/
-                        ${pointcut      LKM::includes()};
-
-                        ${pointcut      LKM::prototypes()};
-
-                        ${pointcut      LKM::data()};
-
-                        ${pointcut      LKM::code()};
-                /* END*/
-
-                template sequence LKM::open(LKM::Context ctx)
+                template sequence LKM::DoSomething()
                 {
-                        chunk           LKM::code()
-                        {
-                                int     main(int ac, char **av)
-                                {
-                                        f1();
-                                        int     base_addr = 0x1234;
-                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
-                                }
-                        }
-                }
-
-                template sequence LKM::close()
-                {
-                        chunk           LKM::includes()
-                        {
-                                #include <stdio.h>
-                        }
-
-                        chunk           LKM::code()
-                        {
-                                int     f1()
-                                {
-                                        printf("tata");
-                                        int     base_addr = 0x1234;
-                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
-                                }
-                        }
-                }
-
-                template type LKM::Context()
-                {
-                        map
-                        {
-                                name : ${self};
-                        }
                 }
         }
-
-	device RS232
-	use LKM
-	{
-		register byte rcv_buf mode R like (........) at 0;
-		register byte snd_buf mode R like (........) at 0;
-		
-		register byte IER mode RW like (.........) at 1
-		{
-			[0] as data_available;
-			[1] as transmitter_empty;
-			[2] as line_status_change;
-			[3] as modem_status_change;
-			[4] as sleep_mode;
-			[5] as low_power_mode;
-		}
-
-		register byte LCR mode RW like (........) at 3
-		{
-			[0..1] as word_lengh
-			{
-				(00) -> _5bits;
-				(01) -> _6bits;
-				(10) -> _7bits;
-				(11) -> _8bits;
-			}
-
-			[2] as stop_bits
-			{
-				(0) -> _1stop_bits;
-				(1) -> _2stop_bits;
-			}
-
-			[3..5] as parity_type
-			{
-				(000) -> none;
-				(001) -> odd;
-				(011) -> even;
-				(101) -> high;
-				(111) -> low;
-			}
-
-			[6] as break_signal
-			{
-				(0) -> disable;
-				(1) -> enable;
-			}
-
-			[7] as dlab
-			{
-				(0) -> buffers;
-				(1) -> clock;
-			}
-		}
-
-		register byte MCR mode RW like (****.*..) at 4
-		{
-			[0] as dtr;
-			[1] as rts;
-			[3] as ao2;
-		}
-
-		register byte DLL mode RW like (........) at 0;
-
-		register byte DLM mode RW like (........) at 1;
-
-		register byte LSR mode RW like (........) at 5
-		{
-			[0] as data_available
-			{
-				(0) -> FALSE;
-				(1) -> TRUE;
-			}
-
-			[1] as overrun
-			{
-				(0) -> good;
-				(1) -> error;
-			}
-
-			[2] as parity
-			{
-				(0) -> good;
-				(1) -> error;
-			}
-
-			[3] as framing
-			{
-				(0) -> good;
-				(1) -> error;
-			}
-
-			[4] as break_signal
-			{
-				(0) -> FALSE;
-				(1) -> TRUE;
-			}
-
-			[5] as thr_state
-			{
-				(0) -> transmitting;
-				(1) -> empty_idle;
-			}
-
-			[6] as thr_and_line
-			{
-				(0) -> transmitting;
-				(1) -> empty_idle;
-			}
-
-			[7] as data_fifo
-			{
-				(0) -> good;
-				(1) -> error;
-			}
-		}
-
-		LKM::read(LKM::Context ctx, LKM::Buffer output)
-		{
-		}
-
-		LKM::write(LKM::Context ctx, LKM::Buffer input)
-		{
-	    }
-
-		LKM::open(LKM::Context ctx)
-		{
-		}
-
-		LKM::close(LKM::Context ctx)
-		{
-		}
-	}
-
-    configuration
-    {
-        devices = RS232;
-        arch = x86;
-        OS = Linux
-        {
-            major = 2;
-            minor = 6;
-            patch = 24;
-        }
-    }
 @}, dummy, input);
 
+local ret = checkInput(input, "INPUT.TXT");
+
+exit (ret);
