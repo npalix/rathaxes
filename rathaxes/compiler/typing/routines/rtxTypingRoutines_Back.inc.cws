@@ -301,9 +301,9 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, t
 
 
 declare function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
-                                              itfTplNode : node);
+                                              interface_list : node);
 function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
-                                      itfTplNode : node)
+                                      interface_list : node)
 {
     error("Function rtxTypeCheck_TemplateSpec<'"+T+"'> is not implemented.");
 }
@@ -323,16 +323,37 @@ function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
  *
  */
 function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
-                                           itfTplNode : node)
+                                           interface_list : node)
 {
     local errcount = $0$;
     localref tpl_mapping = tplTree.mapping.body.block;
     local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+    local itfTypeNode;
+    local itfNode;
+    local itfTree;
 
     // If there are builtin chunks mandatory, check them here.
+    if (rtxInterfaceNameHasType(tplRtype, tplRtype.name.scope, interface_list) == false)
+        return false;
+
+    // Load the itf's tree in order to refer to it's sequence node.
+    if (rtxLink_findInterface(tplRtype.name.scope, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
+                  + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"
+                  + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+    ref itfTypeNode = itfTree.types[tplRtype.name.name];
 
     // Now, check that every mapping is provided by the template,
-    foreach mapId in itfTplNode
+    foreach mapId in itfTypeNode
     {
         // The mapping ids are the keys in tpl.mapping.body.block
         if (!findElement(mapId, tpl_mapping))
@@ -347,7 +368,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
     foreach mapping in tpl_mapping
     {
         local check = false;
-        foreach mapId in itfTplNode
+        foreach mapId in itfTypeNode
         {
             if (mapId == key(mapping))
             {
@@ -384,18 +405,50 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
  * XXX TODO FIXME
  * We still do not know how to manage not-required pointcuts...
  *
+ *  if (rtxTypeCheck_ItfNameDefinesSequence(rtype, itfName, dummy, dummy_qual) == true)
+ *
  */
 function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
-                                               itfTplNode : node)
+                                               interface_list : node)
 {
     local errcount = $0$;
     local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+    local dummy;
+    local tplFullName = rtxRTypeFullQualifiedName<"sequence">(tplRtype, dummy);
+    local itfTplNode;
+    // Used to load the interface's tree after identifying the sequence
+    local itfNode;
+    local itfTree;
 
-    // First, check that the template respects what's imposed by the interface
+    // First, check that the prototypes is defined
+    if (rtxTypeCheck_ItfNameDefinesSequence(tplRtype, tplRtype.name.scope, interface_list, dummy) == false)
+    {
+        return false;
+    }
+    tplFullName = rtxRTypeFullQualifiedName<"sequence">(tplRtype, dummy);
+
+    // Load the itf's tree in order to refer to it's sequence node.
+    if (rtxLink_findInterface(tplRtype.name.scope, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
+                  + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"
+                  + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+    ref itfTplNode = itfTree.sequences[tplRtype.name.name][tplFullName];
+
+    // Now, check that the template respects what's imposed by the interface
     foreach item in itfTplNode.body.block
     {
         if (item.type == "__rtx_itf_decl__")
         {
+            // Is the chunk provided as requested by the interface ?
             if (item.specifier == "chunk"
                 && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
                 && item.qualifier == "provided")
@@ -405,6 +458,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                           + rtxRTypeName<item.body.pointcut.type>(item.body.pointcut) + "'" + DEFAULT_COLOR);
                 increment(errcount);
             }
+            // Is the pointcut provided as requested by the interface ?
             if (item.specifier == "pointcut"
                 && item.qualifier == "provided"
                 && rtxTypeCheck_TemplateHasPointcut(item.rtype, tplTree) == false)
@@ -417,6 +471,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             }
         }
     }
+
     // This function checks the builtin chunks/pointcuts to be implemented depending on required/optional/provided
     if (rtxTypeCheck_TemplateBuiltinItems(tplRtype, tplTree, itfTplNode) == false)
         increment(errcount);
@@ -473,6 +528,8 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
 /**
  *
  * This function takes a Rtype node and a template's tree as parameters.
+ * It does as little as possible, in order to manage cases where we don't
+ * actually know which interface the template is part of.
  *
  * Then it checks whether the template complies to the constraints
  * put upon it by the associated interface:
@@ -484,46 +541,16 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
  *      UNKOWN : How to manage non-mandatory pointcuts ?
  *
  */
-function        rtxTypeCheck_Template(tplRtype : node, tplTree : node)
+function        rtxTypeCheck_Template(tplRtype : node, tplTree : node, interfaces : node)
 {
     local spec = tplTree.prototype.tpl_type;
     local dummy;
     local fullTplProto = rtxRTypeFullQualifiedName<spec>(tplRtype, dummy);
     local itfName = tplRtype.name.scope;
-    local itfNode;
-    local itfTree;
 
-    // Load the itf's tree...
-    if (rtxLink_findInterface(itfName, itfNode) == false)
-    {
-        traceLine(RED + "[Error] Interface '" + itfName + "' containing the template"
-                  + " could not be found within the cache." + DEFAULT_COLOR);
-        return false;
-    }
-    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
-    {
-        traceLine(RED + "[Error] Could not load interface's '"+itfName+"' tree." + DEFAULT_COLOR);
-        return false;
-    }
+    if (rtxTypeCheck_TemplateSpec<spec>(tplRtype, tplTree, interfaces) == true)
+        return true;
 
-    // For each template in interface, check it.
-    foreach item in itfTree.body.block
-    {
-        // Then it's either : a type, a sequence or a builtintype
-        if (existVariable(item.rtype))
-        {
-            local fullItfProto = rtxRTypeFullQualifiedName<spec>(item.rtype, dummy);
-            if (fullTplProto == fullItfProto)
-            {
-                return rtxTypeCheck_TemplateSpec<item.specifier>(tplRtype, tplTree,
-                                                                 item);
-            }
-        }
-    }
-
-    /// XXX TODO FIXME
-    // WE NEED ABSOLUTELY TO BE ABLE TO RESOLVE THE SCOPES OF THE TEMPLATE's PARAMETERS
-    /// XXX TODO FIXME
     traceLine(RED + "[Error] Could not find " + spec + " template '"
               + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
     return false;

@@ -47,7 +47,18 @@ function checkInput(input : node, inputsave : value)
     { error("Can't REGISTER CACHE"); }
 
     traceLine("====>BACK TYPE CHECK");
-    try { rtxTpl_TypeCheck(source); }
+    try {
+        if (rtxTpl_TypeCheck(source) == false)
+        {
+            traceLine("Type checking failed at BackEnd step.");
+            return 0;
+        }
+        else
+        {
+            traceLine("Type checking succeeded???");
+            return 1;
+        }
+    }
     catch(sError) { traceLine("Type Checking failed at BackEnd step: "+sError); return 0; }
 
     return 1;
@@ -77,11 +88,50 @@ generateString({
         {
                 template sequence LKM::DoSomething(String)
                 {
+                    chunk test_pointcut() { }
+
+                    chunk ::CALL() { }
                 }
         }
 @}, dummy, input);
 
-local ret = checkInput(input, "INPUT.TXT");
+//if (checkInput(input, "INPUT.TXT") == 0)
+//    exit(1);
 
-exit (ret);
+clearVariable(input);
+clearVariable(this);
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+generateString({
+        interface Builtin
+        {
+            provided builtintype    String;
+            provided sequence       DoSomething(Builtin::String);
+        }
+
+        interface LKM : Builtin
+        {
+            provided type       String;
+            provided pointcut   test_pointcut();
+
+            provided sequence DoSomething(LKM::String)
+            {
+                provided chunk  test_pointcut();
+            }
+        }
+
+        with LKM
+        {
+                template sequence DoSomething(String)
+                {
+                    chunk test_pointcut() { }
+
+                    chunk ::CALL() { }
+                }
+        }
+@}, dummy, input);
+
+if (checkInput(input, "INPUT2.TXT") == 1)
+    exit(1);
+
+exit(0);
 

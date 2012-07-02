@@ -65,29 +65,65 @@ function        addSequenceBody(theSequence : node, theBody : node)
     return true;
 }
 
+/*
+ * This function takes a type/variable/sequence node and
+ * inserts it in the given list.
+ *
+ *
+ * The list contains references to the nodes, with the names as key.
+ *
+ * Two specificities arise:
+ *  - variables put their identifiers instead of their types in the list
+ *  - sequences allow multiple names to be used, as long as the typing is different
+ *    they use their full qualified name as second key.
+ */
 function        rtxItfAddTypeToList(theNode : node, nameList : reference)
 {
+    local dummy;
     local fullName;
+    local name;
+    localref rtype = theNode.rtype;
 
-    if (theNode.specifier == "variable")
+    switch (theNode.specifier)
     {
-        fullName = theNode.identifiers.name;
-    }
-    else
-    {
-        fullName = rtxRTypeFullQualifiedName<theNode.specifier>(theNode.rtype,
-                                                                theNode.identifiers);
-    }
-
-    if (existVariable(nameList[fullName]))
-    {
-        traceLine(RED + "[Error] Element " + fullName
-                  + " is already defined." + DEFAULT_COLOR);
-        return false;
+    case "variable":
+        name = theNode.identifiers.name;
+        break ;
+    default:
+        name = rtype.name.name;
+        fullName = rtxRTypeFullQualifiedName<theNode.specifier>(rtype, dummy);
+        break ;
     }
 
-    insert nameList[fullName];
-    ref nameList[fullName] = theNode;
+    switch (theNode.specifier)
+    {
+    case "sequence":
+        insert nameList[name];
+        // Only once per interface
+        if (existVariable(nameList[name][fullName]))
+        {
+            traceLine(RED + "[Error] Element " + fullName
+                      + " is already defined in interface "
+                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            return false;
+        }
+        insert nameList[name][fullName];
+        ref nameList[name][fullName] = theNode;
+        break ;
+    default:
+        // Only once per interface
+        if (existVariable(nameList[name]))
+        {
+            traceLine(RED + "[Error] Element " + name
+                      + " is already defined in interface "
+                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            return false;
+        }
+        insert nameList[name];
+        ref nameList[name] = theNode;
+        break ;
+    }
+
     return true;
 }
 

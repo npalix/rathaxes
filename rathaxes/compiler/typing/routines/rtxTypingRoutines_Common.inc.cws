@@ -24,7 +24,11 @@ function        rtxTypeCheck_ParametersMatch(rtype1 : node, rtype2 : node, quali
 }
 
 /*
- * This function checks whether the pointcut is declared by the itfTree.
+ * This function checks whether the pointcut is declared by the itfTree
+ * by going through the whole tree..
+ *
+ * This function shoul only be used while type-checking the interface.
+ * A simpler one shall be available for the other parts of type-checking.
  */
 function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node)
 {
@@ -77,32 +81,83 @@ function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : 
 
 /*
  * This function checks whether the sequence is declared by the itfTree.
+ * It returns true if the match is without a doubt.
+ * False otherwise, after appending the possibilities to out_possibilities.
  */
-function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node, out_qualifier : node)
+function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node,
+                                                out_qualifiers : node, out_possibilities : node)
 {
     local scope_save = prototype.name.scope;
+    local proto_is_qualified = 1;
 
-    foreach def in itfTree.body.block
+    if (findElement(prototype.name.name, itfTree.sequences) == true)
     {
-        // type templates dont matter here, they should not define pointcuts.
-        // So, check only sequence templates...
-        if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        // Go through the proto's types to check wether it's fully qualified or not
+        foreach type in prototype.params
         {
-            if (scope_save == "")
-                prototype.name.scope = itfTree.name;
-            local dummy;
-            local seqProto = rtxRTypeFullQualifiedName<"sequence">(prototype, dummy);
-            local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(def.rtype, dummy);
-            // Is it it ? If yes, return after setting the qualifier in the return param.
-            if (seqProto == itfSeqProto)
+            if (type.global == false && type.scope == "")
             {
-                out_qualifier = def.qualifier;
+                proto_is_qualified = 0;
+                break ;
+            }
+        }
+
+        // Then search, depending on the qualification
+        if (proto_is_qualified == 1)
+        {
+            // In this case, only check wether the prototype in the keys match.
+            local dummy;
+            prototype.name.scope = itfTree.name;
+            local qualifiedName = rtxRTypeFullQualifiedName<"sequence">(prototype, dummy);
+            if (findElement(qualifiedName, itfTree.sequences[prototype.name.name]) == true)
+            {
+                // Add the match to the possibilities, and return true since
+                // there's no other possibility for this peculiar interface
+                prototype.name.scope = scope_save;
+                pushItem out_possibilities;
+                setall out_possibilities#back = itfTree.sequences[prototype.name.name][qualifiedName];
+                pushItem out_qualifiers;
+                out_qualifiers#back = itfTree.sequences[prototype.name.name][qualifiedName].qualifier;
                 return true;
             }
-            if (scope_save == "")
-                prototype.name.scope = "";
+        }
+        else
+        {
+            local dummy;
+            // If not fully qualified, then for each possibility, go through the types
+            foreach seq in itfTree.sequences[prototype.name.name]
+            {
+                local match = 1;
+                foreach type in seq.params
+                {
+                    localref reftype = prototype.params[index(type)];
+                    // Either the type's name is different, of the checked
+                    // type's scope is not empty and differs. In those cases,
+                    // the type does not match, and so does the sequence's prototype.
+                    if (reftype.name != type.name
+                        || (reftype.global == false && reftype.scope != ""
+                            && reftype.scope != type.scope))
+                    {
+                        match = 0;
+                        break ;
+                    }
+                }
+                if (match == 1)
+                {
+                    // Add the match to the possibilities before trying out others
+                    // Since it's not the right one for sure in this interface.
+                    prototype.name.scope = scope_save;
+                    pushItem out_possibilities;
+                    setall out_possibilities#back = seq;
+                    pushItem out_qualifiers;
+                    out_qualifiers#back = seq.qualifier;
+                }
+            }
         }
     }
+
+    prototype.name.scope = scope_save;
+
     return false;
 }
 
@@ -121,11 +176,14 @@ function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node
  * will be seend a the right one, instead of giving an ambiguous error).
  *
  */
-function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
-                                             interface_list : node, out_qualifier : node)
+function rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence : node, itfName : value,
+                                                       interface_list : node,
+                                                       out_qualifiers : node,
+                                                       out_possibilities : node)
 {
     local itfNode;
     local itfTree;
+    local dummy_list;
 
     if (itfName != "")
     {
@@ -141,40 +199,79 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
                       + "' tree." + DEFAULT_COLOR);
             return false;
         }
-        if (rtxTypeCheck_ItfDefinesSequence(theSequence, itfTree, out_qualifier) != false)
+        if (rtxTypeCheck_ItfDefinesSequence(theSequence, itfTree,
+                                            out_qualifiers, out_possibilities) != false)
         {
             theSequence.name.scope = itfName;
             return true;
         }
+
+        // Else, try to iterate over the inheritances...
+        foreach itf in itfTree.inheritance
+        {
+            // Since we don't know if it's the right interface, just try every one,
+            // And the caller will check the possibilities...
+            rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, key(itf), dummy_list,
+                                                          out_qualifiers, out_possibilities);
+        }
     }
     else
     {
-        local dummy_list;
-        // First try out the inheritance tree...
-        foreach parent in itfTree.inheritance
-        {
-            // if it's the right one then qualify the sequence and return true.
-            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, parent, dummy_list, out_qualifier) != false)
-            {
-                theSequence.name.scope = itfName;
-                return true;
-            }
-        }
-        // If not, try the list of explicit interfaces...
+        // try the list of explicit interfaces, since we've no itfTree to go through...
         foreach itf in interface_list
         {
-            // if it's the right one then qualify the sequence and return true.
-            if (rtxTypeCheck_ItfNameDefinesSequence(theSequence, itf, dummy_list, out_qualifier) != false)
-            {
-                theSequence.name.scope = itf;
-                return true;
-            }
+            // Since we don't know if it's the right interface, just try every one,
+            // And the caller will check the possibilities...
+            rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, itf, dummy_list,
+                                                          out_qualifiers, out_possibilities);
         }
     }
 
-    traceLine(RED + "[Error] Declaration of sequence '"
-              + rtxRTypeName<theSequence.type>(theSequence)
-              + "' could not be found in any interface." + DEFAULT_COLOR);
+    return false;
+}
+
+function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
+                                             interface_list : node,
+                                             out_qualifier : node)
+{
+    local dummy;
+    local match_count;
+    local possibilities;
+    local qualifiers;
+    local message;
+
+    if (rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, itfName, interface_list,
+                                                      qualifiers, possibilities) == true)
+    {
+        out_qualifier = qualifiers#front;
+        return true;
+    }
+
+    match_count = getArraySize(possibilities);
+    if (match_count == 1)
+    {
+        // Copy in order to copy all non-qualified fields all at once
+        setall theSequence = possibilities#front.rtype;
+        out_qualifier = qualifiers#front;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify sequence: "
+                    + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
+                    + "found " + match_count + " matching sequences:";
+        select i in possibilities[].rtype
+        {
+            message += endl() + rtxRTypeFullQualifiedName<"sequence">(i, dummy);
+        }
+        message += "" + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify sequence "
+                    + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
+                    + ": No possible match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
 
     return false;
 }

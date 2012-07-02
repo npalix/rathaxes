@@ -22,23 +22,20 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
     if (rtypeNode.type != "__rtx_rtype__")
         error("Bad node type. Received: " + rtypeNode.type);
 
-    local name = rtxRTypeName<rtypeNode.type>(rtypeNode);
+    local name = rtypeNode.name.name;
     // Unkown scope and not explicit global ?
     // In this case, we'll check ALL possibilities. and decide afterwards.
     if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
     {
         // We are searching for qualified items, thus set the scope before checking.
-        rtypeNode.name.scope = interfaceNode.name;
-        name = rtxRTypeName<rtypeNode.type>(rtypeNode);
         // Check current interface.
-        if (findElement(name + "{}", interfaceNode.types) == true)
+        if (findElement(name, interfaceNode.types) == true)
         {
             increment(match_count);
             // Add the interface possibility to the list.
             pushItem possibilities;
             possibilities#back = interfaceNode.name;
         }
-        rtypeNode.name.scope = "";
 
         // Recursive check in parents interfaces.
         foreach parentInterface in interfaceNode.inheritance
@@ -64,17 +61,19 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
                         return true;
                     }
                 }
-                traceLine(RED + "[Error] Could not find interface '"+rtypeNode.name.scope+"' in inheritance tree." + DEFAULT_COLOR);
+                traceLine(RED + "[Error] Could not find interface '"
+                          + rtypeNode.name.scope
+                          + "' in inheritance tree." + DEFAULT_COLOR);
                 return false;
             }
             // If it's a direct inheritance, snoop through the types list.
             else
             {
-                if (findElement(name + "{}", interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
+                if (findElement(name, interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
                     return true;
             }
         }
-        else if (findElement(name + "{}", interfaceNode.types) == true)
+        else if (findElement(name, interfaceNode.types) == true)
             return true;
     }
     else // explicit global == true
@@ -129,7 +128,69 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
         message += "]." + DEFAULT_COLOR;
     }
     else
-        message = RED + "[Error] Could not identify type: No match in the dependency tree." + DEFAULT_COLOR;
+        message = RED + "[Error] Could not identify type '" + rtypeNode.name.name
+                    + "': No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+// This one merely checks a list of interfaces instead of an interface node.
+function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, interface_list : node)
+{
+    local match_count = 0;
+    local possibilities;
+    local message;
+    // To load the trees.
+    local itfNode;
+    local itfTree;
+
+    foreach itfName in interface_list
+    {
+        if (rtypeItfName == "" || rtypeItfName == itfName)
+        {
+            local subcount = 0;
+
+            // Load the itf's tree in order to refer to it's sequence node.
+            if (rtxLink_findInterface(itfName, itfNode) == false)
+            {
+                traceLine(RED + "[Error] Interface '" + itfName + "' containing the template"
+                          + " could not be found within the cache." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+            {
+                traceLine(RED + "[Error] Could not load interface's '"+itfName+"' tree." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxInterfaceHasType_recursive(rtypeNode, itfNode,
+                                              subcount, possibilities) == true)
+            {
+                return true;
+            }
+            match_count = $match_count + subcount$;
+        }
+    }
+
+    if (match_count == 1)
+    {
+        rtypeNode.name.scope = possibilities#[0];
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach i in possibilities
+        {
+            message += i + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify type '" + rtypeNode.name.name
+                    + "': No match in the dependency tree." + DEFAULT_COLOR;
     traceLine(message);
 
     return false;
