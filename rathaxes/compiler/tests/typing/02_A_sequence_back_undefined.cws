@@ -12,7 +12,7 @@
 //traceLine(#FILE);
 //exit(0);
 
-local working_directory = ".cache";
+local working_directory = "__cache";
 if (!existDirectory(working_directory))
 {
         traceLine("Creating directory: " + working_directory);
@@ -34,7 +34,6 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
-    saveProject("__04_C_rtx_01_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
@@ -46,7 +45,6 @@ function checkInput(input : node, inputsave : value)
     traceLine("====>REGISTERING INTO CACHE (FOR BACK TYPE CHECK)");
     if (rtxLink_RegisterToCache(source) == false)
     { error("Can't REGISTER CACHE"); }
-    saveProject("__04_C_rtx_04_cache1.tree", this);
 
     traceLine("====>BACK TYPE CHECK");
     try { rtxTpl_TypeCheck(source); }
@@ -66,12 +64,7 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided pointcut   test_pointcut();
-
-            provided sequence DoSomething(String)
-            {
-                provided chunk  test_pointcut();
-            }
+            provided pointcut  test_pointcut();
         }
 
         with LKM
