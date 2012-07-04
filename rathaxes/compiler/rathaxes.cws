@@ -133,7 +133,11 @@ if (rtxTpl_TypeCheck(source) == false)
 
 // FRONT PASS
 traceLine("====>FRONT TYPE CHECK");
-rtxFront_TypeCheck(source);
+if (rtxFront_TypeCheck(source) == false)
+{
+        traceLine("Front-End Type Checking failed. Stopping driver generation.");
+        exit(1);
+}
 
 traceLine("====>CONF RETRIEVE");
 if (rtxFront_RetrieveConfig(source, source.config_block) == false)

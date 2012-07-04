@@ -128,29 +128,32 @@ function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node
             foreach seq in itfTree.sequences[prototype.name.name]
             {
                 local match = 1;
-                foreach type in seq.params
+                if (getArraySize(seq.rtype.params) == getArraySize(prototype.params))
                 {
-                    localref reftype = prototype.params[index(type)];
-                    // Either the type's name is different, of the checked
-                    // type's scope is not empty and differs. In those cases,
-                    // the type does not match, and so does the sequence's prototype.
-                    if (reftype.name != type.name
-                        || (reftype.global == false && reftype.scope != ""
-                            && reftype.scope != type.scope))
+                    foreach type in seq.rtype.params
                     {
-                        match = 0;
-                        break ;
+                        localref reftype = prototype.params[index(type)];
+                        // Either the type's name is different, of the checked
+                        // type's scope is not empty and differs. In those cases,
+                        // the type does not match, and so does the sequence's prototype.
+                        if (reftype.name != type.name
+                            || (reftype.global == false && reftype.scope != ""
+                                && reftype.scope != type.scope))
+                        {
+                            match = 0;
+                            break ;
+                        }
                     }
-                }
-                if (match == 1)
-                {
-                    // Add the match to the possibilities before trying out others
-                    // Since it's not the right one for sure in this interface.
-                    prototype.name.scope = scope_save;
-                    pushItem out_possibilities;
-                    setall out_possibilities#back = seq;
-                    pushItem out_qualifiers;
-                    out_qualifiers#back = seq.qualifier;
+                    if (match == 1)
+                    {
+                        // Add the match to the possibilities before trying out others
+                        // Since it's not the right one for sure in this interface.
+                        prototype.name.scope = scope_save;
+                        pushItem out_possibilities;
+                        setall out_possibilities#back = seq;
+                        pushItem out_qualifiers;
+                        out_qualifiers#back = seq.qualifier;
+                    }
                 }
             }
         }
@@ -236,9 +239,11 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
 {
     local dummy;
     local match_count;
+    local unique_possibilities;
     local possibilities;
     local qualifiers;
     local message;
+
 
     if (rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, itfName, interface_list,
                                                       qualifiers, possibilities) == true)
@@ -247,11 +252,23 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
         return true;
     }
 
-    match_count = getArraySize(possibilities);
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        local fullName = rtxRTypeFullQualifiedName<"sequence">(entry.rtype, dummy);
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(fullName, unique_possibilities) == false)
+        {
+            insert unique_possibilities[fullName];
+            setall unique_possibilities[fullName] = entry.rtype;
+        }
+    }
+
+    match_count = getArraySize(unique_possibilities);
     if (match_count == 1)
     {
         // Copy in order to copy all non-qualified fields all at once
-        setall theSequence = possibilities#front.rtype;
+        setall theSequence = unique_possibilities#front;
         out_qualifier = qualifiers#front;
         return true;
     }
@@ -261,9 +278,9 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
         message = RED + "[Error] Could not identify sequence: "
                     + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
                     + "found " + match_count + " matching sequences:";
-        select i in possibilities[].rtype
+        foreach entry in unique_possibilities
         {
-            message += endl() + rtxRTypeFullQualifiedName<"sequence">(i, dummy);
+            message += endl() + key(entry);
         }
         message += "" + DEFAULT_COLOR;
     }
@@ -271,6 +288,7 @@ function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value
         message = RED + "[Error] Could not identify sequence "
                     + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
                     + ": No possible match in the dependency tree." + DEFAULT_COLOR;
+
     traceLine(message);
 
     return false;

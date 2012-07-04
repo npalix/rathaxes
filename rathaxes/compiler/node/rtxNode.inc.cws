@@ -42,6 +42,7 @@ declare function rtxNodePointcut(local_node : node, out_ref_pointcut : reference
 declare function rtxNodePointcut_Default(local_node : node, body : reference);
 declare function rtxNodeChunk(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_body : reference);
 declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
+declare function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node);
 declare function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node);
 
 
@@ -478,6 +479,27 @@ function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param
     error("rtxNodeCall_paramType<"+T+"> not implemented.");
 }
 
+function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node)
+{
+    if (existVariable(theType.rtype))
+    {
+        rtxNodeCall_setNodeIdentifier<theType.rtype.type>(out_param, theType.rtype);
+        return true;
+    }
+    traceLine(toString(theType,true));
+    error("rtxNodeCall_setNodeIdentifier<"+T+"> not implemented.");
+}
+
+function rtxNodeCall_setNodeIdentifier<"__rtx_id__">(out_param : node, theType : node)
+{
+    setall out_param = theType;
+}
+
+function rtxNodeCall_setNodeIdentifier<"__rtx_rtype__">(out_param : node, theType : node)
+{
+    setall out_param = theType.name;
+}
+
 function rtxNodeCall_paramType<"__rtx_string__">(theParam : node, theSequence : node, out_param : node)
 {
     return rtxNodeIdentifier(out_param, "string", "Builtin");
@@ -524,7 +546,7 @@ function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSeq
         return false;
     }
 
-    setall out_param = theParam.rtype;
+    rtxNodeCall_setNodeIdentifier<theParam.type>(out_param, theParam);
     return true;
 }
 
@@ -581,7 +603,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
         return false;
     }
 
-    setall out_param = theParam.rtype;
+    rtxNodeCall_setNodeIdentifier<theParam.type>(out_param, theParam);
     return true;
 }
 
@@ -592,7 +614,8 @@ function rtxNodeCall_paramType<"__rtx_data_field__">(theParam : node, theSequenc
     {
         if (item == theParam.val)
         {
-            setall out_param = theSequence.rtype.params[index(item)];
+            localref theParam = theSequence.rtype.params[index(item)];
+            rtxNodeCall_setNodeIdentifier<theParam.type>(out_param, theParam);
             // Now, search for the mapping...
             traceLine(YELLOW + "[WARNING] Type Mapping not checked yet. TBD !" + DEFAULT_COLOR);
             return true;
@@ -612,7 +635,8 @@ function rtxNodeCall_paramType<"__rtx_symbol__">(theParam : node, theSequence : 
     {
         if (item == theParam.val)
         {
-            setall out_param = theSequence.rtype.params[index(item)];
+            localref theParam = theSequence.rtype.params[index(item)];
+            rtxNodeCall_setNodeIdentifier<theParam.type>(out_param, theParam);
             // Success since the field case is not managed here. (here it's a value we want).
             return true;
         }
