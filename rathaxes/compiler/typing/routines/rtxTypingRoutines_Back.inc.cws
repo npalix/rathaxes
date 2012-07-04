@@ -253,7 +253,7 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder 
     select type in placeHolder.seqArgs[].rtype
     {
         pushItem param_types;
-        setall param_types#back = type;
+        setall param_types#back = type.name; // The normalization of the node is with a NodeIdentifier
     }
     
     local itfName;

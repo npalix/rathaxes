@@ -17,7 +17,7 @@ function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
  * by a RType node, by checking inside its tree.
  */
 function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : node,
-                                              match_count : node, possibilities : node)
+                                              possibilities : node)
 {
     if (rtypeNode.type != "__rtx_rtype__")
         error("Bad node type. Received: " + rtypeNode.type);
@@ -31,7 +31,6 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
         // Check current interface.
         if (findElement(name, interfaceNode.types) == true)
         {
-            increment(match_count);
             // Add the interface possibility to the list.
             pushItem possibilities;
             possibilities#back = interfaceNode.name;
@@ -42,8 +41,8 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
         {
             // Here, we don't care about success or failure in the parent interfaces
             // The wrapper function will sort out things depending
-            // on the variables 'match_count' and 'possibilities'
-            rtxInterfaceHasType_recursive(rtypeNode, parentInterface, match_count, possibilities);
+            // on the variable 'possibilities'
+            rtxInterfaceHasType_recursive(rtypeNode, parentInterface, possibilities);
         }
     }
     else if (rtypeNode.name.global == false) // known scope
@@ -56,7 +55,7 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
                 foreach parentInterface in interfaceNode.inheritance
                 {
                     if (rtxInterfaceHasType_recursive(rtypeNode, parentInterface,
-                                                      match_count, possibilities) == true)
+                                                      possibilities) == true)
                     {
                         return true;
                     }
@@ -104,16 +103,26 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
 function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
 {
     local match_count = 0;
+    local unique_possibilities;
     local possibilities;
     local message;
 
     if (rtxInterfaceHasType_recursive(rtypeNode, interfaceNode,
-                                      match_count, possibilities) == true)
+                                      possibilities) == true)
         return true;
 
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+            insert unique_possibilities[entry] = entry;
+    }
+
+    match_count = getArraySize(unique_possibilities);
     if (match_count == 1)
     {
-        rtypeNode.name.scope = possibilities#[0];
+        rtypeNode.name.scope = unique_possibilities#front;
         return true;
     }
 
@@ -121,9 +130,9 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
     {
         message = RED + "[Error] Could not identify type's interface: "
                     + "found " + match_count + " matching interfaces[ ";
-        foreach i in possibilities
+        foreach entry in unique_possibilities
         {
-            message += i + ", " ;
+            message += key(entry) + ", " ;
         }
         message += "]." + DEFAULT_COLOR;
     }
@@ -139,42 +148,72 @@ function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
 function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, interface_list : node)
 {
     local match_count = 0;
+    local unique_possibilities;
     local possibilities;
     local message;
     // To load the trees.
     local itfNode;
     local itfTree;
 
+    if (rtypeItfName != "")
+    {
+        // Load the itf's tree in order to refer to it's sequence node.
+        if (rtxLink_findInterface(rtypeItfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + rtypeItfName
+                      + "' containing the template"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '"
+                      + rtypeItfName + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
+                                          possibilities) == true)
+        {
+            return true;
+        }
+        return false;
+    }
+
     foreach itfName in interface_list
     {
-        if (rtypeItfName == "" || rtypeItfName == itfName)
+        // Load the itf's tree in order to refer to it's sequence node.
+        if (rtxLink_findInterface(itfName, itfNode) == false)
         {
-            local subcount = 0;
-
-            // Load the itf's tree in order to refer to it's sequence node.
-            if (rtxLink_findInterface(itfName, itfNode) == false)
-            {
-                traceLine(RED + "[Error] Interface '" + itfName + "' containing the template"
-                          + " could not be found within the cache." + DEFAULT_COLOR);
-                return false;
-            }
-            if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
-            {
-                traceLine(RED + "[Error] Could not load interface's '"+itfName+"' tree." + DEFAULT_COLOR);
-                return false;
-            }
-            if (rtxInterfaceHasType_recursive(rtypeNode, itfNode,
-                                              subcount, possibilities) == true)
-            {
-                return true;
-            }
-            match_count = $match_count + subcount$;
+            traceLine(RED + "[Error] Interface '" + itfName
+                      + "' containing the template"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '"
+                      + itfName + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
+                                          possibilities) == true)
+        {
+            return true;
         }
     }
 
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+            insert unique_possibilities[entry] = entry;
+    }
+
+    match_count = getArraySize(unique_possibilities);
     if (match_count == 1)
     {
-        rtypeNode.name.scope = possibilities#[0];
+        rtypeNode.name.scope = unique_possibilities#front;
         return true;
     }
 
@@ -182,9 +221,9 @@ function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, inte
     {
         message = RED + "[Error] Could not identify type's interface: "
                     + "found " + match_count + " matching interfaces[ ";
-        foreach i in possibilities
+        foreach entry in unique_possibilities
         {
-            message += i + ", " ;
+            message += key(entry) + ", " ;
         }
         message += "]." + DEFAULT_COLOR;
     }
@@ -201,7 +240,7 @@ function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, inte
  * by a RType node, by checking inside its tree.
  */
 function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, interfaceNode : node,
-                                                        match_count : node, possibilities : node)
+                                                        possibilities : node)
 {
     if (pointcutRtype.type != "__rtx_rtype__")
         error("Bad node type. Received: " + pointcutRtype.type);
@@ -212,8 +251,7 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
     {
         if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
         {
-            // Increment match_count and add interface name into possibilities list
-            increment(match_count);
+            // Add interface name into possibilities list
             pushItem possibilities;
             possibilities#back = interfaceNode.name;
         }
@@ -223,7 +261,7 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
         {
             // Here don't check the return value as we want to try with every interface
             rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype, parentInterface,
-                                                    match_count, possibilities);
+                                                    possibilities);
         }
     }
     else if (pointcutRtype.name.global == false) // known scope
@@ -235,7 +273,7 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
                 foreach parentInterface in interfaceNode.inheritance
                 {
                     if (rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype, parentInterface,
-                                                                match_count, possibilities) == true)
+                                                                possibilities) == true)
                         return true;
                 }
                 traceLine(RED + "[Error] The interface "+interfaceNode.name
@@ -270,16 +308,26 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
 function        rtxTypeCheck_ItfCheckPointcut(rtypeNode : node, interfaceNode : node)
 {
     local match_count = 0;
+    local unique_possibilities;
     local possibilities;
     local message;
 
     if (rtxTypeCheck_ItfCheckPointcut_recursive(rtypeNode, interfaceNode,
-                                                match_count, possibilities) == true)
+                                                possibilities) == true)
         return true;
 
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+            insert unique_possibilities[entry] = entry;
+    }
+
+    match_count = getArraySize(unique_possibilities);
     if (match_count == 1)
     {
-        rtypeNode.name.scope = possibilities#[0];
+        rtypeNode.name.scope = unique_possibilities#front;
         return true;
     }
 
@@ -287,9 +335,9 @@ function        rtxTypeCheck_ItfCheckPointcut(rtypeNode : node, interfaceNode : 
     {
         message = RED + "[Error] Could not identify pointcut's interface: "
                     + "found " + match_count + " matching interfaces[ ";
-        foreach i in possibilities
+        foreach entry in unique_possibilities
         {
-            message += i + ", " ;
+            message += key(entry) + ", " ;
         }
         message += "]." + DEFAULT_COLOR;
     }
