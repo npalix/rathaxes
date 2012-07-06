@@ -162,13 +162,19 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 // If it's a type definition, recurse over it.
                 if (existVariable(ctype_ref.body))
                 { rtxPH_compile<ctype_ref.body.type>(ctype_ref.body, compile, node_idx); }
-
+                // in unstrict mode
+                if (existVariable(ctype_ref.unknown) && $getArraySize(ctype_ref.unknown) > 0$)
+                {       
+                        ctype_ref.identifier = ctype_ref.unknown#back;
+                        removeVariable(ctype_ref.unknown);
+                }
                 // name of a type
                 if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
                 {
                         traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
                         rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl");
                 }
+                // composed
                 if (existVariable(ctype_ref.list))
                 {
                         foreach item in ctype_ref.list
