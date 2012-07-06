@@ -14,8 +14,8 @@ ADD_RATHAXES_CWS_TEST(01_F_sequence_mid_ok.cws)
 ADD_RATHAXES_CWS_TEST(02_A_sequence_back_undefined.cws)
 ADD_RATHAXES_CWS_TEST(02_B_sequence_back_bad_types.cws)
 ADD_RATHAXES_CWS_TEST(02_C_sequence_back_ambiguous_types.cws)
-#ADD_RATHAXES_CWS_TEST(02_D_sequence_back_ambiguous.cws)
-#ADD_RATHAXES_CWS_TEST(02_E_sequence_back_ok.cws)
+ADD_RATHAXES_CWS_TEST(02_D_sequence_back_ambiguous.cws)
+ADD_RATHAXES_CWS_TEST(02_E_sequence_back_ok.cws)
 
 # Type-cheking of the sequences in the Front-end
 #ADD_RATHAXES_CWS_TEST(03_A_sequence_front_undefined.cws)
