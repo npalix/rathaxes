@@ -133,7 +133,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 {
         local treepart;
         // TODO: DIALECT STD TO REMOVE FOR UNSTRICT
-        cnormDialect<"__std__">(treepart);
+        cnormDialect<"__unstrict__">(treepart);
         insert treepart.scripts_path = this.scripts_path;
         insert treepart.map;
         insert treepart.map.files;

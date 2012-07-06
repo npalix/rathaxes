@@ -18,8 +18,8 @@ changeDirectory(working_directory);
 local dummy;
 local input;
 generateString({
-        typedef int                     ${test_name};
         ${test_name}                    test_id;
+        NTSTATUS        funTamere(bla a);
         int                             f1() { ${body}; }
         int                             f2(${test_name} a) {}
         int                             f3(${test_name});
@@ -88,7 +88,7 @@ generateString({
 traceLine("input:\n" + input);
 
 local source;
-cnormDialect<"__std__">(source);
+cnormDialect<"__unstrict__">(source);
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 insert this.c_types;
 parseStringAsBNF({

@@ -20,7 +20,7 @@ function	rtxParseFile(out_ref : reference, file : value)
 {
         insert out_ref.c_types;
         // First setup cnorm...
-        cnormDialect<"__std__">(out_ref); // TODO: change to __unstrict__ when finish
+        cnormDialect<"__unstrict__">(out_ref); // TODO: change to __unstrict__ when finish
         rtxType_Load(out_ref);
         parseAsBNF("parse/rtx.cwp", out_ref, file);
         removeVariable(out_ref.dialect);
@@ -35,7 +35,7 @@ function	rtxParseString(out_ref : reference, data : value)
 {
         insert out_ref.c_types;
         // First setup cnorm...
-        cnormDialect<"__std__">(out_ref); // TODO: change to __unstrict__ when finish
+        cnormDialect<"__unstrict__">(out_ref); // TODO: change to __unstrict__ when finish
         rtxType_Load(out_ref);
         parseStringAsBNF("parse/rtx.cwp", out_ref, data);
         removeVariable(out_ref.dialect);
