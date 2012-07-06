@@ -1,0 +1,27 @@
+#if !existFunction(rtxFront_rtxTools_version)
+
+function rtxFront_rtxTools_version()
+{ return "1.0"; }
+
+
+declare function rtxFront_RetrieveConfig(local_node : node, out_config : reference);
+
+
+function rtxFront_RetrieveConfig(local_node : node, out_config : reference)
+{
+    if (local_node.type != "__root_block__")
+        return false;
+
+    foreach item in local_node.block
+    {
+        if (item.type == "__rtx_config__")
+        {
+            ref out_config = item;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+#end

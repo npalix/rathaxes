@@ -1,0 +1,86 @@
+/*
+ *	TEST for type checking
+ */
+#include "misc/rtxTools.inc.cws"
+#include "misc/colors.cws"
+#include "parse/rtxParse.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+
+//traceLine(#FILE);
+//exit(0);
+
+local working_directory = "__cache";
+if (!existDirectory(working_directory))
+{
+        traceLine("Creating directory: " + working_directory);
+        createDirectory(working_directory);
+}
+changeDirectory(working_directory);
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+// This function returns 0 in case of failure, since we expected a failure.
+// Otherwise it returns 1.
+function checkInput(input : node, inputsave : value)
+{
+    traceLine("input:\n" + input);
+    saveToFile(inputsave, input);
+
+    local source;
+
+    // PARSING PASS
+    traceLine("====>PARSE");
+    rtxParseString(source, input);
+
+    // MIDDLE PASS
+    traceLine("====>MIDDLE TYPE CHECK");
+    try { rtxMiddle_TypeCheck(source); }
+    catch(sError) { traceLine("Type Checking failed at MiddleEnd step: "+sError); return 0; }
+
+
+    // Then register the interfaces into the cache...
+    traceLine("====>REGISTERING INTO CACHE (FOR BACK TYPE CHECK)");
+    if (rtxLink_RegisterToCache(source) == false)
+    { error("Can't REGISTER CACHE"); }
+
+    traceLine("====>BACK TYPE CHECK");
+    try {
+        if (rtxTpl_TypeCheck(source) == false)
+        {
+            traceLine("Type Checking failed at BackEnd step.");
+            return 0;
+        }
+    }
+    catch(sError) { traceLine("Type Checking failed at BackEnd step: "+sError); return 0; }
+
+    return 1;
+}
+
+
+local dummy;
+local input;
+generateString({
+        interface Builtin
+        {
+            provided builtintype    String;
+        }
+
+        interface LKM : Builtin
+        {
+            provided pointcut  test_pointcut();
+        }
+
+        with LKM
+        {
+                template sequence LKM::DoSomething()
+                {
+                }
+        }
+@}, dummy, input);
+
+local ret = checkInput(input, "INPUT.TXT");
+
+exit (ret);

@@ -1,0 +1,84 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+/* Switch to a tmp dir */
+local working_directory = "__02_A_test_middle_parse";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+    removeDirectory(working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+local dummy;
+local input;
+generateString({
+        // Simple interface
+        interface BaseInterface
+        {
+            provided    type            BaseInterface::a_type;
+            provided    type            BaseInterface::type1;
+            provided    type            BaseInterface::type2;
+            provided    pointcut        BaseInterface::a_pointcut();
+            provided    pointcut        BaseInterface::foo(bar);
+
+        }
+
+        // interface with inheritance
+        interface Userland : BaseInterface, OtherInterface
+        {
+            required variable   Userland::req_var_type    dummy_name;
+            provided            builtintype     Userland::pro_builtin;
+            provided            type            Userland::some_type;
+            optional            type            Userland::opt_type { foo; bar; };
+            required            sequence        Userland::req_sequence(BaseInterface::type1 a,
+                                                                       BaseInterface::type2,
+                                                                       Userland::some_type c);
+            provided            sequence        Userland::seq()
+            {
+                provided chunk foo::some_pointcut();
+                /* provided pointcut other_pointcut(JoinPointType); */
+                provided chunk ::some_chunk();
+            }
+        }
+
+        interface OtherInterface
+        {
+            required builtintype        OtherInterface::btype;
+        }
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+#include "misc/colors.cws"
+#include "node/rtxNode.inc.cws"
+#include "passes/mid/rtxTypeCheck.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+
+traceLine("Input:\n" + input + "\nEnd of input");
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("parse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("__02_rtx_parse__.tree", source);
+traceLine("Result of parsing:\n" + toString(source, true));
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}

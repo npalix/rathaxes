@@ -1,0 +1,21 @@
+---
+layout: post
+title: Résultats du hackathon Rathaxes
+lang: fr
+---
+
+h1. {{ page.title }}
+
+Après les améliorations faites durant les RMLL l'été dernier, et une première version du compilateur Rathaxes et de son langage sorties au début de l'automne; nous avons fait quelques progrès en Décembre. Cela nous a conduit a un exemple « Hello World » concret. Mais nous attendions tous de pouvoir mettre nos mains dans du code Rathaxes plus compliqué.
+
+Des agendas étroits ont permis à Thomas S. et moi d'organiser un hackathon de quatre jours sur la première semaine de janvier, dans un endroit retiré. David nous aidait à distance depuis Paris.
+
+Ces quatre jours ont été géniaux, nous avons pu écrire un pilote PCI/Ethernet pour les cartes réseaux Intel 8254x pour Linux (il s'agit des cartes gérées par le pilote e1000). Ce travail valide plusieurs concepts du projet Rathaxes et démontre la puissance de notre système de patrons de codes et d'interfaces, qui s'inspire du paradigme de programmation orienté aspects.
+
+En même temps que le travail sur Rathaxes en lui même, nous avons écrit une bibliothèque Rathaxes pour CMake. Elle permet de compiler des binaires directement depuis un lot de source Rathaxes, ce qui améliore grandement le de développement à la fois en terme de simplicité que de fiabilité. Cette bibliothèque CMake supporte la compilation de programmes exécutables pour n'importe quel système d'exploitation (ce qui est pratique pour les tests de régressions !) et peut aussi être utilisée pour compiler des modules noyau pour Linux. Le support pour des modules noyau Windows sera ajouté dès que possible.
+
+Nous sommes déjà en train d'organiser un second hackathon pour Février avant que nous commencions tous nos stages de fin d'études. Le but de ce second hackathon sera de continuer notre travail sur notre pilote Linux pour carte réseaux et aussi de « porter » nos patrons de codes PCI et LKM sur "STOS":http://www.lse.epita.fr/projets/stos.html un système d'exploitation en développement au "LSE":http://www.lse.epita.fr/.
+
+D'ici là, rencontrez nous au Fosdem dans deux semaines —on est facilement reconnaissables avec nos polos—, et vous fera une démonstration !
+
+-- Louis Opter

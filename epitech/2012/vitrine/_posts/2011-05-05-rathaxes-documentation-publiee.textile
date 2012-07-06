@@ -1,0 +1,17 @@
+---
+layout: post
+title: Publication de la documentation Rathaxes
+lang: fr
+---
+
+h1. {{ page.title }}
+
+Nous avons le plaisir de vous annoncer notre première version publique ! Ca ne reste que de la documentation, mais vous avez tout ce qui est nécessaire afin d’installer une copie locale que vous utilisiez Windows ou n’importe quel système basé sur Unix.
+
+Vous trouverez aussi un aperçu de la nouvelle organisation du langage : front-end, middle-end, et back-end.
+
+La première version du compilateur est prévue pour cet été.
+
+La documentation est disponible sur notre Google code : "firststeps_fr.pdf":http://code.google.com/p/rathaxes/downloads/detail?name=firststeps_fr.pdf.
+
+-- Louis Opter

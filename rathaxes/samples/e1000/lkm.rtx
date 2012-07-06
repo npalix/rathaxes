@@ -1,0 +1,81 @@
+device LKM use LKM, PCI, Ethernet, Log
+{
+    Ethernet::open(Ethernet::Device dev)
+    {
+        Log::info("opening the device");
+
+        /*
+         * Maybe e1000::create_device should be called from here, to be
+         * more coherent.
+         */
+
+        e1000::setup_interrupt_handler(dev);
+        Log::info("interrupt handler installed");
+
+        e1000::set_up_device(dev);
+        Log::info("device activated");
+
+        e1000::activate_device_interruption(dev);
+        Log::info("interruption enabled");
+
+        e1000::print_status(dev);
+    }
+
+    Ethernet::close(Ethernet::Device dev)
+    {
+        Log::info("closing the device");
+
+        /*
+         * Note: some calls to release resources must be done when IRQs are
+         * enabled (dma_free_coherent() for example). So we have to cleanup our
+         * stuff before free_interrupt_handler().
+         */
+        e1000::free_rx_tx(dev);
+        Log::info("free'ed up rx/tx resources");
+
+        e1000::free_interrupt_handler(dev);
+        Log::info("interrupt handler free'ed");
+    }
+
+    Ethernet::interrupt_handler(Ethernet::Device dev)
+    {
+        Log::info("got an interruption");
+        e1000::handle_interrupt(dev);
+    }
+
+    Ethernet::send(Ethernet::Device dev, Socket::SKBuff skb)
+    {
+        Log::info("we have one packet to transmit!");
+    }
+
+    LKM::init()
+    {
+        Log::info("loading module");
+    }
+
+    LKM::exit()
+    {
+        Log::info("unloading module");
+    }
+}
+
+configuration
+{
+    LKM::name = "rtx_e1k";
+    LKM::author = "Rathaxes";
+    LKM::description = "Hello World Loadable Kernel Module (LKM)";
+    LKM::license = "GPL";
+
+    PCI::vendor_id = 0x8086;
+    PCI::product_id = 0x100e; /* e100f on vmware by default it seems */
+    PCI::set_master = true;
+
+    Ethernet::ifname = "rtx%d";
+
+    e1000::rx_ring_size = 256; /* Number of incoming packets we can buffer */
+    /*
+     * The e1000 supports seven receive buffer sizes: 256, 512, 1024, 2048,
+     * 4096, 8192 and 16384 bytes:
+     */
+    e1000::rx_buffer_len = 2048;
+}
