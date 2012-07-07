@@ -5,7 +5,7 @@ with Main
     ${pointcut Main::main()};
 
     /* Definitions */
-    template type Main::Arguments()
+    template type Arguments()
     {
         chunk ::decl()
         {
@@ -28,17 +28,13 @@ with Main
         {
             puts("Arguments:");
             {
-                int i;
-                i = 0;
-                for (; i != ${self}.argc; i++)
+                for (int i = 0; i != ${self}.argc; i++)
                     printf("- [%d]: %s\n", i, ${self}.argv[i]);
             }
 
             puts("Environment:");
             {
-                int i;
-                i = 0;
-                for (; ${self}.env[i]; i++)
+                for (int i = 0; ${self}.env[i]; i++)
                     printf("- %s\n", ${self}.env[i]);
             }
         }
@@ -48,23 +44,17 @@ with Main
         }
     }
 
-    template sequence Main::start(Main::Arguments args)
+    template sequence start(Main::Arguments args)
     {
-        chunk Main::include_headers()
+        chunk include_headers()
         {
             #include <stdlib.h>
         }
 
-        chunk Main::main()
+        chunk main()
         {
             int main(int argc, char *argv[], char *env[])
             {
-                /*
-                 * Do this typedef here to work-around a bug in CNorm __std__
-                 * dialect.
-                 */
-                //typedef int ${Main::Arguments};
-
                 ${Main::Arguments}  args;
 
                 ${local.args.init(local.argc, local.argv, local.env)};
@@ -74,7 +64,7 @@ with Main
         }
     }
 
-    template sequence Main::log(Main::Arguments args)
+    template sequence log(Main::Arguments args)
     {
         chunk   ::CALL()
         {
@@ -82,7 +72,7 @@ with Main
         }
     }
 
-    template sequence Main::exit(Builtin::number status)
+    template sequence exit(Builtin::number status)
     {
         chunk   ::CALL()
         {

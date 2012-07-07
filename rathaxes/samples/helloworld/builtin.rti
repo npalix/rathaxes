@@ -1,12 +1,7 @@
 interface Builtin
 {
-    provided builtintype    Builtin::string;
-    provided builtintype    Builtin::number;
+    provided builtintype    string;
+    provided builtintype    number;
 
-    /* Repeat "Types::" to work-around limitations in the compiler. */
-    provided type           Builtin::integer;
-//  provided builtintype    ::numser;
-//  provided builtintype    ::register;
-//  provided builtintype    ::register_field;
-//  provided builtintype    ::register_value;
+    provided type           integer;
 }

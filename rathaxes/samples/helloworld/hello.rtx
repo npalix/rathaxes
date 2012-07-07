@@ -1,12 +1,12 @@
 device HelloWorld use Main, Builtin, Log
 {
-    Main::start(Main::Arguments args)
+    start(Arguments args)
     {
-        Main::log(args);
+        log(args);
 
-        Log::info("It works!");
+        info("It works!");
 
-        Main::exit(0);
+        exit(0);
     }
 }
 

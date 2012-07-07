@@ -1,14 +1,13 @@
 with Builtin
 {
-    /* Repeat "Builtin::" to work-around limitations in the compiler. */
-    template type Builtin::integer()
+    template type integer()
     {
         chunk ::decl()
         {
             typedef int t_integer;
         }
 
-        chunk ::set(Builtin::Number value)
+        chunk ::set(Number value)
         {
             ${self} = ${value};
         }
