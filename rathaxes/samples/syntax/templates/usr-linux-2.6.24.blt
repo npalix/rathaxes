@@ -50,7 +50,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             typedef void dev_t;
             int ${config.devices}_read(dev_t *ctx)
             {
-                typedef int ${Algorithms::Buffer};
                 ${Algorithms::Buffer}   buf;
                 ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
@@ -72,7 +71,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 
             int ${config.devices}_write(dev_t *ctx)
             {
-                typedef int ${Algorithms::Buffer};
                 ${Algorithms::Buffer}   buf;
                 ${cast local.ctx as User::Context};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};

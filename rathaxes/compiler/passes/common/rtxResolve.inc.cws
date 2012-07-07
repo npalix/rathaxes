@@ -600,11 +600,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     case "target_identifier":
     case "target_expr":
         // Is it a variable of a rathaxes type : check in type_map ?
-        if (local_node#parent.ref_placeholder#parent.ctype.storage == "typedef")
-        {
-            local_node#parent.ref_placeholder = "TARTE";
-        }
-        else if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
+        if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
                  && existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping.");
