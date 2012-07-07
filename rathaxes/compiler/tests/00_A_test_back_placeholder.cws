@@ -104,6 +104,7 @@ parseStringAsBNF({
         ;
 }, source, input);
 
+saveProject("01_parsed.txt", source);
 
 #include "passes/back/rtxPlaceHolders.inc.cws"
 
