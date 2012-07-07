@@ -113,9 +113,10 @@ function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : v
         { ref compile[sKey].ref_placeholder = ref_node#parent; }
         else if (type_target == "target_pointcut")
         {
-            while (ref_node#parent#parent.type != "__block__")
-                ref ref_node = ref_node#parent;
-            ref compile[sKey].ref_placeholder = ref_node;
+                localref goodph = ref_node;
+            while (goodph#parent#parent.type != "__block__")
+                ref goodph = goodph#parent;
+            ref compile[sKey].ref_placeholder = goodph;
         }
         else
         { error("unknown type_target:" + type_target); }
@@ -189,13 +190,27 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 // recurse param list
                 if (existVariable(ctype_ref.param))
                 { rtxPH_compile<ctype_ref.param.type>(ctype_ref.param, compile, node_idx);}
+                // if type is enum
+                if (existVariable(ctype_ref.enum))
+                {
+                        foreach item in ctype_ref.enum.block
+                        {       
+                                if (existVariable(item.type)) rtxPH_compile<item.type>(item, compile, node_idx);
+                        }
+                        // TODO: while codeworker disallow to modify easily key of map, we don't implement PH in mapName of enum
+                        foreach item in ctype_ref.enum.map
+                        {
+                                local sKey = key(item);
+                                if (rtxPH_havePlaceHolder(sKey))
+                                {traceLine("Warning! You can't use placeholders in map name for enum:" + sKey);}
+                        }
+                }
                 // pointer
                 if (!existVariable(ctype_ref.pointer))
                 {break;}
                 // deref
                 ref ctype_ref = ctype_ref.pointer.ctype;
         } while(true);
-
 
         // variable name
         if (existVariable(local_node.name) && rtxPH_havePlaceHolder(local_node.name))
@@ -247,7 +262,7 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
         // body de if then/else, while, switch, do
         if (existVariable(local_node.body))
         { rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx); }
-        // if type composed (struct, enum...), or postexpr
+        // if type composed (struct, union, ...), or postexpr
         if (existVariable(local_node.list))
         {
                 foreach item in local_node.list
@@ -283,7 +298,7 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
             {
                 if (rtxPH_havePlaceHolder(local_node.expr.id))
                 {
-                    traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+                    traceLine("MAP PLACE HOLDER:" + toString(local_node.expr.id));
                     rtxPH_mapPlaceHolder(local_node.expr.id, compile, node_idx, "target_pointcut");
                 }
             }
@@ -307,8 +322,8 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
         if (existVariable(local_node.else))
         { rtxPH_compile<local_node.else.type>(local_node.else, compile, node_idx); }
         // init in a declaration
-        if (existVariable(local_node.init))
-        { rtxPH_compile<local_node.init.type>(local_node.init, compile, node_idx); }
+        if (existVariable(local_node.initialize))
+        { rtxPH_compile<local_node.initialize.type>(local_node.initialize, compile, node_idx); }
         // last part of a FOR statement
         if (existVariable(local_node.increment))
         { rtxPH_compile<local_node.increment.type>(local_node.increment, compile, node_idx); }
