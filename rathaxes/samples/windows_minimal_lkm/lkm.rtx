@@ -1,11 +1,11 @@
 device LKM use LKM
 {
-    LKM::init()
+    init()
     {
         Log::info("Hello this is LKM");
     }
 
-    LKM::exit()
+    exit()
     {
         Log::info("Good bye this was LKM");
     }
@@ -13,8 +13,8 @@ device LKM use LKM
 
 configuration
 {
-    LKM::name = "hello";
-    LKM::author = "Rathaxes";
-    LKM::description = "Hello World Loadable Kernel Module (LKM)";
-    LKM::license = "GPL";
+    name = "hello";
+    author = "Rathaxes";
+    description = "Hello World Loadable Kernel Module (LKM)";
+    license = "GPL";
 }

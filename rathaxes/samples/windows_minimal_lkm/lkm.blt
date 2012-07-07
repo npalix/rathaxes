@@ -6,9 +6,9 @@ with LKM
     ${pointcut LKM::data()};
     ${pointcut LKM::code()};
 
-    template sequence   LKM::init()
+    template sequence   init()
     {
-        chunk   LKM::includes()
+        chunk   includes()
         {
             #include <wdm.h>
             #include <Wdf.h>
@@ -16,7 +16,7 @@ with LKM
         }
 
 
-        chunk   LKM::code()
+        chunk   code()
         {
             /* NTSTATUS */
             long DriverEntry(/*IN PDRIVER_OBJECT*/ struct _DRIVER_OBJECT * DriverObject,
@@ -31,14 +31,14 @@ with LKM
         }
     }
 
-    template sequence   LKM::exit()
+    template sequence   exit()
     {
-        chunk   LKM::prototypes()
+        chunk   prototypes()
         {
             void DriverExit(/*IN*/ struct _DRIVER_OBJECT *DriverObject);
         }
 
-        chunk   LKM::code()
+        chunk   code()
         {
             void DriverExit(/*IN*/ struct _DRIVER_OBJECT *DriverObject)
             {
