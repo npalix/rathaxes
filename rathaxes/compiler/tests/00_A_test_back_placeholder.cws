@@ -77,7 +77,7 @@ generateString({
         int other()
         {
                 int     a[42] = { ${blabla} };
-        }
+        }        
 @}, dummy, input);
 
 #include "cwTool.inc.cws"
