@@ -1,11 +1,10 @@
 with Log
 {
-    template sequence Log::info(Builtin::string msg)
+    template sequence info(Builtin::string msg)
     {
-        chunk Main::include_headers()
+        chunk include_headers()
         {
             #include <stdio.h>
-            typedef int stdio_include_stamp;
         }
 
         chunk ::CALL()
