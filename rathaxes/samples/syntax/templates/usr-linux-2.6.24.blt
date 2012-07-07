@@ -1,9 +1,9 @@
 with LKM, User
 values LKM::OS=linux, LKM::version >= 2.6.24
 {
-    template sequence User::open(User::Context ctx)
+    template sequence open(User::Context ctx)
     {
-        chunk LKM::GLOBAL_CODE_DEFINITION()
+        chunk GLOBAL_CODE_DEFINITION()
         {
             typedef void dev_t;
 
@@ -15,7 +15,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
         }
     }
 
-    template sequence User::close(User::Context ctx)
+    template sequence close(User::Context ctx)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
@@ -43,7 +43,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
         {}
     }
 
-    template sequence User::read(User::Context ctx, Algorithms::Buffer buf)
+    template sequence read(Context ctx, Buffer buf)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
@@ -58,15 +58,15 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS()
+        chunk INIT_LKM_FPTRS()
         {
 		    .read      = &${config.devices}_read,
         }
     }
 
-    template sequence User::write(User::Context ctx, Algorithms::Buffer buf)
+    template sequence write(Context ctx, Buffer buf)
     {
-        chunk LKM::GLOBAL_CODE_DEFINITION()
+        chunk GLOBAL_CODE_DEFINITION()
         {
             typedef void dev_t;
 
@@ -80,7 +80,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS()
+        chunk INIT_LKM_FPTRS()
         {
 		    .write      = &${config.devices}_write,
         }

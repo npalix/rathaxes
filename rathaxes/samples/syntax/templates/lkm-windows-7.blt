@@ -1,16 +1,16 @@
 with LKM
 values LKM::OS=Windows, LKM::version = 7
 {
-    chunk LKM::INCLUDE_DEPENDENCIES
+    chunk INCLUDE_DEPENDENCIES
     {
         #include "ntddk.h"
         #include "wdf.h"
         #include "initguid.h"
     }
 
-    template sequence LKM::load()
+    template sequence load()
     {
-        chunk   LKM::GLOBAL_CODE_DEFINITION
+        chunk   GLOBAL_CODE_DEFINITION
         {
             int KernModuleInit()
             {
@@ -21,7 +21,7 @@ values LKM::OS=Windows, LKM::version = 7
             }
         }
 
-        chunk LKM::BASE_LKM_CODE_DEFINITION
+        chunk BASE_LKM_CODE_DEFINITION
         {
             int Kern_Load()
             {
@@ -30,7 +30,7 @@ values LKM::OS=Windows, LKM::version = 7
         }
     }
 
-    template sequence LKM::unload()
+    template sequence unload()
     {
     }
 }

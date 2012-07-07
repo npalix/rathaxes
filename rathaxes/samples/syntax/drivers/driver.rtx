@@ -134,7 +134,7 @@ use Algorithms, LKM, User
         }
     }
 */
-    User::read(User::Context ctx, Algorithms::Buffer output)
+    read(Context ctx, Buffer output)
     {
         log("my RS232 [read]\n");
 //      concat(output, rcv_buf)
@@ -142,7 +142,7 @@ use Algorithms, LKM, User
 //          PRECONDITION {WAIT(LSR.data_available, TRUE);}
 //      }
     }
-    User::write(User::Context ctx, Algorithms::Buffer input)
+    write(Context ctx, Buffer input)
     {
         log("my RS232 [write]\n");
 //      copy(snd_buf, input)
@@ -150,15 +150,15 @@ use Algorithms, LKM, User
 //          PRECONDITION {WAIT(LSR.thr_state.empty);}
 //      }
     }
-    User::open(User::Context ctx)
+    open(Context ctx)
     {
         log("my RS232 [open]\n");
     }
-    User::close(User::Context ctx)
+    close(Context ctx)
     {
         log("my RS232 [close]\n");
     }
-    User::on_plug(User::Context ctx)
+    on_plug(Context ctx)
     {
         log("my RS232 [on_plug]\n");
         //set(divisor, 0x0C);
@@ -169,21 +169,21 @@ use Algorithms, LKM, User
 
 configuration
 {
-    LKM::devices = RS232;
-    LKM::arch = x86;
-    LKM::OS = linux
+    devices = RS232;
+    arch = x86;
+    OS = linux
     {
-        LKM::major = 2;
-        LKM::minor = 6;
-        LKM::patch = 24;
-        LKM::version = 2.6.24;
+        major = 2;
+        minor = 6;
+        patch = 24;
+        version = 2.6.24;
     }
 
-    Algorithm::size = 32;
+    size = 32;
 
     // Currently, defining a variable twice creates an error.
-    //LKM::OS = Windows
+    //OS = Windows
     //{
-    //    LKM::version = XP;
+    //    version = XP;
     //}
 }

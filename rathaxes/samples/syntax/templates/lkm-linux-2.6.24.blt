@@ -1,7 +1,7 @@
 with LKM
 values LKM::OS=Linux, LKM::version >= 2.6.24
 {
-    template sequence LKM::load()
+    template sequence load()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
         chunk GLOBAL_DATA_DECLARATION()
@@ -24,7 +24,7 @@ values LKM::OS=Linux, LKM::version >= 2.6.24
         { }
     }
 
-    template sequence LKM::unload()
+    template sequence unload()
     {
         // Here, the scopes are up-recursively checked from the template's own interface.
         chunk GLOBAL_DATA_DECLARATION()
