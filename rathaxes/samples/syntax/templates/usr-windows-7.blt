@@ -1,17 +1,17 @@
 with LKM, User
 values LKM::OS=Windows, LKM::version = XP
 {
-    template sequence User::open(Context ctx)
+    template sequence open(Context ctx)
     {
     }
 
-    template sequence User::close(Context ctx)
+    template sequence close(Context ctx)
     {
     }
 
-    template sequence User::read(Context ctx, Buffer buf)
+    template sequence read(Context ctx, Buffer buf)
     {
-        chunk LKM::GLOBAL_CODE_DEFINITION
+        chunk GLOBAL_CODE_DEFINITION
         {
             void ${config.device_name}IoRead(void* Queue, void* Request, int size)
             {
@@ -47,15 +47,15 @@ values LKM::OS=Windows, LKM::version = XP
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS(init)
+        chunk INIT_LKM_FPTRS(init)
         {
 		    ${init}.EvtIoRead      = &${config.device_name}IoRead;
         }
     }
 
-    template sequence User::write(Context ctx, Buffer buf)
+    template sequence write(Context ctx, Buffer buf)
     {
-        chunk LKM::GLOBAL_CODE_DEFINITION
+        chunk GLOBAL_CODE_DEFINITION
         {
             void ${config.device_name}IoWrite(void* Queue, void* Request, int size)
             {
@@ -90,7 +90,7 @@ values LKM::OS=Windows, LKM::version = XP
             }
         }
 
-        chunk LKM::INIT_LKM_FPTRS(init)
+        chunk INIT_LKM_FPTRS(init)
         {
 		    ${init}.EvtIoWrite      = &${config.device_name}IoWrite;
         }
