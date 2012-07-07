@@ -480,7 +480,7 @@ function rtxIntrospect_cond<"for">(local_node : node, theChunk : node,
 {
     rtxIntrospect_code<local_node.increment.type>(local_node.increment,
                                                   theChunk, blockIds);
-    rtxIntrospect_code<local_node.init.type>(local_node.init, theChunk,
+    rtxIntrospect_code<local_node.initialize.type>(local_node.initialize, theChunk,
                                              blockIds);
     rtxIntrospect_code<local_node.body.type>(local_node.body, theChunk,
                                              blockIds);

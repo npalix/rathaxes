@@ -270,24 +270,24 @@ generateString({
 			}
 		}
 
-		//LKM::read(LKM::Context ctx, LKM::Buffer output)
-		//{
+		LKM::read(LKM::Context ctx, LKM::Buffer output)
+		{
 		    /*LOG("my RS232 [read]\n");
                     
 		    CONCAT(output, rcv_buf)
 		    {
 		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
 		    }*/
-		//}
+		}
 
-		//LKM::write(LKM::Context ctx, LKM::Buffer input)
-		//{
+		LKM::write(LKM::Context ctx, LKM::Buffer input)
+		{
 			/*LOG("my RS232 [write]\n");
 			COPY(snd_buf, input)
 			{
 				PRECONDITION {WAIT(LSR->thr_state.empty);}
 			}*/
-		//}
+		}
 
 		LKM::open(LKM::Context ctx)
 		{
@@ -300,12 +300,12 @@ generateString({
 			//LOG("my RS232 [close]\n");
 		}
 
-		//LKM::on_plug(LKM::Context ctx, LKM::Buffer buf)
-		//{
+		LKM::on_plug(LKM::Context ctx, LKM::Buffer buf)
+		{
 			/*LOG("my RS232 [on_plug]\n");
 			SET(divisor, 0x0C);
 			SET(LCR->word_lengh._8bits);*/
-		//}
+		}
 
 	}
 

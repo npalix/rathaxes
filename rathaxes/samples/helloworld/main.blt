@@ -63,7 +63,7 @@ with Main
                  * Do this typedef here to work-around a bug in CNorm __std__
                  * dialect.
                  */
-                typedef int ${Main::Arguments};
+                //typedef int ${Main::Arguments};
 
                 ${Main::Arguments}  args;
 

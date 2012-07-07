@@ -184,6 +184,8 @@ function rtxNodePlaceHolder(local_node   : node)
     insert local_node.body;
     // The potential concatenation sufix
     insert local_node.sufix;
+    // for inside C chunk (default)
+    typeHandling_create(local_node);
 
     return true;
 }
