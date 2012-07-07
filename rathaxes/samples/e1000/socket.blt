@@ -4,10 +4,7 @@ with Socket, LKM
     {
         chunk LKM::includes()
         {
-            typedef int ${Socket::SKBuff};
-
             #include <linux/skbuff.h>
-
             static const ${Socket::SKBuff} force_rtx_lnux_skbuf_decl;
         }
 

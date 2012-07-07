@@ -161,8 +161,6 @@ with Ethernet, PCI, LKM, Log
              * This typedef is needed to workaround a bug in CNorm __std__
              * dialect.
              */
-            typedef int ${Ethernet::Device};
-
             ${Ethernet::Device} rtx_ether_ctx;
             struct net_device *net_dev;
             int error;
@@ -211,8 +209,6 @@ with Ethernet, PCI, LKM, Log
         chunk   PCI::pci_remove_hook(PCI::Device pdev)
         {
             /* workaround for cnorm unstrict */
-            typedef int ${Ethernet::Device};
-
             struct net_device *net_dev = pci_get_drvdata(${pdev});
             ${Ethernet::Device} rtx_ether_ctx = netdev_priv(net_dev);
 

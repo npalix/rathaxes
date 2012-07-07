@@ -4,7 +4,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-            typedef int ${e1000::RxDescriptor};
 
             #include <linux/types.h>
 
@@ -50,7 +49,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-            typedef int ${e1000::RxRing};
 
             static const ${e1000::RxRing}   force_rtx_e1000_rx_ring_decl;
         }
@@ -85,7 +83,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              * have to do this since we do not use the structure in this blt
              * (we hacked a bit and used it in ethernet.blt directly).
              */
-            typedef int ${e1000::Context}; /* CNorm __std__ workaround */
             static const ${e1000::Context} force_struct_rtx_10000_ctx_decl;
         }
 
@@ -120,7 +117,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-            typedef int ${e1000::Register};
             static const ${e1000::Register}  force_enum_rtx_e1000_registers_decl;
         }
 
@@ -170,7 +166,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-            typedef int ${e1000::Commands};
             static const ${e1000::Commands} force_enum_rtx_e1000_commands_decls;
         }
 
@@ -380,7 +375,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
      * ${e1000::register_read32(rtx_ether_ctx->hw_ctx, ${e1000::Register.E1000_STATUS})};
      *
      * "Acceptable":
-     * typedef int ${e1000::Register}; // cnorm __std__ workaround
      * ${e1000::Register} reg_status;
      * ${e1000.init(E1000_STATUS); // didn't work, so we used the next line
      * reg_status = E1000_STATUS;
@@ -572,7 +566,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              * e1000::Context? (but we would need to make it point back to
              * the struct net_device)
              */
-            typedef int       ${e1000::Context};
             ${e1000::Context} hw_ctx;
             hw_ctx = &${ctx}->hw_ctx;
 
@@ -772,7 +765,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         {
             typedef unsigned long int   dma_addr_t;
 
-            typedef int       ${e1000::Context};
             ${e1000::Context} hw_ctx;
             hw_ctx = &${ctx}->hw_ctx;
 

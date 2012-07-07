@@ -48,8 +48,7 @@ rtx_templatedLang_C_compound_stmt(theBlock : node) ::=
 // chunk encapsulate C CODE
 rtx_templatedLang_C_block_item_list(theBlock : node) ::=
 [
-	line_of_code(theBlock)
-        | '#' 
+        '#' 
         [
           "include" ['"' -> '"' | '<' -> '>' ]:sFile
 /**/            #pushItem(theBlock.block)
@@ -63,6 +62,8 @@ rtx_templatedLang_C_block_item_list(theBlock : node) ::=
 /**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
 /**/            => cnormNode_Raw(lastNode, "\n#define "+sData);
         ]
+	| 
+        line_of_code(theBlock)
 ]*
 ;
  

@@ -33,15 +33,13 @@ generateString({
         {
             chunk LKM::typedefs_declaration()
             {
-                typedef int ${KK};
-                typedef int ${TYPE};
                 enum pop${ctx.name} {A, B, C};
             }
 
             chunk LKM::global_data_declaration(theSymbol)
             {
                 theSymbol = 42;
-                //${TYPE} bla;
+                ${TYPE} bla;
             }
 
             chunk LKM::function_declaration()
@@ -97,7 +95,6 @@ generateString({
             chunk ::type_call()
             {
                 // Soon the unstrict cnorm...
-                typedef int ${Builtin::Buffer};
                 ${Builtin::Buffer}  buf;
                 ${local.buf.init(42)};
             }
@@ -105,8 +102,6 @@ generateString({
             chunk ::CALL()
             {
                 // Soon the unstrict cnorm...
-                typedef int ${Builtin::Buffer};
-
                 ${Builtin::Buffer}  buf;
 
                 enum test {
@@ -190,10 +185,8 @@ generateString({
 
 traceLine("input:\n" + input);
 
-
-
 local source;
-cnormDialect<"__std__">(source);
+cnormDialect<"__unstrict__">(source);
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 insert this.c_types;
 rtxType_Load(source);
