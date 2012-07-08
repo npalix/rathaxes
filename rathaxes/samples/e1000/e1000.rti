@@ -14,7 +14,21 @@ interface e1000 : Socket, Ethernet, PCI, LKM
         method      ::init();
     }
 
+    provided type   TxDescriptor
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
+
     provided type   RxRing
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
+
+    provided type   TxRing
     {
         chunk       LKM::includes();
         chunk       ::decl();

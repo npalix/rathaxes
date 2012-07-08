@@ -33,6 +33,59 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     }
 
     /*
+     * This is a generic tx descriptor for the e1000. When you use TCP
+     * Segmentation Offload (TSO) the hardware actually uses two types of
+     * tx descriptors in its tx ring:
+     * - context descriptors: this descriptor doesn't actually point to data to
+     *   send but initialize the offloading engine for the data descriptor that
+     *   follow;
+     * - data descriptors: this descriptor points to data from the skbuffs.
+     */
+    template type   e1000::TxDescriptor()
+    {
+        chunk   LKM::includes()
+        {
+            static const ${e1000::TxDescriptor} force_rtx_e1000_tx_descriptor_decl;
+        }
+
+        chunk   ::decl()
+        {
+            typedef struct rtx_e1000_tx_descriptor
+            {
+                unsigned long int   /* __le64 */    buff_addr;
+                union
+                {
+                    unsigned int    /* __le32 */    data;
+                    struct
+                    {
+                        unsigned short /* __le16 */ length;
+                        unsigned char               csum_offset; /* CSO */
+                        unsigned char               cmd;
+                    }                               fields;
+                }                                   lower;
+                union
+                {
+                    unsigned int    /* __le32 */    data;
+                    struct
+                    {
+                        unsigned char               status;
+                        unsigned char               csum_start; /* CSS */
+                        unsigned short /* __le16 */ special;
+                    }                               fields;
+                }                                   upper;
+            } *rtx_e1000_tx_descriptor_p;
+        }
+
+        chunk   ::init()
+        {
+        }
+
+        map
+        {
+        }
+    }
+
+    /*
      * Ring of e1000::RxDescriptors and their corresponding skbuffs.
      *
      * - size: total size of the ring in bytes.
@@ -72,6 +125,43 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
+    /*
+     * Ring of e1000::TxDescriptors, this is a bit similar to the Rx ring except
+     * that we don't really have to manage the skbuffs themselves (they are
+     * given to use by the kernel).
+     *
+     * - size: total size of the ring in bytes.
+     * - base: address of the ring (we can't use the typedef here until we get
+     *   CNorm unstrict);
+     * - dma_base: (physical) address of the ring where the device can access
+     *   the different descriptors.
+     */
+    template type   e1000::TxRing()
+    {
+        chunk   LKM::includes()
+        {
+            static const ${e1000::TxRing}   force_rtx_e1000_tx_ring_decl;
+        }
+
+        chunk   ::decl()
+        {
+            struct rtx_e1000_tx_ring
+            {
+                unsigned int                    size;
+                struct rtx_e1000_tx_descriptor  *base;
+                void*   /* dma_addr_t */        dma_base;
+            };
+        }
+
+        chunk   ::init()
+        {
+        }
+
+        map
+        {
+        }
+    }
+
     template type   e1000::Context()
     {
         chunk   LKM::includes()
@@ -98,6 +188,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
                 /* we can't use the Rathaxes type here (#8) */
                 struct rtx_e1000_rx_ring    rx_ring;
+                struct rtx_e1000_tx_ring    tx_ring;
             } *rtx_e1000_ctx_p;
         }
 
@@ -138,6 +229,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_FCT           = 0x00030, /* Flow Control Type */
                 E1000_RCTL          = 0x00100, /* Receive Control */
                 E1000_FCTTV         = 0x00170, /* Flow Control Transmit Timer Value */
+                E1000_TCTL          = 0x00400, /* Transmit Control */
                 E1000_CRCERRS       = 0x04000, /* CRC Error Count (base address of the statistic register spaces) */
                 E1000_RAL           = 0x05400, /* Receive Address Low */
                 E1000_RAH           = 0x05404, /* Receive Address High */
@@ -147,6 +239,11 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_RDLEN         = 0x02808, /* Receive Descriptor Length */
                 E1000_RDH           = 0x02810, /* Receive Descriptor Head */
                 E1000_RDT           = 0x02818, /* Receive Descriptor Tail */
+                E1000_TDBAL         = 0x03800, /* Transmit Descriptor Base Address (Low 32 bits) */
+                E1000_TDBAH         = 0x03804, /* Transmit Descriptor Base Address (High 33 bits) */
+                E1000_TDLEN         = 0x03808, /* Transmit Descriptor Length */
+                E1000_TDH           = 0x03810, /* Transmit Descriptor Head */
+                E1000_TDT           = 0x03818, /* Transmit Descriptor Tail */
             };
         }
 
@@ -225,6 +322,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 E1000_RCTL_BSIZE_4096           = (E1000_RCTL_BSEX | (1 << 16) | (1 << 17)),
                 E1000_RCTL_BSIZE_8192           = (E1000_RCTL_BSEX | (1 << 17)),
                 E1000_RCTL_BSIZE_16384          = (E1000_RCTL_BSEX | (1 << 16)),
+                E1000_TCTL_EN                   = (1 << 1),   /* Transmitter Enable */
+                E1000_TCTL_PSP                  = (1 << 3),   /* Pad Short Packet */
             };
         }
 
@@ -722,11 +821,64 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
 
             /*
+             * Transmission initialization (section 14.5):
+             *
+             * 1. Allocate the transmit descriptors ring and map it to make it
+             *    accessible by the device;
+             * 2. Write the start address of the ring in TDBAL/TDBAH and set
+             *    TDLEN to the size of the ring;
+             * 3. Set the TDH/TDT indexes to the beginning and end of the ring;
+             * 4. Set TCTL.PSP to pad short packets and TCTL.EN to enable the
+             *    transmitter.
+             */
+
+            /*
+             * XXX: at this point we must be careful to not fuck up with i, or
+             * we are going go have surprises in `err_skbuffs_alloc`. Maybe it's
+             * time to separate the rx and tx initialization in two functions.
+             */
+
+            /* 1. Allocate the tx ring */
+            hw_ctx->tx_ring.size = ${config.tx_ring_size} * sizeof(*hw_ctx->tx_ring.base);
+            hw_ctx->tx_ring.size = ALIGN(hw_ctx->tx_ring.size, 4096);
+            hw_ctx->tx_ring.base = dma_alloc_coherent(
+                    &${ctx}->pci_dev->dev,
+                    hw_ctx->tx_ring.size,
+                    (dma_addr_t *)&hw_ctx->tx_ring.dma_base,
+                    GFP_KERNEL);
+            if (!hw_ctx->rx_ring.base)
+            {
+                ${Log::info("cannot allocate the descriptors for the tx ring")};
+                goto err_tx_ring_alloc;
+            }
+
+            {
+                ${Log::info("setup_device: tx descriptors allocated")};
+            }
+
+            /* 2. Save the emplacement and the size of the ring in TDBA/TDLEN */
+            rtx_e1000_register_write32(hw_ctx, E1000_TDBAL, (dma_addr_t)hw_ctx->tx_ring.dma_base & 0xffffffff);
+            rtx_e1000_register_write32(hw_ctx, E1000_TDBAH, (dma_addr_t)hw_ctx->tx_ring.dma_base >> 32);
+            rtx_e1000_register_write32(hw_ctx, E1000_TDLEN, hw_ctx->tx_ring.size);
+
+            /* 3. Setup TDH/TDT to zero: the queue is empty */
+            rtx_e1000_register_write32(hw_ctx, E1000_TDH, 0);
+            rtx_e1000_register_write32(hw_ctx, E1000_TDT, 0);
+
+            /* 4. Set TCTL.PSP and enable the transmitter */
+            rtx_e1000_register_set32(hw_ctx, E1000_TCTL, E1000_TCTL_PSP|E1000_TCTL_PSP);
+
+            {
+                ${Log::info("transmit registers configured and transmitter enabled")};
+            }
+
+            /*
              * XXX: We can't return here since we are not in a function but in
              * a chunk of code (injected in a function).
              */
             goto ok;
 
+        err_tx_ring_alloc:
             /*
              * Likewise, always the same problem with error handling, we don't
              * know where we are at in the "parent context":
@@ -782,6 +934,15 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 ${Log::info("free_rx_tx: rx ring free'ed")};
             }
 
+            /*
+             * Free the tx ring:
+             * - Free the descriptors array.
+             */
+            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->tx_ring.size,
+                    hw_ctx->tx_ring.base, (dma_addr_t)hw_ctx->tx_ring.dma_base);
+            {
+                ${Log::info("free_rx_tx: tx ring free'ed")};
+            }
         }
     }
 
