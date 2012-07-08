@@ -90,7 +90,7 @@ with PCI, LKM, Log
              * CNorm doesn't seem to like "dynamic" arrays (i.e: you always
              * have to specify the exact size).
              */
-            static struct pci_device_id rtx_pci_device_table[2] = {
+            static struct pci_device_id rtx_pci_device_table[] = {
                 { ${config.vendor_id}, ${config.product_id}, PCI_ANY_ID, PCI_ANY_ID },
                 { 0, }
             };
