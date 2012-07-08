@@ -75,7 +75,9 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided type       String;
+            provided type       String {
+                attribute Builtin::String value;
+            }
             provided pointcut   test_pointcut();
 
             provided sequence DoSomething(Builtin::String)
@@ -110,7 +112,9 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided type       String;
+            provided type       String {
+                attribute Builtin::String value;
+            }
             provided pointcut   test_pointcut();
 
             provided sequence DoSomething(LKM::String)

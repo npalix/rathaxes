@@ -218,6 +218,7 @@ function rtxNodeCall(local_node     : node,
     return true;
 }
 
+// sequence call (ex: ${log("dosmoething")} in thebackend or log("domething") in the front-end)
 function rtxNodeSequenceCall(local_node : node, name : node, args : node)
 {
         rtxNode(local_node);
