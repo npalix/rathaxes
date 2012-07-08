@@ -50,7 +50,9 @@ generateString({
 
         interface Types
         {
-            provided type   String;
+            provided type   String {
+                attribute Builtin::String value;
+            }
         }
 
         interface LKM : Builtin, Types

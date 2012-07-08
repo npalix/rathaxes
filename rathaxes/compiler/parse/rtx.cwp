@@ -1,15 +1,19 @@
 #include "cnorm.cwp"
 
 #ignore["rathaxes"] ::= 
-[
-	["//" ->[['\r']? '\n']]
-	| ["/*" ->"*/"]
-	| ' '
-	| '\t'
-	| '\n'
-	| '\r'
-	| '\f' // form feed, sometimes Windows kernel headers have this character.
-]+:skip
+        [
+        	['#' ->[['\r']? '\n']]
+        	| ["//" ->[['\r']? '\n']]
+        	| ["/*" ->"*/"]
+        	| ' '
+                | ['\r']? '\n' 
+        	| '\t'
+        	| '\f' // form feed, sometimes Windows kernel headers have this character.
+        ]+:skip
+        =>{
+                this.line = countInputLines();
+                this.col = countInputCols();
+        }
 ;
 /* root of grammar */
 #overload

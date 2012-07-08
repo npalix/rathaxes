@@ -20,9 +20,22 @@ generateString({
         // Simple interface
         interface BaseInterface
         {
-            provided    type            BaseInterface::a_type;
-            provided    type            BaseInterface::type1;
-            provided    type            BaseInterface::type2;
+            provided    builtintype     String;
+            provided    builtintype     Symbol;
+            provided    builtintype     Number;
+
+            provided    type            BaseInterface::a_type
+            {
+                attribute String val;
+            }
+            provided    type            BaseInterface::type1
+            {
+                chunk           injector(Symbol);
+            }
+            provided    type            BaseInterface::type2
+            {
+                method           append(String);
+            }
             provided    pointcut        BaseInterface::a_pointcut();
             provided    pointcut        BaseInterface::foo(bar);
 
@@ -33,8 +46,17 @@ generateString({
         {
             required variable   Userland::req_var_type    dummy_name;
             provided            builtintype     Userland::pro_builtin;
-            provided            type            Userland::some_type;
-            optional            type            Userland::opt_type { foo; bar; };
+            provided            type            Userland::some_type
+            {
+            }
+            optional            type            Userland::opt_type
+            {
+                chunk       BaseInterface::foo(bar);
+                attribute   BaseInterface::type1    t1;
+                attribute   BaseInterface::type2    t2;
+                method      init(Builtin::type1);
+                method      test();
+            }
             required            sequence        Userland::req_sequence(BaseInterface::type1 a,
                                                                        BaseInterface::type2,
                                                                        Userland::some_type c);

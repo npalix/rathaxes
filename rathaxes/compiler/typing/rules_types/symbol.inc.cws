@@ -22,7 +22,7 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
                                             '.'  #readIdentifier:field // variable field
                                         |
                                             '[' #readInteger:bitBegin [".." #readInteger:bitEnd]?
-                                            ']'
+                                            ']' // index variable
                                         ]?
                                 #continue #empty
                                 =>{
@@ -104,7 +104,6 @@ function        rtxType_Parse<"symbol.inc.cws">(src : value, out_type : node)
         }
         if (out_type.rtype == "unknown")
         {       return false;}
-//        traceLine("FOUND:" + toString(out_type));
         return true;
 }
 
@@ -150,6 +149,19 @@ function type_map<"Builtin::register_value">(resolverValues : node,
         return false;
 }
 
+function type_map<"Builtin::register_field">(resolverValues : node,
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node, source_tree : reference)
+{
+        traceLine("Builtin REGFIELD(s):" + toString(mappedIds, true));
+        traceLine("Resolve Value:" + toString(resolverValues, true));
+        traceLine("RType:" + toString(theRtype, true));
+        traceLine("PH:" + toString(placeHolder, true));
+        if ($getArraySize(mappedIds) == 2$)
+               return rtxType_regMap<mappedIds[1]>(resolverValues, theRtype, mappedIds, placeHolder, out_node, source_tree);
+        //error("No traduction for register_value");
+        return false;
+}
 
 function        rtxType_regMap<T>(resolverValues : node, theRtype : node, mappedIds : node, pH : node, out_node : node, source_tree : reference)
 {
@@ -233,6 +245,15 @@ function        rtxNode2cnormNode<"__rtx_register_value__">(in_param : node, out
 {
         traceLine("Receive:" + toString(in_param, true));
         traceLine("out:" + toString(out_param, true));
+        // is just a virtual variable (no correspondant C code) so...
+        setall out_param = in_param;
+        return true;
+}
+
+function        rtxNode2cnormNode<"__rtx_register_field__">(in_param : node, out_param : node)
+{
+        traceLine("Receive FIELD:" + toString(in_param, true));
+        traceLine("out FIELD:" + toString(out_param, true));
         // is just a virtual variable (no correspondant C code) so...
         setall out_param = in_param;
         return true;

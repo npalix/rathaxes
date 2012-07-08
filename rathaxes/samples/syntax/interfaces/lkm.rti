@@ -36,7 +36,9 @@ interface LKM : Algorithms
 
 interface Algorithms : Builtin
 {
-    provided type               Buffer;
+    provided type               Buffer {
+        chunk ::decl();
+    }
 
     provided sequence   log(string)
     {
