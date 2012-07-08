@@ -1,6 +1,16 @@
 interface Ethernet : Socket, PCI, LKM
 {
-    provided type       Device;
+    provided type   Net
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+    }
+
+    provided type   Device
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+    }
 
     required variable ::string  ifname;
 

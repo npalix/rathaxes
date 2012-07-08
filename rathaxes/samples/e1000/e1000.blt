@@ -4,7 +4,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-
             #include <linux/types.h>
 
             static const ${e1000::RxDescriptor} force_rtx_e1000_rx_descriptor_decl;

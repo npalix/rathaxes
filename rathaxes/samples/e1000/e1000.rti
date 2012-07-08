@@ -1,14 +1,41 @@
 interface e1000 : Socket, Ethernet, PCI, LKM
 {
-    provided type   Context;
-    provided type   RxDescriptor;
-    provided type   RxRing;
+    provided type   Context
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
+
+    provided type   RxDescriptor
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
+
+    provided type   RxRing
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
 
     /*
      * These two types should actually be registers definitions in the frontend:
      */
-    provided type   Register;
-    provided type   Commands;
+    provided type   Register
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+        method      ::init();
+    }
+
+    provided type   Commands
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
+    }
 
     provided sequence   create_device()
     {
