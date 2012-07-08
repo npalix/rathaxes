@@ -499,27 +499,22 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
         chunk   ::CALL()
         {
-            // this is an hack for the scope
-            (void)1;
-            {
-                int error;
-                error = e1000_setup_interrupt_handler(${ctx});
+                int error = e1000_setup_interrupt_handler(${ctx});
                 if (error)
                 {
-                    return error;
+                        return error;
                 }
-            }
         }
     }
 
-    template sequence   e1000::free_interrupt_handler(Ethernet::Device ctx)
+    template sequence   free_interrupt_handler(Ethernet::Device ctx)
     {
-        chunk   LKM::prototypes()
+        chunk   prototypes()
         {
             static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx);
         }
 
-        chunk LKM::code()
+        chunk code()
         {
             static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx)
             {
@@ -533,7 +528,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::activate_device_interruption(Ethernet::Device ctx)
+    template sequence   activate_device_interruption(Ethernet::Device ctx)
     {
         chunk  ::CALL()
         {
@@ -546,7 +541,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::set_up_device(Ethernet::Device ctx)
+    template sequence   set_up_device(Ethernet::Device ctx)
     {
         chunk  ::CALL()
         {
@@ -759,7 +754,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::free_rx_tx(Ethernet::Device ctx)
+    template sequence   free_rx_tx(Ethernet::Device ctx)
     {
         chunk   ::CALL()
         {
@@ -792,7 +787,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::handle_interrupt(Ethernet::Device ctx)
+    template sequence   handle_interrupt(Ethernet::Device ctx)
     {
         chunk   ::CALL()
         {

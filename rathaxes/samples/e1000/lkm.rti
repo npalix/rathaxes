@@ -1,25 +1,25 @@
 interface LKM : Builtin
 {
-    provided pointcut   LKM::includes();
+    provided pointcut   includes();
     /* maybe it should be possible to use chunk ::decl in sequence templates? */
-    provided pointcut   LKM::prototypes();
-    provided pointcut   LKM::data();
-    provided pointcut   LKM::code();
+    provided pointcut   prototypes();
+    provided pointcut   data();
+    provided pointcut   code();
 
-    required variable Builtin::string  LKM::author;
-    required variable Builtin::string  LKM::description;
-    required variable Builtin::string  LKM::license;
+    required variable Builtin::string  author;
+    required variable Builtin::string  description;
+    required variable Builtin::string  license;
 
-    required sequence   LKM::init()
+    required sequence   init()
     {
-        provided chunk      LKM::includes();
-        provided chunk      LKM::code();
-        provided pointcut   LKM::init_bus_hook();
+        provided chunk      includes();
+        provided chunk      code();
+        provided pointcut   init_bus_hook();
     }
 
-    required sequence   LKM::exit()
+    required sequence   exit()
     {
-        provided chunk      LKM::code();
-        provided pointcut   LKM::deinit_bus_hook();
+        provided chunk      code();
+        provided pointcut   deinit_bus_hook();
     }
 }

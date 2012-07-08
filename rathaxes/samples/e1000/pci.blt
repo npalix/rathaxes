@@ -22,7 +22,7 @@ with PCI, LKM, Log
         }
     }
 
-    template sequence   PCI::probe()
+    template sequence   probe()
     {
         chunk LKM::prototypes()
         {
@@ -58,7 +58,7 @@ with PCI, LKM, Log
         }
     }
 
-    template sequence   PCI::remove()
+    template sequence   remove()
     {
         chunk LKM::prototypes()
         {
@@ -82,7 +82,7 @@ with PCI, LKM, Log
         }
     }
 
-    template sequence   PCI::register()
+    template sequence   register()
     {
         chunk LKM::data()
         {
@@ -136,7 +136,7 @@ with PCI, LKM, Log
         }
     }
 
-    template sequence   PCI::unregister()
+    template sequence   unregister()
     {
         chunk   LKM::deinit_bus_hook()
         {
