@@ -73,6 +73,7 @@ configuration
     Ethernet::ifname = "rtx%d";
 
     e1000::rx_ring_size = 256; /* Number of incoming packets we can buffer */
+    e1000::tx_ring_size = 256; /* Mumber of buffers we can have in the tx queue */
     /*
      * The e1000 supports seven receive buffer sizes: 256, 512, 1024, 2048,
      * 4096, 8192 and 16384 bytes:
