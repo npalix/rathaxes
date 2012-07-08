@@ -43,14 +43,28 @@ generateString({
             {
                 chunk   LKM::data();
             }
+
+            provided type               LKM::Buffer
+            {
+                attribute Builtin::number size;
+            }
         
             required sequence           LKM::open(LKM::Context);
-            required sequence           LKM::close();
+            required sequence           LKM::close(LKM::Context);
+
+            optional sequence           LKM::read(LKM::Context, LKM::Buffer);
+            optional sequence           LKM::write(LKM::Context, LKM::Buffer);
+            optional sequence           LKM::on_plug(LKM::Context, LKM::Buffer);
         }
 
         interface Generic : LKM
         {
             provided sequence           Generic::set(LKM::Context, Builtin::register_value)
+            {
+                    provided chunk              ::CALL();
+            }
+
+            provided sequence           Generic::set(LKM::Context, Builtin::register_field, Builtin::number)
             {
                     provided chunk              ::CALL();
             }
@@ -83,6 +97,25 @@ generateString({
                                 }
                         }
                 }
+
+                template sequence Generic::set(LKM::Context ctx, Builtin::register_field  regfield, Builtin::number num)
+                {
+                
+                        chunk           LKM::prototypes()
+                        {
+                                #define SET_FIELD_PROTO  !!!
+                        }
+                        
+                        chunk           ::CALL()
+                        {
+                                        typedef         unsigned int    uint32_t; // to put in proto :(
+                                {
+                                        printf("PLUP");
+                                        reg_${regfield.regname}.${regfield.fieldname} = ${num};
+                                }
+                        }
+                }
+
         }
 
         with LKM 
@@ -110,7 +143,7 @@ generateString({
                         }
                 }
         
-                template sequence LKM::close()
+                template sequence LKM::close(LKM::Context ctx)
                 {
                         chunk           LKM::includes()
                         {
@@ -254,60 +287,60 @@ generateString({
 		}
 
 
-		public property word divisor
+		public property word divisor//(LKM::Context ctx, Builtin::number value)
 		{
 			set
 			{
-				SET(LCR->dlab.clock);
-				SET(DLL, value[0..7]);
-				SET(DLM, value[8..15]);
-				SET(LCR->dlab.buffers);
+				Generic::set(ctx, LCR->dlab.clock);
+				Generic::set(ctx, DLL, value[0..7]);
+				Generic::set(ctx, DLM, value[8..15]);
+				Generic::set(ctx, LCR->dlab.buffers);
 			}
 	
 			get
 			{
-				SET(LCR->dlab.clock);
-				SET(value[0..7], DLM);
-				SET(value[8..15], DLL);
-				SET(LCR->dlab.buffers);
+				Generic::set(ctx, LCR->dlab.clock);
+				Generic::set(ctx, value[0..7], DLM);
+				Generic::set(ctx, value[8..15], DLL);
+				Generic::set(ctx, LCR->dlab.buffers);
 			}
 		}
 
 		LKM::read(LKM::Context ctx, LKM::Buffer output)
 		{
-		    /*LOG("my RS232 [read]\n");
+		    LOG("my RS232 [read]\n");
                     
-		    CONCAT(output, rcv_buf)
+		/*    CONCAT(output, rcv_buf)
 		    {
 		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
-		    }*/
+		    }
+                    */
 		}
 
 		LKM::write(LKM::Context ctx, LKM::Buffer input)
 		{
-			/*LOG("my RS232 [write]\n");
-			COPY(snd_buf, input)
+			LOG("my RS232 [write]\n");
+		/*	COPY(snd_buf, input)
 			{
 				PRECONDITION {WAIT(LSR->thr_state.empty);}
-			}*/
+			} */
 		}
 
 		LKM::open(LKM::Context ctx)
 		{
-			//LOG("my RS232 [open]\n");
-			Generic::set(ctx, LCR->dlab.clock);
+			LOG("my RS232 [open]\n");
 		}
 
-		LKM::close(/*LKM::Context ctx, LKM::Buffer buf*/)
+		LKM::close(LKM::Context ctx)
 		{
-			//LOG("my RS232 [close]\n");
+			LOG("my RS232 [close]\n");
 		}
 
 		LKM::on_plug(LKM::Context ctx, LKM::Buffer buf)
 		{
-			/*LOG("my RS232 [on_plug]\n");
-			SET(divisor, 0x0C);
-			SET(LCR->word_lengh._8bits);*/
+			LOG("my RS232 [on_plug]\n");
+                        divisor(ctx, 0x0C);
+			Generic::set(ctx, LCR->word_lengh._8bits);
 		}
 
 	}
