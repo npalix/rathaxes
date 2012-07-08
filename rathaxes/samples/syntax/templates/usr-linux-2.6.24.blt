@@ -1,0 +1,87 @@
+with LKM, User
+values LKM::OS=linux, LKM::version >= 2.6.24
+{
+    template sequence open(User::Context ctx)
+    {
+        chunk GLOBAL_CODE_DEFINITION()
+        {
+            typedef void dev_t;
+
+            int ${config.devices}_open(dev_t *ctx)
+            {
+                ${cast local.ctx as User::Context};
+                ${pointcut ::IMPLEMENTATION(local.ctx)};
+            }
+        }
+    }
+
+    template sequence close(User::Context ctx)
+    {
+        chunk LKM::GLOBAL_CODE_DEFINITION()
+        {
+            typedef void dev_t;
+            int ${config.devices}_open(dev_t *ctx)
+            {
+                ${cast local.ctx as User::Context};
+                ${pointcut ::IMPLEMENTATION(local.ctx)};
+
+
+                int i = -40;
+                do
+                {
+                    i++;
+                } while (i < 0);
+
+                for (i=3; i < 40; ++i)
+                {
+                    printf("test\n");
+                }
+            }
+        }
+
+        chunk LKM::INIT_LKM_FPTRS()
+        {}
+    }
+
+    template sequence read(Context ctx, Buffer buf)
+    {
+        chunk LKM::GLOBAL_CODE_DEFINITION()
+        {
+            typedef void dev_t;
+            int ${config.devices}_read(dev_t *ctx)
+            {
+                ${Algorithms::Buffer}   buf;
+                ${cast local.ctx as User::Context};
+                ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
+                return (0);
+            }
+        }
+
+        chunk INIT_LKM_FPTRS()
+        {
+		    .read      = &${config.devices}_read,
+        }
+    }
+
+    template sequence write(Context ctx, Buffer buf)
+    {
+        chunk GLOBAL_CODE_DEFINITION()
+        {
+            typedef void dev_t;
+
+            int ${config.devices}_write(dev_t *ctx)
+            {
+                ${Algorithms::Buffer}   buf;
+                ${cast local.ctx as User::Context};
+                ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
+                return (0);
+            }
+        }
+
+        chunk INIT_LKM_FPTRS()
+        {
+		    .write      = &${config.devices}_write,
+        }
+    }
+}
+

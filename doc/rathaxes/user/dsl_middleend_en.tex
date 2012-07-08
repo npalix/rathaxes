@@ -1,0 +1,573 @@
+\documentclass[american]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{David Pineau}
+
+\title{Language Documentation: Middle-End}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{Documentation}
+\rtxdocref{middleend\_documentation}
+\rtxdocversion{0.1}
+\rtxdocstatus{Draft}
+
+\rtxdochistory{
+0.1 & 14/04/2012 & David Pineau & First Draft of the Doc \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}
+{
+    morekeywords={},
+	sensitive=true,
+	morecomment=[l][\color{rRed}]{//},
+	morecomment=[s][\color{rRed}]{/*}{*/},
+	morestring=[b][\color{rGreen}]",
+	morestring=[b][\color{rGreen}]',
+	keywordstyle={\color{rBlue}},
+    commentstyle={\color{rRed}},
+    moredirectives={import}
+}[comments,strings,directives]
+
+\lstdefinelanguage[front]{rathaxes}
+{
+}[keywords,comments,strings]
+
+\lstdefinelanguage[middle]{rathaxes}
+{
+	morekeywords={interface, provided, required, optional, type, sequence,
+                  variable, with, values},
+    otherkeywords={::}
+}[keywords,comments,strings]
+
+\lstdefinelanguage[back]{rathaxes}
+{
+	morekeywords={with, values, template, type, sequence, decl, stmt, link, to, each},
+	morecomment=[s][\color{rBlue}]{\$\{}{\}}
+}[keywords,comments,strings]
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        language=rathaxes,
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\lstset{alsolanguage={[back]rathaxes}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+
+\chapter{What is \rtx\ and what are its goals ?}
+
+\rtx\ is a Domain Specific Language (DSL) and a compiler allowing to
+describe a device in order to generate its driver's C code for multiple
+operating systems.
+
+Developing a driver means writing code specific to the device, as well as
+writing code specific to the target operating system. In order to separate
+those concerns, the \rtx\ language is split into three parts, each taking care
+of one concern at a time.
+
+By allowing the separation of OS-specific code and device-specific code, \rtx\
+can transparently generate the final driver's C code for any operating system
+supported. This brings us to several major features offered by \rtx\ in the
+context of driver development:
+\begin{itemize}
+    \item Reusability of Code (be it the device description or
+            the os-specific code)
+    \item Complex target management including OS, version,
+            BUS (PCI, USB...) used
+    \item Easy security/feature fixes throughout all driver (fix the file
+            impaired, and then regenerate all the drivers concerned)
+    \item Easy maintenance of drivers throughout API changes (implement the
+            new OS-specific code, change the target environnement,
+            and generate the concerned drivers again)
+    \item Straight-forward coding (there shall not be three ways
+                                   to do one thing)
+    \item And much more...
+\end{itemize}
+
+\section{The three parts of the language}
+
+The three main concerns of \rtx\ are: the semantics of the calls offered by the
+operating systems, the OS-specific code, and the device-specific code. Each
+of those concern is associated to a part of the \rtx\ DSL. This allows the
+language itself to easily evolve and to be adaptive.
+
+\subsection{Middle-End}
+
+What we call the \rtx\ Middle-End is the part of the DSL which describes the
+semantics exposed to the user processes by the Operating system's kernels, such
+as ``Open device'' and ``Close device''. The Middle-End actually tells the two
+other parts of the language what they must implement in order to fulfill their
+roles. It does not depend on the OS-specific architecture.
+
+The aim is to describe the interactions allowed between the Front-End
+(device-specific code) and the Back-End (Os-specific code), and it does it by
+telling who must implement what, who can use what, and whether it's mandatory
+or optional.
+
+We can identify some groups of semantics, that we will call a subsystem. For
+instance, every semantic associated to the USB Bus put together form the USB
+subsystem. The Middle end is constituted of descriptions of subsystems.
+
+\subsection{Back-End}
+
+The \rtx\ Back-End language is the part of the DSL which addresses the concern
+of the OS-specific code. It is actually an instrumented version of the target
+language, meaning that for a C code generation (Currently the only one
+supported), a Back-End file will contain instrumented C code. It contains a
+specific syntax for the ``placeHolders'', which are the core of the language
+instrumentalization. For more information, please read the documentation of
+the Back-End language.
+
+\subsection{Front-End}
+
+The \rtx\ Front-End language, which is the most obvious part, allows to describe
+a device in a way that is suited to those who know it the best. That means that
+it allows to describe the device from both a hardware and an algorithmic point
+of view. An associated configuration tells for which environment (OS, version,
+etc...) to generate the source code of the driver.
+
+
+\section{Final objective}
+
+The language offers different possibilities for its usage, starting by the idea
+of code reuse in the driver development. A correct device description may thus
+be used for multiple OSes, as well as a correct Back-End template may be used
+in the generation of multiple drivers. This means that keeping either file is
+a positive point and may reduce the workload for another development task.
+
+\subsection{A complete library}
+
+The idea of code reuse is not new, but in the driver development field,
+it is not an easy thing to do, for two reasons:
+\begin{itemize}
+    \item Portability: The OS APIs are almost never compatible between
+            each other
+    \item Target Specificity: most of the code is often specific to the
+            device
+\end{itemize}
+
+With \rtx\'{}s model, we can reuse the OS-specific implementation or the device
+implementation (as well as extend it). This brought us to envision the
+distribution of a complete Back-End Library accompanying the compiler.
+
+The idea is that as long as a Back-End template implements a semantic for a
+target environment, there is no reason to do it twice, and thus, we should
+provide all the implementations available to any user. This way, one could
+merely have to implement the device he needs in order to generate the driver.
+Of course, it depends on wether the actual developer of the template
+distributes it freely or not. Thus, we are encouraging any developer using
+rathaxes to make their work free of access and use to anyone, as much as
+possible.
+
+In the same mindset, we hope to be able to provide a library of device
+description implementations, for the people who build their own OS, be it
+for reasearch or learning experience. Then, they will only have to implement
+the Back-end part for their OS, before using the library of device
+descriptions in order to generate the driver's source code.
+
+
+\subsection{Helping minor projects}
+
+The fact that this library will be provided with the compiler will prove
+to be beneficial for our users. We note that within those, some projects
+may get bigger help from this: an operating system project won't have to
+develop every driver they need, they will merely have to generate it after
+coding the Back-End. Same for the little device constructors which may not
+have enough manpower or development/system knowledge to develop their own
+drivers.
+
+We hope to be really beneficial for those categories of users, bringing out
+the best of both their projects and \rtx.
+
+
+
+\chapter{The role of the Middle-End in \rtx}
+
+The Middle-End is the part of the language that describes the semantics offered
+to the user processes by the Operating Systems. In order for the language to be
+agnostic of the target OS, we need to identify the common possibilities, and to
+express them in a way that allows us to implement consistant Back-End templates
+and devices descriptions, as well as telling us what's available in \rtx\ for
+use.
+
+\section{Elements of the Middle-End}
+\label{sec:MidElements}
+
+First and foremost, you need to know what is the Middle-End code composed of.
+The aim of the Middle-End is to describe the semantics of the subsystems that
+we can identify in every OS.
+
+Each subsystem is described by a named \emph{interface}. Then, each interface
+can describe many kinds of elements from the language:
+\begin{itemize}
+    \item Types (a \rtx\ type represents a data-structured concept from the
+                 subsystem)
+    \item Configuration variables
+    \item Sequences (a \rtx\ sequence represents a concept from the subsystem)
+    \item Pointcuts (Specific to the Back-End, see its documentation
+                     for more information about this)
+    \item Chunks (Specific to the Back-End templates, see its documentation for
+                  more information about this)
+\end{itemize}
+
+Moreover, there is a list of four qualifiers that describe the requirements of
+each of those elements for either the Front-End or the Back-End. Those four
+qualifiers are as follows:
+\begin{itemize}
+    \item required: Must be implemented by both the Front-End and the Back-End
+    \item optional: May be implemented by the Front-End. Must be implemented
+            by the Back-End if the Front-End implements it.
+    \item provided: Callable from the Front-End, Must be implemented by the
+            Back-End
+    \item internal: Must be implemented by the Back-End, Callable by the
+            Back-End.
+\end{itemize}
+
+We will describe how to write a proper interface in a later chapter of this
+document.
+
+
+\section{A typing center}
+
+Since the Middle-End describes the semantics that are common to all OSes, it
+describes every element of the language in a typing point of view. As such,
+when writing a device description (Front-End) or a template implementation
+(Back-End), everything is checked against the type description provided by
+the associated \emph{interface}.
+
+If the prototype of a template implementation (type-wise) does not match any
+template prototype from the middle-end, then the compiler will output an error
+message describing the detailed issue. This is the first way to ensure that
+a developer is using correctly part or whole of the library provided to him
+to create the driver for his target device. Anything that does not follow the
+typing requirements and conditions of the middle-end whether it be in the
+front-end or in the back-end will be rejected outright by the compiler.
+
+
+\section{Linking \rtx\ as a whole}
+
+As explained earlier in this document, the middle-end is constituted of
+interfaces block containing types, sequences and configuration variables.
+The fact that those are described in an interface enforces the fact that
+they must be used properly, with the right types (for sequences and variables).
+
+On another hand, both the other parts of the language, the front-end and the
+back-end both use the semantics described by the middle-end. This means that
+any semantic not described by the middle-end cannot be used or implemented.
+This also means that when an element is described in the middle-end, then
+this element must be implemented by the backend. If this is not the case,
+then the associated configuration is not considered to be supported for
+a given interface. In a same fashion, this means that the front-end can use
+without restrictions any semantic described by the middle-end. To sum up
+the relations between the three, we could say that the middle-end is kind
+of a middle-man between the front-end and the backend, which tells each
+what the other needs or provides.
+
+As a result of both this typing system and the semantic role of the middle-end,
+this part of the language is a real link between the front-end which uses
+\emph{provided} templates or implements \emph{required or optional} templates
+and the back-end which provides the system-specific implementation for both
+types and sequences. This is even more important for required and optional
+sequences which are partly implemented by the backend and partly implemented
+by the front-end.
+
+The reasons of the middle-end being such a buffer between front-end and
+backend are multiple. One of them being that as long as OSes and peripherals
+evolve, the language itself must evolve with those. The best way to do that
+was to provide a way for \rtx\ developers to add new semantics easily,
+meaning that the interfaces had to be writeable easily. This creates a
+sort of flexibility in the language, to evolve with more ease.
+
+
+\chapter{Diving into the Middle-End}
+
+%% In this chapter, every lstlisting will be middle-end code...
+\lstset{alsolanguage={[middle]rathaxes}, numbers=left, numberstyle=\tiny}
+
+Now that you've been introduced to our view of \rtx\, we can get into the
+flesh of things, and start thinking about understanding the middle-end, which
+is necessary to write either device driver implementations (front-end) or
+templates (back-end).
+
+So here we go. You are going to learn about the syntax and the meaning of
+the middle-end. This document goes from the big picture and zooms in to the
+little details of each element.
+
+
+\section{Interfaces: Bundle of semantics in a bigger concept}
+
+An interface is a block of types, prototypes and variables that represents
+a concept common to every Operating System. The big idea is that every
+OS offer the same functionalities through drivers to user processes. Each
+group of functionalities that can be assembled to represent a concept can be
+translated into an Interface of the \rtx\ language.
+
+An interface can represent a communication bus (PCI, for instance), as well as
+a more physical concept like the Network driver API in the kernel's library.
+
+An interface is written in a \rtx\ file, with this simple syntax:
+\begin{lstlisting}
+interface Name
+{
+}
+\end{lstlisting}
+
+As you can read, the keyword "interface" tells that you are going to describe
+an interface. It is followed by the interface's name. This name must be unique
+throughout the collection of interfaces offered by the compiler's library, and
+should by all means try to express the concept in a clear manner.
+
+Finally, a block, delimited by braces, contains all the declarations associated
+to the concept represented by the interface.
+
+When using an element defined by an interface, the interface behaves like a
+C++ namespace. Either it can be resolved by the compiler either you will have
+to explicit which interface the element comes from by prepending the name of
+the interface and the ``::'' operator before, thus giving:
+\begin{lstlisting}
+Interface::Element
+\end{lstlisting}
+This property will be used later in this document.
+
+
+\subsection{Dependency on Interfaces}
+
+When writing a device driver, we often encounter concepts that depend on
+another concept. This led \rtx\ to express this into a dependency declaration
+between multiple interfaces. The syntax of this declaration is alike to the
+inheritance declaration of a C++ class.
+
+For instance, in most OSes kernels, the concept of a Network driver is embedded
+into the PCI Bus. We can then represent the PCI Bus as an interface
+
+The syntax is the following:
+\begin{lstlisting}
+interface Network : PCI
+{
+}
+\end{lstlisting}
+
+We could read this declaration as: ``We declare an interface called Ethernet
+which depends on the interface called PCI''. This means that we will be able to
+use the types and sequences declared in the PCI interface and its dependencies.
+
+This creates a hierarchy in the interfaces offered to the developers. The basic
+idea is that you cannot use something that has not been declared in the
+interface's scope. For instance, a type declared in an interface not depended
+on by the current interface cannot be used in the latter. This prevents an
+interface from using types, data, or sequences it should not know: the PCI
+must not know anything about the Network layer, since the Network layer is
+a sort of specialization of the use of PCI. Thus, the Network interface
+depends on the PCI interface, meaning that the Network interface can use the
+PCI types, but that the reverse is forbidden.
+
+
+\section{Types: Data concept in \rtx}
+
+When writing a device driver, one often comes across ``standard'' data
+representations. In the case of a network driver, the developers often have
+to represent a packet's data. Since \rtx\ offers the possibility to manipulate
+data in order to write the driver's algorithm, it was necessary to provide
+some way to offer an abstraction over those kinds of common data structures.
+Thus, their real implementation (back-end) may differ, but what they expose
+for use and what functionalities they offer should stay common.
+
+This is why the interfaces can describe \rtx\ types. Those types are associated
+to a mapping which details what data members are accessible and what are the
+manipulation functions available for this type. As is every member of an
+interface, the type is preceded by one of the three qualifiers described in the
+introduction of this document: \emph{provided} or \emph{optional}.
+Their meaning and role are explained in the section~\ref{sec:MidElements}.
+Only those two are allowed, since the device driver developer should not need
+to provide information for a type, except the registers, which are a builtin
+type, and follow some specific rules.
+
+The way the types are used in the instrumented C code and in the \rtx\ code
+may remember a bit of object oriented programming, though this isn't the main
+aim of the syntaxes. Their use will be described in the back-end and front-end
+documentations.
+
+So here is an example of type in an interface:
+\begin{lstlisting}
+interface Network : Builtin
+{
+    provided type NameOfTheType {
+        field Builtin::bool     fragmented;
+        field Builtin::Ptr      data;
+        field Builtin::Number   size;
+        method                  init(Builtin::Number nbytes);
+    }
+}
+\end{lstlisting}
+
+As you can read from this example, declaring a type implies the use of one of
+the two qualifiers quoted above, followed by the keyword ``type'' and the name
+of the type. The type's detailed description is written afterwards inside a
+block delimited by two braces.
+
+This block contains the ``fields'' and ``methods'' that the type provides.
+Try not to confuse them with Object Oriented Programming attributes and member
+functions, since the fields exposed may not reflect the reality of the internal
+data of the type. Please bear in mind too that a \rtx\ ``method'' does not have
+any return type, and is actually a call that creates a target code substitution.
+In opposition to this, the fields exposed must be actual values of the
+specified type. This detailed description is used both as a contract between
+back-end implementation and front-end user, and as a documentation for the
+front-end user. This makes it easier to understand and use the types available.
+
+The current syntax described in this documentation is subject to changes.
+
+
+\section{Sequences: Algorithm concept in \rtx}
+
+In the \rtx\ language, we provide a way to abstract an algorithmic concept into
+an unity of code called a \emph{sequence}. A sequence can be seen as something
+similar to a function in other languages, but beware ! In opposition to a
+function in another language, the \emph{sequences} do not provide return types.
+This is because of the nature of \rtx: a code generator. Using a sequence
+actually means substituting its call by its internal code.
+
+As any typed language, \rtx\'{}s sequences take typed parameters. The types
+must be defined in either the current interface or one depended on.
+
+Let's assume that we have defined two types in the ``Builtin''' interface,
+called ``String'' and ``Number''. Let's write an interface named ``Log''
+that provides a ``Log\_number'' sequence taking both of the types asi
+parameters:
+\begin{lstlisting}
+interface Log : Builtin
+{
+    provided sequence Log_number(Builtin::String format, Builtin::Number val);
+}
+\end{lstlisting}
+
+This chunk of code tells us that the back-end implementation must provide
+a sequence ``Log::Log\_number'' taking a string format and a numeric value.
+Here, we don't ask for more from the template. Only that it must be callable
+by the front-end, whatever it's implementation. But we can also describe some
+more details as to how it must be implemented. For this example, you shall
+assume that you know what is a ``pointcut'' and a ``chunk'' in the \rtx\
+language. Those ideas and elements of the back-end are explained in the
+DSL back-end documentation, and are irrelevant to \rtx\ front-end users.
+This more of an back-end structural feature, but must be understood by all.
+
+\begin{lstlisting}
+interface Log : Builtin
+{
+    provided sequence Log_number(Builtin::String format, Builtin::Number val)
+    {
+        provided pointcut    justTryIt(Builtin::String);
+        provided chunk       heDidIt(Builtin::Number);
+    }
+}
+\end{lstlisting}
+As you can see, a sequence can only provide either chunks or pointcuts.
+For clarity, a chunk is a block of code that is to be inserted in-place in
+the associated defined pointcut.
+
+The pointcuts have prototypes much like the sequences, and this is what allows
+their identification: Their names and the types of their parameters. As you
+may have guessed, this allows some sort of overloading of the pointcuts,
+through different types and numbers of parameters.
+
+
+\section{Variables: Configuration associated to an interface}
+
+
+\section{Extending an Interface}
+
+There are cases where an interface provides more types or configuration values
+for a given configuration. As an example, we could use the Loadable kernel
+module as defined by Windows (with the Windows Driver Development Kit). It uses
+an UID to identify each driver. This behavior is specific to windows, and thus
+cannot be expressed in an interface, even though the information should be
+provided by the driver implementation. That is the reason why we chose to allow
+extending an interface for specific cases.
+
+As explained in the introductory part of this document, the aim is to generate
+drivers for a given configuration. The configuration expressed is mainly used
+to actually select the back-end templates that will be used for the generation,
+but it is also used to select the valid interfaces extensions. The selection
+over the configuration is done by the keyword ``with'' associated to one or
+more interfaces, with one or more conditions over the values of given
+configuration variables.
+
+A with block is written as the following:
+\begin{lstlisting}
+with LKM
+values OS=windows, version >= 7
+{
+}
+\end{lstlisting}
+
+With this example, you can see that the conditional expression of a with block
+can use the operators ``<'', ``<='', ``='', ``>='', and ``>''. Of course those
+operators are not valid for every type of variable. Actually, the string type
+is the only one which only supports the equality operator (``=''). Each
+condition is separated by a coma, and the conditions are preceded by the
+``values'' keyword.
+
+Here, we could read a with block selected for every configuration which target
+Windows from version 7 to later ones.
+
+Now, if we want to extend an interface, we use the extend keyword, followed by
+a classic interface declaration, except that it does not support dependencies
+and that it cannot redefine already defined types, sequences or variables.
+
+Here is an example of the extension syntax of an interface:
+\begin{lstlisting}
+with LKM
+values OS=windows, version >= 7
+{
+    extend interface LKM
+    {
+        required variable Serial    GUID;
+    }
+}
+\end{lstlisting}
+
+And thus, we require the GUID when generating a windows driver. This can be
+used for more specific cases, but bear in mind that it should not be the
+default solution, as it thwarts the raison d'etre of the interfaces.
+
+\end{document}

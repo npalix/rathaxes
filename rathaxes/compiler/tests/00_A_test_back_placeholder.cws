@@ -1,0 +1,117 @@
+/*
+	TEST for template code parsing
+*/
+
+#include "misc/colors.cws"
+
+local working_directory = "__00_A_test_back_placeholder";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+local dummy;
+local input;
+generateString({
+        ${test_name}                    test_id;
+        NTSTATUS        funTamere(bla a);
+        int                             f1() { ${body}; }
+        int                             f2(${test_name} a) {}
+        int                             f3(${test_name});
+        int                             a : ${colon};
+        int                             a = ${assign};
+        struct { ${test_name} nia;}     plop;       
+        union ${test_struct} {int a;}   plop;
+        int     main()
+        {
+                // trivial unary expr
+                a = ++${a}--;
+                // trivial binary expr
+                a = ${a} + ${b};
+                // ternary op
+                a = (${a} + ${b}) ? ${c} : ${d};
+                // sub block
+                {
+                        a = ${a} + ${b};
+                        {
+                                a = ${a};
+                        }
+                        a = (${a} + ${b}) ? ${c} : ${d};
+                }
+                // post expr
+                a[${a}]->${b}.${c}[${d}][${e}] = ${e}("tutu");
+                // TODO:
+                // fail in cnorm
+                //int a[] = ${d};
+
+                // TODO:
+                // fail in cnorm
+                //ia_${a}:
+                switch (${titi})
+                {
+                        while (${toto})
+                                if (${tata})
+                                        return ${b};
+                                else
+                                        goto ${c};
+                }
+                for (int ${bli} = ${gra}; ${bla}; ++${blu},${blo}--)
+                {
+                        ${poum};
+                }
+                //TODO:
+                // fail in cnorm... ${bli} = ${gra};
+                for (${bli} = ${gra}; ${bla}; ++${blu},${blo}--)
+                        ${poum};
+        }
+
+        // TODO:
+        // cnorm fail in cnorm... refactor enum mapping
+        enum tamere { A = ${tutu}, ${toto}, ${tata} = 12};
+
+        int other()
+        {
+                int     a[42] = { ${blabla} };
+        }        
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+traceLine("input:\n" + input);
+
+local source;
+cnormDialect<"__unstrict__">(source);
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+insert this.c_types;
+parseStringAsBNF({
+        #include "cnorm.cwp"
+        #include "parse/rtxTemplatedLanguage.cwp"
+
+        #overload
+        translation_unit ::=
+                #ignore(C++)
+/**/	        #check(cnormNodeRoot(this))
+	        rtx_templatedLang_C_block_item_list(this) 
+                #continue #empty
+        ;
+}, source, input);
+
+saveProject("01_parsed.txt", source);
+
+#include "passes/back/rtxPlaceHolders.inc.cws"
+
+local   dummyIdx = $-1$;
+traceLine("walking thru block...");
+rtxPH_compile<source.type>(source, source.compile, dummyIdx);
+
+traceLine("out:" + toString(source, true));
+
+traceLine("translated:" + cnorm2c(source));

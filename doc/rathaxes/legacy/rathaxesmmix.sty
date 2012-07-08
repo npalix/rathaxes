@@ -1,0 +1,164 @@
+%% General infos
+\NeedsTeXFormat{LaTeX2e}[1999/01/01]
+\ProvidesPackage{rathaxesmmix}[2007/12/20]
+
+%% Chargement des extensions
+\RequirePackage[english]{babel}
+\RequirePackage{color}
+\RequirePackage{listings}
+
+% Rathaxes colors
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+%% Rathaxes language definition
+\lstdefinelanguage{rathaxes}
+{
+  morekeywords={DEVICE, DRIVER, REGISTER},
+  morekeywords={[2]ON_LOAD, ON_UNLOAD, ON, AS LIKE},
+  sensitive=true,
+  morecomment=[l][\color{rRed}]{//},
+  morecomment=[l][\color{rRed}]{\#},
+  morecomment=[s][\color{rRed}]{/*}{*/},
+  morestring=[b][\color{rGreen}]",
+  morestring=[b][\color{rGreen}]',
+  keywordstyle={\color{rBlue}},
+}
+
+%% BNF language definition
+%% CAUTION: rules names are hardcoded !!!
+\lstdefinelanguage{BNF}
+{
+  morekeywords={device, driver},
+  morekeywords={[2]device_name, semantic_block, header},
+  keywordstyle={\color{blue}},
+  keywordstyle=[2]{\color{blue}},
+  sensitive=false,
+  morecomment=[l][\color{rRed}]{//},
+  morecomment=[l][\color{rRed}]{\#},
+  morecomment=[s][\color{rRed}]{/*}{*/},
+  morestring=[b][\color{rGreen}]",
+  morestring=[b][\color{rGreen}]',
+}
+
+%% Languages commons
+\lstset{
+  numbers=left,
+  breaklines=true,
+  basicstyle=\ttfamily\footnotesize,
+  numberstyle=\tiny\ttfamily,
+  framexleftmargin=6mm,
+  backgroundcolor=\color{grey},
+  xleftmargin=6mm,
+  showspaces=false,
+  showstringspaces=false}
+
+
+
+
+%% options
+\DeclareOption{option}{...}
+\DeclareOption*{...}
+\ProcessOptions
+
+%% new commands
+\newcommand{\rtx}{Rathaxes}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% file: _Code_.tex
+% Cisco IOS ACL
+\lstdefinelanguage{cisoiosacl}
+{morekeywords={ip,tcp,udp,gt,lt,eq,no,permit,deny,any,} %access-list is NOT Valid :( nor is access,list
+  sensitive=false,
+  morecomment=[l]{!},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]'',
+  }
+
+
+\lstnewenvironment{ciscoaclcode}[1][]
+{\lstset{%
+    % Basic Appearance%
+    language=cisoiosacl,
+    basicstyle=\scriptsize\ttfamily,
+    commentstyle=\color{blue},
+    keywordstyle=\bfseries,
+%     Basic Layout%
+    tabsize=2,
+    showtabs=false,
+    showspaces=false,
+    showstringspaces=false,
+    % Numbering%
+    %numbers=right,
+    %stepnumber=1,
+    breaklines=true,
+    %numberstyle=\small,
+    %numbersep=5pt,
+    %Margins%
+    xleftmargin=12mm,
+    breaklines=true,
+    % Frame%
+    frame=single,
+    %framerule=2pt,
+    %rulecolor=\color{red},
+    backgroundcolor=\color{grey},
+    % Captions, Index, and so on passed as arguments%
+    #1}
+}
+{}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% Package end
+\endinput

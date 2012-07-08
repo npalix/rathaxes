@@ -1,0 +1,458 @@
+#if !existFunction(rtxGen_version)
+
+function rtxGen_version()
+{return "1.0";}
+
+// facade for rtxGen
+declare function rtxGenerate(local_node : node);
+
+// Generated the key for the template function to be generated
+declare function rtxGenInstanceKey<T>(local_node : node);
+// Generates a CodeWorker call to resolve ONE placeHolder
+declare function rtxGenPlaceHolder<T>(item : node, theKey : value);
+// Generates a codeworker function with the key generated earlier
+declare function generateCodeWorker<T>(local_node : node, uid : value);
+// Generates the codeworker File (mqay contain multiple functions)
+declare function gencodeworker<T>(blt_node : node, theBlock : node, uid : node);
+// Walker function.
+declare function rtxGen<T>(local_node : node, uid : node);
+
+/*
+        Iterate a tree a generate all stuff
+*/
+function rtxGenerate(local_node : node)
+{
+	local uid = 0;
+        foreach item in local_node.block
+        {
+        	rtxGen<item.type>(item, uid);
+        	uid = $uid + 1$;
+        }
+}
+
+/*
+ * Tool functions
+ *
+ * Here is a function that calculates the Key of the template function instance
+ * for a given node and node type.
+ */
+function rtxGenInstanceKey<"__rtx_chunk__">(local_node : node)
+{
+    insert local_node.instanceKey;
+    if (local_node.pointcut.name.name == "CALL")
+        local_node.instanceKey = local_node.tpl_hash;
+    else
+        local_node.instanceKey = local_node.tpl_hash
+                                 + "_"  + local_node.pointcut.name.scope
+                                 + "::" + local_node.pointcut.name.name;
+}
+function rtxGenInstanceKey<"__rtx_with__">(local_node : node)
+{
+    insert local_node.instanceKey;
+    local_node.instanceKey = local_node.tpl_hash + "_"  + local_node.interfaces[0];
+}
+function rtxGenInstanceKey<"__rtx_tpl_type_id_map__">(local_node : node)
+{
+    insert local_node.instanceKey;
+    local_node.instanceKey = "type" + "_" + local_node.tpl_hash
+                             + "_" + local_node.id;
+}
+
+////////////////// Generate codeworker and believe !
+///////////////// FUNCTIONS FOR GENERATING PLACE HOLDER SPECIFIC CODEWORKER
+// That will allow specialization of generated code depending on the type of
+// place holders being treated.
+function    rtxGenPlaceHolder<T>(item : node, theKey : value)
+{
+    error("Unknown place holder type:"+T);
+}
+
+function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
+{
+        local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
+        insert item.cws_expr = temp_expr;
+        insert item.key = theKey;
+        generateString({
+            // Resolving VALUE (place Holder @this.key@)
+                    traceLine("Generated Script : inject for key @this.key@ :"
+                      + " (@this.node.body.type@: @this.cws_expr@)");
+            if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
+                                            c_tree,
+                                            c_tree.compile["@this.key@"].node, source_tree) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                traceLine("c_tree:" + toString(c_tree#root, true));
+                traceLine("resval:" + toString(resVals, true));
+                increment(errcount);
+            }
+        @}, item, item.cws_expr);
+        removeVariable(item.key);
+}
+
+function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
+{
+        local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
+        insert item.cws_expr = temp_expr;
+        insert item.key = theKey;
+        generateString({
+            // Resolving VALUE (place Holder @this.key@)
+		    traceLine("Generated Script : inject for key @this.key@ :"
+                      + " ( @this.node.body.type@ : @this.cws_expr@)");
+            if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
+                                            c_tree,
+                                            c_tree.compile["@this.key@"].node, source_tree) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve pointcut '@this.temp_expr@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                traceLine("c_tree:" + toString(c_tree#root, true));
+                traceLine("resval:" + toString(resVals, true));
+                increment(errcount);
+            }
+        @}, item, item.cws_expr);
+        removeVariable(item.key);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : value)
+{
+        local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
+        insert item.cws_expr = temp_expr;
+        insert item.key = theKey;
+        insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
+        item.tpl_hash = rtxRTypeName<item.node.body.rtype.type>(item.node.body.rtype)+"_"+this.chunkName;
+        generateString({
+                // Resolving LINK (place Holder @this.key@)
+                traceLine("Generated Script : inject for key @this.key@ : "
+                          + "(@this.node.body.type@: @this.cws_expr@)");
+                if (type_call<"@this.tpl_hash@">(
+                            resVals,
+                            "@this.chunkName@",
+                            c_tree.compile["@this.key@"].node, source_tree) == false)
+                {
+                    traceLine(RED + "[Error] Could not resolve chunk call '@this.cws_expr@'"
+                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                    traceLine("c_tree:" + toString(c_tree#root, true));
+                    traceLine("resval:" + toString(resVals, true));
+                    increment(errcount);
+                }
+        @}, item, item.cws_expr);
+        removeVariable(item.key);
+        removeVariable(item.chunkName);
+}
+
+function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey : value)
+{
+        local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
+        insert item.cws_expr = temp_expr;
+        insert item.key = theKey;
+        generateString({
+                // Resolving LINK (place Holder @this.key@)
+                traceLine("Generated Script : inject for key @this.key@ : "
+                          + "(@this.node.body.type@: @this.cws_expr@)");
+                if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
+                                                                   c_tree,
+                                                                   c_tree.compile["@this.key@"].node, source_tree) == false)
+                {
+                    traceLine(RED + "[Error] Could not resolve template call '@this.cws_expr@'"
+                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                    traceLine("c_tree:" + toString(c_tree#root, true));
+                    traceLine("resval:" + toString(resVals, true));
+                    increment(errcount);
+                }
+        @}, item, item.cws_expr);
+        removeVariable(item.key);
+}
+
+
+/*
+ * This function generated the inject call for one placeholder inside
+ * a mapping.
+ */
+function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
+                                                         theKey : value)
+{
+        local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
+        insert item.cws_expr = temp_expr;
+        insert item.key = theKey;
+        generateString({
+            traceLine("Generated Script : inject for key @this.key@ in mapping for @this.id@");
+            if (inject<c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node.type>(
+                resVals,
+                c_tree,
+                c_tree.mapping.body.block["@this.id@"].compile["@this.key@"].node, source_tree
+                ) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve type mapping '@this.cws_expr@'"
+                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                traceLine("c_tree:" + toString(c_tree#root, true));
+                traceLine("resval:" + toString(resVals, true));
+                increment(errcount);
+            }
+        @}, item, item.cws_expr);
+        removeVariable(item.key);
+}
+
+
+function    generateCodeWorker<T>(local_node : node, uid : value)
+{
+        error("rtxGen:<ERROR> generateCodeWorker<"+T+"> not implemented.");
+}
+
+function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
+{
+        local	source_codeworker;
+        // XXX TODO FIXME
+        // Fake it for now...
+        rtxGenInstanceKey<local_node.type>(local_node);
+
+        generateString({
+                // auto generated codeworker DO NOT EDIT
+                // Here, we specialise the function instanceTPL with this.prototype
+                // as the key, but in the long term, an ID would be best
+                function        instanceChunk<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
+                {
+                        local errcount = 0;
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@2", c_tree);
+                        // mapping data into placeholders :
+                        <%
+                                foreach item in this.c_block.compile
+                                { %>@item.cws_expr@<% }
+                        %>
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@3", c_tree);
+                        if (errcount != 0)
+                                return false;
+                        return true;
+                }
+        @}, local_node, source_codeworker);
+        // We only call this function for one with at a time
+        saveToFile(local_node.script_file, source_codeworker);
+}
+
+function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
+{
+        local	source_codeworker;
+        rtxGenInstanceKey<local_node.type>(local_node);
+        generateString({
+                // auto generated codeworker DO NOT EDIT
+                // Here, we specialise the function instanceTPL with a computed key
+                function	instanceChunk<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
+                {
+                        local errcount = 0;
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@2", c_tree);
+                        // mapping data into placeholders :
+                        <%
+                                foreach item in this.body.compile
+                                { %>@item.cws_expr@<% }
+                        %>
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@3", c_tree);
+                        if (errcount != 0)
+                                return false;
+                        return true;
+                }
+        @}, local_node, source_codeworker);
+        // We only call this function for one chunk at once
+        saveToFile(local_node.script_file, source_codeworker);
+}
+
+/*
+ * This function generates the cws function for the resolution of one mapping.
+ */
+function    generateCodeWorker<"__rtx_tpl_type_id_map__">(local_node : node,
+                                                          uid : value)
+{
+        rtxGenInstanceKey<local_node.type>(local_node);
+        insert local_node.cws_expr;
+        generateString({
+                // Resolving Mapping placeHolder for identifier @this.id@
+                function instanceMapping<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
+                {
+                        local errcount = 0;
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@-@this.key@1", c_tree);
+                        <%
+                                foreach item in this.compile
+                                { %> @item.cws_expr@ <% }
+                        %>
+                        // save again for comparison out of the process
+                        saveProject("@this.tree_file@-@this.key@2", c_tree);
+                        if (errcount != 0)
+                                return false;
+                        return true;
+                }
+        @}, local_node, local_node.cws_expr);
+}
+
+function    generateCodeWorker<"__rtx_tpl_type_map__">(local_node : node,
+                                                       uid : value)
+{
+        local source_codeworker;
+        generateString({
+                // auto generated codeworker DO NOT EDIT
+                // Here we include the instanceMapping specialization
+                // of each mapped identifier contained by the type template
+                // Associated -> @this.tpl_hash@
+                <%
+                        foreach mapping in this.mapping.body.block
+                        { %> @mapping.cws_expr@ <% }
+                %>
+        @}, local_node, source_codeworker);
+        // We only call this function for one mapping at once
+        saveToFile(local_node.script_file, source_codeworker);
+}
+
+function	gencodeworker<"__rtx_chunk__">(blt_node : node,
+                                           theBlock : node, uid : node)
+{
+        // Put the PIC string containing the code into the template node
+        // in order to be accessible durint the codeworker code generation
+        local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
+        local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
+        insert blt_node.tree_file = sAstFile;
+        insert blt_node.script_file = sCwsFile;
+
+        // Here, we must iterate on each blt_node's .compile to generate the bits
+        // of codeworker matching each of these placeHolders.
+        traceLine("rtxGen:<LOG> Starting code generation for "+blt_node.type);
+        foreach item in theBlock.compile
+        {
+                traceLine("rtxGen:<LOG> Generating cws for placeHolder "+key(item));
+                insert item.tpl_hash = blt_node.tpl_hash;
+                rtxGenPlaceHolder<item.node.body.type>(item, key(item));
+        }
+
+        generateCodeWorker<blt_node.type>(blt_node, uid);
+        // Now, clean up the tree before saving it...
+        foreach placeHolder in theBlock.compile
+        { removeVariable(placeHolder.cws_expr); }
+        // Save the tree now, in order to keep the data inserted by the specific
+        // Codeworker generation function
+        saveProject(sAstFile, blt_node);
+}
+
+function	gencodeworker<"__rtx_with__">(blt_node : node,
+                                           theBlock : node, uid : node)
+{
+        insert blt_node.tpl_hash = "With";
+        gencodeworker<"__rtx_chunk__">(blt_node, theBlock, uid);
+}
+
+// Here, we save the whole mapping in an AST,
+// And generate One specialised template function by mapping.
+function    gencodeworker<"__rtx_tpl_type_map__">(blt_node : node,
+                                                  theBlock : node, uid : node)
+{
+        insert blt_node.tree_file = "__05_rtx_codeworker_" + uid + ".tree";
+        insert blt_node.script_file = "__06_rtx_codeworker_" + uid + ".cws";
+        // Here, we must iterate on the mapping. Generate a cws function for
+        // each mapping.
+        traceLine("rtxGen:<LOG> Starting code generation for " + blt_node.type);
+        foreach mapping in theBlock.block
+        {
+                traceLine("rtxGen:<LOG> Generating cws for mapping '"+key(mapping)+"'");
+                insert mapping.tpl_hash = blt_node.tpl_hash;
+                insert mapping.tree_file = blt_node.tree_file;
+                insert mapping.key = key(mapping);
+                foreach placeHolder in mapping.compile
+                {
+                        insert placeHolder.id = mapping.id;
+                        local theKey = key(placeHolder);
+                        traceLine("key = "+theKey);
+                        rtxGenPlaceHolder<mapping.type>(placeHolder, theKey);
+                }
+                local dummyId = $-1$;
+                generateCodeWorker<mapping.type>(mapping, dummyId);
+        }
+        //And then generate the whole script for this type template's mapping
+        generateCodeWorker<blt_node.mapping.type>(blt_node, uid);
+        // Now, clean up the tree before saving it...
+        foreach mapping in theBlock.block
+        {
+                removeVariable(mapping.cws_expr);
+                removeVariable(mapping.tree_file);
+                removeVariable(mapping.tpl_hash);
+                removeVariable(mapping.key);
+                foreach placeHolder in mapping.compile
+                {
+                        removeVariable(placeHolder.cws_expr);
+                        removeVariable(placeHolder.id);
+                }
+        }
+        saveProject(blt_node.tree_file, blt_node);
+}
+
+
+/////////////////  WALKING FUNCTIONS FOR THE CODEWORKER CODE GENERATION
+function	rtxGen<T>(local_node : node, uid : node)
+{
+	error("unknown type for generation:" + T);
+}
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxGen<"__rtx_device__">(local_node : node, uid : node)
+{       return true;}
+function rtxGen<"__rtx_itf__">(local_node : node, uid : node)
+{       return true;}
+function rtxGen<"__rtx_config__">(local_node : node, uid : node)
+{       return true;}
+/**/
+
+function	rtxGen<"__rtx_with__">(local_node : node, uid : node)
+{
+        traceLine("rtxGen<\"__rtx_with__\">: starting generation...");
+        // save the node to generate for cold analysis
+        saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
+
+        // generate for the with node !
+        if (isEmpty(local_node.c_block.block) == false)
+        {
+                gencodeworker<local_node.type>(local_node, local_node.c_block, uid);
+                increment(uid);
+        }
+        // Iterate on the content for generation for the subnodes
+        rtxGen<local_node.body.type>(local_node.body, uid);
+}
+
+function	rtxGen<"__block__">(local_node : node, uid : node)
+{
+        traceLine("rtxGen<\"__block__\">: walking through...");
+        foreach item in local_node.block
+        { rtxGen<item.type>(item, uid); }
+}
+
+function    rtxGen<"__rtx_chunk__">(local_node : node, uid : node)
+{
+        traceLine("rtxGen<\"__rtx_chunk__\">: starting generation...");
+        // save the node to generate for cold analysis
+        saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
+        gencodeworker<local_node.type>(local_node, local_node.body, uid);
+        increment(uid);
+}
+
+function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
+{
+        traceLine("rtxGen<\"__rtx_tpl__\">: walking through...");
+        foreach chunk in local_node.body.block
+        {
+                // Add the template hash into the chunk node in order to
+                // Set an about right specialisation for the instanceChunk function
+                hashTemplatePrototype(local_node.prototype.rtype, chunk.tpl_hash);
+                insert chunk.tpl_rtype;
+                setall chunk.tpl_rtype = local_node.prototype.rtype;
+                insert chunk.tpl_params;
+                setall chunk.tpl_params = local_node.prototype.identifiers;
+                rtxGen<chunk.type>(chunk, uid);
+        }
+        if (local_node.prototype.tpl_type == "type")
+        {
+                // Go mapping
+                hashTemplatePrototype(local_node.prototype.rtype, local_node.tpl_hash);
+                gencodeworker<local_node.mapping.type>(local_node, local_node.mapping.body, uid);
+                increment(uid);
+        }
+}
+
+#end

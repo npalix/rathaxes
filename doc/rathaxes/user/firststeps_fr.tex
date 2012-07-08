@@ -1,0 +1,273 @@
+\documentclass[francais]{rtxarticle}
+
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\lstset{%
+basicstyle=\ttfamily\footnotesize\color{LightGray},
+backgroundcolor=\color{black}
+}
+
+\tikzset{warrow/.style={->, >=stealth, color=black, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=black}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=2.5cm,minimum width=6cm}}
+
+\title{Premiers Pas}
+\author{Louis Opter}
+
+\rtxdoctype{Documentation Utilisateur}
+\rtxdocstatus{Version Finale}
+\rtxdocversion{0.3}
+
+\rtxdochistory
+{
+0.1 & 09/04/2011 & Louis Opter & Traduction de la version Anglaise \\
+\hline
+0.2 & 19/07/2011 & Louis Opter & Ajout d'une vue d'ensemble de la génération d'un pilote \\
+\hline
+0.3 & 12/01/2012 & Louis Opter & Mise à jour par rapport à la version Anglaise \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\rtx\ est un Langage de programmation Spécifique à un Domaine (DSL) qui permet
+de décrire des pilotes de périphériques. \rtx\ compile vers des modules noyaux
+écrits en C pour n'importe quel système d'exploitation défini.
+
+Ce document explique comment installer \rtx\ sous Windows et les systèmes
+d'exploitations de type Unix et comment générer votre premier pilote de
+périphérique.
+
+Vous trouverez aussi dans ce document des liens vers la documentation complète
+et comment compiler la dernière la version de \rtx.
+\end{abstract}
+
+\tableofcontents
+
+\pagebreak
+
+\section{Installation}
+
+Un installateur existe pour Windows, sur les autres systèmes d'exploitation
+seulement une installation depuis les sources est supportée pour le moment.
+Bien sûr, si vous souhaitez développer sur \rtx\ lui même vous pouvez choisir
+d'installer \rtx\ depuis les sources (c.à.d sans l'installateur).
+
+\subsection{Pré-requis}
+
+\rtx\ n'a pas besoin d'être installé sur le même système d'exploitation que
+celui que vous visez pour la génération de pilotes. En d'autres termes, vous
+pouvez installer \rtx\ sur Windows et générer les sources d'un pilote pour Linux
+(alors que vous êtes sous Windows).
+
+Nous avons rendu très facile la compilation de fichier sources écrit en \rtx\
+depuis des «~Makefile~» générés par CMake. Vous aurez donc besoin d'installer
+\href{http://www.cmake.org/}{CMake} (>= 2.6) en même temps que \rtx. CMake
+fonctionne sur tous les systèmes d'exploitation supportés par \rtx\ et possède
+un \href{http://www.cmake.org/cmake/resources/software.html}{installateur pour
+Windows}\footnote{Quand vous installez CMake sur Windows, faites attention à
+bien sélectionner l'option « Ajoutez CMake dans le \texttt{PATH} pour tous les
+utilisateurs ».}.
+
+Enfin, si vous souhaitez compiler les sources générées par \rtx\ vous aurez
+aussi besoin des sources de Linux sous Linux, du Kit de Développement de Pilote
+de Périphérique pour Microsoft Windows sous Windows, etc.
+
+\subsection{Avec l'installateur Windows}
+
+L'installateur fournis pour Windows inclut tout ce dont vous avez besoin pour
+écrire des pilotes en utilisant \rtx\ : le compilateur et sa documentation.
+
+Téléchargez l'\href{http://rathaxes.googlecode.com/files/rathaxes-latest.exe}{installeur},
+exécuter le puis suivez les instructions sur l'écran.
+
+\subsection{Depuis les sources sur Unix}
+
+Si vous n'utilisez pas Windows vous êtes obligés d'installer \rtx\ depuis les
+«~sources~».
+
+Téléchargez la dernière \href{http://rathaxes.googlecode.com/files/rathaxes-src-latest.tar.gz}
+{archive des sources}. Une fois l'archive extraite, déplacez vous avec «~cd~» à
+l'intérieur. Vous pouvez installer \rtx\ avec les lignes de commandes suivantes~:
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ -DCMAKE_BUILD_TYPE=RELEASE ..
+$ sudo make install
+\end{lstlisting}
+
+\emph{Vous aurez besoin d'être root pour exécuter «~make install~», cet exemple
+utilise «~sudo~» mais adaptez le à votre installation locale}.
+
+\section{Générez votre premier pilote}
+
+Le processus pour générer un pilote est le même pour chaque système
+d'exploitation mais le nom de quelques programmes et certain chemins de fichiers
+changent; sélectionnez les instructions qui correspondent a votre système.
+
+\subsection{Depuis Windows}
+
+Ouvrez le « \rtx\ Shell », ensuite utilisez « cd » pour vous déplacer quelque
+part où vous avez les droits en lecture et en écriture puis générez les sources
+de notre exemple « LKM » :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake "-GNMake Makefiles" %RATHAXES_PATH%/share/doc/samples/LKM/
+$ nmake lkm_src
+\end{lstlisting}
+
+\subsection{Depuis n'importe quel Unix}
+
+Ouvrez votre émulateur de terminal favoris et générez les sources de notre
+exemple de pilote « LKM » :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake /usr/share/doc/rathaxes/samples/LKM/
+$ make lkm_src
+\end{lstlisting}
+
+Si vous êtes sous Linux et avez un arbre des sources valide, vous pouvez aussi
+compilez le module noyau que vous venez de générer:
+
+\begin{lstlisting}
+$ make lkm
+\end{lstlisting}
+
+\section{Plongée dans \rtx}
+
+Avant d'aborder en détail le compilateur et le langage \rtx\ voici une vue
+d'ensemble du processus de génération d'un pilote~:
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{tikzpicture}
+\node (RTX) at (-5,0) {\includegraphics[height=1.5cm]{icons/rtx_no_stroke}};
+\draw (RTX.south) node[below]{\large{\sffamily{Description du pilote}}};
+
+\node (C) at (5,0) {\includegraphics[height=1.5cm]{icons/c_no_stroke}};
+\draw (C.south) node [below]{\large{\sffamily{Module noyau}}};
+
+\node[graybox] (AST1) at (-2,0){\texttt{\large{AST}}};
+\draw[warrow] (RTX)--(AST1);
+
+\node[graybox] (AST2) at (2,0) {\texttt{\large{AST}}};
+\draw[warrow] (AST2)--(C);
+
+\node[redcontainer] (COMPILER) at (0,0) {};
+\draw (COMPILER.south) node[below]{\large{\sffamily{Compilateur}}};
+
+\node[graybox] (RTXLINK) at (COMPILER.center) {\texttt{\large{RTX\_Link}}};
+\draw[warrow] (AST1)--(RTXLINK);
+\draw[warrow] (RTXLINK)--(AST2);
+
+\node (RTI) at (-1.5,2.7) {\includegraphics[height=1.3cm]{icons/rti_no_stroke}};
+\draw (RTI.north west) node[above right]{\large{\sffamily{Interfaces}}};
+\draw[warrow] (RTI.south)--(RTXLINK);
+
+\node (BLT) at (0.5,2.7) {\includegraphics[height=1.3cm]{icons/blt_no_stroke}};
+\draw (BLT.north west) node[above right]{\large{\sffamily{Patrons de code}}};
+\draw[warrow] (BLT.south)--(RTXLINK);
+\end{tikzpicture}
+\caption{Vue d'ensemble de la génération d'un pilote}
+\end{center}
+\end{figure}
+
+Vous pouvez constater que le compilateur utilise trois types de fichiers. Ces
+fichiers ont tous des extensions différente mais sont en réalité écrit dans le
+même langage : \rtx. (Comme en C ou, les fichiers \texttt{.c} et \texttt{.h}
+utilisent des extensions différentes mais sont écrits dans le même
+langage). Ces trois « types » de fichiers ont des rôles différents :
+\begin{description}
+\item [{\texttt .rtx}] : décrit votre pilote, ainsi que ces propres algorithmes
+qui sont indépendant à chaque plateforme ;
+\item [{\texttt .rti}] : contiennent des \emph{interfaces} qui décrivent ce qui
+doit être implémenté dans les fichiers \texttt{.rtx} et ce qui doit être fournis
+par les \emph{patrons} de code enregistrés dans les fichiers \texttt{.blt} ;
+\item [{\texttt .blt}] : contiennent des \emph{unités} de code qui peuvent être
+spécifiques à un système d'exploitation; ces unités sont sélectionnées grâce aux
+informations fournies dans le fichier \texttt{.rtx} et l'introspection du
+système.
+\end{description}
+
+Un projet \rtx\ est compilé à partir d'un fichier \texttt{.rtx} et d'un ou
+plusieurs fichiers \texttt{.rti} et \texttt{.blt}. La documentation complète de
+la partie du langage utilisée dans les fichiers \texttt{.rtx} est disponible
+ici : \href{http://rathaxes.googlecode.com/files/dsl_frontend_fr.pdf}{dsl\_frontend\_fr.pdf}.
+Un autre document couvre les fichiers \texttt{.rti} et \texttt{.blt} :
+\href{http://rathaxes.googlecode.com/files/dsl_backend_fr.pdf}{dsl\_backend\_fr.pdf}.
+
+\section{Installer la version de développement}
+
+Vous pouvez installer la dernière version de \rtx\ si vous avez besoin d'avoir
+les derniers bogues et fonctionnalités ou si vous souhaitez contribuer au
+projet. Ceci implique de cloner la dernière version du projet en utilisant
+Mercurial et de le compiler manuellement.
+
+\subsection{Pré-requis}
+
+Pour cloner et compiler le projet vous avez besoin d'installer ou d'avoir les
+logiciels suivants :
+\begin{itemize}
+\item Mercurial >= 1.5 (vous pouvez vérifier votre version avec la commande
+      «~hg {-}{-}version~» et utiliser
+      \href{http://tortoisehg.bitbucket.org/download/index.html}{TortoiseHg}
+      sur Windows) ;
+\item Subversion (vous devez installer
+      \href{http://www.sliksvn.com/en/download}{Slik SVN} qui contient les
+      programmes en lignes de commande).
+\end{itemize}
+
+Vous aurez aussi besoin des pré-requis habituel pour \rtx\ (CMake et une chaîne
+de compilation). Si vous souhaitez générer la documentation vous aurez besoin
+d'une distribution \LaTeX\ (\href{http://www.tug.org/texlive/}{\TeX Live} >= 2009
+ou \href{http://www.miktex.org/}{Mik\TeX} sur Windows) et de
+\href{http://pages.cs.wisc.edu/~ghost/}{Ghostscript}.
+
+\subsection{Cloner les sources}
+
+Ouvrez un shell (depuis le menu de Visual Studio sous Windows) et cloner le
+projet en utilisant :
+
+\begin{lstlisting}
+$ hg clone https://rathaxes.googlecode.com/hg/ rathaxes
+$ cd rathaxes
+\end{lstlisting}
+
+Gardez le shell ouvert, la section suivante explique comment compiler \rtx\ sur
+Windows ou Unix.
+
+\subsection{Compiler \rtx}
+
+Si vous utilisez un système d'exploitation de type Unix utilisez les commandes
+suivantes :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+\end{lstlisting}
+
+Si vous êtes sous Windows utilisez :
+
+\begin{lstlisting}
+$ mkdir build
+$ cd build
+$ cmake -G "NMake Makefiles" ..
+$ nmake
+\end{lstlisting}
+
+\rtxmaketitleblock
+
+\end{document}

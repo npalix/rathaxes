@@ -1,0 +1,23 @@
+---
+layout: post
+title: Retour sur les  RMLL
+lang: fr
+---
+
+h1. {{ page.title }}
+
+Les RMLL sont passés. Nous voulions vous remercier de votre support !  Cela a été une période productive ! 10 % des commits sur le dépôt ont été faits pendant la semaine des RMLL !
+
+La conférence s’est bien passée. Nous espérons que les gens présents parlent de Rathaxes autour d’eux et comptons un peu sur le bouche à oreille afin de former une petite communauté dans un premier temps.
+
+C’était une expérience très valorisante dans le sens ou cela nous a permis de rencontrer des gens et de présenter notre projet à des gens extérieurs et ayant du recul sur le projet.
+
+Nous espérons, par le biais d’événement de ce genre, commencer à susciter la curiosité des gens pour notre projet et de ce fait recevoir un support de la part de contributeur autour de la toile.
+
+Voici l'interview de David par Intelli'N TV :
+
+<iframe width="587" height="328" src="http://www.youtube.com/embed/P4C3w_XG2wg?rel=0" frameborder="0" allowfullscreen></iframe>
+
+À bientôt !
+
+-- Thomas Sanchez

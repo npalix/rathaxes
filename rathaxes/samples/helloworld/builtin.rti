@@ -1,0 +1,7 @@
+interface Builtin
+{
+    provided builtintype    string;
+    provided builtintype    number;
+
+    provided type           integer;
+}

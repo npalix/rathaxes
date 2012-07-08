@@ -1,0 +1,10 @@
+with Log
+{
+    template sequence   info(Builtin::string msg)
+    {
+        chunk   ::CALL()
+        {
+            pr_info("%s: %s\n", ${config.name}, ${msg});
+        }
+    }
+}

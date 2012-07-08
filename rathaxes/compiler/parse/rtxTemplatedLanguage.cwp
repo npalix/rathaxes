@@ -1,0 +1,90 @@
+/*
+        External languages templated by rathaxes:
+        - C (for now)
+        - C++ (one day for Darwin driver)
+        - Java? (why not)
+        - Other? (!!!)
+*/
+
+rtx_templatedLang_single_stmt<T>(theBody : node) ::= =>error("Not supported language:" + T);
+;
+
+rtx_templatedLang_body<T>(theBody : node) ::= =>error("Not supported language:" + T);
+;
+
+/////////////////////// C LANGUAGE
+
+rtx_templatedLang_single_stmt<"C">(theBody : node) ::= single_statement(theBody)
+;
+
+// templated language body
+// TODO: see to specialized chunk
+rtx_templatedLang_body<"C">(theBody : node) ::=
+	'{'
+/**/	        #check(cnormNodeDecl_Init(theBody))
+		initializer_list(theBody)
+                // last ',' but empty
+		[',']? 
+	'}'
+    |
+        // The two following lines prevent artefacts (by failing previous alternative) 
+/**/    => clearVariable(theBody);
+/**/    #check(cnormNodeBlock(theBody))
+        rtx_templatedLang_C_compound_stmt(theBody)
+;
+
+// block of code of chunk
+rtx_templatedLang_C_compound_stmt(theBlock : node) ::=
+'{'
+/**/	#check(cnormNodeBlock(theBlock, true))
+	rtx_templatedLang_C_block_item_list(theBlock) 
+'}'
+;
+
+// for DEFINE
+#ignore["define"] ::= '\\' [' '|'\t']* '\n'
+;
+
+// chunk encapsulate C CODE
+rtx_templatedLang_C_block_item_list(theBlock : node) ::=
+[
+        '#' 
+        [
+          "include" ['"' -> '"' | '<' -> '>' ]:sFile
+/**/            #pushItem(theBlock.block)
+/**/            => local lastNode;
+/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/            => local sData = "\n#include " + sFile + " \n";
+/**/            => cnormNode_Raw(lastNode, sData);
+        | "define" #ignore("define") -> "\n":sData
+/**/            #pushItem(theBlock.block)
+/**/            => local lastNode;
+/**/	        #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+/**/            => cnormNode_Raw(lastNode, "\n#define "+sData);
+        ]
+	| 
+        line_of_code(theBlock)
+]*
+;
+ 
+///// META-VARIABLE HOOK
+// Don't care... for now...done in rtxMeta
+rtx_templatedLang_code ::= #!ignore "${" #continue(sError, "Expected '}' after \"'${\"") [rtx_templatedLang_brace]* '}' 
+;
+
+// consume all and take account of {}
+rtx_templatedLang_brace ::=
+[#!ignore
+	'{' [rtx_templatedLang_brace]* '}'
+	| #readCString
+        | #readCChar
+	| #readChar:c #check(c != "{" && c != "}" && c != "\"" && c != "'")
+]
+;
+
+//This rule overload allows the template identifier concatenation for Rathaxes.
+#overload
+rootidentifier ::= #!ignore
+    [ 'a'..'z' | 'A'..'Z' | '_' | rtx_templatedLang_code ]
+    [ 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | rtx_templatedLang_code ]*
+;

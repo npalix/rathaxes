@@ -1,0 +1,20 @@
+device LKM use LKM
+{
+    init()
+    {
+        Log::info("Hello this is LKM");
+    }
+
+    exit()
+    {
+        Log::info("Good bye this was LKM");
+    }
+}
+
+configuration
+{
+    name = "hello";
+    author = "Rathaxes";
+    description = "Hello World Loadable Kernel Module (LKM)";
+    license = "GPL";
+}

@@ -1,0 +1,45 @@
+interface Ethernet : Socket, PCI, LKM
+{
+    provided type       Device;
+
+    required variable ::string  ifname;
+
+    required sequence   open(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   send(Ethernet::Device dev, Socket::SKBuff skb)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   close(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    provided sequence   init()
+    {
+        provided chunk  LKM::data();
+        provided chunk  PCI::pci_probe_hook(PCI::Device);
+
+        provided pointcut   Ethernet::create_device(PCI::Device, Ethernet::Device);
+    }
+
+    provided sequence   exit()
+    {
+        provided chunk  PCI::pci_remove_hook(PCI::Device);
+
+        provided pointcut   Ethernet::destroy_device(PCI::Device, Ethernet::Device);
+    }
+}

@@ -1,0 +1,329 @@
+#if !existFunction(rtxMeta_version)
+
+function rtxMeta_version()
+{return "1.0";}
+
+
+#include "cnorm.inc.cws"
+
+#include "node/rtxNode.inc.cws"
+#include "passes/back/rtxPlaceHolders.inc.cws"
+#include "typing/rtxType.inc.cws"
+
+/*
+ * Facade Function, take a tree a apply Meta passes :
+ * - extract all ${} code in C chunks
+ * - construct placeholders
+ * - compile ${} into internal representation
+*/
+declare function rtxMeta(source : node);
+
+/*
+ *
+ * The goal of this template function is to walk through the AST in order
+ * to find and identify each template's ".compile" node. For each one,
+ * each of their placeHolders is parsed and a placeHolder node is built.
+ *
+ */
+declare function rtxMeta_walk<T>(local_node : node);
+
+/*
+ * The goal of this function is to parse all ${} stored in the .compile, it was called by the rtxMeta_walk<T> functions
+ * Each ${} is transformed into his tree representation see rtxNodeBack...
+*/
+declare function rtxMeta_parsePlaceHolder(compile : node);
+
+// MAIN FUNCTION
+function rtxMeta(source : node)
+{
+        // Compile the placeHolders
+        foreach item in source.block
+                rtxPH_walk<item.type>(item);
+        local has_error = false;
+        foreach item in source.block
+        {
+                rtxMeta_walk<item.type>(item);
+                if (!isEmpty(item.error))
+                {
+                        traceLine(RED + "Item of type '"+item.type+"' could not be parsed :"
+                                + endl() + item.error + DEFAULT_COLOR);
+                        has_error = true;
+                }
+        }
+        return !has_error;
+}
+
+// ROOT TEMPLATE
+function rtxMeta_walk<T>(local_node : node)
+{
+        // Then we are on a type of node that doesnt matter to us
+        // but that does not need any error...
+        return true;
+}
+
+// WITH
+function rtxMeta_walk<"__rtx_with__">(local_node : node)
+{
+        local errcount = 0;
+
+        traceLine("rtxMeta_walk<\"__rtx_with__\">: walking through...");
+        // First, walk the templates...
+        foreach item in local_node.body.block
+        {
+                if (rtxMeta_walk<item.type>(item) == false)
+                increment(errcount);
+        }
+        traceLine("rtxMeta_walk<\"__rtx_with__\">: parsing placeHolders...");
+        // Second, compile each with placeHolder.
+        foreach placeHolder in local_node.c_block.compile
+        {
+                if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+                increment(errcount);
+        }
+        if (errcount != 0)
+                return false;
+        return true;
+}
+
+// CHUNK
+function rtxMeta_walk<"__rtx_chunk__">(local_node : node)
+{
+        local errcount = 0;
+
+        traceLine("rtxMeta_walk<\"__rtx_chunk__\">: compiling placeHolders...");
+        foreach placeHolder in local_node.body.compile
+        {
+                if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+                        increment(errcount);
+        }
+        if (errcount != 0)
+                return false;
+        return true;
+}
+
+// TEMPLATE
+function rtxMeta_walk<"__rtx_tpl__">(local_node : node)
+{
+        local errcount = 0;
+
+        traceLine("rtxMeta_walk<\"__rtx_tpl__\">: walking through...");
+        foreach chunk in local_node.body.block
+        {
+            if (rtxMeta_walk<chunk.type>(chunk) == false)
+                increment(errcount);
+        }
+        if (rtxNodeTpl_HasMapping(local_node))
+        {
+            foreach mapping in local_node.mapping.body.block
+            {
+                foreach placeHolder in mapping.compile
+                {
+                    if (rtxMeta_parsePlaceHolder(placeHolder) == false)
+                        increment(errcount);
+                }
+            }
+        }
+        if (errcount != 0)
+                return false;
+        return true;
+}
+
+// TRANSFORM THE ${}
+function    rtxMeta_parsePlaceHolder(compile : node)
+{
+        local treepart;
+        // TODO: DIALECT STD TO REMOVE FOR UNSTRICT
+        cnormDialect<"__unstrict__">(treepart);
+        insert treepart.scripts_path = this.scripts_path;
+        insert treepart.map;
+        insert treepart.map.files;
+        if (existVariable(compile#root.map.files))
+            setall treepart.map.files = compile#root.map.files;
+        parseStringAsBNF({
+                #include "cnorm.cwp"
+                #include "parse/rtxCommon.cwp"
+                
+                /*
+                 *
+                 * BNF rules for the placeHolders
+                 *
+                 */
+                
+                /*
+                 * Root of the placeHolder grammar :
+                 * We have to overload translation_unit since it is defined before
+                 * by cnorm.cwp which is included in order to
+                 * retrieve the rule single_statement
+                 */
+                #overload
+                translation_unit ::=
+/**/            #try
+/**/          	                #ignore("CNORM")
+/**/                            #check(rtxNodePlaceHolder(this))
+                                [
+                                        rtx_placeholder_noconcat(this)
+                                        |
+                                        rtx_place_holder(this)
+                                ]
+/**/                            #continue(sError, "bad token at end of file, unexpected " + peekChar())
+/**/                            #empty
+/**/                            #catch (sError)
+/**/                            | #check(cnormLogError(this, sError))
+                ;
+        
+
+                // read all ${...} forms
+                rtx_place_holder(theNode : node) ::=
+                        [ rootidentifier:theNode.prefix ]?
+                        "${"
+                        [
+                                tpl_sequence_call(theNode.body)
+                                |
+                                tpl_chunk_call(theNode.body)
+                                |
+                                rtx_composed_identifier(theNode.body)
+                        ]
+                        '}'
+                        [ rootidentifier:theNode.sufix ]?
+                        [ ";" ]?//>>>>>????????????
+                ;
+
+                //Parse a chunk call (i.e. "${local.buf.init()}" )
+                tpl_chunk_call(theCall : node) ::=
+/**/                    => local parameters;
+/**/                    => local theVars;
+/**/                    => local theChunk;
+                        // first identifier (may be local ? ${local.buf.init(42)} )
+                        [
+                            rootidentifier:var_name
+/**/                        #pushItem(theVars)
+/**/                        #check(rtxNodeIdentifier(theVars#back, var_name))
+                        ]
+                        // second identifier (may be either the var of the chunk : ${local.buf.init(42)} | ${buf.init(42)} )
+                        '.'
+                        rootidentifier:var2_name
+                        [
+                                '.'
+                                rootidentifier:chunk_name
+/**/                            #pushItem(theVars)
+/**/                            #check(rtxNodeIdentifier(theVars#back, var2_name))
+/**/                            #check(rtxNodeIdentifier(theChunk, chunk_name, "", true))
+                            |
+/**/                            #check(rtxNodeIdentifier(theChunk, var2_name, "", true))
+
+                        ]
+                            
+/**/                    // For later resolution, we need to force it as an explicit global name
+                        // Create the node from
+/**/                    #check(rtxNodeCall(theCall, theVars, theChunk, parameters))
+                        '('
+                                #continue(sError, "Expected closing parenthesis in chunk '" + rtxRTypeName<theChunk.type>(theChunk) + "' call")
+                                [ rtx_var_list(parameters) ]?
+                        ')'
+                ;
+
+                //Function used for parsing a call to a rathaxes sequence in a placeHolder.
+                rtx_sequence_arg(theArg : node) ::=
+                        rtx_composed_identifier(theArg)
+                        |
+                        rtx_literal(theArg)
+                ;
+
+                rtx_literal(theArg : node) ::=
+                        [ #readCString | #readCChar | [~[','|')']]+ ]:data
+/**/                    #check(rtxType_Search(data, theArg))
+                ;
+
+                tpl_sequence_call(theCall : node) ::=
+/**/                    => local seqName;
+/**/                    => local seqArgs;
+                        rtx_scoped_identifier(seqName)
+                        '('
+/**/                            #continue(sError, "Expected closing parenthesis in sequence call :'" 
+/**/                                    + rtxRTypeName<theCall.seqName.type>(theCall.seqName) + "'")
+                        [
+/**/                            #pushItem(seqArgs)
+                                rtx_sequence_arg(seqArgs#back)
+                                [
+                                        ',' 
+/**/                                    #pushItem(seqArgs)
+                                        rtx_sequence_arg(seqArgs#back)
+                                ]*
+                        ]?
+                        ')'
+/**/                    #check(rtxNodeSequenceCall(theCall, seqName, seqArgs))
+                ;
+
+        
+                //Functions used for the parsing of the pointcut
+                // TODO FIXME XXX : check that the partial C code is valid.
+                tpl_pointcut_default(theNode : node) ::=
+                        "default" #continue(sError, "Expected ':' after poinctut's default statement.") ':'
+/**/                    => local body;
+/**/                    #check(rtxNodePointcut_Default(theNode, body))
+/**/                    #continue(sError, "Expected body for pointcut's default statement.")
+                        [
+                                single_statement(body)
+                                |
+/**/                            #check(cnormNodeDecl_Init(body))
+                                initializer_list(body)
+                        ]
+                ;
+
+                tpl_pointcut_parameters(theParams : node) ::=
+                        '(' [ rtx_var_list(theParams) ]? ')'
+                ;
+
+                tpl_pointcut(thePointcut : node) ::=
+                        "pointcut"
+/**/                    => local pointcutId;
+/**/                    => local theParams;
+/**/                    => local theDefault;
+/**/                    #check(rtxNodePointcut(thePointcut, pointcutId, theParams, theDefault))
+/**/                    #check(rtxNodeVarList(theParams))
+                        rtx_scoped_identifier(pointcutId)
+                        #continue(sError, "Expected parameters to definition of pointcut '"+rtxRTypeName<pointcutId.type>(pointcutId)+"'")
+                        tpl_pointcut_parameters(theParams)
+                        [ tpl_pointcut_default(theDefault) ]?
+                ;
+
+                // Here, we allow casting a local C variable into a rathaxes type. This casts lasts for the current chunk's scope.
+                tpl_cast(theCast : node) ::=
+                        "cast"
+                        => local typeId;
+                        #continue(sError, "A cast can only be applied to a local variable (\"local.\" is expected).")
+                        "local" '.' rootidentifier:varName
+                        #continue(sError, "Expected 'as' token for a rathaxes cast.")
+                        "as"
+                        #continue(sError, "Expected Type name for casting type.")
+                        rtx_scoped_identifier(typeId)
+                        #check(rtxNodeCast(theCast, varName, typeId))
+                ;
+
+                rtx_placeholder_noconcat(theNode : node) ::=
+                        "${" [ tpl_pointcut(theNode.body) | tpl_cast(theNode.body) ] '}' 
+                        [ ';' ]? //>>>????
+                ;
+
+        }, treepart, compile.template_expr);
+        // remove variables used for parsing
+        removeVariable(treepart.dialect); // cnorm
+        removeVariable(treepart.scripts_path); // types loader
+        removeVariable(treepart.map); // rtxtypes
+        if (!isEmpty(treepart.error))
+        {
+                traceLine(RED + "Could not build node for template_expr : " + compile.template_expr + DEFAULT_COLOR);
+                local out = "Trace:\n";
+                foreach stack_line in treepart.error[0].trace
+                        out += stack_line;
+                out += "=>Error: " + treepart.error[0].msg;
+                traceLine(YELLOW + out + DEFAULT_COLOR);
+                return false;
+        }
+        traceLine("Built node for template_expr : " + compile.template_expr);
+        insert compile.node;
+        setall compile.node = treepart;
+        return true;
+}
+
+#end

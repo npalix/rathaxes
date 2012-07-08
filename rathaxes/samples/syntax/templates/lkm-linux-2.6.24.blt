@@ -1,0 +1,46 @@
+with LKM
+values LKM::OS=Linux, LKM::version >= 2.6.24
+{
+    template sequence load()
+    {
+        // Here, the scopes are up-recursively checked from the template's own interface.
+        chunk GLOBAL_DATA_DECLARATION()
+        {
+            struct module myModule = {
+                ${ pointcut INIT_LKM_FPTRS() default: .open = NULL }
+            };
+        }
+
+        chunk GLOBAL_CODE_DEFINITION()
+        {
+            int rtxModuleInit(void)
+            {
+                // Here, do something about inserting the module into the kernel.
+            }
+            module_init(rtxModuleInit);
+        }
+
+        chunk ::CALL()
+        { }
+    }
+
+    template sequence unload()
+    {
+        // Here, the scopes are up-recursively checked from the template's own interface.
+        chunk GLOBAL_DATA_DECLARATION()
+        {
+            int rtxModuleExit(void)
+            {
+                //#pragma(comment, "Here, do something about exiting our module (memory etc..)")
+            }
+        }
+
+        chunk GLOBAL_CODE_DEFINITION()
+        {
+            module_exit(rtxModuleExit);
+        }
+
+        chunk ::CALL()
+        { }
+    }
+}

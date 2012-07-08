@@ -1,0 +1,28 @@
+with Socket, LKM
+{
+    template type Socket::SKBuff()
+    {
+        chunk LKM::includes()
+        {
+            #include <linux/skbuff.h>
+            static const ${Socket::SKBuff} force_rtx_lnux_skbuf_decl;
+        }
+
+        chunk ::decl()
+        {
+            struct sk_buff;
+        }
+
+        chunk ::init()
+        {
+        }
+
+        map
+        {
+            // some work may have to be done here in order
+            // to access to some field of the sk_buff.
+            // We should determine if all the sk_buff management
+            // can be abstracted from the user.
+        }
+    }
+}

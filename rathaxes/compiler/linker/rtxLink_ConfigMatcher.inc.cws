@@ -1,0 +1,275 @@
+#if !existFunction(rtxLink_ConfigMatcher_version)
+
+function rtxLink_ConfigMatcher_version()
+{ return "1.0"; }
+
+
+
+
+declare function rtxLink_IsWithNodeCompatible(with : node, config : node);
+declare function rtxLink_CompareValues<T>(ref : node, val : node);
+
+// Must be implemented for each type.
+declare function rtxLink_CompareLesser<T>(ref : node, val : node);
+declare function rtxLink_CompareLesserEqual<T>(ref : node, val : node);
+declare function rtxLink_CompareEqual<T>(ref : node, val : node);
+declare function rtxLink_CompareGreaterEqual<T>(ref : node, val : node);
+declare function rtxLink_CompareGreater<T>(ref : node, val : node);
+
+function rtxLink_CompareLesser<T>(ref : node, val : node)
+{ error(RED+"[Error] Comparison operator '<' is not compatible or implemented for the type "+T+DEFAULT_COLOR); }
+function rtxLink_CompareLesserEqual<T>(ref : node, val : node)
+{ error(RED+"[Error] Comparison operator '<=' is not compatible or implemented for the type "+T+DEFAULT_COLOR); }
+function rtxLink_CompareEqual<T>(ref : node, val : node)
+{ error(RED+"[Error] Comparison operator '=' is not compatible or implemented for the type "+T+DEFAULT_COLOR); }
+function rtxLink_CompareGreaterEqual<T>(ref : node, val : node)
+{ error(RED+"[Error] Comparison operator '>=' is not compatible or implemented for the type "+T+DEFAULT_COLOR); }
+function rtxLink_CompareGreater<T>(ref : node, val : node)
+{ error(RED+"[Error] Comparison operator '>' is not compatible or implemented for the type "+T+DEFAULT_COLOR); }
+
+
+
+
+
+/*
+ * This function checks the conditions of the with block against a configuration
+ * block. It returns true if the with block is in the definition domain of the
+ * configuration
+ *
+ *
+ * The matching is done by trying to match the constraints (with) over the
+ * configuration block. This way, if any value is undefined, that would
+ * prevent any match validation.
+ * Otherwise, there's only a need to check whether the constraints are valid or
+ * not.
+ */
+function rtxLink_IsWithNodeCompatible(with : node, config : node)
+{
+    foreach interface in with
+    {
+        local itf_key = key(interface);
+        // Is the interface defined in the config ? If not, we won't filter over it...
+        if (findElement(itf_key, config) == false)
+        {
+            //traceLine(BLUE + "[Debug] Interface '"+itf_key+"' not defined in config." + DEFAULT_COLOR);
+            continue ;
+        }
+        foreach constraint in interface
+        {
+            local cst_key = key(constraint);
+            // Is the variable defined in the config ?
+            if (!findElement(cst_key, config[itf_key]))
+            {
+                traceLine("Variable '"+cst_key+"' not defined in config.");
+                return false;
+            }
+            // Then let's match the values :
+            // Only the identifier type does not support other comparisons
+            // than equality
+            if (rtxLink_CompareValues<constraint.op>(constraint.val,
+                        config[itf_key][cst_key].val) == false)
+            {
+                traceLine("Values for variable '"+cst_key+"' do not match.");
+                return false;
+            }
+        }
+    }
+    // For now, let's assume the with nodes are compatible
+    return true;
+}
+
+function rtxLink_CompareValues<"<">(ref : node, val : node)
+{
+    return rtxLink_CompareLesser<rtxRTypeName<ref.rtype.type>(ref.rtype)>(ref, val);
+}
+
+function rtxLink_CompareValues<"<=">(ref : node, val : node)
+{
+    return rtxLink_CompareLesserEqual<rtxRTypeName<ref.rtype.type>(ref.rtype)>(ref, val);
+}
+
+function rtxLink_CompareValues<"=">(ref : node, val : node)
+{
+    return rtxLink_CompareEqual<rtxRTypeName<ref.rtype.type>(ref.rtype)>(ref, val);
+}
+
+function rtxLink_CompareValues<">=">(ref : node, val : node)
+{
+    return rtxLink_CompareGreaterEqual<rtxRTypeName<ref.rtype.type>(ref.rtype)>(ref, val);
+}
+
+function rtxLink_CompareValues<">">(ref : node, val : node)
+{
+    return rtxLink_CompareGreater<rtxRTypeName<ref.rtype.type>(ref.rtype)>(ref, val);
+}
+
+
+
+
+function rtxLink_CompareLesser<"Builtin::serial">(ref : node, val : node)
+{
+    local idx = 0;
+    // Loop as long as items are equal.
+    foreach ref_unit in ref.list
+    {
+        // Check we arent out of bounds in val.list. If we are, val<ref.
+        if (idx >= getArraySize(val.list))
+            return true;
+
+        localref val_unit = val.list#[idx];
+        // Check both units are of the same type
+        if (val_unit.type != ref_unit.type)
+            return false;
+        // Simple comparison on unit value types.
+        if (ref_unit.type == "__rtx_serial_unit__")
+        {
+            if (val_unit.val < ref_unit.val)
+                return true;
+            else if (val_unit.val > ref_unit.val)
+                return false;
+        }
+        // The separators must be identical.
+        else if (ref_unit.type == "__rtx_serial_sep__")
+        {
+            if (val_unit.val != ref_unit.val)
+                return false;
+        }
+        else
+            return false; // Serial unit type unknown
+        increment(idx);
+    }
+    // Either val is longer than ref (equal up till now) -> !(val < ref)
+    if (getArraySize(val.list) > getArraySize(ref.list))
+        return false;
+    // Either both were equal (not <) => default case = false
+    return false;
+}
+
+function rtxLink_CompareLesserEqual<"Builtin::serial">(ref : node, val : node)
+{
+    local idx = 0;
+    // Loop as long as items are equal.
+    foreach ref_unit in ref.list
+    {
+        // Check we arent out of bounds in val.list. If we are, val<ref
+        if (idx >= getArraySize(val.list))
+            return true;
+
+        localref val_unit = val.list#[idx];
+        // Check both units are of the same type
+        if (val_unit.type != ref_unit.type)
+            return false;
+        // Simple comparison on unit value types.
+        if (ref_unit.type == "__rtx_serial_unit__")
+        {
+            // if < then <= true too. Then return true.
+            if (val_unit.val < ref_unit.val)
+                return true;
+            else if (val_unit.val > ref_unit.val)
+                return false;
+        }
+        // The separators must be identical.
+        else if (ref_unit.type == "__rtx_serial_sep__")
+        {
+            if (val_unit.val != ref_unit.val)
+                return false;
+        }
+        else
+            return false; // Serial unit type unknown
+        increment(idx);
+    }
+    // Either val is longer than ref : equal up to ref's length : val > ref
+    if (getArraySize(val.list) > getArraySize(ref.list))
+        return false;
+    // Either both were wholly equal : =
+    return true;
+}
+
+/*
+ * Here, the test should be a little more intelligent.
+ */
+function rtxLink_CompareEqual<"Builtin::serial">(ref : node, val : node)
+{
+    return equalTrees(ref, val);
+}
+
+function rtxLink_CompareGreaterEqual<"Builtin::serial">(ref : node, val : node)
+{
+    local idx = 0;
+    // Loop as long as items are equal.
+    foreach ref_unit in ref.list
+    {
+        // Check we arent out of bounds in val.list. If we are, val<ref
+        if (idx >= getArraySize(val.list))
+            return false;
+
+        localref val_unit = val.list#[idx];
+        // Check both units are of the same type
+        if (val_unit.type != ref_unit.type)
+            return false;
+        // Simple comparison on unit value types.
+        if (ref_unit.type == "__rtx_serial_unit__")
+        {
+            // if > then >= true too. Then return true.
+            if (val_unit.val > ref_unit.val)
+                return true;
+            else if (val_unit.val < ref_unit.val)
+                return false;
+        }
+        // The separators must be identical.
+        else if (ref_unit.type == "__rtx_serial_sep__")
+        {
+            if (val_unit.val != ref_unit.val)
+                return false;
+        }
+        else
+            return false; // Serial unit type unknown
+        increment(idx);
+    }
+    // Either val is longer than ref : equal up to ref's length : val > ref
+    // Either both were wholly equal : =
+    return true;
+}
+
+function rtxLink_CompareGreater<"Builtin::serial">(ref : node, val : node)
+{
+    local idx = 0;
+    // Loop as long as items are equal.
+    foreach ref_unit in ref.list
+    {
+        // Check we arent out of bounds in val.list. If we are, val<ref
+        if (idx >= getArraySize(val.list))
+            return false;
+
+        localref val_unit = val.list#[idx];
+        // Check both units are of the same type
+        if (val_unit.type != ref_unit.type)
+            return false;
+        // Simple comparison on unit value types.
+        if (ref_unit.type == "__rtx_serial_unit__")
+        {
+            // if > then >= true too. Then return true.
+            if (val_unit.val > ref_unit.val)
+                return true;
+            else if (val_unit.val < ref_unit.val)
+                return false;
+        }
+        // The separators must be identical.
+        else if (ref_unit.type == "__rtx_serial_sep__")
+        {
+            if (val_unit.val != ref_unit.val)
+                return false;
+        }
+        else
+            return false; // Serial unit type unknown
+        increment(idx);
+    }
+    // Either val is longer than ref : equal up to ref's length : val > ref
+    if (getArraySize(val.list) > getArraySize(ref.list))
+        return true;
+    // Either both were wholly equal : = : default case = false
+    return false;
+}
+
+ 
+#end
