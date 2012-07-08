@@ -3,5 +3,9 @@ interface Builtin
     provided builtintype    string;
     provided builtintype    number;
 
-    provided type           integer;
+    provided type           integer
+    {
+        chunk ::decl();
+        method set(Number);
+    }
 }

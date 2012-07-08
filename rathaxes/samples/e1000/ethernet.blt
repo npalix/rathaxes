@@ -1,5 +1,23 @@
 with Ethernet, PCI, LKM, Log
 {
+
+    template type Ethernet::Net()
+    {
+        chunk LKM::includes()
+        {
+            #include <linux/netdevice.h>
+        }
+
+        chunk ::decl()
+        {
+            typedef struct net_device *net_devp;
+        }
+
+        map {
+        }
+    }
+
+
     /*
      * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
      * from Linux. Ethernet::Device is the type that we use in the private
@@ -9,7 +27,6 @@ with Ethernet, PCI, LKM, Log
     {
         chunk LKM::includes()
         {
-            #include <linux/netdevice.h>
             #include <linux/etherdevice.h>
         }
 
@@ -26,7 +43,7 @@ with Ethernet, PCI, LKM, Log
             {
                 /*
                  * I think it's useless to use the ${PCI::Device} "abstraction"
-                 * here, since we are already in a Linux specific context here.
+                 * here, since we already are in a Linux specific context.
                  */
                 struct pci_dev          *pci_dev;
                 struct net_device       *net_dev;
@@ -36,7 +53,7 @@ with Ethernet, PCI, LKM, Log
             } *rtx_ethernet_dev_p;
         }
 
-        chunk ::init(Ethernet::Device net_dev, PCI::Device pci_dev)
+        chunk ::init(Ethernet::Net net_dev, PCI::Device pci_dev)
         {
             ${self} = netdev_priv(${net_dev});
             /*

@@ -78,7 +78,9 @@ generateString({
 
         interface LKM : Builtin, Algorithm
         {
-            provided type       Context;
+            provided type       Context {
+                attribute Builtin::String   device_name;
+            }
             provided pointcut   test_pointcut();
 
             provided sequence DoSomething(LKM::Context, String)
