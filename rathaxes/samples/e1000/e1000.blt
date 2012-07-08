@@ -48,7 +48,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
     {
         chunk   LKM::includes()
         {
-
             static const ${e1000::RxRing}   force_rtx_e1000_rx_ring_decl;
         }
 
@@ -632,7 +631,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             rtx_e1000_register_set32(hw_ctx, E1000_RAH, E1000_RAH_AV);
 
             {
-                ${Log::info("setup_device: program receieve address done")};
+                ${Log::info("setup_device: receive address programmed")};
             }
 
             /* 2. Initialize the MTA */
@@ -662,7 +661,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
 
             {
-                ${Log::info("setup_device: descriptors allocated")};
+                ${Log::info("setup_device: rx descriptors allocated")};
             }
 
             /*
@@ -710,7 +709,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
             /* 6. Setup RDH/RDT */
             rtx_e1000_register_write32(hw_ctx, E1000_RDH, 0);
-            rtx_e1000_register_write32(hw_ctx, E1000_RDT, hw_ctx->rx_ring.size - 1);
+            rtx_e1000_register_write32(hw_ctx, E1000_RDT, ${config.rx_ring_size} - 1);
 
             /* 7. Configure the buffer size, XXX: * E1000_RCTL_BSIZE_${config.rx_buffer_len} */
             rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_BSIZE_2048);
