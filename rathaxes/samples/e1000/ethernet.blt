@@ -1,6 +1,5 @@
 with Ethernet, PCI, LKM, Log
 {
-
     template type Ethernet::Net()
     {
         chunk LKM::includes()
@@ -13,10 +12,10 @@ with Ethernet, PCI, LKM, Log
             typedef struct net_device *net_devp;
         }
 
-        map {
+        map
+        {
         }
     }
-
 
     /*
      * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
