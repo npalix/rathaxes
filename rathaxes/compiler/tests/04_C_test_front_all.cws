@@ -39,7 +39,10 @@ generateString({
             provided pointcut           LKM::data();
             provided pointcut           LKM::code();
 
-            provided type               LKM::Context;
+            provided type               LKM::Context
+            {
+                chunk   LKM::data();
+            }
         
             required sequence           LKM::open(LKM::Context);
             required sequence           LKM::close();

@@ -7,11 +7,13 @@ function rtxNodeMiddle_version()
 declare function rtxNodeItf(local_node : node, itf_name : value, out_ref_inherit : reference, out_ref_body : reference);
 declare function rtxNodeItfDeclaration(local_node : node, qualifier : value, dtype : value);
 declare function addRTypeToItfDeclaration(declaration_node : node, rtype : node);
-declare function addSequenceBody(theSequence : node, theBody : node);
+declare function rtxItfDeclaration_addBody(theDecl : node, theBody : node);
 declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
 declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
 declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, paramtypes_out_ref : reference, qualifier : value);
-
+declare function rtxNodeItfTypeChunkDeclaration(local_node : node, theIdentifier : node, theTypes : node);
+declare function rtxNodeItfTypeAttributeDeclaration(local_node : node, theType : node, theIdentifier : node);
+declare function rtxNodeItfTypeMethodDeclaration(local_node : node, theIdentifier : node, theTypes : node);
 
 
 
@@ -55,12 +57,12 @@ function        addRTypeToItfDeclaration(declaration_node : node,
     setall declaration_node.rtype = rtype;
 }
 
-function        addSequenceBody(theSequence : node, theBody : node)
+function        rtxItfDeclaration_addBody(theDecl : node, theBody : node)
 {
-    insert theSequence.body;
-    insert theSequence.body.type = "__block__";
-    insert theSequence.body.block;
-    setall theSequence.body.block = theBody;
+    insert theDecl.body;
+    insert theDecl.body.type = "__block__";
+    insert theDecl.body.block;
+    setall theDecl.body.block = theBody;
 
     return true;
 }
@@ -161,6 +163,66 @@ function        rtxNodeItfChunkDeclaration(local_node           : node,
     clearVariable(dummy_body);
 
     rtxNodeRType(rtype_out_ref, identifier, paramtypes_out_ref);
+
+    return true;
+}
+
+
+function        rtxNodeItfTypeChunkDeclaration(local_node : node,
+                                               theIdentifier : node,
+                                               theTypes : node)
+{
+    local dummy_paramids;
+    local dummy_body;
+    local rtype_out_ref;
+    local paramtypes_out;
+
+    rtxNode(local_node);
+    rtxNodeChunk(local_node, rtype_out_ref, dummy_paramids, dummy_body);
+    insert local_node.type = "__rtx_itf_chunk__";
+
+    rtxNodeRType(rtype_out_ref, theIdentifier, paramtypes_out);
+    foreach type in theTypes
+    {
+        pushItem paramtypes_out;
+        setall paramtypes_out#back = type;
+    }
+
+    return true;
+}
+
+function        rtxNodeItfTypeAttributeDeclaration(local_node : node,
+                                                   theType : node,
+                                                   theIdentifier : node)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_attribute__";
+    insert local_node.rtype;
+    setall local_node.rtype = theType;
+    insert local_node.name = theIdentifier;
+
+    return true;
+}
+
+function rtxNodeItfTypeMethodDeclaration(local_node : node,
+                                         theIdentifier : node,
+                                         theTypes : node)
+{
+    local rtype_out_ref;
+    local dummy_paramids;
+    local dummy_body;
+    local paramtypes_out;
+
+    rtxNode(local_node);
+    rtxNodeChunk(local_node, rtype_out_ref, dummy_paramids, dummy_body);
+    local_node.type = "__rtx_itf_method__";
+
+    rtxNodeRType(rtype_out_ref, theIdentifier, paramtypes_out);
+    foreach type in theTypes
+    {
+        pushItem paramtypes_out;
+        setall paramtypes_out#back = type;
+    }
 
     return true;
 }

@@ -70,7 +70,9 @@ generateString({
 
     interface Algorithms : Builtin
     {
-        provided type       Context;
+        provided type       Context {
+            attribute Builtin::String algo_name;
+        }
         provided sequence   open(Context);
     }
 
@@ -78,7 +80,9 @@ generateString({
     {
         provided pointcut   test_pointcut();
 
-        provided type       Context;
+        provided type       Context {
+            attribute Builtin::String device_name;
+        }
 
         required sequence   open(LKM::Context);
     }

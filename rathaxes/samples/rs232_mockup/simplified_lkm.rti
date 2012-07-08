@@ -33,7 +33,12 @@ interface Algorithms : LKM
 {
     provided builtintype        Algorithms::register; //collection?
     provided builtintype        Algorithms::register_field;
-    provided type               Algorithms::Buffer;
+    provided type               Algorithms::Buffer
+    {
+        chunk                   LKM::GLOBAL_DATA_DECLARATION();
+        attribute LKM::Symbol   ptr;
+        attribute LKM::number   size;
+    }
 
     provided sequence   log(LKM::string)
     {
@@ -52,7 +57,11 @@ interface Algorithms : LKM
 
 interface User : Algorithms
 {
-    provided type                       User::Context;//why not device?
+    provided type                       User::Context  //why not device?
+    {
+        chunk LKM::GLOBAL_DATA_DECLARATION();
+    }
+
     required variable LKM::Device_list  User::Devices;
 
 
