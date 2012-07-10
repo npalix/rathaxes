@@ -6,6 +6,7 @@ rtx_stmt<"interface">(theBlock : node) ::=
     => local body;
 
     #readIdentifier:name
+    #check(rtxNode_InfoLocation(lastNode))
     #check(rtxNodeItf(lastNode, name, inheritNode, body))
     [inheritance(inheritNode)]?
     #continue(sError, "Block expected after interface declaration.")
@@ -52,6 +53,7 @@ rtx_itf_declaration(theBlock : node, nameList : node) ::=
     #continue(sError, "Expected declaration type after interface declaration qualifier '"
                       + qualifier + "'.")
     rtx_itf_type:sStmt
+    #check(rtxNode_InfoLocation(lastNode))
     rtx_itf_stmt<sStmt>(lastNode, nameList, qualifier)
 ;
 
@@ -132,6 +134,7 @@ rtx_itf_type_stmt<"chunk">(theDecl : node) ::=
     => local dummy_ids;
     #continue(sError, "Expected name for method in type's declaration.")
     rtx_scoped_identifier(theName)
+    #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Expected parameters to method '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
     #check(rtxNodeItfTypeChunkDeclaration(theDecl, theName, theParamTypes))
@@ -141,6 +144,7 @@ rtx_itf_type_stmt<"attribute">(theDecl : node) ::=
     => local theType;
     #continue(sError, "Expected type for attribute in type's declaration.")
     rtx_scoped_identifier(theType)
+    #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "No attribute name given.")
     => local theName;
     identifier(theName)
@@ -153,6 +157,7 @@ rtx_itf_type_stmt<"method">(theDecl : node) ::=
     => local dummy_ids;
     #continue(sError, "Expected name for method in type's declaration.")
     rtx_scoped_identifier(theName)
+    #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Expected parameters to method '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
     #check(rtxNodeItfTypeMethodDeclaration(theDecl, theName, theParamTypes))
@@ -166,6 +171,7 @@ rtx_itf_stmt<"builtintype">(theDecl : node, nameList : node, theQualif : value) 
 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "builtintype"))
     rtx_scoped_identifier(nameNode)
+    #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Missing ';' ending builtintype declaration.")
     ';'
     #check(rtxNodeRType(rtypeNode, nameNode, params))
@@ -181,6 +187,7 @@ rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "variable"))
     rtx_scoped_identifier(typeNode)
     rtx_scoped_identifier(sName)
+    #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Missing ';' ending variable declaration.")
     ';'
     => setall theDecl.identifiers = sName;
@@ -192,6 +199,7 @@ rtx_itf_stmt<"sequence">(theDecl : node, nameList : node, theQualif : value) ::=
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "sequence"))
     => local rtypeNode;
     rtx_template_prototype(rtypeNode, theDecl.identifiers)
+    #check(rtxNode_InfoLocation(theDecl))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
     #continue(sError, "Expected Block or ';' ending sequence declaration.")
     [

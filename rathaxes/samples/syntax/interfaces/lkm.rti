@@ -11,7 +11,7 @@ interface Builtin
 interface LKM : Algorithms
 {
     provided builtintype        Device_list;
-    provided builtintype		Symbol;
+    provided builtintype	Symbol;
 
     provided pointcut           INCLUDE_DEPENDENCIES();
     provided pointcut           GLOBAL_DATA_DECLARATION();
@@ -29,9 +29,9 @@ interface LKM : Algorithms
     }
 
     required variable LKM::Device_list      Devices;
-    required variable ::string              OS;
-    optional variable ::number              version;
-    optional variable ::numser              arch;
+    required variable Builtin::string       OS;
+    optional variable Builtin::number       version;
+    optional variable Builtin::numser       arch;
 }
 
 interface Algorithms : Builtin
@@ -40,22 +40,22 @@ interface Algorithms : Builtin
         chunk ::decl();
     }
 
-    provided sequence   log(string)
+    provided sequence   log(Builtin::string)
     {
         provided chunk   ::CALL(); // use current namespace/template from frontend
     }
 
-    provided sequence   set(register_value)
+    provided sequence   set(Builtin::register_value)
     {
         provided chunk  ::CALL(); // use current namespace/template from frontend
     }
-    provided sequence   set(register, number)
+    provided sequence   set(Builtin::register_field, Builtin::number)
     {
         provided chunk  ::CALL(); // use current namespace/template from frontend
     }
     //...
 
-    required variable LKM::number size;
+    required variable Builtin::number size;
 }
 
 interface User : LKM

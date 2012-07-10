@@ -18,6 +18,7 @@ rtx_stmt<"template">(theBlock : node) ::=
 /**/    => local rtype;
 /**/    => local identifiers;
         #readIdentifier:sType
+        #check(rtxNode_InfoLocation(lastNode))
 /**/    #check(rtxNodeTplPrototype(prototype, sType, rtype, identifiers))
         rtx_template_prototype(rtype, identifiers)
 
@@ -59,6 +60,7 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 /**/         + theTemplate.rtype.name.scope
 /**/         + "::" + theTemplate.rtype.name.id + "!")
 /**/    #check(rtxNodeTpl_HasMapping(theTemplate))
+        #check(rtxNode_InfoLocation(theTemplate))
 ;
 
 // TYPE MAPPING
@@ -71,6 +73,7 @@ rtx_type_map(theBlock : node) ::=
 // MAP ONE ID
 rtx_type_map_identifier(theMap : node) ::=
         #readIdentifier:sId
+        #check(rtxNode_InfoLocation(theMap))
 /**/    #continue(sError, "Mapping for identifier " + sId + " is already defined.")
 /**/    #check(!rtxNodeTplTypeMapping_HasIdentifier(theMap, sId))
 /**/    => local mapped_body;
@@ -92,6 +95,7 @@ rtx_pointcut(theBlock : node) ::=
 /**/    => local ph;
 /**/    #check(rtxNodePointcut_Raw(lastNode, ph))
         rtx_templatedLang_code:sPlaceHolder
+        #check(rtxNode_InfoLocation(lastNode))
 /**/    => ph = sPlaceHolder;
 /**/    #continue(sError, "Expected ';' after pointcut in with block.")
         ';'
@@ -112,6 +116,7 @@ rtx_stmt<"with">(theBlock : node) ::=
 /**/    => local c_block;
 /**/    #check(rtxNodeWith(lastNode, interfaces, constraints, body, c_block))
         rtx_stmt_with_descript(interfaces, constraints)
+        #check(rtxNode_InfoLocation(lastNode))
         
         // block of the with node
 /**/    #continue(sError, "Expected block after constraints.")
@@ -168,6 +173,7 @@ rtx_stmt_with_constraint(theList : node) ::=
         rtx_stmt_with_operator:sOperator
 /**/    => local theVal;
 /**/    #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
+        #check(rtxNode_InfoLocation(theList#back))
         rtx_value(theVal)
 ;
 
@@ -195,6 +201,7 @@ rtx_stmt<"chunk">(theBlock : node) ::=
 /**/    => local pointcut;
 /**/    #check(rtxNodeChunk(lastNode, pointcut, param_ids, body))
         rtx_scoped_identifier(pointcutId)
+        #check(rtxNode_InfoLocation(lastNode))
         #check(rtxNodeRType(pointcut, pointcutId, param_types))
 
         #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<pointcut.type>(pointcut)+"'.")

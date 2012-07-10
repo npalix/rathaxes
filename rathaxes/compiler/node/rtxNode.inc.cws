@@ -6,6 +6,9 @@ function rtxNode_version()
 declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
 declare function rtxNode(local_node : node);
 
+// usefull function to update location info into the node
+declare function rtxNode_InfoLocation(local_node : node);
+
 // Some Useful Node functions for basic types... Most should be builtin
 declare function rtxNodeNumber(local_node : node, nb : value);
 declare function rtxNodeString(local_node : node, string : value);
@@ -53,6 +56,15 @@ function	rtxNode(local_node : node)
     cnormNode(local_node);
     local_node.type = "__rtx_node__";
 
+    return true;
+}
+
+function rtxNode_InfoLocation(local_node : node)
+{
+    localref locInf = local_node#root;
+    if (!existVariable(locInf.line))
+    { ref locInf = this;}
+    insert local_node.location = locInf + ":" + locInf.line + ":" + locInf.col;
     return true;
 }
 

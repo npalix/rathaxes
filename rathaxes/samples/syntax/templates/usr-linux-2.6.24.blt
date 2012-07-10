@@ -5,8 +5,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
     {
         chunk GLOBAL_CODE_DEFINITION()
         {
-            typedef void dev_t;
-
             int ${config.devices}_open(dev_t *ctx)
             {
                 ${cast local.ctx as User::Context};
@@ -19,7 +17,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
-            typedef void dev_t;
             int ${config.devices}_open(dev_t *ctx)
             {
                 ${cast local.ctx as User::Context};
@@ -47,7 +44,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
-            typedef void dev_t;
             int ${config.devices}_read(dev_t *ctx)
             {
                 ${Algorithms::Buffer}   buf;
@@ -67,8 +63,6 @@ values LKM::OS=linux, LKM::version >= 2.6.24
     {
         chunk GLOBAL_CODE_DEFINITION()
         {
-            typedef void dev_t;
-
             int ${config.devices}_write(dev_t *ctx)
             {
                 ${Algorithms::Buffer}   buf;

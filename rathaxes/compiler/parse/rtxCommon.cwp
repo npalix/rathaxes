@@ -35,6 +35,7 @@ rtx_composed_identifier(theNode : node) ::=
     rtx_scoped_identifier(theVar)
     // Create the node from
     #check(rtxNodeVar(theNode, theVar))
+    #check(rtxNode_InfoLocation(theNode))
     [
         '.' identifier(theNode):curField
         // add the field into the block

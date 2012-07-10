@@ -11,6 +11,7 @@ rtx_stmt_config_block(theBlock : node) ::=
 /**/    => local theValue;
         #check(rtxNodeConfigField(configField, theIdentifier, theValue))
         rtx_scoped_identifier(theIdentifier)
+        #check(rtxNode_InfoLocation(theBlock))
 /**/    #continue(sError, "Expected assignment operator '=' after"
 /**/                    + " configuration variable declaration.")
         '='
@@ -59,6 +60,7 @@ rtx_stmt<"device">(theBlock : node) ::=
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
+        #check(rtxNode_InfoLocation(lastNode))
 /**/    => local deviceBody;
 /**/    #check(rtxNodeDevice(lastNode, device_name, deviceBody))
         ["use"
@@ -101,9 +103,11 @@ rtx_register_like(theNode : node) ::=
 ;
 
 rtx_bit_range(theMap : node) ::= '[' #readInteger:theMap.begin [".." #readInteger:theMap.end]? ']'
+    #check(rtxNode_InfoLocation(theMap))
 ;
 
 rtx_bit_mask(theMask : node) ::= ['(' ['0'|'1']+:theMask.mask ')'] "->" #readIdentifier:theMask.name ';'
+    #check(rtxNode_InfoLocation(theMask))
 ;
 
 rtx_register_map(theBlock : node) ::= 
@@ -132,6 +136,7 @@ rtx_register(theNode : node) ::= "register"
 /**/    => local body;
 /**/    #check(rtxNodeRegister(theNode, type, like, body))
         rtx_scoped_identifier(type)
+        #check(rtxNode_InfoLocation(theNode))
         #readIdentifier:theNode.name
         #check(rtxNodeRegister_addMap(theNode))
         rtx_register_like(like)
@@ -155,6 +160,7 @@ rtx_property(theNode : node) ::=
         => local typeNode;
         => local dummy;
         rtx_scoped_identifier(typeNode)
+        #check(rtxNode_InfoLocation(theNode))
         #check(rtxNodeRType(rtype, typeNode, dummy))
         #readIdentifier:theNode.name
         '{'
@@ -194,6 +200,7 @@ rtx_sequence_call(theBlock : node) ::=
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
         rtx_scoped_identifier(lastNode.sequence)
+        #check(rtxNode_InfoLocation(lastNode))
         [rtx_sequence_args(lastNode.args) ]?
         #continue(sError, "Error in sequence call")
         [';' 
@@ -216,6 +223,7 @@ rtx_sequence(theNode : node) ::=
 /**/    => local seqParamName;
 /**/    => local body;
         rtx_template_prototype(seqRtype, seqParamName)
+        #check(rtxNode_InfoLocation(theNode))
 /**/    #check(rtxNodeSequence(theNode, seqRtype, seqParamName, body))
         #continue(sError, "Expected sequence implementation block.")
         '{'
