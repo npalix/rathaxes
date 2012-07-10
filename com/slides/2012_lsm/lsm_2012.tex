@@ -72,8 +72,12 @@
 \end{frame}
 
 \begin{frame}{Pre-requisites}
-\begin{center}
-\end{center}
+\begin{itemize}
+\item Kernel: The Base Component of OSes;
+\item Device: The Hardware/board plugged into the motherboard;
+\item Subsystems: Abstraction layer for big computer features (Network, FS, Storage, USB, \ldots);
+\item Driver: The software component loaded into the kernel.
+\end{itemize}
 \end{frame}
 
 \begin{frame}{Devices drivers}
@@ -277,8 +281,13 @@ A DSL that:
     with CharDev
     values OS = Linux, version >= 2.6.27 {
       template sequence CharDev::open(Context ctx) {
-         chunk LKM::GLOBAL_CODE_DEFINITION {
+         chunk LKM::INIT_LKM_FPTRS() {
              /* Instrumentalized C */
+             .open = &${self.devname}_write
+         }
+         chunk ::CALL() {
+                int     ${self.devname}_write(dev_t *ctx)
+                {/*....*/}
          }
       }
     }
@@ -314,8 +323,23 @@ A DSL that:
     \begin{minipage}{115mm}
     \begin{lstlisting}
     driver Pipe use LKM, CharDev, Algorithms {
+        register byte APR mode RW like (*****...) at 3
+        {
+            [0..1] as word_lengh {
+                (00) -> _5bits;
+                (01) -> _6bits;
+                (10) -> _7bits;
+                (11) -> _8bits;
+            }
+            [2] as stop_bits {
+                (0) -> _1stop_bits;
+                (1) -> _2stop_bits;
+            }
+        }
       open(Context ctx) {
-         log("Open called on device Pipe");
+         Generic::log("Open called on device!");
+         Generic::set(APR->word_lengh._7bits);
+         log("initialized"); // unqualified call
       }
     }
     \end{lstlisting}
