@@ -137,11 +137,29 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         insert treepart.scripts_path = this.scripts_path;
         insert treepart.map;
         insert treepart.map.files;
+        local subPart;
+        cutString(compile.location, ":", subPart);
+        treepart = subPart[0];
+        insert treepart.line = subPart[1];
+        insert treepart.col = subPart[2];
         if (existVariable(compile#root.map.files))
             setall treepart.map.files = compile#root.map.files;
         parseStringAsBNF({
                 #include "cnorm.cwp"
                 #include "parse/rtxCommon.cwp"
+
+
+                #ignore["meta"] ::= 
+                        [
+                        	["//" ->[['\r']? '\n']]
+                        	| ["/*" ->"*/"]
+                        	| ' '
+                                | ['\r']? '\n' 
+                        	| '\t'
+                        	| '\f' // form feed, sometimes Windows kernel headers have this character.
+                        ]+:skip
+                        =>{ insert this.col = countInputCols();}
+                ;
                 
                 /*
                  *
@@ -158,7 +176,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 #overload
                 translation_unit ::=
 /**/            #try
-/**/          	                #ignore("CNORM")
+/**/          	                #ignore("meta")
 /**/                            #check(rtxNodePlaceHolder(this))
                                 [
                                         rtx_placeholder_noconcat(this)
@@ -184,7 +202,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                                 rtx_composed_identifier(theNode.body)
                         ]
                         '}'
-                        [ rootidentifier:theNode.sufix ]?
+                        [ rootidentifier:theNode.suffix ]?
                         [ ";" ]?//>>>>>????????????
                 ;
 
@@ -198,6 +216,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                             rootidentifier:var_name
 /**/                        #pushItem(theVars)
 /**/                        #check(rtxNodeIdentifier(theVars#back, var_name))
+                            #check(rtxNode_InfoLocation(theVars#back))
                         ]
                         // second identifier (may be either the var of the chunk : ${local.buf.init(42)} | ${buf.init(42)} )
                         '.'
@@ -207,9 +226,12 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                                 rootidentifier:chunk_name
 /**/                            #pushItem(theVars)
 /**/                            #check(rtxNodeIdentifier(theVars#back, var2_name))
+                                #check(rtxNode_InfoLocation(theVars#back))
 /**/                            #check(rtxNodeIdentifier(theChunk, chunk_name, "", true))
+                                #check(rtxNode_InfoLocation(theChunk))
                             |
 /**/                            #check(rtxNodeIdentifier(theChunk, var2_name, "", true))
+                                #check(rtxNode_InfoLocation(theChunk))
 
                         ]
                             
@@ -238,6 +260,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/                    => local seqName;
 /**/                    => local seqArgs;
                         rtx_scoped_identifier(seqName)
+                        #check(rtxNode_InfoLocation(seqName))
                         '('
 /**/                            #continue(sError, "Expected closing parenthesis in sequence call :'" 
 /**/                                    + rtxRTypeName<theCall.seqName.type>(theCall.seqName) + "'")

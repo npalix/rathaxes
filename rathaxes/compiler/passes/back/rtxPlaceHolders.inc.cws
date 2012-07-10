@@ -4,6 +4,11 @@ function rtxPlaceHolders_version()
 {return "1.0";}
 
 /*
+* found the nearest location
+*/
+declare function        rtxPH_GetLocation(local_node : reference);
+
+/*
  * The goal of this func is to go thru all item in the global tree and create PlaceHolders for ${} expression
 */
 declare function	rtxPH_walk<T>(local_node : node);
@@ -18,6 +23,14 @@ declare function	rtxPH_havePlaceHolder(ref_node : reference);
 
 // create a id for the placeholder _*, and reference it in .compile
 declare function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value);
+
+function        rtxPH_GetLocation(local_node : reference)
+{
+        localref theNode = local_node;
+        while (!existVariable(theNode.location))
+        {       ref theNode = theNode#parent;}
+        return theNode.location;
+}
 
 // called from rtxMeta
 // TODO: specialize all __rtx_
@@ -103,6 +116,8 @@ function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : v
         ref_node = sKey;
         // set the target
         insert compile[sKey].type_target = type_target;
+        // set the location for the meta var
+        insert compile[sKey].location = rtxPH_GetLocation(ref_node);
         // set ref_placeholder at correct place
         insert compile[sKey].ref_placeholder;
         if (type_target == "target_identifier")

@@ -598,6 +598,40 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         }
         break ;
     case "target_identifier":
+        traceLine("inject<\"__rtx_var__\">:<LOG> Injecting an identifier");
+        //traceLine("inject<\"__rtx_var__\">:<LOG> ID:theChunk: " + toString(theChunk, true));
+        //traceLine("inject<\"__rtx_var__\">:<LOG> ID:varName: "+ toString(varName, true));
+        //traceLine("inject<\"__rtx_var__\">:<LOG> ID:resolverValues: " + toString(resolverValues, true));
+        //traceLine("inject<\"__rtx_var__\">:<LOG> ID:treeNode: " + toString(treeNode, true));
+        traceLine("inject<\"__rtx_var__\">:<LOG> ID:local_node: " + toString(local_node, true));
+        //traceLine("inject<\"__rtx_var__\">:<LOG> ID:source_tree: " + toString(source_tree, true));
+        local fieldValue;
+        // TODO: obsolete when builtintype will be typed
+        if (isBuiltinVariable(varName))
+        {
+                local dummyResVal;
+                local dummyRtype;
+                local subidentifiers;
+                select n in local_node.body.identifiers[].name { pushItem subidentifiers; subidentifiers#back = n; }
+                if (type_map<"Builtin::"+varName>(dummyResVal, dummyRtype,
+                                        subidentifiers, local_node, fieldValue, source_tree) == false)
+                {
+                        traceLine(RED + "[Error] Could not resolve mapping for builtin variable '"
+                                        + local_node.body.identifiers[0].name + "'" + DEFAULT_COLOR);
+                        return false;
+                }
+        }
+        else
+        { rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);}
+        traceLine("inject<\"__rtx_var__\">:<LOG> ID:fieldValue: " + toString(fieldValue, true));
+        local sChunk = fieldValue;
+        if (existVariable(fieldValue.id))
+        { sChunk = fieldValue.id;}
+        // First concat prefix
+        local finalNode = local_node.prefix + sChunk + local_node.suffix;
+        traceLine("inject<\"__rtx_var__\"> ID:final value:" + finalNode);
+        local_node#parent.ref_placeholder = finalNode;
+        break;
     case "target_expr":
         // Is it a variable of a rathaxes type : check in type_map ?
         if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
@@ -631,7 +665,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            //traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + mapping + DEFAULT_COLOR);
+            traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + toString(mapping, true) + DEFAULT_COLOR);
 
             // Here, the mapping should always be an expression
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
@@ -664,6 +698,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
+            // TODO: obsolete when builtintype will be typed
             if (type_map<"Builtin::"+varName>(dummyResVal, dummyRtype,
                                               subidentifiers,
                                               local_node, mapping, source_tree) == false)
@@ -717,7 +752,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 // Next resolve the value and concat it
                 finalNode = finalNode + fieldValue;
                 // Finally, concat suffix
-                finalNode = finalNode + local_node.sufix;
+                finalNode = finalNode + local_node.suffix;
                 local_node#parent.ref_placeholder.id = finalNode;
             }
         }
@@ -1292,7 +1327,7 @@ function type_map<"Builtin::config">(resolverValues : node,
             }
             else if (itf[mappedIds#[0]].type == "__rtx_id__")
             {
-                out_node = placeHolder.prefix + itf[mappedIds#[0]].val.name + placeHolder.sufix;
+                out_node = placeHolder.prefix + itf[mappedIds#[0]].val.name + placeHolder.suffix;
                 return true;
             }
             else
