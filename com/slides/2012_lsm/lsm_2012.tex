@@ -322,7 +322,7 @@ A DSL that:
 \draw (RTX.east) node[right]{%
     \begin{minipage}{115mm}
     \begin{lstlisting}
-    driver Pipe use LKM, CharDev, Algorithms {
+    device Pipe use LKM, CharDev, Algorithms {
         register byte APR mode RW like (*****...) at 3
         {
             [0..1] as word_lengh {
@@ -355,7 +355,7 @@ A DSL that:
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
 \begin{lstlisting}
-driver Pipe use LKM, CharDev, Algorithms {
+device Pipe use LKM, CharDev, Algorithms {
   open(Context ctx) {
      log("Open called on device Pipe");
   }
@@ -405,7 +405,7 @@ values OS = Linux, version >= 2.6.27 {
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
 \begin{lstlisting}
-driver Pipe use LKM, CharDev, Algorithms {
+device Pipe use LKM, CharDev, Algorithms {
   open(Context ctx) {
      log("Open called on device Pipe");
   }
@@ -457,7 +457,7 @@ values OS = Linux, version >= 2.6.27 {
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
 \begin{lstlisting}
-driver Pipe use LKM, CharDev, Algorithms {
+device Pipe use LKM, CharDev, Algorithms {
   open(Context ctx) {
      log("Open called on device Pipe");
   }
@@ -514,7 +514,7 @@ values OS = Linux, version >= 2.6.27 {
 \draw (RTX.east) node[right]{%
 \begin{minipage}{115mm}
 \begin{lstlisting}
-driver Pipe use LKM, CharDev, Algorithms {
+device Pipe use LKM, CharDev, Algorithms {
   open(Context ctx) {
      log("Open called on device Pipe");
   }
