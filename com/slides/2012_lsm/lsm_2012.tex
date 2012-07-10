@@ -49,8 +49,8 @@
 }
 
 \title{\rtx\ -- LSM 2012}
-\date{12th July 2012}
-\author{L. Auroux \& D. Pineau \\ \texttt{www.rathaxes.org}}
+\date{July 12\textsuperscript{th} 2012}
+\author{L. Auroux, D. Pineau \\ \texttt{www.rathaxes.org}}
 
 \definecolor{lightred}{RGB}{147,36,33}
 \tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
@@ -76,60 +76,61 @@
 \end{center}
 \end{frame}
 
-\begin{frame}{State of the Driver}
+\begin{frame}{Devices drivers}
 \begin{center}
-\only<1>{\LARGE{Often \cemph{\Huge{instables}} and \cemph{\Huge{buggy}}}}
+\only<1>{\LARGE{Are a major \cemph{\Huge{PITA}}}}
 \only<2>{%
-\large{\itshape{\rmfamily{«~\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}~»}}}
+\large{\itshape{\rmfamily{``\tred{30 \%} of Windows Vista \tred{crashes} caused by \tred{Nvidia drivers}''}}}
 
 \vspace{1cm}
-\raggedleft\large{2.6.39: \itshape{\rmfamily{«~the drivers (\tred{65 \% of the patches})~»}} (patrick\_g)}
+\raggedleft\large{2.6.39: \itshape{\rmfamily{``the drivers (\tred{65 \% of the patches})''}} (patrick\_g)}
 
 \vspace{1cm}
-\large{2.6.35: \itshape{\rmfamily{«~\tred{two-thirds of the changes} were made in the drivers~»}}}
+\large{2.6.35: \itshape{\rmfamily{``\tred{two-thirds of the changes} were made in the drivers''}}}
 }
 \end{center}
 \end{frame}
 
 \begin{frame}{Writing drivers}
 \begin{center}
-\only<1>{\Large{A \cemph{\LARGE{hard}} task, \cemph{\LARGE{long}} and \cemph{\LARGE{boring}}}}
+\only<1>{\Large{A \cemph{\LARGE{hard}}, \cemph{\LARGE{long}} and \cemph{\LARGE{error-prone}} task}}
 \end{center}
 \only<2>{\Large{%
-In cause:
+Culprits:
+
 \begin{itemize}
-\item Required skills ;
-\item Portability ;
+\item Required skills;
+\item Portability;
 \item Maintenance.
 \end{itemize}
 }}
 \end{frame}
 
-\begin{frame}{What \rtx\ offers to answer those issues}
+\begin{frame}{\rtx\ answers}
 \begin{center}
-\only<1>{\Large{\cemph{\LARGE{Simplify}} the development cycles}}
+\only<1>{\Large{\cemph{\LARGE{Simplify}} development cycles}}
 \end{center}
 \only<2>{\Large{
-To be done through:
+A DSL that:
 \begin{itemize}
-\item Abstracting the platforms ;
-\item Static checks ;
-\item Separated skills.
+\item Comes with platform abstractions;
+\item Performs static checks;
+\item \emph{Separates skills} $\rightarrow$ collaborative work.
 \end{itemize}}}
 \end{frame}
 
-\begin{frame}{Thus the tools for \rtx}
+\begin{frame}{Tools used by \rtx}
 	\begin{center}
         \Large{%
 	\begin{itemize}
-		\item	CodeWorker Language {\small (\url{http://www.codeworker.org/})} ;
+		\item	CodeWorker Language {\small (\url{http://www.codeworker.org/})};
 		\item	C Front-end: cnorm {\small (\url{http://code.google.com/p/cnorm/})}.
 	\end{itemize}
         }
 	\end{center}
 \end{frame}
 
-\begin{frame}[fragile]{What is a driver ?}
+\begin{frame}[fragile]{What is a driver?}
 \begin{tikzpicture}[overlay]
 % User processes box and its text
 \node[redbox, minimum height=6cm, minimum width=1.5cm] (USERLAND) at (0.7,-0.3) {};
@@ -177,7 +178,7 @@ To be done through:
     \node[graybox       ] (PCI) at (BUS.center) {PCI};
     \node[graybox, above=2mm of PCI] (USB) at (PCI.north)  {USB};
     \node[graybox, below=2mm of PCI] (ISA) at (PCI.south)  {ISA};
-    \node[graybox, below=2mm of ISA] (I2C) at (ISA.south)  {I\textsuperscript{2}C};
+    \node[graybox, below=2mm of ISA, minimum height=1em] (I2C) at (ISA.south)  {\ldots};
 
 % Register box and its text
 \node[graybox, minimum width=5cm, minimum height=8mm, rotate=90, right=7mm, anchor=north] (REGISTERS) at (BUS.east) {};
@@ -209,24 +210,24 @@ To be done through:
 \end{frame}
 
 
-\begin{frame}{The \rtx\ language (Middle-End)}
+\begin{frame}{\rtx\ language (Middle-End)}
 \begin{tikzpicture}[overlay]
 \node (RTI) at (1.2,0) {\includegraphics[height=1.5cm]{icons/rti}};
 
 \draw (RTI.north east) node[below right]{%
     \begin{minipage}{10cm}
-    Describe a \emph{«~subsystem~»} with:
+    Describe \emph{``subsystems''} with:
     \begin{itemize}
-    \item Types ;
-    \item Sequences ;
-    \item Variables of configuration.
+    \item Types;
+    \item Sequences;
+    \item Configuration variables;
     \end{itemize}
     \end{minipage}
 };
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{The \rtx\ language (Middle-End)}
+\begin{frame}[fragile]{\rtx\ language (Middle-End)}
 \begin{tikzpicture}[overlay]
 \node (RTI) at (1.2,0) {\includegraphics[height=1.5cm]{icons/rti}};
 
@@ -250,23 +251,23 @@ To be done through:
 \end{frame}
 
 
-\begin{frame}{The \rtx\ language (Back-End)}
+\begin{frame}{\rtx\ language (Back-End)}
 \begin{tikzpicture}[overlay]
 \node (BLT) at (1.2,0) {\includegraphics[height=1.5cm]{icons/blt}};
 
 \draw (BLT.north east) node[below right]{%
     \begin{minipage}{10cm}
-        Implements the interfaces for each OS:
+        Implement the interfaces for each OS:
         \begin{itemize}
-        \item Type templates ;
-        \item Sequence templates.
+        \item Types templates;
+        \item Sequences templates.
         \end{itemize}
     \end{minipage}
 };
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{The \rtx\ language (Back-End)}
+\begin{frame}[fragile]{\rtx\ language (Back-End)}
 \begin{tikzpicture}[overlay]
 \node (BLT) at (1.2,0) {\includegraphics[height=1.5cm]{icons/blt}};
 
@@ -288,16 +289,16 @@ To be done through:
 \end{frame}
 
 
-\begin{frame}{The \rtx\ language (Front-End)}
+\begin{frame}{\rtx\ language (Front-End)}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,0) {\includegraphics[height=1.5cm]{icons/rtx}};
 
 \draw (RTX.north east) node[below right]{%
     \begin{minipage}{10cm}
-        Describes the hardware, the driver's algorithms, and the target environment:
+        Hardware, algorithms and target descriptions:
         \begin{itemize}
-        \item Registers ;
-        \item Sequences' algorithms ;
+        \item Registers;
+        \item Sequences' algorithms;
         \item Configuration.
         \end{itemize}
     \end{minipage}
@@ -305,7 +306,7 @@ To be done through:
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{The \rtx\ language (Back-End)}
+\begin{frame}[fragile]{\rtx\ language (Back-End)}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,0) {\includegraphics[height=1.5cm]{icons/rtx}};
 
@@ -324,7 +325,7 @@ To be done through:
 \end{frame}
 
 
-\begin{frame}[fragile]{Interactions between language parts}
+\begin{frame}[fragile]{Interactions between the language parts}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
@@ -374,7 +375,7 @@ values OS = Linux, version >= 2.6.27 {
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{Interactions between language parts}
+\begin{frame}[fragile]{Interactions between the language parts}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
@@ -426,7 +427,7 @@ values OS = Linux, version >= 2.6.27 {
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{Interactions between language parts}
+\begin{frame}[fragile]{Interactions between the language parts}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
@@ -483,7 +484,7 @@ values OS = Linux, version >= 2.6.27 {
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile]{Interactions between language parts}
+\begin{frame}[fragile]{Interactions between the language parts}
 \begin{tikzpicture}[overlay]
 \node (RTX) at (1.2,2.4) {\includegraphics[height=1.5cm]{icons/rtx}};
 \draw (RTX.east) node[right]{%
@@ -543,7 +544,7 @@ values OS = Linux, version >= 2.6.27 {
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Generating a driver}
+\begin{frame}{Driver generation work-flow}
 \only<1>{\begin{tikzpicture}[overlay]
 \node (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
 \node[redbox] (COMPILER) at (3.5,-0.5) {Compiler};
@@ -552,7 +553,7 @@ values OS = Linux, version >= 2.6.27 {
 \draw[warrow] (RTX)--(COMPILER);
 \draw[warrow] (COMPILER)--(C);
 
-\draw (RTX.north east) node[below right]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right]{\large{Driver description}};
 \draw (C.north east) node [below right]{\large{Kernel module}};
 \end{tikzpicture}}
 
@@ -564,14 +565,14 @@ values OS = Linux, version >= 2.6.27 {
 \draw[warrow,opacity=0.3] (RTX)--(COMPILER);
 \draw[warrow,opacity=0.3] (COMPILER)--(C);
 
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 \draw (COMPILER.south east) node[above right]{\Large{Compiler}};
 \draw (C.north east) node [below right, opacity=0.3]{\large{Kernel module}};
 \end{tikzpicture}}
 
 \only<3>{\begin{tikzpicture}[overlay]
 \node[opacity=0.3] (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 
 \node[opacity=0.3] (C) at (3.5,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
 
@@ -594,7 +595,7 @@ values OS = Linux, version >= 2.6.27 {
 
 \only<4>{\begin{tikzpicture}[overlay]
 \node[opacity=0.3] (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 
 \node[opacity=0.3] (C) at (3.5,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
 
@@ -617,7 +618,7 @@ values OS = Linux, version >= 2.6.27 {
 
 \only<5>{\begin{tikzpicture}[overlay]
 \node[opacity=0.3] (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 
 \node[opacity=0.3] (C) at (3.5,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
 
@@ -644,7 +645,7 @@ values OS = Linux, version >= 2.6.27 {
 
 \only<6>{\begin{tikzpicture}[overlay]
 \node[opacity=0.3] (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 
 \node[opacity=0.3] (C) at (3.5,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
 
@@ -668,14 +669,14 @@ values OS = Linux, version >= 2.6.27 {
 \draw[warrow] (RTI.west)--(RTXLINK.north);
 
 \node (BLT) at (6,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
-\draw (BLT.east) node[above right]{\Large{Templates of code}};
+\draw (BLT.east) node[above right]{\Large{Code templates}};
 \draw[warrow] (BLT.west)--(RTXLINK);
 \draw (C.north east) node [below right, opacity=0.3]{\large{Kernel module}};
 \end{tikzpicture}}
 
 \only<7>{\begin{tikzpicture}[overlay]
 \node[opacity=0.3] (RTX) at (3.5,2.5) {\includegraphics[height=1.5cm]{icons/rtx}};
-\draw (RTX.north east) node[below right, opacity=0.3]{\large{Description of the driver}};
+\draw (RTX.north east) node[below right, opacity=0.3]{\large{Driver description}};
 
 \node[opacity=0.3] (C) at (3.5,-3.5) {\includegraphics[height=1.5cm]{icons/c}};
 
@@ -697,27 +698,27 @@ values OS = Linux, version >= 2.6.27 {
 \draw[warrow] (RTI.west)--(RTXLINK.north);
 
 \node (BLT) at (6,-0.5) {\includegraphics[height=1.3cm]{icons/blt}};
-\draw (BLT.east) node[above right]{\Large{Templates of code}};
+\draw (BLT.east) node[above right]{\Large{Code templates}};
 \draw[warrow] (BLT.west)--(RTXLINK);
 \draw (C.north east) node [below right, opacity=0.3]{\large{Kernel module}};
 \end{tikzpicture}}
 \end{frame}
 
-\begin{frame}{First step into \rtx}
+\begin{frame}{}%First steps into \rtx}
 	\begin{center}
 	\Huge{\emph{Demonstration}}
 	\end{center}
 \end{frame}
 
 
-\begin{frame}{Current situation of \rtx}
+\begin{frame}{Current state of \rtx}
 \only<1>{
     \Large{%
         A bit of history:
         \begin{itemize}
-            \item 2002: Thesis of L. Reveillere \emph{«~Devil~»} ;
-            \item 2007: Beginning of the project at LSE (with Epitech);
-            \item 2012: Refactoring, gone open-source.
+            \item 2002: L. Reveillere thesis \emph{``Devil''};
+            \item 2007: Beginning of the project at LSE;
+            \item 2011-12: Refactoring, open sourcing.
         \end{itemize}
     }
 }
@@ -725,8 +726,8 @@ values OS = Linux, version >= 2.6.27 {
     \Large{%
         The project right now:
         \begin{itemize}
-            \item Slow development (team of 3-5) ;
-            \item Coverage of the problematique: ~70\% ;
+            \item Slow development (team of 3-5);
+            \item ~70\% of the problematic covered.
         \end{itemize}
     }
 }
@@ -734,36 +735,29 @@ values OS = Linux, version >= 2.6.27 {
     \Large{%
         What we need:
         \begin{itemize}
-            \item Feedback about the language ;
-            \item More input from hardware specialists ;
+            \item Feedback on the language;
+            \item Input from drivers devs \& hw vendors;
             \item Contributors.
-        \end{itemize}
-    }
-}
-\only<4>{
-    \Large{
-        In the near future:
-        \begin{itemize}
-            \item Work closely with small experimental/exotic OSes ;
-            \item Gaining contributors ;
-            \item Beginning of a driver/kernel library.
         \end{itemize}
     }
 }
 \end{frame}
 
 \begin{frame}{Next steps}
-	\begin{center}
+    \begin{center}
         \Large{%
 	\begin{itemize}
-		\item	Fosdem 2013;
-		\item	Evolution to Python $\rightarrow$ contributions.
+            \item Get in touch with small/experimental OSes;
+            \item Beginning of a driver/kernel library;
+            \item More proofs of concept;
+            \item Gaining contributors;
+            \item Fosdem 2013.
 	\end{itemize}
         }
-	\end{center}
+    \end{center}
 \end{frame}
 
-\begin{frame}{Questions ?}
+\begin{frame}{Questions?}
 \begin{center}
 \Huge{Thanks}
 
