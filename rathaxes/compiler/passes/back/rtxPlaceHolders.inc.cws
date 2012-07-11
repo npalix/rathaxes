@@ -96,7 +96,7 @@ function	rtxPH_havePlaceHolder(ref_node : reference)
 // translate the placeholder into _1,_2,_X,etc...
 // type_target:
 //      - target_identifier : accept only subsitution of targeted ref_placeholder by an identifier
-//      - target_expr : you must substitute the node of the targeted ref_placeholder
+//      - target_expr : you must substitute the node of the targeted ref_placeholder by a setall
 //      - target_decl : accept substitution of the declaration members, identifier included.
 //      - target_pointcut : accept substitution of the whole statement/expression
 function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value)
