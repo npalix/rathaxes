@@ -212,15 +212,16 @@ function    generateCodeWorker<"__rtx_with__">(local_node : node, uid : value)
                 function        instanceChunk<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
                 {
                         local errcount = 0;
-                        // save again for comparison out of the process
-                        saveProject("@this.tree_file@2", c_tree);
                         // mapping data into placeholders :
                         <%
                                 foreach item in this.c_block.compile
                                 { %>@item.cws_expr@<% }
                         %>
                         // save again for comparison out of the process
-                        saveProject("@this.tree_file@3", c_tree);
+                        local instanciateTree;
+                        setall instanciateTree = c_tree;
+                        if (existVariable(instanciateTree.compile)) {removeVariable(instanciateTree.compile);}
+                        saveProject("@this.tree_filename@-instanciation.tree", instanciateTree);
                         if (errcount != 0)
                                 return false;
                         return true;
@@ -240,15 +241,16 @@ function    generateCodeWorker<"__rtx_chunk__">(local_node : node, uid : value)
                 function	instanceChunk<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
                 {
                         local errcount = 0;
-                        // save again for comparison out of the process
-                        saveProject("@this.tree_file@2", c_tree);
                         // mapping data into placeholders :
                         <%
                                 foreach item in this.body.compile
                                 { %>@item.cws_expr@<% }
                         %>
                         // save again for comparison out of the process
-                        saveProject("@this.tree_file@3", c_tree);
+                        local instanciateTree;
+                        setall instanciateTree = c_tree;
+                        if (existVariable(instanciateTree.compile)) {removeVariable(instanciateTree.compile);}
+                        saveProject("@this.tree_filename@-instanciation.tree", instanciateTree);
                         if (errcount != 0)
                                 return false;
                         return true;
@@ -271,14 +273,15 @@ function    generateCodeWorker<"__rtx_tpl_type_id_map__">(local_node : node,
                 function instanceMapping<"@this.instanceKey@">(resVals : node, c_tree : node, source_tree : reference)
                 {
                         local errcount = 0;
-                        // save again for comparison out of the process
-                        saveProject("@this.tree_file@-@this.key@1", c_tree);
                         <%
                                 foreach item in this.compile
                                 { %> @item.cws_expr@ <% }
                         %>
                         // save again for comparison out of the process
-                        saveProject("@this.tree_file@-@this.key@2", c_tree);
+                        local instanciateTree;
+                        setall instanciateTree = c_tree;
+                        if (existVariable(instanciateTree.compile)) {removeVariable(instanciateTree.compile);}
+                        saveProject("@this.tree_filename@-@this.key@-instanciation.tree", instanciateTree);
                         if (errcount != 0)
                                 return false;
                         return true;
@@ -307,10 +310,17 @@ function    generateCodeWorker<"__rtx_tpl_type_map__">(local_node : node,
 function	gencodeworker<"__rtx_chunk__">(blt_node : node,
                                            theBlock : node, uid : node)
 {
+        local sContext = blt_node.tpl_hash;
+        if (sContext == "With")
+        {       sContext += "_" + uid;}
+        local sFile = sContext + "_chunk_" + blt_node.pointcut.name.scope + "_" + blt_node.pointcut.name.name;
+        traceLine(">>out file:" + sFile);
+
         // Put the PIC string containing the code into the template node
         // in order to be accessible durint the codeworker code generation
-        local sAstFile = "__05_rtx_codeworker_" + uid + ".tree";
-        local sCwsFile = "__06_rtx_codeworker_" + uid + ".cws";
+        local sAstFile = sFile + ".tree";
+        local sCwsFile = sFile + ".cws"; 
+        insert blt_node.tree_filename = sFile;
         insert blt_node.tree_file = sAstFile;
         insert blt_node.script_file = sCwsFile;
 
@@ -330,7 +340,7 @@ function	gencodeworker<"__rtx_chunk__">(blt_node : node,
         { removeVariable(placeHolder.cws_expr); }
         // Save the tree now, in order to keep the data inserted by the specific
         // Codeworker generation function
-        saveProject(sAstFile, blt_node);
+        saveProject(sAstFile + ".tree", blt_node);
 }
 
 function	gencodeworker<"__rtx_with__">(blt_node : node,
@@ -345,8 +355,12 @@ function	gencodeworker<"__rtx_with__">(blt_node : node,
 function    gencodeworker<"__rtx_tpl_type_map__">(blt_node : node,
                                                   theBlock : node, uid : node)
 {
-        insert blt_node.tree_file = "__05_rtx_codeworker_" + uid + ".tree";
-        insert blt_node.script_file = "__06_rtx_codeworker_" + uid + ".cws";
+        local sFile = blt_node.tpl_hash + "_typemap_" + blt_node.prototype.name.scope + "_" + blt_node.prototype.name.name;
+        traceLine(">>out file2:" + sFile);
+
+        insert blt_node.tree_filename = sFile;
+        insert blt_node.tree_file = sFile + ".tree";
+        insert blt_node.script_file = sFile + ".cws";
         // Here, we must iterate on the mapping. Generate a cws function for
         // each mapping.
         traceLine("rtxGen:<LOG> Starting code generation for " + blt_node.type);
@@ -355,6 +369,7 @@ function    gencodeworker<"__rtx_tpl_type_map__">(blt_node : node,
                 traceLine("rtxGen:<LOG> Generating cws for mapping '"+key(mapping)+"'");
                 insert mapping.tpl_hash = blt_node.tpl_hash;
                 insert mapping.tree_file = blt_node.tree_file;
+                insert mapping.tree_filename = blt_node.tree_filename;
                 insert mapping.key = key(mapping);
                 foreach placeHolder in mapping.compile
                 {
@@ -373,6 +388,7 @@ function    gencodeworker<"__rtx_tpl_type_map__">(blt_node : node,
         {
                 removeVariable(mapping.cws_expr);
                 removeVariable(mapping.tree_file);
+                removeVariable(mapping.tree_filename);
                 removeVariable(mapping.tpl_hash);
                 removeVariable(mapping.key);
                 foreach placeHolder in mapping.compile
@@ -404,7 +420,7 @@ function	rtxGen<"__rtx_with__">(local_node : node, uid : node)
 {
         traceLine("rtxGen<\"__rtx_with__\">: starting generation...");
         // save the node to generate for cold analysis
-        saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
+        //saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
 
         // generate for the with node !
         if (isEmpty(local_node.c_block.block) == false)
@@ -427,7 +443,7 @@ function    rtxGen<"__rtx_chunk__">(local_node : node, uid : node)
 {
         traceLine("rtxGen<\"__rtx_chunk__\">: starting generation...");
         // save the node to generate for cold analysis
-        saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
+        //saveProject("__04_rtx_gen_" + uid + ".tree", local_node);
         gencodeworker<local_node.type>(local_node, local_node.body, uid);
         increment(uid);
 }
