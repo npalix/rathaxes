@@ -340,7 +340,7 @@ function	gencodeworker<"__rtx_chunk__">(blt_node : node,
         { removeVariable(placeHolder.cws_expr); }
         // Save the tree now, in order to keep the data inserted by the specific
         // Codeworker generation function
-        saveProject(sAstFile + ".tree", blt_node);
+        saveProject(sAstFile, blt_node);
 }
 
 function	gencodeworker<"__rtx_with__">(blt_node : node,
@@ -397,6 +397,7 @@ function    gencodeworker<"__rtx_tpl_type_map__">(blt_node : node,
                         removeVariable(placeHolder.id);
                 }
         }
+        traceLine(">>>>>>>>>:" + blt_node.tree_file);
         saveProject(blt_node.tree_file, blt_node);
 }
 
