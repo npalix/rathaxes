@@ -82,8 +82,6 @@ function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : 
                     {
                         localref reftype = refPointcut.rtype.params[index(type)];
                         localref param    = pointcutRtype.params[index(type)];
-                        traceLine(BLUE + "Probing types: "+toString(param,true) + toString(reftype,true) + DEFAULT_COLOR);
-
                         // if param name differs, or param scope differs.
                         if (reftype.name != param.name
                             || (param.global == false && param.scope != "" && param.scope != reftype.scope))

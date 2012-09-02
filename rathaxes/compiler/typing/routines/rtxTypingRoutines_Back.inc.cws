@@ -158,6 +158,99 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : nod
 }
 
 
+function rtxTypeCheck_ItfTypeDefinesAttribute(itfType : node, attribute : node)
+{
+    local match = false;
+
+    foreach mapId in itfType.attributes
+    {
+        if (key(mapId) == attribute)
+        {
+            match = true;
+            break ;
+        }
+    }
+
+    return match;
+}
+
+function rtxTypeCheck_ItfTypeDefinesCall(itfType : node, thePointcut : node)
+{
+    local message = "";
+    local match_count;
+    local unique_possibilities;
+    local possibilities;
+    local dummy_params;
+
+    foreach itfEntry in itfType.body.block
+    {
+        if ((itfEntry.type == "__rtx_itf_chunk__" || itfEntry.type == "__rtx_itf_method__")
+            && itfEntry.pointcut.name.name == thePointcut.name.name)
+        {
+            if (getArraySize(itfEntry.pointcut.params) == getArraySize(thePointcut.params))
+            {
+                local match = 1;
+                foreach reftype in itfEntry.pointcut.params
+                {
+                    localref type = thePointcut.params#[index(reftype)];
+                    if (type.name != reftype.name
+                        || (type.global == false
+                            && type.scope != ""
+                            && type.scope != reftype.scope))
+                    {
+                        match = 0;
+                        break ;
+                    }
+                }
+                if (match == 1)
+                {
+                    local prototype = rtxRTypeFullQualifiedName<"pointcut">(itfEntry.pointcut, dummy_params);
+                    insert possibilities[prototype];
+                    setall possibilities[prototype] = itfEntry.pointcut;
+                }
+            }
+        }
+    }
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+        {
+            insert unique_possibilities[key(entry)];
+            setall unique_possibilities[key(entry)] = entry;
+        }
+    }
+    match_count = getArraySize(unique_possibilities);
+
+    if (match_count == 1)
+    {
+        setall thePointcut = unique_possibilities#[0];
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface for method's '"
+                    + rtxRTypeFullQualifiedName<"pointcut">(thePointcut, dummy_params) + "'"
+                    + " parameter: " + "found " + match_count + " matching prototypes [ ";
+        foreach entry in unique_possibilities
+        {
+            message += rtxRTypeFullQualifiedName<"pointcut">(entry, dummy_params) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not match type's chunk or method '"
+                  + rtxRTypeFullQualifiedName<"pointcut">(thePointcut, dummy_params)
+                  + "'." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+
 ////////// TO CHECK
 function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_error : node)
 {
@@ -183,26 +276,31 @@ function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_er
 }
 
 /*
- * This function takes a Rtype node for a chunk and a template tree,
+ * This function takes a Rtype node for a chunk (interface) and a template tree,
  * and checks whether the chunk was implemented within the template.
  *
- * XXX TODO FIXME
- * The function does not check if the statement is ambiguous:
- * if two interfaces define "PLOP", then defining the chunk "PLOP" will
- * not result in an ambiguous statement, but resolve as the first pointcut
- * encountered.
+ * In order for the result to be reliable, the chunk given must be
+ * fully qualified.
  */
 function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
 {
-    local fullPointcut = rtxRTypeName<chunkRtype.type>(chunkRtype);
+    if (chunkRtype.name.global == false && chunkRtype.name.scope == "")
+        error("The chunk's name is not qualified "+ toString(chunkRtype, true));
+    foreach param in chunkRtype.params
+    {
+        if (param.global == false && param.scope == "")
+            error("The chunk's parameters #"+index(param)+" is not qualified "+ toString(chunkRtype, true));
+    }
+
+    local dummy_params;
+    local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(chunkRtype, dummy_params);
     foreach item in tpl.body.block
     {
         // If Fully-qulified equals, or if only name matches and not fully qualified
-        if (fullPointcut == rtxRTypeName<item.pointcut.type>(item.pointcut)
-            || (chunkRtype.name.name == item.pointcut.name.name && item.pointcut.name.scope == ""))
+        if (fullPointcut == rtxRTypeFullQualifiedName<"pointcut">(item.pointcut, dummy_params))
         {
             // Then qualify it.
-            item.pointcut.name.scope = chunkRtype.name.scope;
+            setall item.pointcut = chunkRtype;
             return true;
         }
     }
@@ -260,6 +358,39 @@ function rtxTypeCheck_TemplateHasPointcut(pointcutRtype : node, tpl : node)
                     return true;
                 }
             }
+        }
+    }
+    return false;
+}
+
+function rtxTypeCheck_TplTypeHasAttribute(theAttribute : node, tplTree : node)
+{
+    // XXX FIXME TODO
+    // Currently, we cannot check that the expression of the mapping
+    // resolves to the type described in the interface.
+
+    // The mapping ids are the keys in tpl.mapping.body.block
+    if (findElement(theAttribute.name, tplTree.mapping.body.block) == false)
+        return false;
+    return true;
+}
+
+/*
+ * This function receives a qualified method as parameter.
+ */
+function rtxTypeCheck_TplTypeHasMethod(theMethod : node, tplTree : node)
+{
+    local dummy_params;
+    local itfChunkName = rtxRTypeFullQualifiedName<"pointcut">(theMethod.pointcut, dummy_params);
+
+    foreach entry in tplTree.body.block
+    {
+        if (entry.type == "__rtx_chunk__"
+            && entry.pointcut.name.name == theMethod.pointcut.name.name)
+        {
+            local tplChunkName = rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params);
+            if (tplChunkName == itfChunkName)
+                return true;
         }
     }
     return false;
@@ -420,7 +551,12 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
 
     // If there are builtin chunks mandatory, check them here.
     if (rtxInterfaceNameHasType(tplRtype, tplRtype.name.scope, interface_list) == false)
+    {
+        traceLine(RED + "[Error] Type '" + rtxRTypeName<tplRtype.type>(tplRtype)
+                  + "' could not be found in interface '" + tplRtype.name.scope
+                  + "' or in the template's dependencies." + DEFAULT_COLOR);
         return false;
+    }
 
     // Load the itf's tree in order to refer to it's sequence node.
     if (rtxLink_findInterface(tplRtype.name.scope, itfNode) == false)
@@ -438,35 +574,71 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
     }
     ref itfTypeNode = itfTree.types[tplRtype.name.name];
 
-    // Now, check that every mapping is provided by the template,
-    foreach mapId in itfTypeNode
+    // Check that no chunk/method provided is unknown to the interface.
+    // Mind that the template's implem may not be fully qualified,
+    // and thus this call qualifies it in case of success
+    foreach entry in tplTree.body.block
     {
-        // The mapping ids are the keys in tpl.mapping.body.block
-        if (!findElement(mapId, tpl_mapping))
+        if (entry.type == "__rtx_chunk__")
         {
-            traceLine(RED + "[Error] Type template " + tplName
-                      +" does not implement the required mapping: '"
-                      + mapId + "'." + DEFAULT_COLOR);
-            increment(errcount);
-        }
-    }
-    // and finally check that no mapping provided is unknown to the interface.
-    foreach mapping in tpl_mapping
-    {
-        local check = false;
-        foreach mapId in itfTypeNode
-        {
-            if (mapId == key(mapping))
+            if (rtxTypeCheck_ItfTypeDefinesCall(itfTypeNode, entry.pointcut) == false)
             {
-                check = true;
-                break ;
+                local dummy_params;
+                traceLine(RED + "[Error] Type template " + tplName
+                          + " implements an unknown chunk or method: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params) + "'."+ DEFAULT_COLOR);
+                increment(errcount);
             }
         }
-        if (check != true)
+    }
+    // Now that the method implemented are qualified,
+    // check that every chunk/method/attribute is provided by the template,
+    foreach entry in itfTypeNode.body.block
+    {
+        switch (entry.type)
+        {
+        case "__rtx_itf_attribute__":
+            if (rtxTypeCheck_TplTypeHasAttribute(entry, tplTree) == false)
+            {
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required attribute: '"
+                          + entry.name + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        case "__rtx_itf_method__":
+            if (rtxTypeCheck_TplTypeHasMethod(entry, tplTree) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required method: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
+                          + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        case "__rtx_itf_chunk__":
+            if (rtxTypeCheck_TemplateHasChunk(entry.pointcut, tplTree) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required chunk: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
+                          + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        }
+    }
+    // Check that no attribute is undefined
+    foreach mapping in tpl_mapping
+    {
+        local attribute = key(mapping);
+        if (rtxTypeCheck_ItfTypeDefinesAttribute(itfTypeNode, attribute) == false)
         {
             traceLine(RED + "[Error] Type template " + tplName
                       + " implements an unknown mapping: '"
-                      + key(mapping) + "'." + DEFAULT_COLOR);
+                      + attribute + "'." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -536,7 +708,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
         {
             // Is the chunk provided as requested by the interface ?
             if (item.specifier == "chunk"
-                && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
+                && rtxTypeCheck_TemplateHasChunk(item.bodypointcut, tplTree) == false
                 && item.qualifier == "provided")
             {
                 traceLine(RED + "[Error] Sequence template '" + tplName

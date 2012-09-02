@@ -39,10 +39,36 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
         // Recursive check in parents interfaces.
         foreach parentInterface in interfaceNode.inheritance
         {
-            // Here, we don't care about success or failure in the parent interfaces
-            // The wrapper function will sort out things depending
-            // on the variable 'possibilities'
-            rtxInterfaceHasType_recursive(rtypeNode, parentInterface, possibilities);
+            // Load the itf's tree in order to refer to it's sequence node.
+            local loaded = false;
+            local itfNode;
+            local itfName = key(parentInterface);
+
+            // Here, we must manage two distinct cases:
+            //  - Parent Interface written within the same source file = node already loaded (may not be present in cache)
+            //  - Parent Interface not loaded (to be loaded)
+            if (!existVariable(parentInterface.name))
+            {
+                if (rtxLink_findInterface(itfName, itfNode) == true)
+                {
+                    if (rtxLink_LoadItem(itfNode, interfaceNode.inheritance[key(parentInterface)], false) == true)
+                        loaded = true;
+                    else
+                        traceLine(YELLOW + "Could not load interface '" + itfName + "' from cache for type-checking." + DEFAULT_COLOR);
+                }
+                else
+                    traceLine(YELLOW + "Could not find interface '" + itfName + "' in cache for type-checking." + DEFAULT_COLOR);
+            }
+            else
+                loaded = true;
+
+            if (loaded)
+            {
+                // Here, we don't care about success or failure in the parent interfaces
+                // The wrapper function will sort out things depending
+                // on the variable 'possibilities'
+                rtxInterfaceHasType_recursive(rtypeNode, parentInterface, possibilities);
+            }
         }
     }
     else if (rtypeNode.name.global == false) // known scope

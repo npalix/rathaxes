@@ -277,7 +277,6 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
             }
             else
             {
-                traceLine(toString(decl, true));
                 if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
                     increment(errcount);
             }
