@@ -363,9 +363,13 @@ function        rtxNodeRType(local_node     : node,
     return true;
 }
 
+function        rtxRTypeName(theNode : node)
+{
+    error(toString(theNode#parent,true));
+}
+
 function        rtxRTypeName<T>(theNode : node)
 {
-    traceLine("Bad node type: " + T + "\n");
     error("Bad node type: " + T + "\n");
 }
 
@@ -498,7 +502,6 @@ function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node)
         rtxNodeCall_setNodeIdentifier<theType.rtype.type>(out_param, theType.rtype);
         return true;
     }
-    traceLine(toString(theType,true));
     error("rtxNodeCall_setNodeIdentifier<"+T+"> not implemented.");
 }
 

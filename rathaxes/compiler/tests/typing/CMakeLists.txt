@@ -23,3 +23,21 @@ ADD_RATHAXES_CWS_TEST(03_B_sequence_front_bad_types.cws)
 ADD_RATHAXES_CWS_TEST(03_C_sequence_front_ambiguous_types.cws)
 ADD_RATHAXES_CWS_TEST(03_D_sequence_front_ambiguous.cws)
 ADD_RATHAXES_CWS_TEST(03_E_sequence_front_ok.cws)
+
+
+#
+# Test suite for the type's type checking
+#
+
+# Interface's internal type checking tests
+ADD_RATHAXES_CWS_TEST(04_A_type_mid_no_body.cws)
+ADD_RATHAXES_CWS_TEST(04_B_type_mid_attribute_notype.cws)
+ADD_RATHAXES_CWS_TEST(04_C_type_mid_attribute_ambiguoustype.cws)
+ADD_RATHAXES_CWS_TEST(04_D_type_mid_method_notype.cws)
+ADD_RATHAXES_CWS_TEST(04_E_type_mid_method_ambiguoustype.cws)
+ADD_RATHAXES_CWS_TEST(04_F_type_mid_chunk_nochunk.cws)
+ADD_RATHAXES_CWS_TEST(04_G_type_mid_chunk_notype.cws)
+ADD_RATHAXES_CWS_TEST(04_H_type_mid_chunk_ambiguouspointcut.cws)
+ADD_RATHAXES_CWS_TEST(04_I_type_mid_chunk_ambiguoustype.cws)
+ADD_RATHAXES_CWS_TEST(04_J_type_mid_ok.cws)
+

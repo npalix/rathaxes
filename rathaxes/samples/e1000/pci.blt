@@ -12,11 +12,6 @@ with PCI, LKM, Log
             struct pci_dev;
         }
 
-        chunk   ::init(PCI::Device pci_dev)
-        {
-            ${self} = ${pci_dev};
-        }
-
         map
         {
         }

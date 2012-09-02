@@ -242,14 +242,16 @@ function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, inte
 function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, interfaceNode : node,
                                                         possibilities : node)
 {
+    local dummy;
+
     if (pointcutRtype.type != "__rtx_rtype__")
         error("Bad node type. Received: " + pointcutRtype.type);
-
 
     // Unkown scope and not explicit global ?
     if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
     {
-        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode,
+                                            dummy, possibilities) == true)
         {
             // Add interface name into possibilities list
             pushItem possibilities;
@@ -282,10 +284,13 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
                 return false;
             }
 
-            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode.inheritance[pointcutRtype.name.scope]) == true)
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype,
+                                                interfaceNode.inheritance[pointcutRtype.name.scope],
+                                                dummy, possibilities) == true)
                 return true;
         }
-        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode) == true)
+        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode
+                                                 , dummy, possibilities) == true)
             return true;
 
     }
@@ -293,9 +298,13 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
     {
         // XXX TODO FIXME
         // builtin item management.
-        if (pointcutRtype.name.name == "CALL"
-            || pointcutRtype.name.name == "IMPLEMENTATION")
+        switch (pointcutRtype.name.name)
+        {
+        case "decl":
+        case "IMPLEMENTATION":
+        case "CALL":
             return true;
+        }
     }
 
     return false;
@@ -319,27 +328,30 @@ function        rtxTypeCheck_ItfCheckPointcut(rtypeNode : node, interfaceNode : 
     // First, create a list of unique elements.
     foreach entry in possibilities
     {
-        // findElements checks the key, not the content, so insert as a key
-        if (findElement(entry, unique_possibilities) == false)
-            insert unique_possibilities[entry] = entry;
+        // findElements checks the key, not the content...
+        if (findElement(key(entry), unique_possibilities) == false)
+        {
+            insert unique_possibilities[key(entry)];
+            setall unique_possibilities[key(entry)] = entry;
+        }
     }
 
     match_count = getArraySize(unique_possibilities);
     if (match_count == 1)
     {
-        rtypeNode.name.scope = unique_possibilities#front;
+        setall rtypeNode = unique_possibilities#front.rtype;
         return true;
     }
 
     if (match_count != 0)
     {
-        message = RED + "[Error] Could not identify pointcut's interface: "
-                    + "found " + match_count + " matching interfaces[ ";
+        message = RED + "[Error] Could not identify pointcut ("
+                    + "found " + match_count + " matching interfaces):";
         foreach entry in unique_possibilities
         {
-            message += key(entry) + ", " ;
+            message += endl() + key(entry);
         }
-        message += "]." + DEFAULT_COLOR;
+        message += DEFAULT_COLOR;
     }
     else
         message = RED + "[Error] Could not identify pointcut: No match in the dependency tree." + DEFAULT_COLOR;

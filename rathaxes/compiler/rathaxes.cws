@@ -111,7 +111,11 @@ rtxParseFile(source, inputFile);
 
 // MIDDLE PASS
 traceLine("====>MIDDLE TYPE CHECK");
-rtxMiddle_TypeCheck(source);
+if (rtxMiddle_TypeCheck(source) == false)
+{
+    traceLine("Middle-End Type Checking failed. Stopping compilation.");
+    exit(1);
+}
 
 // BACK PASS
 traceLine("====>BACK META,TH,Intro,Gen");

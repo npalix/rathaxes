@@ -18,6 +18,8 @@ changeDirectory(working_directory);
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
+// This function returns 0 in case of failure, since we expected a failure.
+// Otherwise it returns 1.
 function checkInput(input : node, inputsave : value)
 {
     traceLine("input:\n" + input);
@@ -34,7 +36,7 @@ function checkInput(input : node, inputsave : value)
     traceLine("====>MIDDLE TYPE CHECK");
     if (rtxMiddle_TypeCheck(source) == false)
     {
-        traceLine("Type Checking failed at MiddleEnd step: "+sError);
+        traceLine("Type Checking failed at MiddleEnd step as expected");
         return 0;
     }
 
@@ -46,7 +48,6 @@ function checkInput(input : node, inputsave : value)
 local dummy;
 local input;
 generateString({
-
         interface Builtin
         {
             provided builtintype String;
@@ -54,23 +55,16 @@ generateString({
 
         interface LKM : Builtin
         {
-            required sequence           LKM::required_notype();
-            required sequence           LKM::required_notype();
-            required sequence           LKM::required_notype(Builtin::String);
-            required sequence           LKM::required_notype(Builtin::String);
+            provided builtintype String;
 
-            optional sequence           LKM::optional_notype();
-            optional sequence           LKM::optional_notype();
-            optional sequence           LKM::optional_notype(Builtin::String);
-            optional sequence           LKM::optional_notype(Builtin::String);
-
-            provided sequence           LKM::provided_notype();
-            provided sequence           LKM::provided_notype();
-            provided sequence           LKM::provided_notype(Builtin::String);
-            provided sequence           LKM::provided_notype(Builtin::String);
+            provided type Bomb
+            {
+                method pouet(String);
+            }
         }
 @}, dummy, input);
 
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
+

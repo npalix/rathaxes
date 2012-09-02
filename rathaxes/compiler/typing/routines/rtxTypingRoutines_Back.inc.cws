@@ -14,14 +14,13 @@ function rtxTypingRoutines_Back_version()
  * It then checks whether the pointcut was defined within the interface or not.
  *
  */
-function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : node)
+function rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype : node, itfName : node,
+                                                       interface_list : node, possibilities : node)
 {
-    local pointcutName = rtxRTypeName<pointcutRtype.type>(pointcutRtype);
-    local itfNode;
+    local dummy;
     local itfTree;
+    local itfNode;
 
-    // If there is no explicit interface, we must check each interface in the dependencies.
-    // First, load the interface's tree...
     if (itfName != "")
     {
         if (rtxLink_findInterface(itfName, itfNode) == false)
@@ -36,40 +35,127 @@ function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : nod
                       + "' tree." + DEFAULT_COLOR);
             return false;
         }
-        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, itfTree) != false)
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, itfTree,
+                                            dummy, possibilities) != false)
         {
             pointcutRtype.name.scope = itfName;
             return true;
         }
-    }
 
-    // If test did not succeed  AND the interface is not explicitly given:
-    if (pointcutRtype.name.scope == "")
-    {
-        if (pointcutRtype.name.global == false)
+        foreach parentItf in itfTree.inheritance
         {
-            // Then, check for the parent interfaces.
-            foreach parent in itfTree.inheritance
+            local parentTree;
+            local name = key(parentItf);
+            if (rtxLink_findInterface(name, itfNode) == false)
             {
-                local name = key(parent);
-                if (rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype, name) != false)
-                {
-                    pointcutRtype.name.scope = name;
-                    return true;
-                }
+                traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
+                          + " could not be found within the cache." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxLink_LoadItem(itfNode, parentTree, false) == false)
+            {
+                traceLine(RED + "[Error] Could not load interface's '" + name
+                          + "' tree." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, parentTree,
+                                                dummy, possibilities) == true)
+            {
+                pointcutRtype.name.scope = name;
+                return true;
             }
         }
-        else
+    }
+    else if (pointcutRtype.name.global == false) // Not explicitly global
+    {
+        local dummy_list;
+        foreach name in interface_list
         {
-            if (pointcutRtype.name.name == "CALL"
-                || pointcutRtype.name.name == "IMPLEMENTATION")
+            if (rtxLink_findInterface(name, itfNode) == false)
+            {
+                traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
+                          + " could not be found within the cache." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+            {
+                traceLine(RED + "[Error] Could not load interface's '" + name
+                          + "' tree." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype, name, dummy_list, possibilities) == true)
+            {
+                pointcutRtype.name.scope = name;
                 return true;
+            }
+        }
+    }
+    else // explicit global == true
+    {
+        // XXX TODO FIXME
+        // builtin item management.
+        switch (pointcutRtype.name.name)
+        {
+        case "decl":
+        case "IMPLEMENTATION":
+        case "CALL":
+            return true;
         }
     }
 
     return false;
 }
 
+
+function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : node, interface_list : node)
+{
+    local match_count = 0;
+    local unique_possibilities;
+    local possibilities;
+    local message;
+    local dummyrefPointcut;
+    local dummy;
+
+    if (rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype, itfName,
+                                                      interface_list, possibilities) == true)
+        return true;
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+        {
+            insert unique_possibilities[entry];
+            setall unique_possibilities[entry] = possibilities[key(entry)];
+        }
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        setall pointcutRtype = unique_possibilities#front.rtype;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify pointcut's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach entry in unique_possibilities
+        {
+            message += key(entry) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify pointcut '"
+                  + rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy)
+                  + "': No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
 
 
 ////////// TO CHECK
@@ -226,26 +312,26 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
  * This pack of functions check each type of placeHolder that the Meta pass can analyze
  *
  */
-declare function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node);
+declare function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node);
 
-function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node)
+function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     traceLine(RED + "[Error] rtxTypeCheck_CheckPlaceholder: Placeholder type '"+T+"' not type-checked." + DEFAULT_COLOR);
     return false;
 }
 
-function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChunk : node, itfTree : node)
+function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     return true;
 }
 
-function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : node, theChunk : node, itfTree : node)
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     traceLine(YELLOW + "[Warning] Function not implemented : rtxType_CheckPlaceholder<\"__rtx_tpl_chunk_call__\">()."+ DEFAULT_COLOR);
     return true;
 }
 
-function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder : node, theChunk : node, itfTree : node)
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     local rtype;
     local param_types;
@@ -277,7 +363,7 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder 
     return false;
 }
 
-function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, theChunk : node, itfTree : node)
+function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, theChunk : node, itfTree : node, interface_list : node)
 {
     // 
     // We need to catch the builtins before trying the generic solution
@@ -294,7 +380,7 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, t
         default:
         }
     }
-    return rtxTypeCheck_ItfDefinesPointcut(placeHolder.rtype, itfTree);
+    return rtxTypeCheck_ItfNameDefinesPointcut(placeHolder.rtype, itfTree.name, interface_list);
 }
 
 
@@ -490,9 +576,8 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             if (name == "" && chunk.pointcut.name.global == false)
             {
                 name = tplTree.prototype.rtype.name.scope;
-                traceLine("Setting default itf to "+name);
             }
-            if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name) == false)
+            if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name, interface_list) == false)
             {
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
@@ -506,7 +591,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             // Now, in the chunk, let's check every placeHolder...
             select ph in chunk.body.compile[].node
             {
-                if (rtxTypeCheck_CheckPlaceholder<ph.body.type>(ph.body, chunk, itfTree) == false)
+                if (rtxTypeCheck_CheckPlaceholder<ph.body.type>(ph.body, chunk, itfTree, interface_list) == false)
                 {
                     traceLine(RED + "[Error] Placeholder '" + ph#parent.template_expr + "' could not be validated." + DEFAULT_COLOR);
                     increment(errcount);
@@ -518,6 +603,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             increment(errcount);
         }
     }
+
 
     if (errcount != 0)
         return false;
@@ -551,7 +637,7 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node, interface
     if (rtxTypeCheck_TemplateSpec<spec>(tplRtype, tplTree, interfaces) == true)
         return true;
 
-    traceLine(RED + "[Error] Could not find " + spec + " template '"
+    traceLine(RED + "[Error] Could not validate " + spec + " template '"
               + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
     return false;
 }

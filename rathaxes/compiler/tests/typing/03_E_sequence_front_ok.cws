@@ -73,7 +73,7 @@ generateString({
         provided pointcut   test_pointcut();
 
         provided type       Context {
-            attribute Builtin::string device_name;
+            attribute Builtin::String device_name;
         }
 
         required sequence   open(LKM::Context);

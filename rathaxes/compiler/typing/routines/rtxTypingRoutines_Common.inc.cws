@@ -30,50 +30,81 @@ function        rtxTypeCheck_ParametersMatch(rtype1 : node, rtype2 : node, quali
  * This function shoul only be used while type-checking the interface.
  * A simpler one shall be available for the other parts of type-checking.
  */
-function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node)
+function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node,
+                                                out_qualifiers : node, out_possibilities : node)
 {
-    local dummy_ids;
-    local scope_save = pointcutRtype.name.scope;
+    local proto_is_qualified = 1;
 
-    // WE NEED to have a __rtx_itf__ node for itfTree, here...
-    if (itfTree.type != "__rtx_itf__")
-        error("Wrong node type for itfTree to function rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node) ("+itfTree.type+")");
+    local dummy;
 
-    // Then check if the pointcut is defined within the interface
-    // (global or inside a sequence)
-    if (scope_save == "")
-        pointcutRtype.name.scope = itfTree.name;
-    foreach def in itfTree.body.block
+    if (findElement(pointcutRtype.name.name, itfTree.pointcuts) == true)
     {
-        // Check global pointcuts...
-        if (def.type == "__rtx_itf_decl__" && def.specifier == "pointcut")
+        // Go through the proto's types to check wether it's fully qualified or not
+        foreach type in pointcutRtype.params
         {
-            if (rtxRTypeFullQualifiedName<"pointcut">(def.rtype, dummy_ids)
-                    == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+            if (type.global == false && type.scope == "")
             {
-                pointcutRtype.name.scope = scope_save;
+                proto_is_qualified = 0;
+                break ;
+            }
+        }
+        if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
+            proto_is_qualified = 0;
+
+        // Then search, depending on the qualification
+        if (proto_is_qualified == 1)
+        {
+            // In this case, only check wether the pointcutRtype in the keys match.
+            local dummy;
+            pointcutRtype.name.scope = itfTree.name;
+            local qualifiedName = rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy);
+            if (findElement(qualifiedName, itfTree.pointcuts[pointcutRtype.name.name]) == true)
+            {
+                // Add the match to the possibilities, and return true since
+                // there's no other possibility for this peculiar interface
+                insert out_possibilities[qualifiedName];
+                setall out_possibilities[qualifiedName] = itfTree.pointcuts[pointcutRtype.name.name][qualifiedName];
+                insert out_qualifiers[qualifiedName];
+                out_qualifiers[qualifiedName] = itfTree.pointcuts[pointcutRtype.name.name][qualifiedName].qualifier;
                 return true;
             }
         }
-        // type templates dont matter here, they should not define pointcuts.
-        // So, check only sequence templates...
-        else if (def.type == "__rtx_itf_decl__" && def.specifier == "sequence")
+        else
         {
-            // In which, check every poincut...
-            foreach item in def.body.block
+            local dummy;
+            // If not fully qualified, then for each possibility, go through the types
+            foreach refPointcut in itfTree.pointcuts[pointcutRtype.name.name]
             {
-                if (item.type == "__rtx_itf_decl__" && item.specifier == "pointcut"
-                    && rtxRTypeFullQualifiedName<"pointcut">(item.rtype, dummy_ids)
-                        == rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy_ids))
+                local match = 1;
+                if (getArraySize(refPointcut.rtype.params) == getArraySize(pointcutRtype.params))
                 {
-                    pointcutRtype.name.scope = scope_save;
-                    return true;
+                    foreach type in refPointcut.rtype.params
+                    {
+                        localref reftype = refPointcut.rtype.params[index(type)];
+                        localref param    = pointcutRtype.params[index(type)];
+                        traceLine(BLUE + "Probing types: "+toString(param,true) + toString(reftype,true) + DEFAULT_COLOR);
+
+                        // if param name differs, or param scope differs.
+                        if (reftype.name != param.name
+                            || (param.global == false && param.scope != "" && param.scope != reftype.scope))
+                        {
+                            match = 0;
+                            break ;
+                        }
+                    }
+                    if (match == 1)
+                    {
+                        // Add the match to the possibilities before trying out others
+                        // Since it's not the right one for sure in this interface.
+                        insert out_possibilities[key(refPointcut)];
+                        setall out_possibilities[key(refPointcut)] = refPointcut;
+                        insert out_qualifiers[key(refPointcut)];
+                        out_qualifiers[key(refPointcut)] = refPointcut.qualifier;
+                    }
                 }
             }
         }
     }
-
-    pointcutRtype.name.scope = "";
 
     return false;
 }
@@ -101,6 +132,8 @@ function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node
                 break ;
             }
         }
+        if (prototype.name.scope == "" && prototype.name.global == false)
+            proto_is_qualified = 0;
 
         // Then search, depending on the qualification
         if (proto_is_qualified == 1)
