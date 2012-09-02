@@ -32,8 +32,11 @@ function checkInput(input : node, inputsave : value)
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
-    try { rtxMiddle_TypeCheck(source); }
-    catch(sError) { traceLine("Type Checking failed at MiddleEnd step: "+sError); return 1; }
+    if (rtxMiddle_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at MiddleEnd step: "+sError);
+        return 0;
+    }
 
     return 0;
 }

@@ -811,7 +811,6 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
 
     // First, build the rtype node.
     rtxNodeRType(theRtype, local_node.body.seqName, paramTypes);
-    traceLine(toString(local_node.body,true));
     foreach param in local_node.body.seqArgs
     {
         if (existVariable(param.rtype))
@@ -871,8 +870,8 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     insertModifier(theParent, dummy);
     startIdx = dummy.block_idx; // retrieve updated startIdx from dummy.
     rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
-    traceLine(PURPLE+toString(chunkTree.body,true)+DEFAULT_COLOR);
-    traceLine(PURPLE+toString(theParent,true)+DEFAULT_COLOR);
+    //traceLine(PURPLE+toString(chunkTree.body,true)+DEFAULT_COLOR);
+    //traceLine(PURPLE+toString(theParent,true)+DEFAULT_COLOR);
 
     return true;
 }

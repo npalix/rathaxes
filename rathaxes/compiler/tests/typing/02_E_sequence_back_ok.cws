@@ -37,8 +37,11 @@ function checkInput(input : node, inputsave : value)
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
-    try { rtxMiddle_TypeCheck(source); }
-    catch(sError) { traceLine("Type Checking failed at MiddleEnd step: "+sError); return 0; }
+    if (rtxMiddle_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at MiddleEnd step as expected.");
+        return 0;
+    }
 
 
     // Then register the interfaces into the cache...
@@ -47,14 +50,11 @@ function checkInput(input : node, inputsave : value)
     { error("Can't REGISTER CACHE"); }
 
     traceLine("====>BACK TYPE CHECK");
-    try {
-        if (rtxTpl_TypeCheck(source) == false)
-        {
-            traceLine("Type Checking failed at Backend step.");
-            return 0;
-        }
+    if (rtxTpl_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at Backend step.");
+        return 0;
     }
-    catch(sError) { traceLine("Type Checking failed at BackEnd step: "+sError); return 0; }
 
     return 1;
 }

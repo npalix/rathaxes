@@ -147,7 +147,7 @@ rtx_itf_type_stmt<"attribute">(theDecl : node) ::=
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "No attribute name given.")
     => local theName;
-    identifier(theName)
+    #readIdentifier:theName
     #check(rtxNodeItfTypeAttributeDeclaration(theDecl, theType, theName))
 ;
 

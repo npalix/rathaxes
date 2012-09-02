@@ -38,6 +38,8 @@ function rtxLink_LoadItem(cache_node : node,
                           out_ref_tree : reference,
                           load_script : value = true)
 {
+    clearVariable(out_ref_tree);
+
     if ((load_script == true && !existVariable(cache_node.script_file))
         || !existVariable(cache_node.tree_file))
         error("rtxLink:<ERROR> The node does not contain any script or tree to load!");
