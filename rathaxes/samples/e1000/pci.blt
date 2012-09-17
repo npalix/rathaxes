@@ -12,6 +12,10 @@ with PCI, LKM, Log
             struct pci_dev;
         }
 
+        chunk ::init(PCI::Device)
+        {
+        }
+
         map
         {
         }

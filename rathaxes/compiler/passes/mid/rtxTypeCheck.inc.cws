@@ -205,6 +205,10 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
 
+    // This checks for multiple definition
+    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.types) == false)
+        return false;
+
     /*
      * Type-check whatever we can check in the type:
      *  - chunks,
@@ -235,6 +239,9 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
         }
         else if (decl.type == "__rtx_itf_method__")
         {
+            // It's a method, so enforce the globality of the method.
+            decl.pointcut.name.scope = "";
+            decl.pointcut.name.global = true;
             local suberrcount = 0;
             foreach param in decl.pointcut.params
             {
@@ -299,10 +306,6 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                   + "This type cannot be used." + DEFAULT_COLOR);
         return false;
     }
-
-    // This checks for multiple definition
-    if (rtxItfAddTypeToList(currentDeclaration, currentInterface.types) == false)
-        return false;
 
     return true;
 }

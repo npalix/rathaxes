@@ -405,7 +405,11 @@ function rtxTypeCheck_TplTypeHasMethod(theMethod : node, tplTree : node)
         {
             local tplChunkName = rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params);
             if (tplChunkName == itfChunkName)
+            {
+                // Ensure it's in the global scope
+                setall entry.pointcut = theMethod.pointcut;
                 return true;
+            }
         }
     }
     return false;
