@@ -3,8 +3,8 @@ interface PCI : LKM
     provided type   PCI::Device
     {
         chunk       LKM::includes();
-        chunk       ::decl();
-        method      ::init(PCI::Device);
+        method      decl();
+        method      init(PCI::Device);
     }
 
     required variable Builtin::number  PCI::vendor_id;
