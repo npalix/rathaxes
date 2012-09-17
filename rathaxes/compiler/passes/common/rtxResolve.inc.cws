@@ -237,6 +237,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                                           source_tree : reference)
 {
     local idx = $0$;
+    local dst_param_name;
+
     // TODO: failed to get the param from ::IMPLEM
     /* 
     if (getArraySize(src_params.list) != getArraySize(dst_params.list))
@@ -321,9 +323,12 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         }
 
         if (existVariable(dst_param.type) && dst_param.type == "__rtx_var__")
-            ref dst_param = dst_param.identifiers#[0].name;
-        insert dst_resVals[dst_param];
-        setall dst_resVals[dst_param] = theValue;
+            ref dst_param_name = dst_param.identifiers#[0].name;
+        else
+            ref dst_param_name = dst_param;
+
+        insert dst_resVals[dst_param_name];
+        setall dst_resVals[dst_param_name] = theValue;
         increment(idx);
     }
 
@@ -637,7 +642,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
                  && existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
         {
-            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping.");
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping (" + varName + ").");
             // Create the resolvervalues for the type resolution:
             // This should not need any more than config and var's identifier.
             local resVal;
@@ -665,7 +670,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + toString(mapping, true) + DEFAULT_COLOR);
+            // traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + toString(mapping, true) + DEFAULT_COLOR);
 
             // Here, the mapping should always be an expression
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
@@ -685,7 +690,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             }
 
             //traceLine(BLUE + "[Debug] Type mapping resolution : resolved mapping = " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
-
         }
         else if (isBuiltinVariable(varName)) // Mapping for a  builtin type
         {
