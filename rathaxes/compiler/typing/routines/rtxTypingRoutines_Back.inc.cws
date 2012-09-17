@@ -297,7 +297,8 @@ function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
     local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(chunkRtype, dummy_params);
     foreach tpl_chunk in tpl.body.block
     {
-        if (getArraySize(chunkRtype.params) == getArraySize(tpl_chunk.pointcut.params))
+        if (chunkRtype.name.name == tpl_chunk.pointcut.name.name
+            && getArraySize(chunkRtype.params) == getArraySize(tpl_chunk.pointcut.params))
         {
             local match = 1;
             foreach reftype in chunkRtype.params
@@ -794,7 +795,6 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
             increment(errcount);
         }
     }
-
 
     if (errcount != 0)
         return false;
