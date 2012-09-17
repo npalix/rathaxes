@@ -286,6 +286,7 @@ function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
 {
     if (chunkRtype.name.global == false && chunkRtype.name.scope == "")
         error("The chunk's name is not qualified "+ toString(chunkRtype, true));
+
     foreach param in chunkRtype.params
     {
         if (param.global == false && param.scope == "")
@@ -294,14 +295,28 @@ function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
 
     local dummy_params;
     local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(chunkRtype, dummy_params);
-    foreach item in tpl.body.block
+    foreach tpl_chunk in tpl.body.block
     {
-        // If Fully-qulified equals, or if only name matches and not fully qualified
-        if (fullPointcut == rtxRTypeFullQualifiedName<"pointcut">(item.pointcut, dummy_params))
+        if (getArraySize(chunkRtype.params) == getArraySize(tpl_chunk.pointcut.params))
         {
-            // Then qualify it.
-            setall item.pointcut = chunkRtype;
-            return true;
+            local match = 1;
+            foreach reftype in chunkRtype.params
+            {
+                localref type = tpl_chunk.pointcut.params#[index(reftype)];
+                if (type.name != reftype.name
+                    || (type.global == false
+                        && type.scope != ""
+                        && type.scope != reftype.scope))
+                {
+                    match = 0;
+                    break ;
+                }
+            }
+            if (match == 1)
+            {
+                setall tpl_chunk.pointcut = chunkRtype;
+                return true;
+            }
         }
     }
     return false;
@@ -708,12 +723,12 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
         {
             // Is the chunk provided as requested by the interface ?
             if (item.specifier == "chunk"
-                && rtxTypeCheck_TemplateHasChunk(item.bodypointcut, tplTree) == false
+                && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
                 && item.qualifier == "provided")
             {
-                traceLine(RED + "[Error] Sequence template '" + tplName
+                traceLine(RED + "[Error] Sequence template '" + tplFullName
                           + "' does not provide the chunk '"
-                          + rtxRTypeName<item.body.pointcut.type>(item.body.pointcut) + "'" + DEFAULT_COLOR);
+                          + rtxRTypeFullQualifiedName<"pointcut">(item.body.pointcut, dummy) + "'" + DEFAULT_COLOR);
                 increment(errcount);
             }
             // Is the pointcut provided as requested by the interface ?
