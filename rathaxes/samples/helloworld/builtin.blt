@@ -7,7 +7,7 @@ with Builtin
             typedef int t_integer;
         }
 
-        chunk ::set(Number value)
+        chunk ::set(number value)
         {
             ${self} = ${value};
         }
