@@ -20,17 +20,17 @@ rtx_templatedLang_single_stmt<"C">(theBody : node) ::= single_statement(theBody)
 // templated language body
 // TODO: see to specialized chunk
 rtx_templatedLang_body<"C">(theBody : node) ::=
+/**/    #check(cnormNodeBlock(theBody))
+        rtx_templatedLang_C_compound_stmt(theBody)
+    |
+        // The following line prevents artefacts (by failing previous alternative) 
+/**/    => clearVariable(theBody);
 	'{'
 /**/	        #check(cnormNodeDecl_Init(theBody))
 		initializer_list(theBody)
                 // last ',' but empty
 		[',']? 
 	'}'
-    |
-        // The two following lines prevent artefacts (by failing previous alternative) 
-/**/    => clearVariable(theBody);
-/**/    #check(cnormNodeBlock(theBody))
-        rtx_templatedLang_C_compound_stmt(theBody)
 ;
 
 // block of code of chunk

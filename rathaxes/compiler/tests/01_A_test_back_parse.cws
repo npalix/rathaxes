@@ -125,7 +125,9 @@ generateString({
         {
             chunk ::CALL()
             {
-                ${LKM::test(ctx)};
+                { // regression test for #47
+                    ${LKM::test(ctx)};
+                }
             }
         }
 
