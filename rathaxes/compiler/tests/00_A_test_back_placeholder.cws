@@ -19,6 +19,7 @@ local dummy;
 local input;
 generateString({
         ${test_name}                    test_id;
+        // test unstrict mode
         NTSTATUS        funTamere(bla a);
         int                             f1() { ${body}; }
         int                             f2(${test_name} a) {}
@@ -45,13 +46,12 @@ generateString({
                 }
                 // post expr
                 a[${a}]->${b}.${c}[${d}][${e}] = ${e}("tutu");
-                // TODO:
-                // fail in cnorm
-                //int a[] = ${d};
+                // in init list
+                int a[] = ${d};
 
-                // TODO:
-                // fail in cnorm
-                //ia_${a}:
+                // as a label
+                ia${niania}:
+
                 switch (${titi})
                 {
                         while (${toto})
@@ -64,14 +64,13 @@ generateString({
                 {
                         ${poum};
                 }
-                //TODO:
-                // fail in cnorm... ${bli} = ${gra};
+
+                // in for loop
                 for (${bli} = ${gra}; ${bla}; ++${blu},${blo}--)
                         ${poum};
         }
 
-        // TODO:
-        // cnorm fail in cnorm... refactor enum mapping
+        // refactor enum mapping
         enum tamere { A = ${tutu}, ${toto}, ${tata} = 12};
 
         int other()

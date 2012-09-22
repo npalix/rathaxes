@@ -109,6 +109,7 @@ function rtxFrontGen_Device(theDevice : node, source_tree : reference)
     local itfList;
     local itfUsed;
 
+    // insert using interfaces in the itfList
     foreach itfName in theDevice.use
     {
         if (!findElement(itfName, itfList))

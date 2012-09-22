@@ -215,9 +215,9 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                         // TODO: while codeworker disallow to modify easily key of map, we don't implement PH in mapName of enum
                         foreach item in ctype_ref.enum.map
                         {
-                                local sKey = key(item);
+                                local sKey = item.key;
                                 if (rtxPH_havePlaceHolder(sKey))
-                                {traceLine("Warning! You can't use placeholders in map name for enum:" + sKey);}
+                                {rtxPH_mapPlaceHolder(item.key, compile, node_idx, "target_identifier");}
                         }
                 }
                 // pointer
@@ -320,13 +320,12 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
             else
                 rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
         }
-        // TODO: cnorm fail
         // Label
-        //if (existVariable(local_node.label) && rtxPH_havePlaceHolder(local_node.label))
-        //{
-        //        traceLine("MAP PLACE HOLDER:" + toString(local_node.label));
-        //        rtxPH_mapPlaceHolder(local_node.label, compile, node_idx);
-        //}
+        if (existVariable(local_node.label) && rtxPH_havePlaceHolder(local_node.label))
+        {
+                traceLine("MAP PLACE HOLDER:" + toString(local_node.label));
+                rtxPH_mapPlaceHolder(local_node.label, compile, node_idx, "target_identifier");
+        }
         // if/switch/while
         if (existVariable(local_node.condition))
         { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
