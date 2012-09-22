@@ -786,8 +786,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             rtx_e1000_register_write32(hw_ctx, E1000_RDH, 0);
             rtx_e1000_register_write32(hw_ctx, E1000_RDT, ${config.rx_ring_size} - 1);
 
-            /* 7. Configure the buffer size, XXX: * E1000_RCTL_BSIZE_${config.rx_buffer_len} */
-            rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_BSIZE_2048);
+            /* 7. Configure the buffer size, */
+            rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_BSIZE_${config.rx_buffer_len});
 
             /* 8. Enable the receiver */
             rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_EN);

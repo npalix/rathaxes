@@ -701,6 +701,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a builtintype mapping (" + varName + ").");
             // TODO: obsolete when builtintype will be typed
             if (type_map<"Builtin::"+varName>(dummyResVal, dummyRtype,
                                               subidentifiers,
@@ -740,11 +741,13 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
              */
             local fieldValue;
             local finalNode;
+
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a value placeHolder : "+toString(local_node.body.identifiers));
             rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);
             // The ResValLeaf is a whole node : setall it into the placeholder's parent
             if (existVariable(fieldValue.type))
             {
-                traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier : "+toString(local_node.body.identifiers));
+                traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier '"+toString(local_node.body.identifiers)+"' of type "+fieldValue.type);
                 setall local_node#parent.ref_placeholder = fieldValue;
             }
             else // or craft the expr node...
@@ -1323,7 +1326,12 @@ function type_map<"Builtin::config">(resolverValues : node,
             local retval;
             if (existVariable(itf[mappedIds#[0]].val.rtype)) // then it's a rtx var...
             {
-                return rtxNode2cnormNode<itf[mappedIds#[0]].type>(itf[mappedIds#[0]].val, out_node);
+                // Always returns a terminal literal.
+                if (rtxNode2cnormNode<itf[mappedIds#[0]].type>(itf[mappedIds#[0]].val, out_node) == false)
+                    return false;
+
+                out_node.literal = placeHolder.prefix + out_node.literal + placeHolder.suffix;
+                return true;
             }
             else if (itf[mappedIds#[0]].type == "__rtx_id__")
             {
