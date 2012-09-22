@@ -225,12 +225,14 @@ function rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence : node, itfNa
         {
             traceLine(RED + "[Error] Interface '" + itfName + "' containing the sequence"
                       + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSequence.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
         {
             traceLine(RED + "[Error] Could not load interface's '" + itfName
                       + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for sequence at " + theSequence.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxTypeCheck_ItfDefinesSequence(theSequence, itfTree,

@@ -26,13 +26,15 @@ function rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype : node, itf
         if (rtxLink_findInterface(itfName, itfNode) == false)
         {
             traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
-                      + " could not be found within the cache." + DEFAULT_COLOR);
+                      + " could not be found within the cache" + DEFAULT_COLOR);
+            traceLine(RED + "        for pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
         {
             traceLine(RED + "[Error] Could not load interface's '" + itfName
                       + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        to typecheck pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, itfTree,
@@ -50,12 +52,14 @@ function rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype : node, itf
             {
                 traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
                           + " could not be found within the cache." + DEFAULT_COLOR);
+                traceLine(RED + "        for pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
                 return false;
             }
             if (rtxLink_LoadItem(itfNode, parentTree, false) == false)
             {
                 traceLine(RED + "[Error] Could not load interface's '" + name
                           + "' tree." + DEFAULT_COLOR);
+                traceLine(RED + "        to typecheck pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
                 return false;
             }
             if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, parentTree,
@@ -75,12 +79,14 @@ function rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype : node, itf
             {
                 traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
                           + " could not be found within the cache." + DEFAULT_COLOR);
+                traceLine(RED + "        for pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
                 return false;
             }
             if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
             {
                 traceLine(RED + "[Error] Could not load interface's '" + name
                           + "' tree." + DEFAULT_COLOR);
+                traceLine(RED + "        to typecheck pointcut at " + pointcutRtype#parent.location + DEFAULT_COLOR);
                 return false;
             }
             if (rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype, name, dummy_list, possibilities) == true)
@@ -265,7 +271,8 @@ function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_er
         {
             if (tplNode.qualifier != "provided")
             {
-                traceLine(RED + "[Error] Builtin pointcut implemented in not provided template." + DEFAULT_COLOR);
+                traceLine(RED + "[Error] Builtin pointcut implemented in not a provided template." + DEFAULT_COLOR);
+                traceLine(RED + "        for chunk at " + tplNode.location + DEFAULT_COLOR);
                 out_ref_error = true;
                 return false;
             }
@@ -435,6 +442,7 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
             traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
                       + ": It does not provide the necessary pointcut: '"
                       + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
             return false;
         }
     }
@@ -450,6 +458,7 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
             traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
                       + ": It does not provide the necessary pointcut: '"
                       + rtxRTypeName<rtype.type>(rtype) + "'" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
             return false;
         }
     }
@@ -468,6 +477,7 @@ declare function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk :
 function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     traceLine(RED + "[Error] rtxTypeCheck_CheckPlaceholder: Placeholder type '"+T+"' not type-checked." + DEFAULT_COLOR);
+    traceLine(RED + "        at " + placeHolder.location + DEFAULT_COLOR);
     return false;
 }
 
@@ -479,6 +489,7 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChu
 function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     traceLine(YELLOW + "[Warning] Function not implemented : rtxType_CheckPlaceholder<\"__rtx_tpl_chunk_call__\">()."+ DEFAULT_COLOR);
+    traceLine(YELLOW + "          at " + placeHolder.location + DEFAULT_COLOR);
     return true;
 }
 
@@ -506,9 +517,9 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder 
         // We're trying to call the ::CALL  chunk, so it is mandatory that the sequence is provided
         if (qualifier == "provided")
             return true;
-        else
-            traceLine(RED + "[Error] The Sequence was found but is a '" + qualifier
-                      + "' and thus does not provide the '::CALL' chunk." + DEFAULT_COLOR);
+        traceLine(RED + "[Error] The Sequence was found but is a '" + qualifier
+                  + "' and thus does not provide the '::CALL' chunk." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + placeHolder.location + DEFAULT_COLOR);
     }
 
     return false;
@@ -575,6 +586,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
         traceLine(RED + "[Error] Type '" + rtxRTypeName<tplRtype.type>(tplRtype)
                   + "' could not be found in interface '" + tplRtype.name.scope
                   + "' or in the template's dependencies." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
         return false;
     }
 
@@ -584,12 +596,14 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
         traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
                   + "' containing the template"
                   + " could not be found within the cache." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
         return false;
     }
     if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
     {
         traceLine(RED + "[Error] Could not load interface's '"
                   + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        traceLine(RED + "        for type at " + tplRtype#parent.location + DEFAULT_COLOR);
         return false;
     }
     ref itfTypeNode = itfTree.types[tplRtype.name.name];
@@ -607,6 +621,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
                 traceLine(RED + "[Error] Type template " + tplName
                           + " implements an unknown chunk or method: '"
                           + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params) + "'."+ DEFAULT_COLOR);
+                traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }
         }
@@ -623,6 +638,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
                 traceLine(RED + "[Error] Type template " + tplName
                           +" does not implement the required attribute: '"
                           + entry.name + "'." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }
             break ;
@@ -634,6 +650,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
                           +" does not implement the required method: '"
                           + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
                           + "'." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }
             break ;
@@ -645,6 +662,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
                           +" does not implement the required chunk: '"
                           + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
                           + "'." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }
             break ;
@@ -659,6 +677,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
             traceLine(RED + "[Error] Type template " + tplName
                       + " implements an unknown mapping: '"
                       + attribute + "'." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + mapping.location + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -711,12 +730,14 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
         traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
                   + "' containing the template"
                   + " could not be found within the cache." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
         return false;
     }
     if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
     {
         traceLine(RED + "[Error] Could not load interface's '"
                   + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
         return false;
     }
     ref itfTplNode = itfTree.sequences[tplRtype.name.name][tplFullName];
@@ -734,6 +755,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                 traceLine(RED + "[Error] Sequence template '" + tplFullName
                           + "' does not provide the chunk '"
                           + rtxRTypeFullQualifiedName<"pointcut">(item.body.pointcut, dummy) + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
                 increment(errcount);
             }
             // Is the pointcut provided as requested by the interface ?
@@ -745,7 +767,8 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                 traceLine(RED + "[Error] Sequence template '" + tplName
                           + "' does not provide the pointcut '"
                           + rtxRTypeFullQualifiedName<"pointcut">(item.rtype,dummy) + "'" + DEFAULT_COLOR);
-                    increment(errcount);
+                traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
+                increment(errcount);
             }
         }
     }
@@ -774,6 +797,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
                           + "' has never been defined." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + chunk.location + DEFAULT_COLOR);
                 increment(errcount);
             }
 
@@ -786,6 +810,7 @@ function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
                 if (rtxTypeCheck_CheckPlaceholder<ph.body.type>(ph.body, chunk, itfTree, interface_list) == false)
                 {
                     traceLine(RED + "[Error] Placeholder '" + ph#parent.template_expr + "' could not be validated." + DEFAULT_COLOR);
+                    traceLine(RED + "        at " + ph.location + DEFAULT_COLOR);
                     increment(errcount);
                 }
             }
@@ -830,6 +855,7 @@ function        rtxTypeCheck_Template(tplRtype : node, tplTree : node, interface
 
     traceLine(RED + "[Error] Could not validate " + spec + " template '"
               + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
+    traceLine(RED + "        at " + tplRtype#parent.location + DEFAULT_COLOR);
     return false;
 }
 

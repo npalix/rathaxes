@@ -293,6 +293,8 @@ function rtxNodeWith_BuildFromConfigVar(local_node : node, config : node)
         traceLine(RED + "[Error] Configuration variable "
                   + itfName + "::" + varName + " is defined multiple times."
                   + DEFAULT_COLOR);
+        traceLine(RED + "        from " + local_node.location + DEFAULT_COLOR);
+        traceLine(RED + "        at " + config[itfName].location + DEFAULT_COLOR);
         return false;
     }
     insert config[itfName][varName].type = local_node.val.type;
@@ -325,6 +327,7 @@ function rtxNodeWith_BuildFromConfig(local_node : node, out_config : node)
     {
         traceLine(RED + "[Error] Wrong node type given to function"
                   + " rtxNodeWith_BuildFromConfig." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node.location + DEFAULT_COLOR);
         return false;
     }
 
@@ -444,6 +447,8 @@ function rtxNodePointcut(local_node         : node,
                          out_ref_params     : reference,
                          out_ref_default    : reference)
 {
+    rtxNode(local_node);
+
     insert local_node.type = "__rtx_pointcut__";
     insert local_node.name;
     insert local_node.parameters;
@@ -459,6 +464,8 @@ function rtxNodePointcut(local_node         : node,
 function rtxNodePointcut_Default(local_node : node,
                                  body       : reference)
 {
+    rtxNode(local_node);
+
     insert local_node.type = "__rtx_pointcut_default__";
     insert local_node.body;
     // the body Should pure C code.
@@ -530,12 +537,14 @@ function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSeq
     if (getArraySize(theParam.val) != 2)
     {
         traceLine(RED + "[CRITICAL ERROR] The register field node is malformed." + DEFAULT_COLOR);
+        traceLine(RED + "                 at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
 
     if (!existVariable(theParam#root.map.registers))
     {
         traceLine(RED + "[ERROR] No mapping in the tree to identify registers." + DEFAULT_COLOR);
+        traceLine(RED + "        for parameter at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     localref    curMap = theParam#root.map.registers;
@@ -543,6 +552,7 @@ function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSeq
     if (!findElement(theParam.val[0], curMap))
     {
         traceLine(RED + "[ERROR] There is no register named '"+theParam.val[0]+"' in the device."+ DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap[theParam.val[0]];
@@ -550,6 +560,7 @@ function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSeq
     if (!existVariable(curMap.map))
     {
         traceLine(RED + "[ERROR] The register named '"+theParam.val[0]+"' does not describe any field."+ DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap.map;
@@ -558,6 +569,7 @@ function rtxNodeCall_paramType<"__rtx_register_field__">(theParam : node, theSeq
     {
         traceLine(RED + "[ERROR] No register field named '"+theParam.val[1]
                   +"' could be found in the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
 
@@ -570,12 +582,14 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
     if (getArraySize(theParam.val) != 3)
     {
         traceLine(RED + "[CRITICAL ERROR] The register value node is malformed." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
 
     if (!existVariable(theParam#root.map.registers))
     {
         traceLine(RED + "[ERROR] No mapping in the tree to identify registers." + DEFAULT_COLOR);
+        traceLine(RED + "        from parameter at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     localref    curMap = theParam#root.map.registers;
@@ -583,6 +597,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
     if (!findElement(theParam.val[0], curMap))
     {
         traceLine(RED + "[ERROR] There is no register named '"+theParam.val[0]+"' in the device."+ DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap[theParam.val[0]];
@@ -590,6 +605,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
     if (!existVariable(curMap.map))
     {
         traceLine(RED + "[ERROR] The register named '"+theParam.val[0]+"' does not describe any field."+ DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap.map;
@@ -598,6 +614,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
     {
         traceLine(RED + "[ERROR] No register field named '"+theParam.val[1]
                   +"' could be found in the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap[theParam.val[1]];
@@ -606,6 +623,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
     {
         traceLine(RED + "[ERROR] The register field '"+theParam.val[1]
                   +"' of the register '"+theParam.val[0]+"' does not describe any value."+ DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
     ref curMap = curMap.map;
@@ -615,6 +633,7 @@ function rtxNodeCall_paramType<"__rtx_register_value__">(theParam : node, theSeq
         traceLine(RED + "[ERROR] No register value named '"+theParam.val[2]
                   +"' could be found in the register field '"+theParam.val[1]
                   +"' of the register '"+theParam.val[0]+"'." + DEFAULT_COLOR);
+        traceLine(RED + "        at " + theParam.location + DEFAULT_COLOR);
         return false;
     }
 
@@ -686,12 +705,14 @@ function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node
     foreach param in theCall.args
     {
         pushItem params;
+
         if (rtxNodeCall_paramType<param.type>(param, theSequence, params#back) == false)
         {
             traceLine(RED + "[Error] Could not identify type of " + param.val
                       + "(parameter index: " + index(param) + ") to sequence "
                       + rtxRTypeName<theCall.sequence.type>(theCall.sequence)
                       + "." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theCall.location + "." + DEFAULT_COLOR);
             increment(errcount);
         }
     }

@@ -47,6 +47,7 @@ function type_map<"Builtin::number">(resolverValues : node,
     else
     {
         traceLine(RED + "[Error] Identifier '"+mappedIds#[0]+"' not mapped for type '::number'." + DEFAULT_COLOR);
+        traceLine(RED + "        at" + placeHolder.location + DEFAULT_COLOR);
     }
     return false;
 }
