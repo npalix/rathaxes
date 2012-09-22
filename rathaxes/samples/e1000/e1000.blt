@@ -393,9 +393,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                    ${rtx_ether_ctx}->net_dev->dev_addr,
                    ${rtx_ether_ctx}->net_dev->addr_len);
 
-            { /* < See #10 */
-                ${Log::info("e1000::create: mac address loaded from the EEPROM")};
-            }
+            ${Log::info("e1000::create: mac address loaded from the EEPROM")};
         }
 
         chunk ::CALL()
@@ -432,9 +430,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             static void rtx_e1000_print_status(struct rtx_e1000_ctx *ctx)
             {
                 unsigned int status = rtx_e1000_register_read32(ctx, E1000_STATUS);
-                { /* < workaround issue #10 */
                     ${Log::info("card status:")};
-                }
                 /*
                  * we can't use Log::info below because it just accept a string
                  * (as opposed to a format string with its parameters).
@@ -681,10 +677,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             int i = 0; /* CNorm workaround, the init part of for isn't generated */
             for (i = 0; i != 64; ++i)
                 rtx_e1000_register_write32(hw_ctx, E1000_CRCERRS + i * 4, 0);
-
-            {
-                ${Log::info("setup_device: general configuration done")};
-            }
+            
+            ${Log::info("setup_device: general configuration done")};
 
             /*
              * Receive initialization (section 14.4):
@@ -719,9 +713,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                     *(unsigned short *)(&${ctx}->net_dev->dev_addr[4]));
             rtx_e1000_register_set32(hw_ctx, E1000_RAH, E1000_RAH_AV);
 
-            {
-                ${Log::info("setup_device: receive address programmed")};
-            }
+            ${Log::info("setup_device: receive address programmed")};
 
             /* 2. Initialize the MTA */
 
@@ -729,9 +721,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             for (i = 0; i != 128; ++i)
                 rtx_e1000_register_write32(hw_ctx, E1000_MTA + i * 4, 0);
 
-            {
-                ${Log::info("setup_device: MTA init done")};
-            }
+            ${Log::info("setup_device: MTA init done")};
 
             /* 4. Setup the receive descriptor ring */
 
@@ -749,9 +739,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 goto err_rx_ring_alloc;
             }
 
-            {
-                ${Log::info("setup_device: rx descriptors allocated")};
-            }
+            ${Log::info("setup_device: rx descriptors allocated")};
 
             /*
              * Allocate the skbuffs, map them for DMA, and write their address
@@ -787,9 +775,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                         hw_ctx->rx_ring.dma_skbuffs[i]);
             }
 
-            {
-                ${Log::info("setup_device: skbuffs allocated")};
-            }
+            ${Log::info("setup_device: skbuffs allocated")};
 
             /* 5. Save the emplacement and the size of the ring in RDBA/RDLEN */
             rtx_e1000_register_write32(hw_ctx, E1000_RDBAL, (dma_addr_t)hw_ctx->rx_ring.dma_base & 0xffffffff);
@@ -806,9 +792,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             /* 8. Enable the receiver */
             rtx_e1000_register_set32(hw_ctx, E1000_RCTL, E1000_RCTL_EN);
 
-            {
-                ${Log::info("setup_device: receive registers configured and receiver enabled")};
-            }
+            ${Log::info("setup_device: receive registers configured and receiver enabled")};
 
             /*
              * Transmission initialization (section 14.5):
@@ -842,9 +826,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                 goto err_tx_ring_alloc;
             }
 
-            {
-                ${Log::info("setup_device: tx descriptors allocated")};
-            }
+            ${Log::info("setup_device: tx descriptors allocated")};
 
             /* 2. Save the emplacement and the size of the ring in TDBA/TDLEN */
             rtx_e1000_register_write32(hw_ctx, E1000_TDBAL, (dma_addr_t)hw_ctx->tx_ring.dma_base & 0xffffffff);
@@ -858,9 +840,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             /* 4. Set TCTL.PSP and enable the transmitter */
             rtx_e1000_register_set32(hw_ctx, E1000_TCTL, E1000_TCTL_PSP|E1000_TCTL_PSP);
 
-            {
-                ${Log::info("transmit registers configured and transmitter enabled")};
-            }
+            ${Log::info("transmit registers configured and transmitter enabled")};
 
             /*
              * XXX: We can't return here since we are not in a function but in
@@ -920,9 +900,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
             dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->rx_ring.size,
                     hw_ctx->rx_ring.base, (dma_addr_t)hw_ctx->rx_ring.dma_base);
-            {
-                ${Log::info("free_rx_tx: rx ring free'ed")};
-            }
+            ${Log::info("free_rx_tx: rx ring free'ed")};
 
             /*
              * Free the tx ring:
@@ -930,9 +908,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
              */
             dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->tx_ring.size,
                     hw_ctx->tx_ring.base, (dma_addr_t)hw_ctx->tx_ring.dma_base);
-            {
-                ${Log::info("free_rx_tx: tx ring free'ed")};
-            }
+            ${Log::info("free_rx_tx: tx ring free'ed")};
         }
     }
 

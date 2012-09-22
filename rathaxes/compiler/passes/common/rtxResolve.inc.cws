@@ -68,8 +68,7 @@ function insertModifier(theBlock : node, thePointcut : node)
         insert theBlock.modifier = 0;
     thePointcut.block_idx = $thePointcut.block_idx + theBlock.modifier$;
 
-    local iterator_id = thePointcut.block_idx;
-    removeVariable(theBlock#[thePointcut.block_idx]);
+    removeVariable(theBlock#[$thePointcut.block_idx$]);
     decrement(theBlock.modifier);
 }
 
@@ -766,7 +765,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         break ;
     }
 
-
     return true;
 }
 
@@ -794,8 +792,8 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     // Tool variable for code replacing.
     local       errcount = 0;
     local       dummy;
-    local       startIdx = 0;
-    local       phName = "call";
+    local       startIdx = local_node#parent.block_idx;
+    local       phName = "_"+local_node#parent.block_idx;
     local       phIdx = 0;
     localref    theParent = local_node#parent.ref_placeholder#parent;
     if (local_node#parent.type_target != "target_pointcut")
@@ -826,6 +824,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         {
             traceLine(RED + "[Error] Could not find rtx type associated to param '"+param.val
                       +"' for sequence call '"+local_node#parent.template_expr+"'." + DEFAULT_COLOR);
+            return false;
         }
     }
 
@@ -865,14 +864,12 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     rtxResolve_BuildFrontResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree);
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
-        increment(errcount);
+        traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(theRtype,dummy) + DEFAULT_COLOR);
+        return false;
     }
-    // And insert it in the sequence implem after having removed the original call node.
-    local dummy;
-    insert dummy.block_idx;
-    dummy.block_idx = $startIdx - theParent.modifier$; // Compute current original index (alias the key).
-    insertModifier(theParent, dummy);
-    startIdx = dummy.block_idx; // retrieve updated startIdx from dummy.
+
+    insertModifier(theParent, local_node#parent);
+    startIdx = local_node#parent.block_idx; // retrieve updated startIdx from dummy.
     rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
     //traceLine(PURPLE+toString(chunkTree.body,true)+DEFAULT_COLOR);
     //traceLine(PURPLE+toString(theParent,true)+DEFAULT_COLOR);
