@@ -1,0 +1,209 @@
+/*
+	TEST for template code parsing
+*/
+
+#include "misc/colors.cws"
+
+local working_directory = "__01_A_test_back_parse";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+local dummy;
+local input;
+generateString({
+    with LKM, Userland
+    values LKM::OS=pigeonMouette, LKM::maj=0, LKM::min=1
+    {
+        ${pointcut Userland::theTestPointcut(config.plop.name)
+         default:
+             NULL;
+        };
+        ${pointcut Userland::defaulted_pointcut()
+         default:
+             test = 3;
+        };
+        template sequence Userland::open(::Context ctx)
+        {
+            chunk LKM::typedefs_declaration()
+            {
+                enum pop${ctx.name} {A, B, C};
+            }
+
+            chunk LKM::global_data_declaration(theSymbol)
+            {
+                theSymbol = 42;
+                ${TYPE} bla;
+            }
+
+            chunk LKM::function_declaration()
+            {
+                int    module_open(int a)
+                {
+                    int    bal${KKK} = 13;
+                    printf("COUCOU\n");
+                    // Be careful, this is seen as a declaration :(
+                    // It is a side effect of the default type int of C
+                    ${ctx.name} = 42;
+                    ${TOTO} += 3;
+                    return 0;
+                }
+                
+            }
+
+            chunk LKM::init_fptrs(Builtin::symbol symbol)
+            {
+                ${symbol}.open = &module_open;
+            }
+
+            chunk Userland::theTestPointcut(Builtin::symbol OneRandomSymbol)
+            {
+                ${OneRandomSymbol} |= 1;
+            }
+
+            chunk ::CALL()
+            {
+                void fake_func()
+                {
+                    printf("Hello world!");
+                }
+            }
+        }
+
+        template sequence LKM::test(::Context ctx)
+        {
+            chunk LKM::function_declaration()
+            {
+                int test_${ctx.name}(void)
+                {
+                    int ret = strcmp("open", param);
+                    return ret;
+                }
+            }
+
+            chunk Userland::theTestPointcut(Builtin::symbol OneRandomSymbol)
+            {
+                ${OneRandomSymbol} |= 2;
+            }
+
+            chunk ::type_call()
+            {
+                // Soon the unstrict cnorm...
+                ${Builtin::Buffer}  buf;
+                ${local.buf.init(42)};
+            }
+
+            chunk ::CALL()
+            {
+                // Soon the unstrict cnorm...
+                ${Builtin::Buffer}  buf;
+
+                enum test {
+                        ${local.plop.name} = ${local.plop.size},
+                } toto;
+
+                // chunk call -> voir le type de ce pointcut
+                int tab[${local.buf.size}] = {${local.buf.size}};
+                ${local.buf.size} = 256;
+                ${local.buf.ptr} = kmalloc(${local.buf.size} * sizeof(*${local.buf.ptr}));
+                int a = ${local.buf.constant};
+                a = ${local.buf.constant};
+                char * s = ${local.buf.name};
+                s = ${local.buf.name};
+                int b = ${local.buf.id};
+                b = ${local.buf.id};
+            }
+        }
+
+        template sequence LKM::test_call(::Context ctx)
+        {
+            chunk ::CALL()
+            {
+                { // regression test for #47
+                    ${LKM::test(ctx)};
+                }
+            }
+        }
+
+        template type Builtin::Buffer()
+        {
+            chunk ::decl()
+            {
+                typedef struct rtxBuiltinBuffer
+                {
+                    long long unsigned int  sz;
+                    char                    *buf;
+                } t_rtxBltinBuf;
+            }
+            chunk ::init(Builtin::number size)
+            {
+                ${self}.sz = ${size};
+                ${self}.buf = kmalloc(${self}.sz * sizeof(*${self}.buf));
+            }
+            chunk ::clean()
+            {
+                kfree(${self}.buf);
+            }
+            map
+            {
+                // Let's try all kinds of mapping expressions
+                ptr : ${self}.buf;
+                size : ${self}.sz;
+                constant : 42;
+                name : "Buffer";
+                id : pouet;
+            }
+        }
+
+        template type ::Context()
+        {
+            /*
+            chunk ::decl() { }
+            chunk ::init() { }
+            chunk ::clean() { }
+            //*/
+            map
+            {
+                name : ContextRocks; 
+            }
+        }
+    }
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+traceLine("input:\n" + input);
+
+local source;
+cnormDialect<"__unstrict__">(source);
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+insert this.c_types;
+rtxType_Load(source);
+parseStringAsBNF("parse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("__01_rtx_parse__.tree", source);
+traceLine("====>Result of parsing: __01_rtx_parse__.tree");
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}

@@ -1,0 +1,51 @@
+/*
+        Parsing Library
+*/
+
+
+#if !existFunction(rtxParse_version)
+
+#include "misc/rtxTools.inc.cws"
+#include "cnorm.inc.cws"
+#include "typing/rtxType.inc.cws"
+
+function rtxParse_version()
+{       return "1.0";}
+
+declare	function	rtxParseFile(out_ref : reference, file : value);
+declare function	rtxParseString(out_ref : reference, data : value);
+
+
+function	rtxParseFile(out_ref : reference, file : value)
+{
+        insert out_ref.c_types;
+        // First setup cnorm...
+        out_ref = file;
+        cnormDialect<"__unstrict__">(out_ref);
+        rtxType_Load(out_ref);
+        parseAsBNF("parse/rtx.cwp", out_ref, file);
+        removeVariable(out_ref.dialect);
+        if (existVariable(out_ref.error))
+        {
+                traceLine(rtxError2String(out_ref.error));
+                exit(-1);
+        }
+}
+
+function	rtxParseString(out_ref : reference, data : value)
+{
+        insert out_ref.c_types;
+        // First setup cnorm...
+        out_ref = "<string>";
+        cnormDialect<"__unstrict__">(out_ref);
+        rtxType_Load(out_ref);
+        parseStringAsBNF("parse/rtx.cwp", out_ref, data);
+        removeVariable(out_ref.dialect);
+        if (!isEmpty(out_ref.error))
+        {
+                traceLine(rtxError2String(out_ref.error));
+                exit(-1);
+        }
+}
+
+#end

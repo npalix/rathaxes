@@ -1,0 +1,21 @@
+---
+layout: post
+title: Rathaxes hackathon results
+lang: us
+---
+
+h1. {{ page.title }}
+
+After the improvements made during the LSM this last summer, and a first version of the Rathaxes compiler and of the language released in early fall; we made some steady progress in December. That led us to a very practical “Hello World” code sample. But, we were all waiting to get our hands in some more complex Rathaxes code.
+
+Tight schedules allowed me and Thomas S. to organize a four days hackathon the first week of January,  in a retired place. David was helping us remotely from Paris.
+
+These four days have been incredible, we have been able to write a PCI/Ethernet driver for the Intel 8254x NICs on Linux (the one behind the e1000 driver). This work validate many concept of the Rathaxes project and demonstrated the powerfulness of our templates and interfaces, system inspired from the aspects programming paradigm.
+
+Along with the work on Rathaxes itself, we wrote a CMake library for Rathaxes.  This library allows us to build native binaries directly from a set of Rathaxes sources, greatly improving the development work flow both in terms of ease of use and robustness. This CMake library supports regular program building on any platform (helpful for regression tests!) and can also build Linux kernel modules. Support for Windows kernel modules will be also added, as soon as possible.
+
+We are already working on a second hackathon in February before we all start our final internships. The goal of this second hackathon will be to complete the work on our Linux Intel NIC driver and also “port” our PCI and LKM templates to "STOS":http://www.lse.epita.fr/projets/stos.html an operating system being developed in the "LSE":http://www.lse.epita.fr/.
+
+In the meantime, meet us at the Fosdem in two weeks —we are highly recognizable with our Rathaxes polo shirts—, we will do a demo for you!
+
+-- Louis Opter

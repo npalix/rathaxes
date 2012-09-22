@@ -1,0 +1,836 @@
+#if !existFunction(rtxTypingRoutines_Back_version)
+
+function rtxTypingRoutines_Back_version()
+{ return "1.0"; }
+
+#include "typing/routines/rtxTypingRoutines_Common.inc.cws"
+
+
+/**
+ *
+ * This function takes a RType node for a pointcut and the name of the itf to
+ * search into.
+ *
+ * It then checks whether the pointcut was defined within the interface or not.
+ *
+ */
+function rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype : node, itfName : node,
+                                                       interface_list : node, possibilities : node)
+{
+    local dummy;
+    local itfTree;
+    local itfNode;
+
+    if (itfName != "")
+    {
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the pointcut"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, itfTree,
+                                            dummy, possibilities) != false)
+        {
+            pointcutRtype.name.scope = itfName;
+            return true;
+        }
+
+        foreach parentItf in itfTree.inheritance
+        {
+            local parentTree;
+            local name = key(parentItf);
+            if (rtxLink_findInterface(name, itfNode) == false)
+            {
+                traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
+                          + " could not be found within the cache." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxLink_LoadItem(itfNode, parentTree, false) == false)
+            {
+                traceLine(RED + "[Error] Could not load interface's '" + name
+                          + "' tree." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, parentTree,
+                                                dummy, possibilities) == true)
+            {
+                pointcutRtype.name.scope = name;
+                return true;
+            }
+        }
+    }
+    else if (pointcutRtype.name.global == false) // Not explicitly global
+    {
+        local dummy_list;
+        foreach name in interface_list
+        {
+            if (rtxLink_findInterface(name, itfNode) == false)
+            {
+                traceLine(RED + "[Error] Interface '" + name + "' containing the pointcut"
+                          + " could not be found within the cache." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+            {
+                traceLine(RED + "[Error] Could not load interface's '" + name
+                          + "' tree." + DEFAULT_COLOR);
+                return false;
+            }
+            if (rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype, name, dummy_list, possibilities) == true)
+            {
+                pointcutRtype.name.scope = name;
+                return true;
+            }
+        }
+    }
+    else // explicit global == true
+    {
+        // XXX TODO FIXME
+        // builtin item management.
+        switch (pointcutRtype.name.name)
+        {
+        case "decl":
+        case "IMPLEMENTATION":
+        case "CALL":
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+function rtxTypeCheck_ItfNameDefinesPointcut(pointcutRtype : node, itfName : node, interface_list : node)
+{
+    local match_count = 0;
+    local unique_possibilities;
+    local possibilities;
+    local message;
+    local dummyrefPointcut;
+    local dummy;
+
+    if (rtxTypeCheck_ItfNameDefinesPointcut_recursive(pointcutRtype, itfName,
+                                                      interface_list, possibilities) == true)
+        return true;
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+        {
+            insert unique_possibilities[entry];
+            setall unique_possibilities[entry] = possibilities[key(entry)];
+        }
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        setall pointcutRtype = unique_possibilities#front.rtype;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify pointcut's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach entry in unique_possibilities
+        {
+            message += key(entry) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify pointcut '"
+                  + rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy)
+                  + "': No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+
+function rtxTypeCheck_ItfTypeDefinesAttribute(itfType : node, attribute : node)
+{
+    local match = false;
+
+    foreach mapId in itfType.attributes
+    {
+        if (key(mapId) == attribute)
+        {
+            match = true;
+            break ;
+        }
+    }
+
+    return match;
+}
+
+function rtxTypeCheck_ItfTypeDefinesCall(itfType : node, thePointcut : node)
+{
+    local message = "";
+    local match_count;
+    local unique_possibilities;
+    local possibilities;
+    local dummy_params;
+
+    foreach itfEntry in itfType.body.block
+    {
+        if ((itfEntry.type == "__rtx_itf_chunk__" || itfEntry.type == "__rtx_itf_method__")
+            && itfEntry.pointcut.name.name == thePointcut.name.name)
+        {
+            if (getArraySize(itfEntry.pointcut.params) == getArraySize(thePointcut.params))
+            {
+                local match = 1;
+                foreach reftype in itfEntry.pointcut.params
+                {
+                    localref type = thePointcut.params#[index(reftype)];
+                    if (type.name != reftype.name
+                        || (type.global == false
+                            && type.scope != ""
+                            && type.scope != reftype.scope))
+                    {
+                        match = 0;
+                        break ;
+                    }
+                }
+                if (match == 1)
+                {
+                    local prototype = rtxRTypeFullQualifiedName<"pointcut">(itfEntry.pointcut, dummy_params);
+                    insert possibilities[prototype];
+                    setall possibilities[prototype] = itfEntry.pointcut;
+                }
+            }
+        }
+    }
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+        {
+            insert unique_possibilities[key(entry)];
+            setall unique_possibilities[key(entry)] = entry;
+        }
+    }
+    match_count = getArraySize(unique_possibilities);
+
+    if (match_count == 1)
+    {
+        setall thePointcut = unique_possibilities#[0];
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface for method's '"
+                    + rtxRTypeFullQualifiedName<"pointcut">(thePointcut, dummy_params) + "'"
+                    + " parameter: " + "found " + match_count + " matching prototypes [ ";
+        foreach entry in unique_possibilities
+        {
+            message += rtxRTypeFullQualifiedName<"pointcut">(entry, dummy_params) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not match type's chunk or method '"
+                  + rtxRTypeFullQualifiedName<"pointcut">(thePointcut, dummy_params)
+                  + "'." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+
+////////// TO CHECK
+function rtxTypeCheck_ChunkIsBuiltin(pointcut : node, tplNode : node, out_ref_error : node)
+{
+    // A builtin chunk should be written as "::Something"
+    if (pointcut.global == true && pointcut.scope == "")
+    {
+        if (   (pointcut.name == "CALL" && tplNode.specifier == "sequence") // code of the call of a sequence
+            || (pointcut.name == "decl" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // code of type declaration for a rathaxes type
+            || (pointcut.name == "init" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // init code for a rathaxes type
+            || (pointcut.name == "fini" && (tplNode.specifier == "type" || tplNode.specifier == "builtintype")) // end code for a rathaxes type
+           )
+        {
+            if (tplNode.qualifier != "provided")
+            {
+                traceLine(RED + "[Error] Builtin pointcut implemented in not provided template." + DEFAULT_COLOR);
+                out_ref_error = true;
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+ * This function takes a Rtype node for a chunk (interface) and a template tree,
+ * and checks whether the chunk was implemented within the template.
+ *
+ * In order for the result to be reliable, the chunk given must be
+ * fully qualified.
+ */
+function rtxTypeCheck_TemplateHasChunk(chunkRtype : node, tpl : node)
+{
+    if (chunkRtype.name.global == false && chunkRtype.name.scope == "")
+        error("The chunk's name is not qualified "+ toString(chunkRtype, true));
+
+    foreach param in chunkRtype.params
+    {
+        if (param.global == false && param.scope == "")
+            error("The chunk's parameters #"+index(param)+" is not qualified "+ toString(chunkRtype, true));
+    }
+
+    local dummy_params;
+    local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(chunkRtype, dummy_params);
+    foreach tpl_chunk in tpl.body.block
+    {
+        if (chunkRtype.name.name == tpl_chunk.pointcut.name.name
+            && getArraySize(chunkRtype.params) == getArraySize(tpl_chunk.pointcut.params))
+        {
+            local match = 1;
+            foreach reftype in chunkRtype.params
+            {
+                localref type = tpl_chunk.pointcut.params#[index(reftype)];
+                if (type.name != reftype.name
+                    || (type.global == false
+                        && type.scope != ""
+                        && type.scope != reftype.scope))
+                {
+                    match = 0;
+                    break ;
+                }
+            }
+            if (match == 1)
+            {
+                setall tpl_chunk.pointcut = chunkRtype;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+/*
+ * This function takes a Rtype node for a pointcut and a template tree,
+ * and checks whether the pointcut was defined within the template.
+ *
+ * XXX TODO FIXME
+ * The function does not check if the statement is ambiguous:
+ * if the interface declare two "PLOP" for a same template but different scopes,
+ * then defining the pointcut "PLOP" will not result in an ambiguous statement,
+ * but resolve as the first pointcut encountered.
+ */
+function rtxTypeCheck_TemplateHasPointcut(pointcutRtype : node, tpl : node)
+{
+    local dummy;
+    local fullPointcut = rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype,dummy);
+    foreach chunk in tpl.body.block
+    {
+        foreach placeHolder in chunk.body.compile
+        {
+            localref body = placeHolder.node.body;
+            if (body.type == "__rtx_pointcut__")
+            {
+                local fullTplPointcut = rtxRTypeFullQualifiedName<"pointcut">(body.rtype,dummy);
+                if (body.rtype.name.name == pointcutRtype.name.name && body.rtype.name.scope == "")
+                {
+                    local result = true;
+                    foreach param in pointcutRtype.params
+                    {
+                        localref pRtype = body.rtype.params#[index(param)];
+                        local nameTpl = rtxRTypeName<pRtype.type>(pRtype);
+                        local nameItf = rtxRTypeName<param.type>(param);
+
+                        if (nameTpl != nameItf)
+                        {
+                            result = false;
+                            break ;
+                        }
+                    }
+                    if (result == true)
+                    {
+                        body.name.scope = pointcutRtype.name.scope;
+                        return true;
+                    }
+                }
+                else if (fullTplPointcut == fullPointcut)
+                {
+                    // Then qualify it
+                    body.name.scope = pointcutRtype.name.scope;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function rtxTypeCheck_TplTypeHasAttribute(theAttribute : node, tplTree : node)
+{
+    // XXX FIXME TODO
+    // Currently, we cannot check that the expression of the mapping
+    // resolves to the type described in the interface.
+
+    // The mapping ids are the keys in tpl.mapping.body.block
+    if (findElement(theAttribute.name, tplTree.mapping.body.block) == false)
+        return false;
+    return true;
+}
+
+/*
+ * This function receives a qualified method as parameter.
+ */
+function rtxTypeCheck_TplTypeHasMethod(theMethod : node, tplTree : node)
+{
+    local dummy_params;
+    local itfChunkName = rtxRTypeFullQualifiedName<"pointcut">(theMethod.pointcut, dummy_params);
+
+    foreach entry in tplTree.body.block
+    {
+        if (entry.type == "__rtx_chunk__"
+            && entry.pointcut.name.name == theMethod.pointcut.name.name)
+        {
+            local tplChunkName = rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params);
+            if (tplChunkName == itfChunkName)
+            {
+                // Ensure it's in the global scope
+                setall entry.pointcut = theMethod.pointcut;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/*
+ * This function checks, depending on the type of dependency on the template,
+ * that the required builtin chunks are implemented.
+ */
+function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, itfTplNode : node)
+{
+    // Here, check the builtin pointcuts.
+    if (itfTplNode.qualifier == "required" || itfTplNode.qualifier == "optional")
+    {
+        local identifier;
+        local rtype;
+        local dummy;
+        rtxNodeIdentifier(identifier, "IMPLEMENTATION", "", true);
+        rtxNodeRType(rtype, identifier, dummy);
+        if (rtxTypeCheck_TemplateHasPointcut(rtype, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<identifier.type>(identifier) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    else // case of provided
+    {
+        local identifier;
+        local rtype;
+        local dummy;
+        rtxNodeIdentifier(identifier, "CALL", "", true);
+        rtxNodeRType(rtype, identifier, dummy);
+        if (rtxTypeCheck_TemplateHasChunk(rtype, tplTree) == false)
+        {
+            traceLine(RED + "[Error] Sequence template is " + itfTplNode.qualifier
+                      + ": It does not provide the necessary pointcut: '"
+                      + rtxRTypeName<rtype.type>(rtype) + "'" + DEFAULT_COLOR);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+/*
+ *
+ * This pack of functions check each type of placeHolder that the Meta pass can analyze
+ *
+ */
+declare function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node);
+
+function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
+{
+    traceLine(RED + "[Error] rtxTypeCheck_CheckPlaceholder: Placeholder type '"+T+"' not type-checked." + DEFAULT_COLOR);
+    return false;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
+{
+    return true;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
+{
+    traceLine(YELLOW + "[Warning] Function not implemented : rtxType_CheckPlaceholder<\"__rtx_tpl_chunk_call__\">()."+ DEFAULT_COLOR);
+    return true;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_sequence_call__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
+{
+    local rtype;
+    local param_types;
+    rtxNodeRType(rtype, placeHolder.seqName, param_types);
+    select type in placeHolder.seqArgs[].rtype
+    {
+        pushItem param_types;
+        setall param_types#back = type.name; // The normalization of the node is with a NodeIdentifier
+    }
+    
+    local itfName;
+    if (rtype.name.scope == "")
+        itfName = theChunk.pointcut.name.scope;
+    else
+        itfName = rtype.name.scope;
+
+    local dummy_list;
+    local qualifier;
+    if (rtxTypeCheck_ItfNameDefinesSequence(rtype, itfName, dummy_list, qualifier) == true)
+    {
+        // We're trying to call the ::CALL  chunk, so it is mandatory that the sequence is provided
+        if (qualifier == "provided")
+            return true;
+        else
+            traceLine(RED + "[Error] The Sequence was found but is a '" + qualifier
+                      + "' and thus does not provide the '::CALL' chunk." + DEFAULT_COLOR);
+    }
+
+    return false;
+}
+
+function rtxTypeCheck_CheckPlaceholder<"__rtx_pointcut__">(placeHolder : node, theChunk : node, itfTree : node, interface_list : node)
+{
+    // 
+    // We need to catch the builtins before trying the generic solution
+    // 
+    localref id = placeHolder.rtype.name;
+    if (id.scope == "" && id.global == true)
+    {
+        switch (id.name)
+        {
+        case "IMPLEMENTATION":
+            localref tplRtype = theChunk#parent#parent#parent.prototype.rtype;
+            return rtxTypeCheck_ParametersMatch(tplRtype, placeHolder.rtype, "pointcut");
+            break ;
+        default:
+        }
+    }
+    return rtxTypeCheck_ItfNameDefinesPointcut(placeHolder.rtype, itfTree.name, interface_list);
+}
+
+
+
+
+declare function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
+                                              interface_list : node);
+function rtxTypeCheck_TemplateSpec<T>(tplRtype : node, tplTree : node,
+                                      interface_list : node)
+{
+    error("Function rtxTypeCheck_TemplateSpec<'"+T+"'> is not implemented.");
+}
+
+/**
+ *
+ * This function takes a template rtype, a template tree, and the associated
+ * node within the interface.
+ *
+ * Its role is to check that the mapping indicated in the interface is properly
+ * respected in the type template's implementation. This also checks that every
+ * mapping implemented inside the template is required by the interface.
+ *
+ * XXX FIXME TODO
+ * Currently, we do not manage the chunks in a type template, we'll hade to
+ * Think and design this properly.
+ *
+ */
+function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
+                                           interface_list : node)
+{
+    local errcount = $0$;
+    localref tpl_mapping = tplTree.mapping.body.block;
+    local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+    local itfTypeNode;
+    local itfNode;
+    local itfTree;
+
+    // If there are builtin chunks mandatory, check them here.
+    if (rtxInterfaceNameHasType(tplRtype, tplRtype.name.scope, interface_list) == false)
+    {
+        traceLine(RED + "[Error] Type '" + rtxRTypeName<tplRtype.type>(tplRtype)
+                  + "' could not be found in interface '" + tplRtype.name.scope
+                  + "' or in the template's dependencies." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Load the itf's tree in order to refer to it's sequence node.
+    if (rtxLink_findInterface(tplRtype.name.scope, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
+                  + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"
+                  + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+    ref itfTypeNode = itfTree.types[tplRtype.name.name];
+
+    // Check that no chunk/method provided is unknown to the interface.
+    // Mind that the template's implem may not be fully qualified,
+    // and thus this call qualifies it in case of success
+    foreach entry in tplTree.body.block
+    {
+        if (entry.type == "__rtx_chunk__")
+        {
+            if (rtxTypeCheck_ItfTypeDefinesCall(itfTypeNode, entry.pointcut) == false)
+            {
+                local dummy_params;
+                traceLine(RED + "[Error] Type template " + tplName
+                          + " implements an unknown chunk or method: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy_params) + "'."+ DEFAULT_COLOR);
+                increment(errcount);
+            }
+        }
+    }
+    // Now that the method implemented are qualified,
+    // check that every chunk/method/attribute is provided by the template,
+    foreach entry in itfTypeNode.body.block
+    {
+        switch (entry.type)
+        {
+        case "__rtx_itf_attribute__":
+            if (rtxTypeCheck_TplTypeHasAttribute(entry, tplTree) == false)
+            {
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required attribute: '"
+                          + entry.name + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        case "__rtx_itf_method__":
+            if (rtxTypeCheck_TplTypeHasMethod(entry, tplTree) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required method: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
+                          + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        case "__rtx_itf_chunk__":
+            if (rtxTypeCheck_TemplateHasChunk(entry.pointcut, tplTree) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Type template " + tplName
+                          +" does not implement the required chunk: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
+                          + "'." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        }
+    }
+    // Check that no attribute is undefined
+    foreach mapping in tpl_mapping
+    {
+        local attribute = key(mapping);
+        if (rtxTypeCheck_ItfTypeDefinesAttribute(itfTypeNode, attribute) == false)
+        {
+            traceLine(RED + "[Error] Type template " + tplName
+                      + " implements an unknown mapping: '"
+                      + attribute + "'." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+
+/**
+ *
+ * This function takes a template rtype, a template tree, and the associated
+ * node within the interface.
+ *
+ * This function checks that a sequence template implements all the required
+ * pointcuts and chunks.
+ * It also checks that the chunks implemented are linked to valid pointcuts
+ * (Meaning that the pointcuts must be defined in the current interface, or
+ * in a parent interface. This must not be defined in a child interface).
+ *
+ * XXX TODO FIXME
+ * We still do not know how to manage not-required pointcuts...
+ *
+ *  if (rtxTypeCheck_ItfNameDefinesSequence(rtype, itfName, dummy, dummy_qual) == true)
+ *
+ */
+function rtxTypeCheck_TemplateSpec<"sequence">(tplRtype : node, tplTree : node,
+                                               interface_list : node)
+{
+    local errcount = $0$;
+    local tplName = rtxRTypeName<tplRtype.type>(tplRtype);
+    local dummy;
+    local tplFullName = rtxRTypeFullQualifiedName<"sequence">(tplRtype, dummy);
+    local itfTplNode;
+    // Used to load the interface's tree after identifying the sequence
+    local itfNode;
+    local itfTree;
+
+    // First, check that the prototypes is defined
+    if (rtxTypeCheck_ItfNameDefinesSequence(tplRtype, tplRtype.name.scope, interface_list, dummy) == false)
+    {
+        return false;
+    }
+    tplFullName = rtxRTypeFullQualifiedName<"sequence">(tplRtype, dummy);
+
+    // Load the itf's tree in order to refer to it's sequence node.
+    if (rtxLink_findInterface(tplRtype.name.scope, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + tplRtype.name.scope
+                  + "' containing the template"
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"
+                  + tplRtype.name.scope + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+    ref itfTplNode = itfTree.sequences[tplRtype.name.name][tplFullName];
+
+    // Now, check that the template respects what's imposed by the interface
+    foreach item in itfTplNode.body.block
+    {
+        if (item.type == "__rtx_itf_decl__")
+        {
+            // Is the chunk provided as requested by the interface ?
+            if (item.specifier == "chunk"
+                && rtxTypeCheck_TemplateHasChunk(item.body.pointcut, tplTree) == false
+                && item.qualifier == "provided")
+            {
+                traceLine(RED + "[Error] Sequence template '" + tplFullName
+                          + "' does not provide the chunk '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(item.body.pointcut, dummy) + "'" + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            // Is the pointcut provided as requested by the interface ?
+            if (item.specifier == "pointcut"
+                && item.qualifier == "provided"
+                && rtxTypeCheck_TemplateHasPointcut(item.rtype, tplTree) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Sequence template '" + tplName
+                          + "' does not provide the pointcut '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(item.rtype,dummy) + "'" + DEFAULT_COLOR);
+                    increment(errcount);
+            }
+        }
+    }
+
+    // This function checks the builtin chunks/pointcuts to be implemented depending on required/optional/provided
+    if (rtxTypeCheck_TemplateBuiltinItems(tplRtype, tplTree, itfTplNode) == false)
+        increment(errcount);
+
+    // Next, we need to check that every non-mandatory chunk actually exists.
+    // But... What about non-mandatory pointcuts ?
+    foreach chunk in tplTree.body.block
+    {
+        local builtinCheckError = false;
+
+        // manage not-builtin chunks
+        if (rtxTypeCheck_ChunkIsBuiltin(chunk.pointcut, itfTplNode, builtinCheckError) == false
+            && builtinCheckError != true)
+        {
+            local name = chunk.pointcut.name.scope;
+            if (name == "" && chunk.pointcut.name.global == false)
+            {
+                name = tplTree.prototype.rtype.name.scope;
+            }
+            if (rtxTypeCheck_ItfNameDefinesPointcut(chunk.pointcut, name, interface_list) == false)
+            {
+                traceLine(RED + "[Error] Pointcut '"
+                          + rtxRTypeName<chunk.pointcut.type>(chunk.pointcut)
+                          + "' has never been defined." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+
+            // The placeHolder checkers need the whole Interface tree, so unwind up to it...
+            localref itfTree = itfTplNode;
+            while (itfTree.type != "__rtx_itf__") { ref itfTree = itfTree#parent; }
+            // Now, in the chunk, let's check every placeHolder...
+            select ph in chunk.body.compile[].node
+            {
+                if (rtxTypeCheck_CheckPlaceholder<ph.body.type>(ph.body, chunk, itfTree, interface_list) == false)
+                {
+                    traceLine(RED + "[Error] Placeholder '" + ph#parent.template_expr + "' could not be validated." + DEFAULT_COLOR);
+                    increment(errcount);
+                }
+            }
+        }
+        else if (builtinCheckError == true) // builtinCheck detected an error.
+        {
+            increment(errcount);
+        }
+    }
+
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+
+/**
+ *
+ * This function takes a Rtype node and a template's tree as parameters.
+ * It does as little as possible, in order to manage cases where we don't
+ * actually know which interface the template is part of.
+ *
+ * Then it checks whether the template complies to the constraints
+ * put upon it by the associated interface:
+ *  - For a type : is the mapping fully compliant ?
+ *                 Are all the implemented mappings valid (for the itf) ?
+ *  - For a sequence : Are the mandatory chunks/pointcuts implemented ?
+ *                     Are the non-mandatory chunks valid in the context ?
+ *
+ *      UNKOWN : How to manage non-mandatory pointcuts ?
+ *
+ */
+function        rtxTypeCheck_Template(tplRtype : node, tplTree : node, interfaces : node)
+{
+    local spec = tplTree.prototype.tpl_type;
+    local dummy;
+    local fullTplProto = rtxRTypeFullQualifiedName<spec>(tplRtype, dummy);
+    local itfName = tplRtype.name.scope;
+
+    if (rtxTypeCheck_TemplateSpec<spec>(tplRtype, tplTree, interfaces) == true)
+        return true;
+
+    traceLine(RED + "[Error] Could not validate " + spec + " template '"
+              + fullTplProto + "' in interface '" + itfName + "'." + DEFAULT_COLOR);
+    return false;
+}
+
+#end

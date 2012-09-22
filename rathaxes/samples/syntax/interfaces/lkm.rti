@@ -1,0 +1,130 @@
+interface Builtin
+{
+    provided builtintype        string;
+    provided builtintype        number;
+    provided builtintype        numser;
+    provided builtintype        register;
+    provided builtintype        register_field;
+    provided builtintype        register_value;
+}
+
+interface LKM : Algorithms
+{
+    provided builtintype        Device_list;
+    provided builtintype	Symbol;
+
+    provided pointcut           INCLUDE_DEPENDENCIES();
+    provided pointcut           GLOBAL_DATA_DECLARATION();
+    provided pointcut           GLOBAL_CODE_DEFINITION();
+
+    provided sequence           load()
+    {
+        provided pointcut       INIT_LKM_FPTRS(); // Symbol is the type of the joinpoint
+        provided chunk          GLOBAL_CODE_DEFINITION();
+    }
+
+    provided sequence           unload()
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+    }
+
+    required variable LKM::Device_list      Devices;
+    required variable Builtin::string       OS;
+    optional variable Builtin::number       version;
+    optional variable Builtin::numser       arch;
+}
+
+interface Algorithms : Builtin
+{
+    provided type               Buffer {
+        chunk ::decl();
+    }
+
+    provided sequence   log(Builtin::string)
+    {
+        provided chunk   ::CALL(); // use current namespace/template from frontend
+    }
+
+    provided sequence   set(Builtin::register_value)
+    {
+        provided chunk  ::CALL(); // use current namespace/template from frontend
+    }
+    provided sequence   set(Builtin::register_field, Builtin::number)
+    {
+        provided chunk  ::CALL(); // use current namespace/template from frontend
+    }
+    //...
+
+    required variable Builtin::number size;
+}
+
+interface User : LKM
+{
+    provided builtintype        Context;//why not device?
+
+
+    required sequence           open(Context)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+    }
+
+    required sequence           close(Context)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+
+    required sequence           read(Context, Algorithms::Buffer)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+
+    required sequence           write(Context, Algorithms::Buffer)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+
+    required sequence           on_plug(Context)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+}
+
+//with LKM
+//values OS=Linux
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
+
+//with LKM
+//values OS=OpenBSD
+//{
+//    extend interface
+//    {
+//        required variable string    type;
+//        required variable number    MAJOR;
+//        optional variable number    minor;
+//    }
+//}
+
+//with LKM
+//values OS=Windows
+//{
+//    extend interface
+//    {
+//        required variable numser    UUID;
+//        required variable string    device_name;
+//        required variable string    device_guid;
+//        required variable string    class_name;
+//        required variable string    class_guid;
+//        required variable string    dispatch_mode;
+//    }
+//}

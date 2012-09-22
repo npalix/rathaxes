@@ -1,0 +1,19 @@
+with Builtin
+{
+    template type integer()
+    {
+        chunk ::decl()
+        {
+            typedef int t_integer;
+        }
+
+        chunk ::set(number value)
+        {
+            ${self} = ${value};
+        }
+
+        map
+        {
+        }
+    }
+}

@@ -1,0 +1,399 @@
+#if !existFunction(rtxPlaceHolders_version)
+
+function rtxPlaceHolders_version()
+{return "1.0";}
+
+/*
+* found the nearest location
+*/
+declare function        rtxPH_GetLocation(local_node : reference);
+
+/*
+ * The goal of this func is to go thru all item in the global tree and create PlaceHolders for ${} expression
+*/
+declare function	rtxPH_walk<T>(local_node : node);
+
+/*
+* Go thru C code and placeholderize ${}
+*/
+declare function	rtxPH_compile<T>(local_node : node, compile : node,
+                                      node_idx : value);
+// check if ref_node have a placeHolder
+declare function	rtxPH_havePlaceHolder(ref_node : reference);
+
+// create a id for the placeholder _*, and reference it in .compile
+declare function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value);
+
+function        rtxPH_GetLocation(local_node : reference)
+{
+        localref theNode = local_node;
+        while (!existVariable(theNode.location))
+        {       ref theNode = theNode#parent;}
+        return theNode.location;
+}
+
+
+function        rtxPH_UpgradeStatementToBlock(local_node : node)
+{
+    if (local_node.type != "__block__")
+    {
+        local theStatement;
+        setall theStatement = local_node;
+        clearVariable(local_node);
+        cnormNodeBlock(local_node);
+        pushItem local_node.block;
+        setall local_node.block#back = theStatement;
+    }
+}
+
+
+// called from rtxMeta
+// TODO: specialize all __rtx_
+function        rtxPH_walk<T>(local_node : node)
+{
+        return true;
+}
+
+// Template 
+function        rtxPH_walk<"__rtx_tpl__">(local_node : node)
+{
+        traceLine("template ("+local_node.prototype.tpl_type+")! walk on " + local_node.prototype);
+        // walk on all subitems
+        foreach chunk in local_node.body.block
+        { rtxPH_walk<chunk.type>(chunk); }
+        // go thru type mapping
+        if (existVariable(local_node.mapping))
+        {
+                local   dummyIdx = $-1$;
+                foreach item in local_node.mapping.body.block
+                { rtxPH_compile<item.body.type>(item.body, item.compile, dummyIdx); }
+        }
+}
+
+// Chunk inside Template...the real work begins here
+function        rtxPH_walk<"__rtx_chunk__">(local_node : node)
+{
+        local   dummyIdx = $-1$;
+        traceLine("walking lone chunk...");
+        rtxPH_compile<local_node.body.type>(local_node.body, local_node.body.compile, dummyIdx);
+}
+
+// A block inside
+function        rtxPH_walk<"__block__">(local_node : node)
+{
+        // Should only be used for the block of a with node.
+        traceLine("WALKING BLOCK");
+        // block contain template for with, chunks for template
+        foreach item in local_node.block
+        { rtxPH_walk<item.type>(item); }
+}
+
+// Configuration block
+function	rtxPH_walk<"__rtx_with__">(local_node : node)
+{
+        traceLine("with! recurs body");
+        // First walk the block of templates
+        rtxPH_walk<local_node.body.type>(local_node.body);
+        // And then compile the standalone C block surrounded by with
+        rtxPH_compile<local_node.c_block.type>(local_node.c_block, local_node.c_block.compile, $-1$);
+}
+
+////////
+// Tool functions in order to find the placeHolders
+
+// check that the node have a placeholder
+function	rtxPH_havePlaceHolder(ref_node : reference)
+{
+	traceLine("havePH?:" + ref_node);
+	return (findString(ref_node, "${") != -1);
+}
+
+// translate the placeholder into _1,_2,_X,etc...
+// type_target:
+//      - target_identifier : accept only subsitution of targeted ref_placeholder by an identifier
+//      - target_expr : you must substitute the node of the targeted ref_placeholder by a setall
+//      - target_decl : accept substitution of the declaration members, identifier included.
+//      - target_pointcut : accept substitution of the whole statement/expression
+function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value)
+{
+        // add the local counter for the chunk
+        if (!existVariable(compile.nbplaceholder))
+                insert compile.nbplaceholder;
+        // increment for a local UID
+        compile.nbplaceholder = $compile.nbplaceholder + 1$;
+        // create the key
+        local sKey = "_" + compile.nbplaceholder;
+        // for block handling, we need a ref on the block and an idx inside for futur insertion
+        insert compile[sKey].block_idx = node_idx;
+        // store the Meta Expression for future compilation (rtxMeta)
+        insert compile[sKey].template_expr = ref_node;
+        // invert ${} and _X
+        ref_node = sKey;
+        // set the target
+        insert compile[sKey].type_target = type_target;
+        // set the location for the meta var
+        insert compile[sKey].location = rtxPH_GetLocation(ref_node);
+        // set ref_placeholder at correct place
+        insert compile[sKey].ref_placeholder;
+        if (type_target == "target_identifier")
+        { ref compile[sKey].ref_placeholder = ref_node;}
+        else if (type_target == "target_expr")
+        { ref compile[sKey].ref_placeholder = ref_node#parent;}
+        else if (type_target == "target_decl")
+        { ref compile[sKey].ref_placeholder = ref_node#parent; }
+        else if (type_target == "target_pointcut")
+        {
+                localref goodph = ref_node;
+            while (goodph#parent#parent.type != "__block__")
+                ref goodph = goodph#parent;
+            ref compile[sKey].ref_placeholder = goodph;
+        }
+        else
+        { error("unknown type_target:" + type_target); }
+}
+
+////////
+// Going thru C Code
+function	rtxPH_compile<T>(local_node : node, compile : node,
+                              node_idx : value)
+{
+    error("rtxPH_compile<"+T+"> Hasn't been implemented yet ("+T+")...");
+}
+
+// C Code block
+function	rtxPH_compile<"__block__">(local_node : node, compile : node, node_idx : value)
+{
+        traceLine("COMPILE BLOCK");
+        // find every single placeHolder in the cNorm tree
+        foreach item in local_node.block
+        {
+                if (!existVariable(item.type))
+                { error(RED + "A parsing artefact may have been left into the block: empty item:"+toString(item) + DEFAULT_COLOR);}
+                rtxPH_compile<item.type>(item, compile, index(item));
+        }
+}
+
+// A Root block as a Block
+function rtxPH_compile<"__root_block__">(local_node : node, compile : node, node_idx : value)
+{ rtxPH_compile<"__block__">(local_node, compile, node_idx); }
+
+// Initializer List
+// TODO: Notice that we are in a initializer list...so PH are targetted inside a initlist
+function rtxPH_compile<"__block_init__">(local_node : node, compile : node, node_idx : value)
+{ rtxPH_compile<"__block__">(local_node, compile, node_idx); }
+
+// Going thru declaration
+function        rtxPH_compile<"__decl__">(local_node : node, compile : node, node_idx : value)
+{
+        traceLine("COMPILE DECL");
+        // walk the ctype node
+        localref ctype_ref = local_node.ctype;
+        do
+        {
+                // If it's a type definition, recurse over it.
+                if (existVariable(ctype_ref.body))
+                { rtxPH_compile<ctype_ref.body.type>(ctype_ref.body, compile, node_idx); }
+                // in unstrict mode
+                if (existVariable(ctype_ref.unknown) && $getArraySize(ctype_ref.unknown) > 0$)
+                {       
+                        ctype_ref.identifier = ctype_ref.unknown#back;
+                        removeVariable(ctype_ref.unknown);
+                }
+                // name of a type
+                if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
+                {
+                        traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
+                        rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl");
+                }
+                // composed
+                if (existVariable(ctype_ref.list))
+                {
+                        foreach item in ctype_ref.list
+                        {
+                            // XXX TODO FIXME
+                            // This should not be needed, but the sample helloworld had an issue i didnt care about at the time.
+                            // XXX TODO FIXME
+                            if (existVariable(item.type))
+                                rtxPH_compile<item.type>(item, compile, node_idx);
+                        }
+                }
+                // recurse param list
+                if (existVariable(ctype_ref.param))
+                { rtxPH_compile<ctype_ref.param.type>(ctype_ref.param, compile, node_idx);}
+                // if type is enum
+                if (existVariable(ctype_ref.enum))
+                {
+                        foreach item in ctype_ref.enum.block
+                        {       
+                                if (existVariable(item.type)) rtxPH_compile<item.type>(item, compile, node_idx);
+                        }
+                        // TODO: while codeworker disallow to modify easily key of map, we don't implement PH in mapName of enum
+                        foreach item in ctype_ref.enum.map
+                        {
+                                local sKey = item.key;
+                                if (rtxPH_havePlaceHolder(sKey))
+                                {rtxPH_mapPlaceHolder(item.key, compile, node_idx, "target_identifier");}
+                        }
+                }
+                // pointer
+                if (!existVariable(ctype_ref.pointer))
+                {break;}
+                // deref
+                ref ctype_ref = ctype_ref.pointer.ctype;
+        } while(true);
+
+        // variable name
+        if (existVariable(local_node.name) && rtxPH_havePlaceHolder(local_node.name))
+        {
+                traceLine("MAP PLACE HOLDER:" + toString(local_node.name));
+                rtxPH_mapPlaceHolder(local_node.name, compile, node_idx, "target_identifier");
+        }
+
+        // And check each of the possible members...
+        // the colon expression for C++ ctor init list and bitfields
+        if (existVariable(local_node.colon_expr))
+                rtxPH_compile<local_node.colon_expr.type>(local_node.colon_expr, compile, node_idx);
+        // the assign_expression for initialization list
+        if (existVariable(local_node.assign_expr))
+                rtxPH_compile<local_node.assign_expr.type>(local_node.assign_expr, compile, node_idx);
+        // recurse on the function's code
+        if (existVariable(local_node.body))
+        { rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx);}
+}
+
+// usefull trampoline for all type of declaration
+function	rtxPH_compile<"__field_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxPH_compile<"__decl__">(local_node, compile, node_idx); }
+function	rtxPH_compile<"__param_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxPH_compile<"__decl__">(local_node, compile, node_idx); }
+function	rtxPH_compile<"__fwd_decl__">(local_node : node, compile : node, node_idx : value)
+{ rtxPH_compile<"__decl__">(local_node, compile, node_idx); }
+
+
+// The subtypes of expression offer many different attributes to the node,
+// So do not bother with subtypes and check them all and then recurse.
+function        rtxPH_compile<"__expr__">(local_node : node, compile : node, node_idx : value)
+{
+        // left for bin operator
+        if (existVariable(local_node.left))
+        { rtxPH_compile<local_node.left.type>(local_node.left, compile, node_idx); }
+        // right for bin operator
+        if (existVariable(local_node.right))
+        { rtxPH_compile<local_node.right.type>(local_node.right, compile, node_idx); }
+        // if,while
+        if (existVariable(local_node.condition))
+        { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
+        // if then
+        if (existVariable(local_node.then))
+        { rtxPH_compile<local_node.then.type>(local_node.then, compile, node_idx);}
+        // if else
+        if (existVariable(local_node.else))
+        { rtxPH_compile<local_node.else.type>(local_node.else, compile, node_idx); }
+        // body de if then/else, while, switch, do
+        if (existVariable(local_node.body))
+        { rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx); }
+        // if type composed (struct, union, ...), or postexpr
+        if (existVariable(local_node.list))
+        {
+                foreach item in local_node.list
+                {
+                        if (existVariable(item.expr.list))
+                        {
+                                // for postexpr_type == call
+                                foreach param in item.expr.list
+                                {
+                                        if (existVariable(param.expr_type))
+                                                rtxPH_compile<param.type>(param, compile, node_idx);
+                                }
+                        }
+                        else // standard case
+                        {       rtxPH_compile<item.expr.type>(item.expr, compile, node_idx);}
+                }
+        }
+        // for terminal id that contain ${}
+        if (existVariable(local_node.id) && rtxPH_havePlaceHolder(local_node.id))
+        {
+                traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+                rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr");
+        }
+}
+
+// Going thru statement expression 
+function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx : value)
+{
+        // post expr
+        if (existVariable(local_node.expr))
+        {
+            if (existVariable(local_node.expr.id)) // terminal id, may be a pointcut/call
+            {
+                if (rtxPH_havePlaceHolder(local_node.expr.id))
+                {
+                    traceLine("MAP PLACE HOLDER:" + toString(local_node.expr.id));
+                    rtxPH_mapPlaceHolder(local_node.expr.id, compile, node_idx, "target_pointcut");
+                }
+            }
+            else
+                rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+        }
+        // Label
+        if (existVariable(local_node.label) && rtxPH_havePlaceHolder(local_node.label))
+        {
+                traceLine("MAP PLACE HOLDER:" + toString(local_node.label));
+                rtxPH_mapPlaceHolder(local_node.label, compile, node_idx, "target_identifier");
+        }
+        // if/switch/while
+        if (existVariable(local_node.condition))
+        { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
+        // if then
+        if (existVariable(local_node.then))
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.then);
+            rtxPH_compile<local_node.then.type>(local_node.then, compile, node_idx);
+        }
+        // if else
+        if (existVariable(local_node.else))
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.else);
+            rtxPH_compile<local_node.else.type>(local_node.else, compile, node_idx);
+        }
+        // init in a declaration
+        if (existVariable(local_node.initialize))
+        { rtxPH_compile<local_node.initialize.type>(local_node.initialize, compile, node_idx); }
+        // last part of a FOR statement
+        if (existVariable(local_node.increment))
+        { rtxPH_compile<local_node.increment.type>(local_node.increment, compile, node_idx); }
+        // {} 
+        if (existVariable(local_node.body))
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.body);
+            rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx);
+        }
+}
+
+// index designation in initializer_list : lst l = {[42] = 12, [43] = 13, [44] = 14};
+function rtxPH_compile<"__index_designation__">(local_node : node, compile : node, node_idx : value)
+{
+        // First, look into the index (most likely an expression/terminal expr)
+        rtxPH_compile<local_node.index.type>(local_node.index, compile, node_idx);
+        // Next look into the rhs expr.
+        rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+}
+
+// field designation in initializer_list : lst l = {.nia = 12, .blu = 666};
+function rtxPH_compile<"__field_designation__">(local_node : node, compile : node, node_idx : value)
+{
+        // First check that the field is not a placeHolder
+        if (rtxPH_havePlaceHolder(local_node.name))
+        { rtxPH_mapPlaceHolder(local_node.name, compile, node_idx, "target_identifier"); }
+        // Next check the rhs for a placeHolder
+        rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
+}
+
+// direct pointcut in a WITH
+function    rtxPH_compile<"__rtx_pointcut_raw__">(local_node : node, compile : node, node_idx : value)
+{
+        traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
+        rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr");
+}
+
+#end

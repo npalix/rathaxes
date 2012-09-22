@@ -1,0 +1,7 @@
+interface Log : Builtin, Main /* Log needs types */
+{
+    provided sequence info(string)
+    {
+        provided chunk  ::CALL();
+    }
+}

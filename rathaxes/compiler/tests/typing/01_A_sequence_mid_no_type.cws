@@ -1,0 +1,67 @@
+/*
+ *	TEST for type checking
+ */
+#include "misc/rtxTools.inc.cws"
+#include "misc/colors.cws"
+#include "parse/rtxParse.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+local working_directory = "__cache";
+if (!existDirectory(working_directory))
+{
+        traceLine("Creating directory: " + working_directory);
+        createDirectory(working_directory);
+}
+changeDirectory(working_directory);
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+// This function returns 0 in case of failure, since we expected a failure.
+// Otherwise it returns 1.
+function checkInput(input : node, inputsave : value)
+{
+    traceLine("input:\n" + input);
+    saveToFile(inputsave, input);
+
+    local source;
+
+    // PARSING PASS
+    traceLine("====>PARSE");
+    rtxParseString(source, input);
+    saveProject("__04_C_rtx_01_parse__.tree", source);
+
+    // MIDDLE PASS
+    traceLine("====>MIDDLE TYPE CHECK");
+    if (rtxMiddle_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at MiddleEnd step: "+sError);
+        return 0;
+    }
+
+    return 1;
+}
+
+
+
+local dummy;
+local input;
+generateString({
+        interface LKM
+        {
+            required sequence           LKM::required_notype();
+            optional sequence           LKM::optional_notype();
+            provided sequence           LKM::provided_notype();
+            required sequence           LKM::required_notype(LKM::Context);
+            optional sequence           LKM::optional_notype(LKM::Context);
+            provided sequence           LKM::provided_notype(LKM::Context);
+            required sequence           LKM::required_notype(Context);
+            optional sequence           LKM::optional_notype(Context);
+            provided sequence           LKM::provided_notype(Context);
+        }
+@}, dummy, input);
+
+local ret = checkInput(input, "INPUT.TXT");
+
+exit (ret);

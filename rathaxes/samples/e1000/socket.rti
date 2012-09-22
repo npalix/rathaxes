@@ -1,0 +1,8 @@
+interface Socket : LKM
+{
+    provided type Socket::SKBuff {
+        chunk   LKM::includes();
+        method  decl();
+        method  init();
+    }
+}

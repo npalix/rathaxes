@@ -1,0 +1,316 @@
+%
+% Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+% 
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+% 
+% THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+%
+
+\documentclass[11pt]{report}
+\usepackage{listings}
+\lstset{language=C}
+\lstloadlanguages{C}
+\lstset{numbers=left, breaklines=true, basicstyle=\ttfamily,
+  numberstyle=\tiny\ttfamily, framexleftmargin=6mm,
+  backgroundcolor=\color{grey}, xleftmargin=6mm, language=C,
+  showspaces=false, showstringspaces=false}
+\usepackage{color}
+\usepackage[english]{babel}
+\usepackage{listings}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+\author{Amsallem David\\Dumont Mickael\\Gallon Sylvestre\\Suarez Tomas}
+\title{Register}
+\maketitle
+
+\section*{Licence}
+\addcontentsline{toc}{section}{Licence}
+Copyright (c) 2007 Rathaxes Team (team@rathaxes.eu)
+\\\\
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+\\\\
+THE ARTICLE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS ARTICLE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTUOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Rathaxes Team is divided into three work teams:\\
+\begin{description}
+  \item{The Transverse Team, in charge of the logistic part of the project and
+    relaying informations between the two other teams.}
+  \item{The Hardware Team, in charge of the system and low level aspects of the
+    project and providing the Language Team with informations they need.}
+  \item{The Language Team, in charge of designing and implementing the Rathaxes
+    DSL, according to informations provided by the Hardware Team.\\}
+\end{description}
+
+As agreed within the Rathaxes teams, Rathaxes will be able to generate drivers
+for the four following operating systems:
+\begin{description}
+    \item{OpenBSD}
+    \item{Linux 2.6}
+    \item{MacOS X 10.5}
+    \item{Windows XP}
+\end{description}
+
+This paper deals with the concept of registers. It provides
+an abstraction layer to describe the most commonly way to handle 
+registers.
+
+\tableofcontents
+
+\chapter{Register}
+
+\section{Generalities}
+
+We are going to define some needed knowledge before describing how do we 
+generate the code for register managment.
+
+\subsection{Register size}
+
+By now we will use the next syntax to refer to adress space.
+
+\begin{description}
+	\item{BYTE - 1 bytes - 8 bits}
+	\item{WORD - 2 bytes - 16 bits}
+	\item{DWORD - 4 bytes - 32 bits}
+	\item{LONG - 8 bytes - 64 bits}
+\end{description}
+
+A register has a fixe sized. It depends of the capabilities of the cpu to access
+or read a memory zone, so It can't be smaller than a BYTE. Generaly a register
+can't be higher than LONG size (except on certain exotic 128 bits architecture).
+We can admit that a cpu can rarely access to register with greater size than the
+cpu adressing size. 
+
+\subsection{packing}
+Packing is an C extension present in all compilators. This extension permit
+the precission for the processor that a structure must be allocated or mapped
+in memory with exactly the right size , no padding, etc.. Why do we need to
+precise that to the compilator? Because in (casi) all the time a compilator try
+to optimize the generated asm code. The problem can appear when you have a structure 
+like this:
+
+\begin{lstlisting}
+struct test 
+{
+	BYTE	a;
+	DWORD	b;
+};
+\end{lstlisting}
+
+The intel x86 processor make access by DWORD and in this case read 4 bits so the a and the three 
+firt BYTE of b, and on the second read it read the last BYTE of b and concat the two parts of b. 
+So to don't have the concat phase and so gain cycle, the compilator optimize the aligned structure 
+in memory (on a DWORD for intel). In case of mapped device this comportement could be dangerous, 
+if there are another device on physical memory just after the wanted device we can modify his state. 
+So to resolve this problem on gcc we used attributes : 
+\begin{lstlisting}
+struct test
+{
+	BYTE	a;
+	DWORD	b;
+}	__attribute__ ((packed));
+\end{lstlisting}
+On windows compiler or unix pcc we used the pragam directive, pragma allow us to set the alignment 
+size, so we can used it like that : 
+\begin{lstlisting}
+#pragma packed 1 // set the alignment to 1
+struct test
+{
+	BYTE	a;
+	BYTE	b;
+};
+#pragma packed // restore the default alignement
+\end{lstlisting}
+
+\subsection{volatile}
+Volatile is a C keyword defined by the Kernighan and ritchie. This keyword is used to inform the 
+compilator that a specified variable could be change by an external element. for exemple :
+\begin{lstlisting}
+	myregister = 0;
+	sleep(42);
+	if (myregister == 42)
+	{
+		printf("Message catched\n");
+		getmesg();
+	}
+	return ;
+\end{lstlisting}
+
+If myregister is not a volatille variable the compilator will optimize this code by deleting the if
+block because myregiser will never have the value 42 set. but if myregister is mapped on a register
+the controlleur could change the state of the register at any time and so during the sleep(42) myregister 
+could be set to 42 and the if was right. The C keyword on all compiler for volatile is simply 'volatile' like : 
+
+\begin{lstlisting}
+	volatile DWORD myregister;
+\end{lstlisting}
+
+\subsection{read in register}
+If we have something to read into a register several times we must save it into a variable. Because 
+the read is atomic and if you read a second time your register can have another statement. If the 
+register pio\_RXR (a reception data for a pio) contain a value X if the device is readable and a value
+Y if it is not. This code could not work because of the 2 read of pio\_RXR:
+\begin{lstlisting}
+if (pio_RXR == X && pio_RXR != 0)
+	read(device);
+\end{lstlisting}
+in this exemple the value can change between the first and the second line.
+If we wan't to code this exemple in a right way we must do :
+\begin{lstlisting}
+int regsave = pio_RXR
+if (regsave == X && regsave != 0)
+	read(device);
+\end{lstlisting}
+
+\section{The good way to code}
+
+\subsection{Have a lisible code}
+There are some rules to respect to produce a clear lisible and maintainable code. The first important 
+point is to define "magic" values. For exemple if we need to have the value 0xdeadbeef in a register 
+to initialize the device we must define a symbol named for exemple DEV\_READY to simplify the code.
+Example: 
+\begin{lstlisting}
+#define TX_READY	0xdeadbeef
+#define MAGIC		(1<<8)
+#define	OTHER		0xcafecafe
+\end{lstlisting} 	
+
+
+\subsection{mapped}
+Mapped register its a tricks done by the mmu. In fact the mmu adressed the physical
+ports of the devices in differents memory adresses. By the way some rules permit
+the generation of clear code to the managing the memory mapped device. The memory
+mapped register are in general mapped with all the other register of the controller
+for exemple the at91 PIO Controller is mapped at the range 0xfffff200 to 0xfffff400
+and this adress space contains all the controller registers for the PIO. To handle that
+the must simple way is to create a define for the base address and to create a structure 
+representing all the controllers register.
+\begin{lstlisting}
+
+PIOS_ADDR_BASE			0xffff2000
+
+struct				pios
+{
+	volatile DWORD		PIO_IER;
+	volatile DWORD		PIO_IDR;
+	volatile DWORD		PIO_IMR;
+	volatile BYTE		reserverd[42];
+	volatile DWORD		PIO_ISR;
+	volatile DWORD		PIO_CSR[x];
+	volatile DWORD		PIO_PSR;
+	volatile DWORD		PIO_FADDR;
+	volatile DWORD		PIO_GBSR;
+}	__attribute__ ((packed))
+
+\end{lstlisting}
+
+This code is for unix. For windows we will use the pragma drective instead a gcc extension.
+The previous code must be present in a header file. After this step you must fill the 
+structure with the data located on the physical address. For that you can use a "phystovir" 
+function. This function permits to mapped an physical adress in a virtual adress and return 
+the virtual adress pointer. So the good way to represent that problem is here : 
+
+\begin{lstlisting}
+struct pios *my_controller;
+
+my_controller = phystovir(PIOS_ADDR_BASE);
+\end{lstlisting}
+After you can simply access to the registers with the member of that data structure.
+\begin{lstlisting}
+if (my_controller->PIO_IER & (1<<2))
+	my_controller->PIO_IDR = 1;
+\end{lstlisting}
+\subsection{Ioports}
+An ioports base device follow always the same scheme. It has a range of Ioports. This
+ioports correspond just to number where we can access to device register.
+The good way to develop device with ioports is to define a base adress for the device and
+relative adress for the registers. For exemple the rs232 ioports goes to 0x3f8 to 0x3ff.
+\begin{lstlisting}
+/*Base adress*/
+#define RS_232_IO_BASE		0x3f8
+
+/*Relative adress*/
+#define	TRANSMITTER		0
+#define	RECEIVER		0
+#define	DIVISOR			0
+#define	IER			1
+#define	DLHB			1
+#define	IIR			2
+#define	FCR			2
+#define	LCR			3
+#define	MCR			4
+#define	LSR			5
+#define	MSR			6
+#define Scratch			7
+\end{lstlisting}
+
+When you have included all the previous code in an header file, you can access easily 
+to register with this code
+\begin{lstlisting}
+res = in(RS_232_ADDR_BASE+RECEIVER);
+\end{lstlisting}
+
+\section{Structuration of a register}
+
+Rathaxes saw a register like a langage type. We know for the moment four type famillies.
+Each type correspond at a specific comportement for an specified algorithm (see algorithm 
+section).
+
+\subsection{Common}
+Common register are the simplest one. They are like C variable, we can get it set it in 
+all way that we want. The common register must have a length size specified (BYTE, WORD, 
+DW, L, LL, ...).
+
+\subsection{Indexed}
+Indexed register is the same type of register than vga ones. They are composed of one index
+register and 1 or N data register. The index register contain a value who identify what is/are 
+the register(s) present is the data register.\\
+For exemple if we put 0x1 in VGA\_IDX the VGA\_DATA is the VGA\_CURSOR register, else if we put
+0x2 the VGA\_DATA is the VGA\_IMR register.
+
+\subsection{Shared}
+Shared register correspond of a register containing 2 or N register. For exemple FLP\_REG could 
+contain FLP\_READ in his first fourth bits on FLP\_STAT is his last fourth bits.
+
+
+\subsection{Rotate}
+Rotate register define registers like the one of the 8259a pic. This pic as two register 
+corresponding to eight registers. \\
+When we perform the first read on 0x20 the program read on ICW1 , when we perform a read on
+ICW1, the 4th read on 0x21 correspond in order to ICW2 ICW3 ICW4 and OCW1. the second read
+on 0x21 correspond to OCW2, etc...
+
+\subsection{Stacks}
+Stacks register represent register than contain a stack of data. When we perform a read on it
+the data is flushed and the next value is pushed at the place of the old one.
+
+\subsection{Ping Pong}
+Ping pong is mechanism created to reduce the access time to a register and create a coolest and
+more economic (in energy) way to acced on data stream. For exemple if we have 4 bytes on a 
+ping pong register the fisrt time we perform a read on the register A the second time we perform
+the read on the register the third on the register A etc....
+
+\subsection{Ping Pong Stack}
+Is a stack acceded in ping pong mode.
+
+\end{document}

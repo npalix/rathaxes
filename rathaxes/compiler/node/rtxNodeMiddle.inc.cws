@@ -1,0 +1,298 @@
+#if !existFunction(rtxNodeMiddle_version)
+
+function rtxNodeMiddle_version()
+{return "1.0";}
+
+
+declare function rtxNodeItf(local_node : node, itf_name : value, out_ref_inherit : reference, out_ref_body : reference);
+declare function rtxNodeItfDeclaration(local_node : node, qualifier : value, dtype : value);
+declare function addRTypeToItfDeclaration(declaration_node : node, rtype : node);
+declare function rtxItfDeclaration_addBody(theDecl : node, theBody : node);
+declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
+declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
+declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, paramtypes_out_ref : reference, qualifier : value);
+declare function rtxNodeItfTypeChunkDeclaration(local_node : node, theIdentifier : node, theTypes : node);
+declare function rtxNodeItfTypeAttributeDeclaration(local_node : node, theType : node, theIdentifier : node);
+declare function rtxNodeItfTypeMethodDeclaration(local_node : node, theIdentifier : node, theTypes : node);
+declare function rtxItfAddDeclToType(theNode : node, theDecl : node);
+
+
+
+function        rtxNodeItf(local_node      : node,
+                           itf_name        : value,
+                           out_ref_inherit : reference,
+                           out_ref_body    : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf__";
+    insert local_node.body;
+    insert local_node.name = itf_name;
+    insert local_node.inheritance;
+    insert local_node.types;
+
+    /* XXX: Do we need the boolean argument ? */
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    ref out_ref_inherit = local_node.inheritance;
+    return true;
+}
+
+function        rtxNodeItfDeclaration(local_node        : node,
+                                      qualifier         : value,
+                                      dtype             : value)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_decl__";
+
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = dtype;
+    insert local_node.identifiers;
+
+    return true;
+}
+
+function        addRTypeToItfDeclaration(declaration_node : node,
+                                         rtype : node)
+{
+    insert declaration_node.rtype;
+    setall declaration_node.rtype = rtype;
+}
+
+function        rtxItfDeclaration_addBody(theDecl : node, theBody : node)
+{
+    insert theDecl.body;
+    insert theDecl.body.type = "__block__";
+    insert theDecl.body.block;
+    setall theDecl.body.block = theBody;
+
+    return true;
+}
+
+/*
+ * This function takes a type/variable/sequence node and
+ * inserts it in the given list.
+ *
+ *
+ * The list contains references to the nodes, with the names as key.
+ *
+ * Two specificities arise:
+ *  - variables put their identifiers instead of their types in the list
+ *  - sequences allow multiple names to be used, as long as the typing is different
+ *    they use their full qualified name as second key.
+ */
+function        rtxItfAddTypeToList(theNode : node, nameList : reference)
+{
+    local dummy;
+    local fullName;
+    local name;
+    localref rtype = theNode.rtype;
+
+    switch (theNode.specifier)
+    {
+    case "variable":
+        name = theNode.identifiers.name;
+        break ;
+    default:
+        name = rtype.name.name;
+        fullName = rtxRTypeFullQualifiedName<theNode.specifier>(rtype, dummy);
+        break ;
+    }
+
+    switch (theNode.specifier)
+    {
+    case "sequence":
+    case "pointcut":
+        insert nameList[name];
+        // Only once per interface
+        if (existVariable(nameList[name][fullName]))
+        {
+            traceLine(RED + "[Error] Element " + fullName
+                      + " is already defined in interface "
+                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            return false;
+        }
+        insert nameList[name][fullName];
+        ref nameList[name][fullName] = theNode;
+        break ;
+    default:
+        // Only once per interface
+        if (existVariable(nameList[name]))
+        {
+            traceLine(RED + "[Error] Element " + name
+                      + " is already defined in interface "
+                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            return false;
+        }
+        insert nameList[name];
+        ref nameList[name] = theNode;
+        break ;
+    }
+
+    return true;
+}
+
+
+function        rtxNodeItfPointcutDeclaration(local_node : node,
+                                              qualifier : value,
+                                              identifier : node,
+                                              out_ref_params : reference)
+{
+    insert local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "pointcut";
+
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, identifier, out_ref_params);
+
+    return true;
+}
+
+function        rtxNodeItfChunkDeclaration(local_node           : node,
+                                           identifier           : node,
+                                           paramtypes_out_ref   : reference,
+                                           qualifier            : value)
+{
+    local dummy_paramids;
+    local dummy_body;
+    local rtype_out_ref;
+
+    insert local_node.type = "__rtx_itf_decl__";
+    insert local_node.qualifier = qualifier;
+    insert local_node.specifier = "chunk";
+
+    insert local_node.body;
+    rtxNodeChunk(local_node.body, rtype_out_ref, dummy_paramids, dummy_body);
+    clearVariable(dummy_body);
+
+    rtxNodeRType(rtype_out_ref, identifier, paramtypes_out_ref);
+
+    return true;
+}
+
+
+function        rtxNodeItfTypeChunkDeclaration(local_node : node,
+                                               theIdentifier : node,
+                                               theTypes : node)
+{
+    local dummy_paramids;
+    local dummy_body;
+    local rtype_out_ref;
+    local paramtypes_out;
+
+    rtxNode(local_node);
+    rtxNodeChunk(local_node, rtype_out_ref, dummy_paramids, dummy_body);
+    insert local_node.type = "__rtx_itf_chunk__";
+
+    rtxNodeRType(rtype_out_ref, theIdentifier, paramtypes_out);
+    foreach type in theTypes
+    {
+        pushItem paramtypes_out;
+        setall paramtypes_out#back = type;
+    }
+
+    return true;
+}
+
+function        rtxNodeItfTypeAttributeDeclaration(local_node : node,
+                                                   theType : node,
+                                                   theIdentifier : node)
+{
+    local dummy;
+
+    rtxNode(local_node);
+    local_node.type = "__rtx_itf_attribute__";
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, theType, dummy);
+    insert local_node.name = theIdentifier;
+
+    return true;
+}
+
+function rtxNodeItfTypeMethodDeclaration(local_node : node,
+                                         theIdentifier : node,
+                                         theTypes : node)
+{
+    local rtype_out_ref;
+    local dummy_paramids;
+    local dummy_body;
+    local paramtypes_out;
+
+    rtxNode(local_node);
+    rtxNodeChunk(local_node, rtype_out_ref, dummy_paramids, dummy_body);
+    local_node.type = "__rtx_itf_method__";
+
+    rtxNodeRType(rtype_out_ref, theIdentifier, paramtypes_out);
+    foreach type in theTypes
+    {
+        pushItem paramtypes_out;
+        setall paramtypes_out#back = type;
+    }
+
+    return true;
+}
+
+function rtxItfAddDeclToType(theNode : node, theDecl : node)
+{
+    local dummy_ids;
+    local list;
+    local decl_key;
+    local qualified_name;
+    local insert_ref;
+
+    switch (theDecl.type)
+    {
+    case "__rtx_itf_chunk__":
+        if (!existVariable(theNode.chunks))
+            insert theNode.chunks;
+        ref list = theNode.chunks;
+        decl_key = theDecl.pointcut.name.name;
+        qualified_name = rtxRTypeFullQualifiedName<"pointcut">(theDecl.pointcut, dummy_ids);
+        ref insert_ref = theDecl;
+        break ;
+    case "__rtx_itf_method__":
+        if (!existVariable(theNode.methods))
+            insert theNode.methods;
+        ref list = theNode.methods;
+        decl_key = theDecl.pointcut.name.name;
+        qualified_name = rtxRTypeFullQualifiedName<"pointcut">(theDecl.pointcut, dummy_ids);
+        ref insert_ref = theDecl;
+        break ;
+    case "__rtx_itf_attribute__":
+        if (!existVariable(theNode.attributes))
+            insert theNode.attributes;
+        ref list = theNode.attributes;
+        decl_key = theDecl.name;
+        qualified_name = decl_key;
+        ref insert_ref = theDecl.rtype;
+        break ;
+    }
+
+    if (theDecl.type != "__rtx_itf_attribute__")
+    {
+        if (!findElement(decl_key, list))
+            insert list[decl_key];
+        if (findElement(qualified_name, list[decl_key]) == true)
+        {
+            traceLine(RED + "[Error] Type's chunk/method declaration '" + qualified_name
+                      + "' cannot be declared twice." + DEFAULT_COLOR);
+            return false;
+        }
+        insert list[decl_key][qualified_name];
+        ref list[decl_key][qualified_name] = insert_ref;
+    }
+    else
+    {
+        if (findElement(decl_key, list) == true)
+        {
+            traceLine(RED + "[Error] Type's attribute '" + decl_key
+                      + "' cannot be declared twice." + DEFAULT_COLOR);
+            return false;
+        }
+        insert list[decl_key];
+        ref list[decl_key] = insert_ref;
+    }
+
+    return true;
+}
+
+#end

@@ -1,0 +1,16 @@
+device HelloWorld use Main, Builtin, Log
+{
+    start(Arguments args)
+    {
+        log(args);
+
+        info("It works!");
+
+        exit(0);
+    }
+}
+
+configuration
+{
+
+}

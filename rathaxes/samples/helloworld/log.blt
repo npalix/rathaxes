@@ -1,0 +1,15 @@
+with Log
+{
+    template sequence info(Builtin::string msg)
+    {
+        chunk include_headers()
+        {
+            #include <stdio.h>
+        }
+
+        chunk ::CALL()
+        {
+            puts(${msg});
+        }
+    }
+}

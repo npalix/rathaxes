@@ -1,0 +1,29 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+#include "02_C_test_middle_check_inheritance.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__02_D_check_types_declaration";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+    removeDirectory(working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+#include "passes/mid/rtxTypeCheck.inc.cws"
+traceLine("Checking types declarations");
+
+if (rtxItfCheckTypesDeclarations_walk(source, source.interfaces) == false)
+{
+    traceLine("Error while checking types.");
+    exit(1);
+}
+
+exit(0);

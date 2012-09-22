@@ -1,0 +1,139 @@
+interface e1000 : Socket, Ethernet, PCI, LKM
+{
+    provided type   Context
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init();
+    }
+
+    provided type   RxDescriptor
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init();
+    }
+
+    provided type   TxDescriptor
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init();
+    }
+
+    provided type   RxRing
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init();
+    }
+
+    provided type   TxRing
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init();
+    }
+
+    /*
+     * These two types should actually be registers definitions in the frontend:
+     */
+    provided type   Register
+    {
+        chunk       LKM::includes();
+        method      decl();
+        method      init(Builtin::number);
+    }
+
+    provided type   Commands
+    {
+        chunk       LKM::includes();
+        method      decl();
+    }
+
+    provided sequence   create_device()
+    {
+        provided chunk  Ethernet::create_device(PCI::Device, Ethernet::Device);
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   destroy_device()
+    {
+        provided chunk  Ethernet::destroy_device(PCI::Device, Ethernet::Device);
+        provided chunk  ::CALL();
+    }
+
+    /*
+     * This should take an e1000::Context as the first argument but this was
+     * not working as wished.
+     */
+    provided sequence   print_status(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   setup_interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::includes(); // works without this one
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   free_interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   activate_device_interruption(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   set_up_device(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   free_rx_tx(Ethernet::Device dev)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   handle_interrupt(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_read32(e1000::Context, e1000::Register)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_write32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_set32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_unset32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+}

@@ -1,0 +1,82 @@
+with Main
+{
+    /* File structure declaration */
+    ${pointcut Main::include_headers()};
+    ${pointcut Main::main()};
+
+    /* Definitions */
+    template type Arguments()
+    {
+        chunk ::decl()
+        {
+            struct rtx_args
+            {
+                int     argc;
+                char    **argv;
+                char    **env;
+            };
+        }
+
+        chunk ::init(Builtin::number argc, Builtin::symbol argv, Builtin::symbol env)
+        {
+            ${self}.argc = ${argc};
+            ${self}.argv = ${argv};
+            ${self}.env = ${env};
+        }
+
+        chunk ::log()
+        {
+            puts("Arguments:");
+            {
+                for (int i = 0; i != ${self}.argc; i++)
+                    printf("- [%d]: %s\n", i, ${self}.argv[i]);
+            }
+
+            puts("Environment:");
+            {
+                for (int i = 0; ${self}.env[i]; i++)
+                    printf("- %s\n", ${self}.env[i]);
+            }
+        }
+
+        map
+        {
+        }
+    }
+
+    template sequence start(Main::Arguments args)
+    {
+        chunk include_headers()
+        {
+            #include <stdlib.h>
+        }
+
+        chunk main()
+        {
+            int main(int argc, char *argv[], char *env[])
+            {
+                ${Main::Arguments}  args;
+
+                ${local.args.init(local.argc, local.argv, local.env)};
+
+                ${pointcut ::IMPLEMENTATION(local.args)};
+            }
+        }
+    }
+
+    template sequence log(Main::Arguments args)
+    {
+        chunk   ::CALL()
+        {
+            ${args.log()};
+        }
+    }
+
+    template sequence exit(Builtin::number status)
+    {
+        chunk   ::CALL()
+        {
+            exit(${status});
+        }
+    }
+}
