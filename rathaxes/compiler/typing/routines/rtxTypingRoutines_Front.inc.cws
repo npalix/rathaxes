@@ -49,12 +49,14 @@ function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
     {
         traceLine(RED + "[Error] Interface '" + itfName
                   + "' could not be found within the cache." + DEFAULT_COLOR);
+        traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
         return false;
     }
     if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
     {
         traceLine(RED + "[Error] Could not load interface's '" + itfName
                   + "' tree." + DEFAULT_COLOR);
+        traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
         return false;
     }
 
@@ -71,6 +73,8 @@ function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
                 traceLine(RED + "[Error] Sequence '"
                           + rtxRTypeName<item.rtype.type>(item.rtype)
                           + "' not implemented in device block." + DEFAULT_COLOR);
+                traceLine(RED + "        for sequence at " + item.location + DEFAULT_COLOR);
+                traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
                 increment(errcount);
             }
         }
@@ -117,6 +121,7 @@ function rtxTypeCheck_Register(theRegister : node)
                         traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
                                 + "[" + field.map.begin + ".." + field.map.end + "] is outside range 0.." + $bitsize - 1$ + "\n"
                                 + DEFAULT_COLOR);
+                        traceLine(RED + "        at " + theRegister.location + DEFAULT_COLOR);
                         return false;
                 }
                 // calc the size of the field in bitsize
@@ -135,6 +140,7 @@ function rtxTypeCheck_Register(theRegister : node)
                                         + "Can't extract * value in pattern :" + likePattern 
                                         + " for range [" + field.map.begin + ".." + end + "]\n"
                                         + DEFAULT_COLOR);
+                        traceLine(RED + "        for register at " + theRegister.location + DEFAULT_COLOR);
                         return false;
                 }
                 // foreach value in field
@@ -149,6 +155,7 @@ function rtxTypeCheck_Register(theRegister : node)
                                 traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
                                                 + "the value " + value.mask + " is outside the range value for the field\n"
                                                 + DEFAULT_COLOR);
+                                traceLine(RED + "        for register at " + theRegister.location + DEFAULT_COLOR);
                                 return false;
                         }
                         insert  value.bitsize = value_bitsize;

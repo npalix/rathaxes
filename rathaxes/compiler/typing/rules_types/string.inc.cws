@@ -44,6 +44,7 @@ function type_map<"Builtin::string">(resolverValues : node,
     else
     {
         traceLine(RED + "[Error] Identifier '"+mappedIds#[0]+"' not mapped for type '::string'." + DEFAULT_COLOR);
+        traceLine(RED + "        at" + placeHolder.location + DEFAULT_COLOR);
     }
     return false;
 }

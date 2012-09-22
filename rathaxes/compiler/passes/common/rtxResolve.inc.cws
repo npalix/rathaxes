@@ -245,7 +245,6 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
                   +", got "+getArraySize(src_params.list)+")." + DEFAULT_COLOR);
         traceLine(toString(dst_params, true)+toString(src_params, true));
-        error("test");
         return false;
     }*/
 
@@ -440,6 +439,7 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
             traceLine(RED + "[Error] Could not find template "
                       + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
                       + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
             return false;
         }
         if (!rtxLink_selectUniqueTemplate(templateCache, source_tree.config))
@@ -447,6 +447,7 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
             traceLine(RED + "[Error] Could not select an unique template"
                       + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
                       + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
             return false;
         }
         if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
@@ -454,14 +455,17 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
             traceLine(RED + "[Error] Could not select chunk '::CALL'"
                       + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
                       + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
             return false;
         }
 
         // Now that we have selected the decl chunk, load the tree & script
         if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
         {
-            traceLine(RED + "[Error] Could not load script or tree."
+            traceLine(RED + "[Error] Could not load script or tree associated to sequence "
+                      + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
                       + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
             return false;
         }
 
@@ -622,6 +626,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 {
                         traceLine(RED + "[Error] Could not resolve mapping for builtin variable '"
                                         + local_node.body.identifiers[0].name + "'" + DEFAULT_COLOR);
+                        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                         return false;
                 }
         }
@@ -665,7 +670,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             {
                 traceLine(RED + "[Error] Could not resolve mapping of '"
                           + subidentifiers[0] + "' for identifier '"
-                          + local_node.body.identifiers[0].name + "'." + DEFAULT_COLOR);
+                          + local_node.body.identifiers[0].name + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -675,7 +681,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
             {
                 traceLine(RED + "[Error] inject<\"__rtx_var__\">: could not weave for node of type '"
-                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented." + DEFAULT_COLOR);
+                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -709,6 +716,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             {
                 traceLine(RED + "[Error] Could not resolve mapping for builtin variable '"
                           + local_node.body.identifiers[0].name + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -718,7 +726,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
             {
                 traceLine(RED + "[Error] inject<\"__rtx_var__\">: could not weave for node of type '"
-                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented." + DEFAULT_COLOR);
+                          + mapping.type + "' (weaving "+toString(mapping)+"): not implemented" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -764,7 +773,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         }
         break ;
     default:
-        error(RED + "[Error] Target type " + local_node#parent.type_target + " is not managed." + toString(local_node#parent.ref_placeholder#parent,true) + DEFAULT_COLOR);
+        error(RED + "[Error] Target type " + local_node#parent.type_target + " is not managed  (from "
+              + local_node#parent.location + DEFAULT_COLOR);
         break ;
     }
 
@@ -803,6 +813,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     {
         error(RED + "[Error] inject<\"__rtx_tpl_sequence_call__\">: Wrong target type ("
               + local_node#parent.type_target + ")" + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
     }
 
     // Two variables to create the rtype associated to the sequence call
@@ -826,7 +837,8 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         else
         {
             traceLine(RED + "[Error] Could not find rtx type associated to param '"+param.val
-                      +"' for sequence call '"+local_node#parent.template_expr+"'." + DEFAULT_COLOR);
+                      +"' for sequence call '"+local_node#parent.template_expr+"'" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
             return false;
         }
     }
@@ -837,6 +849,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         traceLine(RED + "[Error] Could not find template "
                   + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
                   + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
     if (!rtxLink_selectUniqueTemplate(templateCache, source_tree.config))
@@ -844,6 +857,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         traceLine(RED + "[Error] Could not select an unique template"
                   + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
                   + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
     if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
@@ -851,14 +865,17 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         traceLine(RED + "[Error] Could not find '::CALL' chunk"
                   + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
                   + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
     // Now that we have selected the decl chunk, load the tree & script
     if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
     {
-        traceLine(RED + "[Error] Could not load script or tree."
+        traceLine(RED + "[Error] Could not load script or tree associated to sequence "
+                  + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
                   + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -868,6 +885,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
         traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(theRtype,dummy) + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -894,7 +912,8 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         && local_node#parent.type_target != "target_pointcut")
     {
         traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Injection target type "
-                  + local_node#parent.type_target + " not managed for a pointcut." + DEFAULT_COLOR);
+                  + local_node#parent.type_target + " not managed for a pointcut" + DEFAULT_COLOR);
+        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -930,14 +949,15 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
                 if (getArraySize(theParent) <= thePointcut.block_idx)
                 {
                     error(RED+ "[Error] inject_pointcut<T(\""+T+"\")>: Trying to get index "
-                          + thePointcut.block_idx + " into block " +
-                          toString(theParent,true) +DEFAULT_COLOR);
+                          + thePointcut.block_idx + " at " + local_node#parent.location
+                          + " into block " + toString(theParent,true) +DEFAULT_COLOR);
                 }
                 setall theParent#[thePointcut.block_idx] = local_node.body.default.body;
             }
             else
                 error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Node type '" + theParent#parent.type
-                      + "' not supported for default resolution.." + DEFAULT_COLOR);
+                      + "' not supported for default resolution. (at " + local_node#parent.location
+                      + ")" + DEFAULT_COLOR);
         }
         else
         {
@@ -959,7 +979,8 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     {
         if (theParent#parent.type != "__block__" && theParent#parent.type != "__block_init__")
         {
-            error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: parent of placeholder is not a block." + DEFAULT_COLOR);
+            error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: parent of placeholder is not a block"
+                  + " at " + local_node#parent.location + "." + DEFAULT_COLOR);
         }
 
         // First, remove the current placeHolder, in case there was no statement
@@ -971,7 +992,8 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
             if (rtxLink_LoadItem(chunk, c_tree) == false)
             {
                 traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Could not "
-                          +"load script for one chunk for pointcut "+pointcutName+"." + DEFAULT_COLOR);
+                          +"load script for one chunk for pointcut "+pointcutName+ DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 increment(errcount);
             }
             local resVals;
@@ -980,7 +1002,8 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
                                                  resVals, c_tree.parameters, source_tree) == false)
             {
                 traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Wrong parameters given to pointcut '"
-                          + pointcutName + "'." + DEFAULT_COLOR);
+                          + pointcutName + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
 
@@ -991,6 +1014,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
             else
             {
                 traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Could not instanciate chunk '"+c_tree.instanceKey+"'." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 increment(errcount);
             }
         }
@@ -1053,11 +1077,15 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
                     // Then replace each Tpl CALL by the CALL chunks associated.
                     if (rtxResolve_replaceCalls(decl, resVals, source_tree) == false)
                     {
-                        traceLine(YELLOW + "Could not replace Call for ::IMPLEMENTATION pointcut for template '" + local_node#parent.tpl_hash + "'."+ DEFAULT_COLOR);
+                        traceLine(YELLOW + "Could not replace Call for ::IMPLEMENTATION pointcut for template '"
+                                  + local_node#parent.tpl_hash + "'"+ DEFAULT_COLOR);
+                        traceLine(YELLOW + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
                         return false;
                     }
 
-                    //traceLine(BLUE + "[Debug] Resolved implementation call to " + rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy) + ":" + toString(decl.body, true)+DEFAULT_COLOR);
+                    //traceLine(BLUE + "[Debug] Resolved implementation call to "
+                    //          + rtxRTypeFullQualifiedName<"sequence">(decl.rtype, dummy)
+                    //          + ":" + toString(decl.body, true)+DEFAULT_COLOR);
                     //traceLine(PURPLE + "[Debug] Resolved implementation:"+cnorm2c(decl.body)+DEFAULT_COLOR);
 
                     // Finally, insert the block in-place of the placeHolder.
@@ -1071,6 +1099,7 @@ function inject_pointcut<"::IMPLEMENTATION">(resolverValues : node, treeNode : n
         }
     }
     traceLine(YELLOW + "Could not resolve ::IMPLEMENTATION pointcut for template " + local_node#parent.tpl_hash + DEFAULT_COLOR);
+    traceLine(YELLOW + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
     return false;
 }
 
@@ -1124,17 +1153,21 @@ function    type_call<T>(resolverValues : node,
     local   startIdx;
     if (!rtxLink_findTemplates(theRtype, templates))
     {
-        traceLine("type_call<"+T+">: Could not find template.");
+        traceLine(RED + "[Error] type_call<"+T+">: Could not find template " + rtxRTypeName(theRtype));
+        traceLine(RED + "        used at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
     if (!rtxLink_selectUniqueTemplate(templates, source_tree.config))
     {
-        traceLine("type_call<"+T+">: Could not select an unique template.");
+        traceLine(RED + "[Error] type_call<"+T+">: Could not select an unique template for " + rtxRTypeName(theRtype));
+        traceLine(RED + "        used at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
     if (!rtxLink_selectChunkFromTemplate(templates, chunkName, theChunk))
     {
-        traceLine("type_call<"+T+">: Could not select chunk '" + chunkName + "'.");
+        traceLine(RED + "[Error] type_call<"+T+">: Could not select chunk '" + chunkName
+                  + "' from type " + rtxRTypeName(theRtype));
+        traceLine(RED + "        called from " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -1157,7 +1190,8 @@ function    type_call<T>(resolverValues : node,
     traceLine("type_call<"+T+">:<LOG> Resolving chunk " + chunkName + "... ");
     if (instanceChunk<subtree.instanceKey>(resVals, subtree.body, source_tree) == false)
     {
-        traceLine("type_call<\""+T+"\">:<ERROR> Could not instance Chunk '"+subtree.instanceKey+"'.");
+        traceLine(RED + "[Error] type_call<\""+T+"\">: Could not instance Chunk '"+subtree.instanceKey+"'.");
+        traceLine(RED + "        called from " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -1202,14 +1236,16 @@ function type_map<T>(resolverValues : node,
     local   templates;
     if (!rtxLink_findTemplates(theRtype, templates))
     {
-        traceLine("type_map<"+T+">:<ERROR> Could not find template associated to type "
+        traceLine(RED + "[Error] type_map<"+T+">: Could not find template associated to type "
                   + rtxRTypeName<theRtype.type>(theRtype));
+        traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
     if (!rtxLink_selectUniqueTemplate(templates, source_tree.config))
     {
-        traceLine("type_map<"+T+">:<ERROR> Could not select an unique template associated"
+        traceLine(RED + "[Error] type_map<"+T+">: Could not select an unique template associated"
                   " to type " + rtxRTypeName<theRtype.type>(theRtype));
+        traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -1226,7 +1262,8 @@ function type_map<T>(resolverValues : node,
 
         if (instanceMapping<theMapping.instanceKey>(resolverValues, subtree, source_tree) == false)
         {
-            traceLine("type_map<"+T+">:<ERROR> instanceMapping<\""+theMapping.instanceKey+"\"> failed.");
+            traceLine(RED + "[Error] type_map<"+T+">: instanceMapping<\""+theMapping.instanceKey+"\"> failed");
+            traceLine(RED + "        for mapping at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
             return false;
         }
 
@@ -1281,7 +1318,8 @@ function type_map<"Builtin::local">(resolverValues : node,
     removeFirstElement(mappedIds); // remove the "local."
     if (!findElement(mappedIds#[0], theChunk.variables))
     {
-        traceLine(RED + "[ERROR] Could not find local variable '" + mappedIds#[0] + "' in block." + DEFAULT_COLOR);
+        traceLine(RED + "[ERROR] Could not find local variable '" + mappedIds#[0] + "' in block" + DEFAULT_COLOR);
+        traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -1343,7 +1381,8 @@ function type_map<"Builtin::config">(resolverValues : node,
                 traceLine(RED + "[Error] Unmanaged type in Builtin::config type_map<> function : '"+itf[mappedIds#[0]].type+"'");
             }
             traceLine(RED + "[Error] Cannot translate node of type '" + itf[mappedIds#[0]].type
-                      + "' into a C value for config item replacement." + DEFAULT_COLOR);
+                      + "' into a C value for config item replacement" + DEFAULT_COLOR);
+            traceLine(RED + "        for mapping at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
             return false;
         }
     }

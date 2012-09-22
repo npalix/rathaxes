@@ -74,6 +74,7 @@ function        rtxItfCheckInheritance_walk<"__rtx_itf__">(local_node : node,
         {
             traceLine(RED + "[Error] Unable to find interface ``" + parentName
                       + "'' required by ``" + local_node.name + "''" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + local_node.location + "." + DEFAULT_COLOR);
             return false;
         }
 
@@ -140,7 +141,8 @@ function        rtxItfCheckTypesDeclarations<"chunk">(currentDeclaration : node,
         traceLine(RED + "[Error] Declaration of chunk '"
                   + rtxRTypeFullQualifiedName<"pointcut">(currentDeclaration.body.pointcut, dummy)
                   + "' in interface '" + currentInterface.name
-                  + "' refers to an unkown pointcut." + DEFAULT_COLOR);
+                  + "' refers to an unkown pointcut" + DEFAULT_COLOR);
+        traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -171,7 +173,8 @@ function        rtxItfCheckTypesDeclarations<"pointcut">(currentDeclaration : no
             traceLine(RED + "[Error] Parameter type ``"
                       + rtxRTypeName<rtypeNode.type>(rtypeNode) + "''"
                       + " of pointcut '" + currentDeclaration.rtype.name.name
-                      + " could not be identified." + DEFAULT_COLOR);
+                      + " could not be identified" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
             increment(errcount);
         }
         else // Success -> update the rtypeNode
@@ -228,7 +231,8 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                 traceLine(RED + "[Error] Declaration of chunk '"
                           + rtxRTypeFullQualifiedName<"pointcut">(decl.pointcut, dummy) + "' in type "
                           + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
-                          + " could not be associated to a pointcut." + DEFAULT_COLOR);
+                          + " could not be associated to a pointcut" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
                 increment(errcount);
             }
             else
@@ -253,7 +257,8 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                               + rtxRTypeName<rtypeNode.type>(rtypeNode) + "''"
                               + " of method '" + decl.pointcut.name.name + "' of type '"
                               + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
-                              + "' could not be identified for sequence." + DEFAULT_COLOR);
+                              + "' could not be identified for sequence" + DEFAULT_COLOR);
+                    traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
                     increment(suberrcount);
                 }
                 else // Success -> update the rtypeNode
@@ -280,6 +285,7 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                           + "' could not be identified for declaration of type '"
                           + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
                           + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
                 increment(errcount);
             }
             else
@@ -292,6 +298,7 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
         {
             traceLine(RED + "[Error] Declaration type '" + decl.type
                       + "' is not supported in a type mapping. How could it happen ?" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
             increment(errcount);
         }
     }
@@ -304,6 +311,7 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
     {
         traceLine(RED + "[Error] Type declaration contains an empty body. "
                   + "This type cannot be used." + DEFAULT_COLOR);
+        traceLine(RED + "        from " + currentDeclaration.location + "." + DEFAULT_COLOR);
         return false;
     }
 
@@ -337,7 +345,8 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
 
     if (scope == "" && currentDeclaration.rtype.name.global == false)
     {
-        traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace." + DEFAULT_COLOR);
+        traceLine(RED + "[Error] Type '"+name+"' should be defined in the global namespace" + DEFAULT_COLOR);
+        traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
         return false;
     }
     else
@@ -346,7 +355,9 @@ function        rtxItfCheckTypesDeclarations<"variable">(currentDeclaration : no
         {
                 traceLine(RED + "[Error] Type ``" + typeName + "''"
                           + " could not be identified for variable ``" + varname
-                          + "''." + DEFAULT_COLOR);
+                          + "''" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
+                return false;
         }
     }
 
@@ -377,6 +388,7 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
                       + rtxRTypeName<rtypeNode.type>(rtypeNode) + "''"
                       + " could not be identified for sequence ``"
                       + typeName + "''." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
             increment(errcount);
         }
         else // Success -> update the rtypeNode
@@ -399,6 +411,7 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
                 traceLine(RED + "[Error] Pointcut '"
                           + rtxRTypeFullQualifiedName<"pointcut">(decl.body.pointcut, dummy)
                           +"' could not be identified or qualified." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
                 increment(errcount);
             }
             // In the case of success, the scoped identifier is already updated.
@@ -415,7 +428,8 @@ function        rtxItfCheckTypesDeclarations<"sequence">(currentDeclaration : no
             traceLine(RED + "[Error] Declaration with type='" + decl.type
                       + "', specifier='" + decl.specifier
                       + "', qualifier='" + decl.qualifier
-                      + "' is forbidden in a sequence's body." + DEFAULT_COLOR);
+                      + "' is forbidden in a sequence's body" + DEFAULT_COLOR);
+            traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
             increment(errcount);
         }
     }

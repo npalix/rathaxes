@@ -45,8 +45,8 @@ function rtxMeta(source : node)
                 rtxMeta_walk<item.type>(item);
                 if (!isEmpty(item.error))
                 {
-                        traceLine(RED + "Item of type '"+item.type+"' could not be parsed :"
-                                + endl() + item.error + DEFAULT_COLOR);
+                        traceLine(RED + "[Error] Item of type '"+item.type+"' could not be parsed :"
+                                  + endl() + item.error + DEFAULT_COLOR);
                         has_error = true;
                 }
         }
@@ -335,7 +335,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         removeVariable(treepart.map); // rtxtypes
         if (!isEmpty(treepart.error))
         {
-                traceLine(RED + "Could not build node for template_expr : " + compile.template_expr + DEFAULT_COLOR);
+                traceLine(RED + "[Error] Could not build node for template_expr : "
+                          + compile.template_expr + DEFAULT_COLOR);
+                traceLine(RED + "        from " + compile.location
+                          + "." + DEFAULT_COLOR);
                 local out = "Trace:\n";
                 foreach stack_line in treepart.error[0].trace
                         out += stack_line;

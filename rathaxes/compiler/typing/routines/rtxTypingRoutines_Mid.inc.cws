@@ -89,6 +89,7 @@ function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : 
                 traceLine(RED + "[Error] Could not find interface '"
                           + rtypeNode.name.scope
                           + "' in inheritance tree." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
                 return false;
             }
             // If it's a direct inheritance, snoop through the types list.
@@ -189,12 +190,14 @@ function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, inte
             traceLine(RED + "[Error] Interface '" + rtypeItfName
                       + "' containing the template"
                       + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
         {
             traceLine(RED + "[Error] Could not load interface's '"
                       + rtypeItfName + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for template at " + rtypeNode#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
@@ -213,12 +216,14 @@ function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, inte
             traceLine(RED + "[Error] Interface '" + itfName
                       + "' containing the template"
                       + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
         {
             traceLine(RED + "[Error] Could not load interface's '"
                       + itfName + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for template at " + rtypeNode#parent.location + DEFAULT_COLOR);
             return false;
         }
         if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
@@ -307,6 +312,7 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
                 traceLine(RED + "[Error] The interface "+interfaceNode.name
                           +" does not depend on interface '"+pointcutRtype.name.scope
                           +"': The pointcut cannot be declared." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + pointcutRtype#parent.location + DEFAULT_COLOR);
                 return false;
             }
 

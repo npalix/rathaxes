@@ -106,9 +106,9 @@ function        rtxItfAddTypeToList(theNode : node, nameList : reference)
         // Only once per interface
         if (existVariable(nameList[name][fullName]))
         {
-            traceLine(RED + "[Error] Element " + fullName
-                      + " is already defined in interface "
-                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            traceLine(RED + "[Error] Element " + fullName + " at " + theNode.location);
+            traceLine(RED + "        is already defined in interface " + rtype.name.scope
+                      + " at " + nameList[name][fullName].location + "." + DEFAULT_COLOR);
             return false;
         }
         insert nameList[name][fullName];
@@ -118,9 +118,9 @@ function        rtxItfAddTypeToList(theNode : node, nameList : reference)
         // Only once per interface
         if (existVariable(nameList[name]))
         {
-            traceLine(RED + "[Error] Element " + name
-                      + " is already defined in interface "
-                      + rtype.name.scope + "." + DEFAULT_COLOR);
+            traceLine(RED + "[Error] Element " + name + " at " + theNode.location);
+            traceLine(RED + "        is already defined in interface " + rtype.name.scope
+                      + " at " + nameList[name][fullName].location + "." + DEFAULT_COLOR);
             return false;
         }
         insert nameList[name];
@@ -274,7 +274,8 @@ function rtxItfAddDeclToType(theNode : node, theDecl : node)
         if (findElement(qualified_name, list[decl_key]) == true)
         {
             traceLine(RED + "[Error] Type's chunk/method declaration '" + qualified_name
-                      + "' cannot be declared twice." + DEFAULT_COLOR);
+                      + "' at " + theDecl.location + " cannot be declared twice" + DEFAULT_COLOR);
+            traceLine(RED + "        from " + list[decl_key].location + "." + DEFAULT_COLOR);
             return false;
         }
         insert list[decl_key][qualified_name];
@@ -285,7 +286,8 @@ function rtxItfAddDeclToType(theNode : node, theDecl : node)
         if (findElement(decl_key, list) == true)
         {
             traceLine(RED + "[Error] Type's attribute '" + decl_key
-                      + "' cannot be declared twice." + DEFAULT_COLOR);
+                      + "' at " + theDecl.location + " cannot be declared twice" + DEFAULT_COLOR);
+            traceLine(RED + "        from " + list[decl_key].location + "." + DEFAULT_COLOR);
             return false;
         }
         insert list[decl_key];

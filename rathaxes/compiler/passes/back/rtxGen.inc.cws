@@ -81,7 +81,8 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
                                             c_tree.compile["@this.key@"].node, source_tree) == false)
             {
                 traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
-                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                          + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
+                traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
                 //traceLine("c_tree:" + toString(c_tree#root, true));
                 //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
@@ -104,7 +105,8 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
                                             c_tree.compile["@this.key@"].node, source_tree) == false)
             {
                 traceLine(RED + "[Error] Could not resolve pointcut '@this.temp_expr@'"
-                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                          + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
+                traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
                 //traceLine("c_tree:" + toString(c_tree#root, true));
                 //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
@@ -130,7 +132,8 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
                             c_tree.compile["@this.key@"].node, source_tree) == false)
                 {
                     traceLine(RED + "[Error] Could not resolve chunk call '@this.cws_expr@'"
-                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                              + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
+                    traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
                     //traceLine("c_tree:" + toString(c_tree#root, true));
                     //traceLine("resval:" + toString(resVals, true));
                     increment(errcount);
@@ -154,7 +157,8 @@ function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey :
                                                                    c_tree.compile["@this.key@"].node, source_tree) == false)
                 {
                     traceLine(RED + "[Error] Could not resolve template call '@this.cws_expr@'"
-                              + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                              + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
+                    traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
                     //traceLine("c_tree:" + toString(c_tree#root, true));
                     //traceLine("resval:" + toString(resVals, true));
                     increment(errcount);
@@ -183,7 +187,8 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                 ) == false)
             {
                 traceLine(RED + "[Error] Could not resolve type mapping '@this.cws_expr@'"
-                          + " from template '@this.tpl_hash@'." + DEFAULT_COLOR);
+                          + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
+                traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
                 //traceLine("c_tree:" + toString(c_tree#root, true));
                 //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
