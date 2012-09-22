@@ -32,6 +32,21 @@ function        rtxPH_GetLocation(local_node : reference)
         return theNode.location;
 }
 
+
+function        rtxPH_UpgradeStatementToBlock(local_node : node)
+{
+    if (local_node.type != "__block__")
+    {
+        local theStatement;
+        setall theStatement = local_node;
+        clearVariable(local_node);
+        cnormNodeBlock(local_node);
+        pushItem local_node.block;
+        setall local_node.block#back = theStatement;
+    }
+}
+
+
 // called from rtxMeta
 // TODO: specialize all __rtx_
 function        rtxPH_walk<T>(local_node : node)
@@ -331,10 +346,16 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
         { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
         // if then
         if (existVariable(local_node.then))
-        { rtxPH_compile<local_node.then.type>(local_node.then, compile, node_idx); }
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.then);
+            rtxPH_compile<local_node.then.type>(local_node.then, compile, node_idx);
+        }
         // if else
         if (existVariable(local_node.else))
-        { rtxPH_compile<local_node.else.type>(local_node.else, compile, node_idx); }
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.else);
+            rtxPH_compile<local_node.else.type>(local_node.else, compile, node_idx);
+        }
         // init in a declaration
         if (existVariable(local_node.initialize))
         { rtxPH_compile<local_node.initialize.type>(local_node.initialize, compile, node_idx); }
@@ -343,7 +364,10 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
         { rtxPH_compile<local_node.increment.type>(local_node.increment, compile, node_idx); }
         // {} 
         if (existVariable(local_node.body))
-        { rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx); }
+        {
+            rtxPH_UpgradeStatementToBlock(local_node.body);
+            rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx);
+        }
 }
 
 // index designation in initializer_list : lst l = {[42] = 12, [43] = 13, [44] = 14};

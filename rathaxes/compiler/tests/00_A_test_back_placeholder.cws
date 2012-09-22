@@ -68,6 +68,8 @@ generateString({
                 // in for loop
                 for (${bli} = ${gra}; ${bla}; ++${blu},${blo}--)
                         ${poum};
+                if (1)
+                    ${poum};
         }
 
         // refactor enum mapping

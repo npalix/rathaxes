@@ -353,24 +353,16 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             ${rtx_ether_ctx}->hw_ctx.irq = ${pdev}->irq;
 
             if (pci_enable_device_mem(${pdev}))
-            {
                 ${Log::info("e1000::create: pci_enable_device_mem failed")};
-            }
             if (pci_request_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars, ${config.name}))
-            {
                 ${Log::info("e1000::create: pci_request_selected_regions failed")};
-            }
             if (${config.set_master})
-            {
                 pci_set_master(${pdev});
-            }
 
             /* 0 here is for BAR_0: */
             ${rtx_ether_ctx}->hw_ctx.ioaddr = pci_ioremap_bar(${pdev}, 0);
             if (!${rtx_ether_ctx}->hw_ctx.ioaddr)
-            {
                 ${Log::info("e1000::create: pci_ioremap_bar failed")};
-            }
 
             /*
              * The really device specific algorithm starts here (so it should
@@ -586,9 +578,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
                         ethernet_ctx);
 
                 if (error)
-                {
                     ${Log::info("cannot register the interrupt handler")};
-                }
 
                 return error;
             }
@@ -956,9 +946,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             if (intr)
             {
                 if (intr & E1000_INTR_LSC)
-                {
                     ${Log::info("cable link status changed")};
-                }
 
                 return IRQ_HANDLED;
             }
