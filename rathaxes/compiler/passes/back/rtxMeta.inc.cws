@@ -45,8 +45,8 @@ function rtxMeta(source : node)
                 rtxMeta_walk<item.type>(item);
                 if (!isEmpty(item.error))
                 {
-                        traceLine(RED + "[Error] Item of type '"+item.type+"' could not be parsed :"
-                                  + endl() + item.error + DEFAULT_COLOR);
+                        traceLine(RED + "Item of type '"+item.type+"' could not be parsed :"
+                                + endl() + item.error + DEFAULT_COLOR);
                         has_error = true;
                 }
         }
@@ -333,7 +333,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         removeVariable(treepart.dialect); // cnorm
         removeVariable(treepart.scripts_path); // types loader
         removeVariable(treepart.map); // rtxtypes
-        if (!isEmpty(treepart.error))
+        // some artefact could be create so check if message is empty
+        if (existVariable(treepart.error[0]) && treepart.error[0].msg != "")
         {
                 traceLine(RED + "[Error] Could not build node for template_expr : "
                           + compile.template_expr + DEFAULT_COLOR);

@@ -13,7 +13,7 @@ function rtxLink_Query_version()
 
 
 declare function rtxLink_LoadItem(cache_node : node, out_ref_tree : reference, load_script : value = true);
-declare function rtxLink_findGlobalCode(with_values : node, out_code_ref : reference);
+declare function rtxLink_findGlobalCode(with_values : node, list_code_ref : node);
 declare function rtxLink_findInterface(itfName : value, out_itf_ref : reference);
 declare function rtxLink_selectExtendedInterfaces(interface : node, with_values : node, out_ext_list : node);
 declare function rtxLink_selectUniqueTemplate(templates : reference, config : node);
@@ -21,10 +21,6 @@ declare function rtxLink_selectChunkFromTemplate(theTemplate : node, chunkName :
 declare function rtxLink_findTemplates(theRtype : node, out_tpls : node);
 declare function rtxLink_selectCompatibleChunks(chunks : node, config : node);
 declare function rtxLink_findChunks(pointcut_name : node, out_chunks : node);
-
-
-
-
 
 /*
  * This function loads the tree and the script for a given cache node.
@@ -38,70 +34,77 @@ function rtxLink_LoadItem(cache_node : node,
                           out_ref_tree : reference,
                           load_script : value = true)
 {
+    // out_ref_tree is overwrite
     clearVariable(out_ref_tree);
-
+    // cache_node must be valid
     if ((load_script == true && !existVariable(cache_node.script_file))
         || !existVariable(cache_node.tree_file))
         error("rtxLink:<ERROR> The node does not contain any script or tree to load!");
-
-    // Test if the node has already been loaded or not ?
+    // local cache overload global cache
+    // for treefile
+    local sTreeFile;
+    local localFile = catPath(this.local_backlib_path, cache_node.tree_file);
+    local backFile = catPath(this.backlib_path, cache_node.tree_file);
+    if (existFile(localFile))
+    {  sTreeFile = localFile;}
+    else if (existFile(backFile))
+    {  sTreeFile = backFile;}
+    else
+    {error("Cache Error: inexistant " + cache_node.tree_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
+    // for script
+    local sCwsFile;
     if (load_script != false && !existVariable(cache_node.load))
     {
-        traceLine("rtxLink:<LOG> LOADING Script '" + cache_node.script_file + "'");
-        // Try/catch and load first from global cache, and try out local after it failed.
-        try {
-            extendExecutedScript(loadFile(this.backlib_path+cache_node.script_file));
-        }
-        catch (sError) {
-            local err = sError;
-            try{
-                try { extendExecutedScript(loadFile(this.local_backlib_path+cache_node.script_file)); }
-                catch (sError) { error(sError+" in file "+this.local_backlib_path+cache_node.script_file); }
-            }
-            catch (sError) {
-                // If double error, then display both errors.
-                traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+err+DEFAULT_COLOR);
+        localFile = catPath(this.local_backlib_path, cache_node.script_file);
+        backFile = catPath(this.backlib_path, cache_node.script_file);
+        if (existFile(localFile))
+        { sCwsFile = localFile;}
+        else if (existFile(backFile))
+        { sCwsFile = backFile;}
+        else
+        {error("Cache Error: inexistant " + cache_node.script_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
+    }
+    // load Files
+    if (sCwsFile != "")
+    {
+        traceLine("rtxLink:<LOG> LOADING Script '" + sCwsFile + "'");
+        try {extendExecutedScript(loadFile(sCwsFile));}
+        catch (sError) 
+        {
                 traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+sError+DEFAULT_COLOR);
-                return false;
-            }
+                error(sError + " in file " + sCwsFile); 
         }
         insert cache_node.load = true;
     }
     else if (load_script != false)
-    {
-        traceLine("rtxLink:<LOG> Script Already loaded !");
-    }
-
-    // local cache overload global cache
-    if (existFile(this.local_backlib_path + cache_node.tree_file))
-    {cwLoadProject(this.local_backlib_path + cache_node.tree_file, out_ref_tree);}
-    else if (existFile(this.backlib_path + cache_node.tree_file))
-    {cwLoadProject(this.backlib_path+cache_node.tree_file, out_ref_tree);}
-    else
-    {error("Cache Error: inexistant " + cache_node.tree_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
-
+    {   traceLine("rtxLink:<LOG> Script Already loaded !");}
+    traceLine("rtxLink:<LOG> LOADING TreeFile '" + sTreeFile + "'");
+    cwLoadProject(this.local_backlib_path + cache_node.tree_file, out_ref_tree);
     traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;
 }
-
 
 /*
  * This function returns the first global_code cache node found matching the
  * configuration block.
  */
-function rtxLink_findGlobalCode(with_values : node, out_code_ref : reference)
+function rtxLink_findGlobalCode(with_values : node, list_code_ref : node)
 {
     if (!existVariable(this.session))
         error("rtxLink:<ERROR> The cache was not loaded before use !");
 
+    traceLine("Globale CODE:" + toString(this.session.global_code, true));
+    
     foreach item in this.session.global_code
     {
         if (rtxLink_IsWithNodeCompatible(item.with, with_values))
         {
-            ref out_code_ref = item;
-            return true;
+            pushItem list_code_ref;
+            ref list_code_ref#back = item;
         }
     }
+    if ($getArraySize(list_code_ref) > 0$)
+    {   return true;}
     return false;
 }
 
