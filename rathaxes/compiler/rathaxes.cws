@@ -164,6 +164,7 @@ rtxFrontGenerate(source);
      * For the code to compile, we need to have the types declared.
      * Here is the "include" code generation:
      */
+    
     local include;
     cnormNodeRoot(include);
     foreach  item in source.c_types
@@ -182,6 +183,7 @@ rtxFrontGenerate(source);
             }
         }
     }
+    
     /*
      * This is our final code, tell cnorm2c that this is a root block,
      * otherwise it will scope the whole thing inside braces.

@@ -1,0 +1,83 @@
+#if !existFunction(rtxFrontGenerate_version)
+
+function rtxFrontGenerate_version()
+{ return "1.0"; }
+
+// Entry point for front end generation
+declare function rtxFrontGenAll(source_tree : node, weave_chunk : reference);
+declare function rtxFrontGenAll_iterate<T>(local_node : node, source_tree : reference, weave_chunk : reference);
+//
+
+// iterate thru all devices of rtx source_tree and generate list of weave_chunk
+// must be call from Main script with the node for the OUTPUT FILE
+function rtxFrontGenAll(source_tree : node, weave_chunk : reference)
+{
+        // init weave_chunk
+
+        // generate all item found in a rtx file
+        if (rtxFrontGenAll_iterate<local_node.type>(local_node, local_node, weave_chunk) == false)
+        {   error(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);}
+}
+
+// For Unknown Node
+function rtxFrontGenAll_iterate<T>(local_node : node, source_tree : reference, weave_chunk : reference)
+{ error("rtxFrontGen_iterate<"+T+"> not implemented."); }
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxFrontGenAll_iterate<"__rtx_itf__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{       return true;}
+function rtxFrontGenAll_iterate<"__rtx_tpl__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{       return true;}
+function rtxFrontGenAll_iterate<"__rtx_with__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{       return true;}
+function rtxFrontGenAll_iterate<"__rtx_config__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{ return true; }
+/**/
+
+// some root block could be found
+function rtxFrontGenAll_iterate<"__root_block__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{ return rtxFrontGenAll_iterate<"__block__">(local_node, source_tree, weave_chunk); }
+
+// Go thru block
+function rtxFrontGenAll_iterate<"__block__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{
+        local errcount = 0;
+
+        foreach item in local_node.block
+        {
+                if (rtxFrontGenAll_iterate<item.type>(item, source_tree, weave_chunk) == false)
+                        increment(errcount);
+        }
+
+        if (errcount != 0)
+                return false;
+        return true;
+}
+
+// Go thru Device
+function rtxFrontGenAll_iterate<"__rtx_device__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{
+        // iterate thru all item in device
+        local err = rtxFrontGenAll_iterate<local_node.body.type>(local_node.body, source_tree, weave_chunk);
+        return err;
+}
+
+// iterate thru registers
+function rtxFrontGenAll_iterate<"__rtx_register__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{
+        return true;
+}
+
+// iterate thru property
+function rtxFrontGenAll_iterate<"__rtx_property__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{
+        return true;
+}
+
+// iterate thru sequences
+function rtxFrontGenAll_iterate<"__rtx_sequence__">(local_node : node, source_tree : reference, weave_chunk : reference)
+{
+        return true;
+}
+
+#end

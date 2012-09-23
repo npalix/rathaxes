@@ -333,8 +333,10 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         removeVariable(treepart.dialect); // cnorm
         removeVariable(treepart.scripts_path); // types loader
         removeVariable(treepart.map); // rtxtypes
-        if (!isEmpty(treepart.error))
+        // some artefact could be create so check if message is empty
+        if (existVariable(treepart.error[0]) && treepart.error[0].msg != "")
         {
+                traceLine("Dump:" + toString(treepart.error));
                 traceLine(RED + "Could not build node for template_expr : " + compile.template_expr + DEFAULT_COLOR);
                 local out = "Trace:\n";
                 foreach stack_line in treepart.error[0].trace
