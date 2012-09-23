@@ -59,7 +59,7 @@ function rtxFront_TypeCheckNode<"__rtx_config__">(local_node : node, itf_list : 
     return rtxTypeCheck_Config(local_node);
 }
 
-function rtxFront_TypeCheckNode<"__rtx__property__">(local_node : node, itf_list : node)
+function rtxFront_TypeCheckNode<"__rtx_property__">(local_node : node, itf_list : node)
 {
         // TODO: FIXME
         return true;
