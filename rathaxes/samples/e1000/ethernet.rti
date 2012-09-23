@@ -11,6 +11,7 @@ interface Ethernet : Socket, PCI, LKM
         chunk       LKM::includes();
         method      decl();
         method      init(Ethernet::Net, PCI::Device);
+        pointcut    Ethernet::SubContext();
     }
 
     required variable ::string  ifname;

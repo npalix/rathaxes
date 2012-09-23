@@ -2,7 +2,7 @@ interface e1000 : Socket, Ethernet, PCI, LKM
 {
     provided type   Context
     {
-        chunk       LKM::includes();
+        chunk       Ethernet::SubContext();
         method      decl();
         method      init();
     }

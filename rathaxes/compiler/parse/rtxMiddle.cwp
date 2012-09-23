@@ -116,7 +116,7 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
 ;
 
 rtx_itf_type_body_stmt ::=
-    "attribute" | "method" | "chunk"
+    "attribute" | "method" | "chunk" | "pointcut"
 ;
 
 rtx_itf_type_body_declaration(theBlock : node) ::=
@@ -127,6 +127,19 @@ rtx_itf_type_body_declaration(theBlock : node) ::=
     rtx_itf_type_stmt<declType>(theDecl)
     #continue(sError, "Missing ';' ending type's " + declType + " declaration.")
     ';'
+;
+
+rtx_itf_type_stmt<"pointcut">(theDecl : node) ::=
+    => local nameNode;
+    => local paramTypes;
+    => local dummy_ids;
+
+    #continue(sError, "Expected pointcut name after pointcut declaration.")
+    rtx_scoped_identifier(nameNode)
+    #check (rtxNodeItfTypePointcutDeclaration(theDecl, nameNode, paramTypes))
+
+    #continue(sError, "Expected parameters to pointcut '"+rtxRTypeName<nameNode.type>(nameNode)+"'.")
+    rtx_parameter_list(paramTypes, dummy_ids)
 ;
 
 rtx_itf_type_stmt<"chunk">(theDecl : node) ::=
