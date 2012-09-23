@@ -23,20 +23,22 @@
 // And finally reduce the selection to only one template before loading.
 
 local theWith;
-local theCacheNode;
+local listCacheNode;
 
 build_config(theWith);
 
-if (rtxLink_findGlobalCode(theWith, theCacheNode) == false)
+if (rtxLink_findGlobalCode(theWith, listCacheNode) == false)
     error("01_K_test_back_resolvePointcutDefault.cws:"
           +" The global code could not be found by rtxLink.");
 
-traceLine("Loading global_code... cache_node : "+toString(theCacheNode, true));
 local c_tree;
-if (rtxLink_LoadItem(theCacheNode, c_tree) == false)
-    error("01_K_test_back_resolvePointcutDefault.cws:"
-          +" Could not load either script or tree files");
-
+foreach theCacheNode in listCacheNode
+{
+        traceLine("Loading global_code... cache_node : "+toString(theCacheNode, true));
+        if (rtxLink_LoadItem(theCacheNode, c_tree) == false)
+                 error("01_K_test_back_resolvePointcutDefault.cws:"
+                  +" Could not load either script or tree files");
+}
 traceLine("====>Codeworker Script and tree Loaded with success.");
 
 // Now, try the C code generation out : simulate an input (the resVal node)

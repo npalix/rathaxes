@@ -23,13 +23,27 @@ generateString({
 
         interface Builtin
         {
+            provided pointcut           Builtin::types();
+
+            provided builtintype        base_adr;
             provided builtintype        string;
             provided builtintype        number;
             provided builtintype        symbol;
-            provided builtintype        register;
-            provided builtintype        register_field;
-            provided builtintype        register_value;
-            provided builtintype        base_adr;
+
+            provided builtintype        register
+            {
+                chunk           Builtin::types();
+            }
+
+            provided builtintype        register_field
+            {
+                chunk           Builtin::types();
+            }
+
+            provided builtintype        register_value
+            {
+                chunk           Builtin::types();
+            }
         }
 
         interface LKM : Builtin
@@ -72,9 +86,39 @@ generateString({
 
             provided sequence           Generic::LOG(Builtin::string);
         }
+        
+        with Builtin
+        {
+                ${pointcut Builtin::types()};
+        
+                template builtintype Builtin::register()
+                {
+                        chunk   Builtin::types()
+                        {
+                                #define HERE_REGISTERS
+                        }
+                }
 
+                template builtintype register_field()
+                {
+                        chunk   Builtin::types()
+                        {
+                                #define REGISTER_FIELD
+                        }
+                }
+
+                template builtintype register_value()
+                {
+                        chunk   Builtin::types()
+                        {
+                                #define REGISTER_VALUE
+                        }
+                }        
+        }
+        
         with Generic
         {
+                
                 template sequence Generic::set(LKM::Context ctx, Builtin::register_value  regval)
                 {
                 

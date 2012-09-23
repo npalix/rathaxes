@@ -91,7 +91,7 @@ generateString({
             {
                 chunk pouet(String) {}
 
-                chunk Explode(Number) {}
+                method Explode(Number) {}
 
                 map
                 {

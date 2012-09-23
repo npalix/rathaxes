@@ -102,7 +102,7 @@ function rtxNodeDevice_AddUseInterface(local_node : node, name : value)
 function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : reference, visibility : value)
 {
         rtxNode(local_node);
-        local_node.type = "__rtx__property__";
+        local_node.type = "__rtx_property__";
         if (visibility == "")
         {       visibility = "private";}
         insert local_node.visibility = visibility;

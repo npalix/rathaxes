@@ -43,6 +43,7 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 /**/    =>traceLine("Template type block!");
         [
                 "chunk" rtx_stmt<"chunk">(theBlock)
+        |       "method" rtx_stmt<"chunk">(theBlock)
         |
                 "map"
 /**/            =>traceLine("MAP");
@@ -61,6 +62,30 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 /**/         + "::" + theTemplate.rtype.name.id + "!")
 /**/    #check(rtxNodeTpl_HasMapping(theTemplate))
         #check(rtxNode_InfoLocation(theTemplate))
+;
+
+rtx_stmt_template_content<"builtintype">(theTemplate : node, theBlock : node) ::=
+/**/    =>traceLine("Template builtin type block!");
+        [
+                "chunk" rtx_stmt<"chunk">(theBlock)
+        |       "method" rtx_stmt<"chunk">(theBlock)
+        |
+                "map"
+/**/            =>traceLine("MAP");
+/**/            =>local mapping;
+/**/            =>local body;
+/**/            #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
+/**/            #check(rtxNodeTplTypeMapping(mapping, body))
+/**/            #continue(sError, "Mapping block expected after map statement.")
+                rtx_type_map(mapping)
+/**/            #continue(sError, "The mapping for template type "
+/**/                + theTemplate.rtype.name.scope + "::"
+/**/                + theTemplate.rtype.name.id + " is defined twice.")
+        ]*
+/**/    #continue(sError, "No mapping defined for template type"
+/**/         + theTemplate.rtype.name.scope
+/**/         + "::" + theTemplate.rtype.name.id + "!")
+/**/    #check(rtxNode_InfoLocation(theTemplate))
 ;
 
 // TYPE MAPPING
