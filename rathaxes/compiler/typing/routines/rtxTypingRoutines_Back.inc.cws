@@ -632,12 +632,24 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
     {
         switch (entry.type)
         {
-        case "__rtx_itf_attribute__":
-            if (rtxTypeCheck_TplTypeHasAttribute(entry, tplTree) == false)
+        case "__rtx_itf_pointcut__":
+            if (rtxTypeCheck_TemplateHasPointcut(entry.rtype, tplTree) == false)
             {
+                local dummy;
+                traceLine(RED + "[Error] Type template " + tplName + " does not implement the required pointcut: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.rtype, dummy) + "'" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + entry.location + "." + DEFAULT_COLOR);
+                increment(errcount);
+            }
+            break ;
+        case "__rtx_itf_chunk__":
+            if (rtxTypeCheck_TemplateHasChunk(entry.pointcut, tplTree) == false)
+            {
+                local dummy;
                 traceLine(RED + "[Error] Type template " + tplName
-                          +" does not implement the required attribute: '"
-                          + entry.name + "'." + DEFAULT_COLOR);
+                          +" does not implement the required chunk: '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
+                          + "'." + DEFAULT_COLOR);
                 traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }
@@ -654,14 +666,12 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
                 increment(errcount);
             }
             break ;
-        case "__rtx_itf_chunk__":
-            if (rtxTypeCheck_TemplateHasChunk(entry.pointcut, tplTree) == false)
+        case "__rtx_itf_attribute__":
+            if (rtxTypeCheck_TplTypeHasAttribute(entry, tplTree) == false)
             {
-                local dummy;
                 traceLine(RED + "[Error] Type template " + tplName
-                          +" does not implement the required chunk: '"
-                          + rtxRTypeFullQualifiedName<"pointcut">(entry.pointcut, dummy)
-                          + "'." + DEFAULT_COLOR);
+                          +" does not implement the required attribute: '"
+                          + entry.name + "'." + DEFAULT_COLOR);
                 traceLine(RED + "        at " + entry.location + DEFAULT_COLOR);
                 increment(errcount);
             }

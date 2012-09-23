@@ -48,7 +48,10 @@ with Ethernet, PCI, LKM, Log
                 struct net_device       *net_dev;
 
                 /* while waiting on issue #8 */
-                struct rtx_e1000_ctx    hw_ctx;
+                //${e1000::Context}       hw_ctx;
+                // In the long-term, this may disappear for a new concept allowing
+                // to embbed a descriptor defined and manipulated by the front-end
+                ${pointcut Ethernet::SubContext()};
             } *rtx_ethernet_dev_p;
         }
 
@@ -149,7 +152,6 @@ with Ethernet, PCI, LKM, Log
                 struct rtx_e1000_ctx* ctx;
 
                 rtx_ether_dev = dev_id;
-                ctx = &rtx_ether_dev->hw_ctx;
                 ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 

@@ -170,6 +170,17 @@ function        rtxNodeItfChunkDeclaration(local_node           : node,
 }
 
 
+function        rtxNodeItfTypePointcutDeclaration(local_node : node,
+                                                  theIdentifier : node,
+                                                  out_ref_params : reference)
+{
+    insert local_node.type = "__rtx_itf_pointcut__";
+
+    insert local_node.rtype;
+    rtxNodeRType(local_node.rtype, theIdentifier, out_ref_params);
+
+    return true;
+}
 function        rtxNodeItfTypeChunkDeclaration(local_node : node,
                                                theIdentifier : node,
                                                theTypes : node)
@@ -241,6 +252,14 @@ function rtxItfAddDeclToType(theNode : node, theDecl : node)
 
     switch (theDecl.type)
     {
+    case "__rtx_itf_pointcut__":
+        if (!existVariable(theNode.pointcuts))
+            insert theNode.pointcuts;
+        ref list = theNode.pointcuts;
+        decl_key = theDecl.rtype.name.name;
+        qualified_name = rtxRTypeFullQualifiedName<"pointcut">(theDecl.rtype, dummy_ids);
+        ref insert_ref = theDecl;
+        break ;
     case "__rtx_itf_chunk__":
         if (!existVariable(theNode.chunks))
             insert theNode.chunks;

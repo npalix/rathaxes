@@ -223,8 +223,21 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
      */
     foreach decl in currentDeclaration.body.block
     {
-        if (decl.type == "__rtx_itf_chunk__")
+        switch (decl.type)
         {
+        case "__rtx_itf_pointcut__":
+            // This call prints an error if there is 
+            // But for the registration, we must enforce the presence of the .specifier
+            insert decl.specifier = "pointcut";
+            if (rtxItfCheckTypesDeclarations<"pointcut">(decl, currentInterface, interfacesList) == false)
+            {
+                increment(errcount);
+                break ;
+            }
+            if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
+                increment(errcount);
+            break ;
+        case "__rtx_itf_chunk__":
             if (rtxTypeCheck_ItfCheckPointcut(decl.pointcut, currentInterface) == false)
             {
                 local dummy;
@@ -234,15 +247,12 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                           + " could not be associated to a pointcut" + DEFAULT_COLOR);
                 traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
                 increment(errcount);
+                break ;
             }
-            else
-            {
-                if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
-                    increment(errcount);
-            }
-        }
-        else if (decl.type == "__rtx_itf_method__")
-        {
+            if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
+                increment(errcount);
+            break ;
+        case "__rtx_itf_method__":
             // It's a method, so enforce the globality of the method.
             decl.pointcut.name.scope = "";
             decl.pointcut.name.global = true;
@@ -275,9 +285,8 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                 if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
                     increment(errcount);
             }
-        }
-        else if (decl.type == "__rtx_itf_attribute__")
-        {
+            break ;
+        case "__rtx_itf_attribute__":
             // In case of success the rtype's name.scope field is updated properly
             if (rtxInterfaceHasType(decl.rtype, currentInterface) == false)
             {
@@ -293,13 +302,13 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                 if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
                     increment(errcount);
             }
-        }
-        else
-        {
+            break ;
+        default:
             traceLine(RED + "[Error] Declaration type '" + decl.type
                       + "' is not supported in a type mapping. How could it happen ?" + DEFAULT_COLOR);
             traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
             increment(errcount);
+            break ;
         }
     }
     if (errcount != 0)
