@@ -38,7 +38,7 @@ rtx_itf_qualifier ::=
 ;
 
 rtx_itf_type ::=
-    "sequence" | "variable" | "type" | [ "builtintype" ] | "pointcut" | "chunk"
+    "sequence" | "variable" | "type" | "builtintype" | "pointcut" | "chunk"
 ;
 
 rtx_itf_declaration(theBlock : node, nameList : node) ::=
@@ -101,6 +101,7 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "type"))
     rtx_scoped_identifier(nameNode)
+    #check(rtxNode_InfoLocation(theDecl))
     #check(rtxNodeRType(rtypeNode, nameNode, params))
 /**/=> addRTypeToItfDeclaration(theDecl, rtypeNode);
     #continue(sError, "Missing block describing type in declaration.")
@@ -172,10 +173,17 @@ rtx_itf_stmt<"builtintype">(theDecl : node, nameList : node, theQualif : value) 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "builtintype"))
     rtx_scoped_identifier(nameNode)
     #check(rtxNode_InfoLocation(theDecl))
-    #continue(sError, "Missing ';' ending builtintype declaration.")
-    ';'
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
+    [';'
+    |
+/**/    => local typeBody;
+        '{'
+            #continue(sError, "Missing '}' ending block.")
+            [ rtx_itf_type_body_declaration(typeBody) ]*
+        '}'
+        #check(rtxItfDeclaration_addBody(theDecl, typeBody))
+    ]
 ;
 
 rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=

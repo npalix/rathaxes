@@ -84,7 +84,7 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk testMethod(Number paf)
+                method testMethod(Number paf)
                 {
                 }
 

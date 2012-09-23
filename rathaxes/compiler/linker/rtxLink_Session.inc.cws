@@ -68,8 +68,8 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
         local registered = false;
         foreach glob in this.session.global_code
         {
-            // XXX FIXME Improve this comparison when flatten will be ready.
-            if (equalTrees(glob.with, theWith))
+            traceLine("Another SESSION GLOBAL!!!" + toString(glob, true));
+            if (local_node.interfaces[0] == glob.interfaces)
             {
                 registered = true;
                 break ;
@@ -84,6 +84,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
             localref theNode = this.session.global_code#back;
             insert theNode.with;
             setall theNode.with = theWith;
+            insert theNode.interfaces = local_node.interfaces[0];
             insert theNode.script_file = local_node.script_file;
             insert theNode.tree_file = local_node.tree_file;
 
@@ -92,6 +93,7 @@ function rtxLink_SessionRegister<"__rtx_with__">(local_node : node,
             localref tmpNode = this.session.temp.global_code#back;
             insert tmpNode.with;
             setall tmpNode.with = theWith;
+            insert tmpNode.interfaces = local_node.interfaces[0];
             insert tmpNode.script_file = local_node.script_file;
             insert tmpNode.tree_file = local_node.tree_file;
         }
