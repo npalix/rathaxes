@@ -1,6 +1,6 @@
 # Disable this "coding-style" warning (seriously, you have to compile with
 # -pedantic to get it...)
-EXTRA_CFLAGS	= -Wno-declaration-after-statement
+EXTRA_CFLAGS	= -Wno-declaration-after-statement -std=gnu99
 
 KDIR		= /lib/modules/$(shell uname -r)/build
 obj-m		:= @LKM_OBJECTS@
