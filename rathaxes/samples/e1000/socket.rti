@@ -1,8 +1,23 @@
-interface Socket : LKM
+interface Socket : LKM, Device
 {
-    provided type Socket::SKBuff {
-        chunk   LKM::includes();
-        method  decl();
-        method  init();
+    /* The SKBuff type from the kernel */
+    provided type   AbstractSKBuff
+    {
+        chunk       LKM::includes();
+        method      decl();
+    }
+
+    provided type   SKBuff
+    {
+        chunk       LKM::includes();
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+        method      decl();
+        method      init(Socket::AbstractSKBuff);
+        method      dump_infos();
+        method      map_to(Device::AbstractDevice);
+        method      map_from(Device::AbstractDevice);
+        method      unmap_to_and_free(Device::AbstractDevice);
+        method      unmap_from_and_free(Device::AbstractDevice);
     }
 }

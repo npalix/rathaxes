@@ -31,8 +31,19 @@ interface e1000 : Socket, Ethernet, PCI, LKM
     provided type   TxRing
     {
         chunk       LKM::includes();
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
         method      decl();
         method      init();
+
+        /* Clean the ring (i.e: move the head closer to the tail): */
+        method      clean();
+        /* Return the number of clean descriptors left in the ring: */
+        method      descriptors_remaining();
+        method      tso_cksum_offload(Socket::SKBuff);
+        method      put(Socket::SKBuff);
+        /* Signal the device that new dirty descriptors are on the ring: */
+        method      start_xmit(e1000::Context);
     }
 
     /*
@@ -49,6 +60,12 @@ interface e1000 : Socket, Ethernet, PCI, LKM
     {
         chunk       LKM::includes();
         method      decl();
+    }
+
+    provided type   TxDescriptorFlags
+    {
+        chunk       LKM::includes();
+        chunk       ::decl();
     }
 
     provided sequence   create_device()
@@ -105,6 +122,16 @@ interface e1000 : Socket, Ethernet, PCI, LKM
     }
 
     provided sequence   handle_interrupt(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   _xmit_tso_cksum_offload(Ethernet::Device, Socket::SKBuff)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   xmit(Ethernet::Device, Socket::AbstractSKBuff)
     {
         provided chunk  ::CALL();
     }
