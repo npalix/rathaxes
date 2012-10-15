@@ -1,4 +1,4 @@
-device LKM use LKM, PCI, Ethernet, Log
+device LKM use LKM, PCI, Ethernet, Log, Socket
 {
     Ethernet::open(Ethernet::Device dev)
     {
@@ -43,9 +43,10 @@ device LKM use LKM, PCI, Ethernet, Log
         e1000::handle_interrupt(dev);
     }
 
-    Ethernet::send(Ethernet::Device dev, Socket::SKBuff skb)
+    Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
     {
         Log::info("we have one packet to transmit!");
+        e1000::xmit(dev, skb);
     }
 
     LKM::init()
@@ -66,8 +67,13 @@ configuration
     LKM::description = "Hello World Loadable Kernel Module (LKM)";
     LKM::license = "GPL";
 
+    /*
+     * See section 5.2 of the Intel manual for all the values
+     * - 0x100e is for the 82540EM-A;
+     * - 0x100f, apparently found on vmware by default, is for the 82545EM-A.
+     */
     PCI::vendor_id = 0x8086;
-    PCI::product_id = 0x100e; /* e100f on vmware by default it seems */
+    PCI::product_id = 0x100e;
     PCI::set_master = true;
 
     Ethernet::ifname = "rtx%d";
@@ -79,4 +85,10 @@ configuration
      * 4096, 8192 and 16384 bytes:
      */
     e1000::rx_buffer_len = 2048;
+    /*
+     * 4096 bytes maximum per transmit descriptor is used on Linux and FreeBSD,
+     * 2048 on Minix and HelenOS, I can't find why. If I understand the Intel
+     * manual correctly, the maximum should be 16288 (see section 3.3.3).
+     */
+     e1000::tx_max_data_per_desc = 4096;
 }

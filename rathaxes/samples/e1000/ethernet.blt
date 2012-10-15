@@ -1,6 +1,56 @@
 with Ethernet, PCI, LKM, Log
 {
-    template type Ethernet::Net()
+    template type   Ethernet::ProtocolId()
+    {
+        chunk LKM::prototypes()
+        {
+            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short);
+        }
+
+        chunk LKM::data()
+        {
+            static const struct
+            {
+                unsigned short  id;
+                const char      *name;
+            } rtx_ethernet_proto_table[] =
+            {
+                { ETH_P_IP,     "IPv4"  },
+                { ETH_P_IPV6,   "IPv6"  },
+                { ETH_P_ARP,    "ARP"   },
+            };
+        }
+
+        chunk LKM::code()
+        {
+            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short proto_id)
+            {
+                for (int i = 0;
+                     i != sizeof(rtx_ethernet_proto_table) / sizeof(rtx_ethernet_proto_table[0]);
+                     i++)
+                    if (proto_id == rtx_ethernet_proto_table[i].id)
+                        return rtx_ethernet_proto_table[i].name;
+
+                return "Unknown";
+            }
+        }
+
+        chunk decl()
+        {
+            typedef unsigned short  rtx_ether_protocol_id;
+        }
+
+        chunk to_str()
+        {
+            rtx_ethernet_protocol_id_to_str(${self});
+        }
+
+        map
+        {
+        }
+    }
+
+    template type   Ethernet::AbstractDevice()
     {
         chunk LKM::includes()
         {
@@ -17,11 +67,6 @@ with Ethernet, PCI, LKM, Log
         }
     }
 
-    /*
-     * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
-     * from Linux. Ethernet::Device is the type that we use in the private
-     * field of the struct net_device.
-     */
     template type   Ethernet::Device()
     {
         chunk LKM::includes()
@@ -47,15 +92,15 @@ with Ethernet, PCI, LKM, Log
                 struct pci_dev          *pci_dev;
                 struct net_device       *net_dev;
 
-                /* while waiting on issue #8 */
-                //${e1000::Context}       hw_ctx;
-                // In the long-term, this may disappear for a new concept allowing
-                // to embbed a descriptor defined and manipulated by the front-end
+                /*
+                 * In the long-term, this may disappear for a new concept allowing
+                 * to embbed a descriptor defined and manipulated by the front-end
+                 */
                 ${pointcut Ethernet::SubContext()};
             } *rtx_ethernet_dev_p;
         }
 
-        chunk ::init(Ethernet::Net net_dev, PCI::Device pci_dev)
+        chunk ::init(Ethernet::AbstractDevice net_dev, PCI::Device pci_dev)
         {
             ${self} = netdev_priv(${net_dev});
             /*
@@ -82,9 +127,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_open(struct net_device *dev)
             {
-                struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
+                ${Ethernet::Device} rtx_ether_dev = netdev_priv(dev);
 
-                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
@@ -92,7 +136,7 @@ with Ethernet, PCI, LKM, Log
         }
     }
 
-    template sequence   Ethernet::send(Ethernet::Device dev, Socket::SKBuff skb)
+    template sequence   Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
     {
         chunk LKM::prototypes()
         {
@@ -101,13 +145,11 @@ with Ethernet, PCI, LKM, Log
 
         chunk LKM::code()
         {
-            static int  rtx_ethernet_xmit(struct sk_buff* skb, struct net_device *dev)
+            static int  rtx_ethernet_xmit(struct sk_buff* kernel_skb, struct net_device *net_dev)
             {
-                ${cast local.dev as Ethernet::Device};
-                ${cast local.skb as Socket::SKBuff};
-                ${pointcut ::IMPLEMENTATION(local.dev, local.skb)};
-
-                return 0;
+                ${Ethernet::Device} rtx_ethernet_dev = netdev_priv(net_dev);
+                ${cast local.kernel_skb as Socket::AbstractSKBuff};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ethernet_dev, local.kernel_skb)};
             }
         }
     }
@@ -123,9 +165,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_close(struct net_device *dev)
             {
-                struct rtx_ethernet_dev* rtx_ether_dev = netdev_priv(dev);
+                ${Ethernet::Device} rtx_ether_dev = netdev_priv(dev);
 
-                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return 0;
@@ -148,11 +189,8 @@ with Ethernet, PCI, LKM, Log
         {
             static enum irqreturn   rtx_ethernet_interrupt_handler(int irq, void *dev_id)
             {
-                struct rtx_ethernet_dev* rtx_ether_dev;
-                struct rtx_e1000_ctx* ctx;
+                ${Ethernet::Device} rtx_ether_dev = dev_id;
 
-                rtx_ether_dev = dev_id;
-                ${cast local.rtx_ether_dev as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_dev)};
 
                 return IRQ_NONE;

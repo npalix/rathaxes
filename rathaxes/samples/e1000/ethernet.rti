@@ -1,16 +1,30 @@
 interface Ethernet : Socket, PCI, LKM
 {
-    provided type   Net
+     provided type   ProtocolId
+     {
+         chunk       LKM::prototypes();
+         chunk       LKM::data();
+         chunk       LKM::code();
+         method      decl();
+         method      to_str();
+     }
+
+    provided type   AbstractDevice
     {
         chunk       LKM::includes();
-        method       decl();
+        method      decl();
     }
 
+    /*
+     * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
+     * from Linux. Ethernet::Device is the type that we use in the private
+     * field of the struct net_device.
+     */
     provided type   Device
     {
         chunk       LKM::includes();
         method      decl();
-        method      init(Ethernet::Net, PCI::Device);
+        method      init(Ethernet::AbstractDevice, PCI::Device);
         pointcut    Ethernet::SubContext();
     }
 
@@ -22,7 +36,7 @@ interface Ethernet : Socket, PCI, LKM
         provided chunk  LKM::code();
     }
 
-    required sequence   send(Ethernet::Device dev, Socket::SKBuff skb)
+    required sequence   send(Ethernet::Device, Socket::AbstractSKBuff)
     {
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
