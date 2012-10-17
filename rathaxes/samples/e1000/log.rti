@@ -1,5 +1,7 @@
 interface Log : Builtin
 {
+    required variable   Builtin::number name;
+
     provided sequence   info(Builtin::string)
     {
         provided chunk  ::CALL();

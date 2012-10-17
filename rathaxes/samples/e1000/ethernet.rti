@@ -1,5 +1,7 @@
 interface Ethernet : Socket, PCI, LKM
 {
+    required variable   Builtin::string ifname;
+
      provided type   ProtocolId
      {
          chunk       LKM::prototypes();
@@ -27,8 +29,6 @@ interface Ethernet : Socket, PCI, LKM
         method      init(Ethernet::AbstractDevice, PCI::Device);
         pointcut    Ethernet::SubContext();
     }
-
-    required variable ::string  ifname;
 
     required sequence   open(Ethernet::Device)
     {

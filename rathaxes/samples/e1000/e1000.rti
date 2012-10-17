@@ -1,5 +1,13 @@
-interface e1000 : Socket, Ethernet, PCI, LKM
+interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
 {
+    /* XXX: This should be in pci.rti, also maybe we need a bool type */
+    required variable   Builtin::symbol set_master;
+
+    required variable   Builtin::number rx_ring_size;
+    required variable   Builtin::number tx_ring_size;
+    required variable   Builtin::number rx_buffer_len;
+    required variable   Builtin::number tx_max_data_per_desc;
+
     provided type   Context
     {
         chunk       Ethernet::SubContext();
