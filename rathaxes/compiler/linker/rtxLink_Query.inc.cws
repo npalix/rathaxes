@@ -43,9 +43,12 @@ function rtxLink_LoadItem(cache_node : node,
     // local cache overload global cache
     // for treefile
     local sTreeFile;
+    local workingFile = catPath("./", cache_node.tree_file);
     local localFile = catPath(this.local_backlib_path, cache_node.tree_file);
     local backFile = catPath(this.backlib_path, cache_node.tree_file);
-    if (existFile(localFile))
+    if (existFile(workingFile))
+    { sTreeFile = workingFile;}
+    else if (existFile(localFile))
     {  sTreeFile = localFile;}
     else if (existFile(backFile))
     {  sTreeFile = backFile;}
@@ -55,9 +58,12 @@ function rtxLink_LoadItem(cache_node : node,
     local sCwsFile;
     if (load_script != false && !existVariable(cache_node.load))
     {
+        workingFile = catPath("./", cache_node.script_file);
         localFile = catPath(this.local_backlib_path, cache_node.script_file);
         backFile = catPath(this.backlib_path, cache_node.script_file);
-        if (existFile(localFile))
+        if (existFile(workingFile))
+        { sCwsFile = workingFile;}
+        else if (existFile(localFile))
         { sCwsFile = localFile;}
         else if (existFile(backFile))
         { sCwsFile = backFile;}
@@ -79,7 +85,7 @@ function rtxLink_LoadItem(cache_node : node,
     else if (load_script != false)
     {   traceLine("rtxLink:<LOG> Script Already loaded !");}
     traceLine("rtxLink:<LOG> LOADING TreeFile '" + sTreeFile + "'");
-    cwLoadProject(this.local_backlib_path + cache_node.tree_file, out_ref_tree);
+    cwLoadProject(sTreeFile, out_ref_tree);
     traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;
 }
