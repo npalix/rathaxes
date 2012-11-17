@@ -294,9 +294,10 @@ function rtxLink_SessionRegister<"__rtx_itf__">(local_node : node,
 
     // Add itf in temp...
     insert tmp_itfs[itfName];
-    insert tmp_itfs[itfName].name = itfName;
-    insert tmp_itfs[itfName].tree_file = itfName + ".tree";
-    insert tmp_itfs[itfName].extensions;
+    setall tmp_itfs[itfName] = itfs[itfName];
+   // insert tmp_itfs[itfName].name = itfName;
+   // insert tmp_itfs[itfName].tree_file = itfName + ".tree";
+   // insert tmp_itfs[itfName].extensions;
 }
 
 function rtxLink_SessionRegister<"__rtx_itf_extension__">(local_node : node,

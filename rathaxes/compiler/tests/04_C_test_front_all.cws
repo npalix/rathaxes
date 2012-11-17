@@ -8,6 +8,9 @@
 #include "linker/rtxLink.inc.cws"
 #include "passes/rtxPasses.inc.cws"
 
+// new gen passes
+#include "passes/front/rtxFrontGenerate.inc.cws"
+
 local working_directory = "__04_C_test_front_parse";
 if (!existDirectory(working_directory))
 {
@@ -32,17 +35,19 @@ generateString({
 
             provided builtintype        register
             {
-                chunk           Builtin::types();
+                chunk                   Builtin::types();
+                pointcut                Builtin::register_fields();
             }
 
             provided builtintype        register_field
             {
-                chunk           Builtin::types();
+                chunk                   Builtin::register_fields();
+                pointcut                Builtin::register_values();
             }
 
             provided builtintype        register_value
             {
-                chunk           Builtin::types();
+                chunk                   Builtin::register_values();
             }
         }
 
@@ -95,7 +100,7 @@ generateString({
                 {
                         chunk   Builtin::types()
                         {
-                                #define HERE_REGISTERS
+                                #define REG_${self}
                         }
                 }
 
@@ -462,8 +467,11 @@ if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
         exit(-1);
 }
 
-traceLine("====>GENERATE");
-rtxFrontGenerate(source);
+//traceLine("====>GENERATE");
+//rtxFrontGenerate(source);
+traceLine("====>NEWGENERATE");
+rtxFrontGenAll(source);
+
 traceLine(" CTYPES:\n" + toString(source.c_types));
 saveProject("__04_C_rtx_06_frontgen.tree", source);
 
