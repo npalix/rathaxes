@@ -83,7 +83,6 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
                 traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                 traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                //traceLine("c_tree:" + toString(c_tree#root, true));
                 //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
             }
@@ -100,6 +99,8 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
             // Resolving VALUE (place Holder @this.key@)
 		    traceLine("Generated Script : inject for key @this.key@ :"
                       + " ( @this.node.body.type@ : @this.cws_expr@)");
+            traceLine(">>inject : @this.cws_expr@ " + toString(c_tree.compile["@this.key@"].node.type, true));
+            traceLine(">>resval :" + toString(resVals, true));
             if (inject<c_tree.compile["@this.key@"].node.type>(resVals,
                                             c_tree,
                                             c_tree.compile["@this.key@"].node, source_tree) == false)
@@ -107,8 +108,6 @@ function    rtxGenPlaceHolder<"__rtx_pointcut__">(item : node, theKey : value)
                 traceLine(RED + "[Error] Could not resolve pointcut '@this.temp_expr@'"
                           + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                 traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                //traceLine("c_tree:" + toString(c_tree#root, true));
-                //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
             }
         @}, item, item.cws_expr);

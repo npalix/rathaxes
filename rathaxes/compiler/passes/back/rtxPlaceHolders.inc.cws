@@ -22,7 +22,7 @@ declare function	rtxPH_compile<T>(local_node : node, compile : node,
 declare function	rtxPH_havePlaceHolder(ref_node : reference);
 
 // create a id for the placeholder _*, and reference it in .compile
-declare function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value);
+declare function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value, ph_type : value = "scalar");
 
 function        rtxPH_GetLocation(local_node : reference)
 {
@@ -114,7 +114,10 @@ function	rtxPH_havePlaceHolder(ref_node : reference)
 //      - target_expr : you must substitute the node of the targeted ref_placeholder by a setall
 //      - target_decl : accept substitution of the declaration members, identifier included.
 //      - target_pointcut : accept substitution of the whole statement/expression
-function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value)
+// ph_type:
+//      - scalar
+//      - pointer
+function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : value, type_target : value, ph_type : value)
 {
         // add the local counter for the chunk
         if (!existVariable(compile.nbplaceholder))
@@ -133,6 +136,8 @@ function	rtxPH_mapPlaceHolder(ref_node : reference, compile : node, node_idx : v
         insert compile[sKey].type_target = type_target;
         // set the location for the meta var
         insert compile[sKey].location = rtxPH_GetLocation(ref_node);
+        // set the ph_type
+        insert compile[sKey].ph_type = ph_type;
         // set ref_placeholder at correct place
         insert compile[sKey].ref_placeholder;
         if (type_target == "target_identifier")
@@ -274,12 +279,25 @@ function	rtxPH_compile<"__fwd_decl__">(local_node : node, compile : node, node_i
 // So do not bother with subtypes and check them all and then recurse.
 function        rtxPH_compile<"__expr__">(local_node : node, compile : node, node_idx : value)
 {
+        if (!existVariable(this.phtype)) insert this.phtype = "scalar";/////
         // left for bin operator
         if (existVariable(local_node.left))
-        { rtxPH_compile<local_node.left.type>(local_node.left, compile, node_idx); }
+        { 
+                // the array for pointer on struct
+                if (local_node.operator == "->") { insert this.phtype = "pointer";}////
+                // all post expr case [] or (), are pointer
+                if (local_node.expr_type == "__postexpr__") { insert this.phtype = "pointer";}////
+                rtxPH_compile<local_node.left.type>(local_node.left, compile, node_idx); 
+                insert this.phtype = "scalar";////
+        }
         // right for bin operator
         if (existVariable(local_node.right))
-        { rtxPH_compile<local_node.right.type>(local_node.right, compile, node_idx); }
+        { 
+                // the unary *
+                if (local_node.operator == "*" && local_node.expr_type == "__unary__") {insert this.phtype = "pointer";}////
+                rtxPH_compile<local_node.right.type>(local_node.right, compile, node_idx); 
+                insert this.phtype = "scalar";////
+        }
         // if,while
         if (existVariable(local_node.condition))
         { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
@@ -314,7 +332,8 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
         if (existVariable(local_node.id) && rtxPH_havePlaceHolder(local_node.id))
         {
                 traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
-                rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr");
+                //insert local_node.phtype = this.phtype;
+                rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr", this.phtype);
         }
 }
 

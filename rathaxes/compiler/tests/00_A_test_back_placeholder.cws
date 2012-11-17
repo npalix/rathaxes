@@ -78,6 +78,13 @@ generateString({
         int other()
         {
                 int     a[42] = { ${blabla} };
+                // check ph type == pointer
+                *${a1} = 12;
+                *${a2}++ = 12;
+                *(${a3} + 35) = 12;
+                ${a4}->tutu = 12;
+                ${a5}[14] = 12;
+                ${a6}(1, 2, 3);
         }        
 @}, dummy, input);
 
@@ -112,7 +119,7 @@ saveProject("01_parsed.txt", source);
 local   dummyIdx = $-1$;
 traceLine("walking thru block...");
 rtxPH_compile<source.type>(source, source.compile, dummyIdx);
-
+saveProject("02_out.txt", source);
 traceLine("out:" + toString(source, true));
 
 traceLine("translated:" + cnorm2c(source));
