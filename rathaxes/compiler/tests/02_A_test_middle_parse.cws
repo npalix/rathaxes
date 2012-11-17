@@ -63,7 +63,7 @@ generateString({
             provided            sequence        Userland::seq()
             {
                 provided chunk foo::some_pointcut();
-                /* provided pointcut other_pointcut(JoinPointType); */
+                provided pointcut other_pointcut(JoinPointType);
                 provided chunk ::some_chunk();
             }
         }
