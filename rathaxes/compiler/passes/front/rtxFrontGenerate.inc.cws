@@ -66,6 +66,32 @@ function rtxFrontGenAll_iterate<"__rtx_device__">(local_node : node, source_tree
 // iterate thru registers
 function rtxFrontGenAll_iterate<"__rtx_register__">(local_node : node, source_tree : reference, weave_chunk : reference)
 {
+         // TODO: capture un resval pour le futur self
+        traceLine("REG:" + toString(local_node, true));
+        local   chunks;
+        local   fakename;
+        local phName = thePointcut.block_idx;//
+        local phIdx = 0;
+        local startIdx = 0;
+        // TODO: very ugly, not needed in future
+        rtxNodeIdentifier(fakename, "types", "Builtin");
+        if (rtxLink_findChunks(fakename, chunks) == false)
+                traceLine(YELLOW + "[Warning] Gen register: No chunk associated with register" + DEFAULT_COLOR);
+        local errcount;
+        foreach chunk in chunks
+        {
+                local c_tree;
+                if (rtxLink_LoadItem(chunk, c_tree) == false)
+                {
+                        traceLine(RED + "[Error] Gen register : Could not load script for one chunk for register " + DEFAULT_COLOR);
+                        increment(errcount);
+                }
+                traceLine("FOUND CHUNK: " + toString(chunk, true) + ">>SRC:" + toString(c_tree, true));
+                if (instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source_tree) != false)
+                {
+                        rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, c_tree.body);
+                }
+        }
         return true;
 }
 

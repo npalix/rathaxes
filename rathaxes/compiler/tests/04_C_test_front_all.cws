@@ -36,18 +36,20 @@ generateString({
             provided builtintype        register
             {
                 chunk                   Builtin::types();
-                pointcut                Builtin::register_fields();
+                pointcut                Builtin::register_fields(Builtin::register);
             }
 
             provided builtintype        register_field
             {
-                chunk                   Builtin::register_fields();
-                pointcut                Builtin::register_values();
+                chunk                   Builtin::register_fields(Builtin::register);
+                pointcut                Builtin::register_values_name(Builtin::register_field);
+                pointcut                Builtin::register_values_value(Builtin::register_field);
             }
 
             provided builtintype        register_value
             {
-                chunk                   Builtin::register_values();
+                chunk                   Builtin::register_values_name(Builtin::register_field);
+                chunk                   Builtin::register_values_value(Builtin::register_field);
             }
         }
 
@@ -94,29 +96,36 @@ generateString({
         
         with Builtin
         {
-                ${pointcut Builtin::types()};
-        
                 template builtintype Builtin::register()
                 {
-                        chunk   Builtin::types()
+                        chunk Builtin::types()
                         {
-                                #define REG_${self}
+                                ${self.type}         REG_${self.name};
+                                ${pointcut              Builtin::register_fields(self)};
                         }
                 }
 
                 template builtintype register_field()
                 {
-                        chunk   Builtin::types()
+                        chunk Builtin::register_fields(Builtin::register reg)
                         {
-                                #define REGISTER_FIELD
+                                enum    FIELD_${reg.name}
+                                {
+                                        ${pointcut Builtin::register_values(self)},
+                                };
                         }
                 }
 
                 template builtintype register_value()
                 {
-                        chunk   Builtin::types()
+                        chunk Builtin::register_values_name(Builtin::register_field field)
                         {
-                                #define REGISTER_VALUE
+                                ${self.name}
+                        }
+
+                        chunk Builtin::register_values_value(Builtin::register_field field)
+                        {
+                                ${self.value}       
                         }
                 }        
         }
@@ -126,7 +135,7 @@ generateString({
                 
                 template sequence Generic::set(LKM::Context ctx, Builtin::register_value  regval)
                 {
-                
+                /*
                         chunk           LKM::prototypes()
                         {
                                 #define REG_ADDR(base, reg) \
@@ -137,7 +146,7 @@ generateString({
                         	#define REG_WRITE(base, reg, value) (pio_write_32(REG_ADDR(base, reg), value))
                         
                         }
-                        
+                  */      
                         chunk           ::CALL()
                         {
                                         typedef         unsigned int    uint32_t; // to put in proto :(
@@ -152,12 +161,12 @@ generateString({
 
                 template sequence Generic::set(LKM::Context ctx, Builtin::register_field  regfield, Builtin::number num)
                 {
-                
+                /*
                         chunk           LKM::prototypes()
                         {
                                 #define SET_FIELD_PROTO  !!!
                         }
-                        
+                  */      
                         chunk           ::CALL()
                         {
                                         typedef         unsigned int    uint32_t; // to put in proto :(
@@ -468,9 +477,9 @@ if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
 }
 
 //traceLine("====>GENERATE");
-//rtxFrontGenerate(source);
-traceLine("====>NEWGENERATE");
-rtxFrontGenAll(source);
+rtxFrontGenerate(source);
+//traceLine("====>NEWGENERATE");
+//rtxFrontGenAll(source);
 
 traceLine(" CTYPES:\n" + toString(source.c_types));
 saveProject("__04_C_rtx_06_frontgen.tree", source);

@@ -946,6 +946,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     local   errcount = 0;
 
     // First, search every chunk associated to the pointcut...
+    traceLine(">>pointcut:" + toString(local_node.body.name));
     if (rtxLink_findChunks(local_node.body.name, chunks) == false)
         traceLine(YELLOW + "[Warning] inject_pointcut<\""+T+"\">: No chunk associated with"
                   +" the pointcut " + pointcutName + DEFAULT_COLOR);
