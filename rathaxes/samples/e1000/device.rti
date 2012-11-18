@@ -2,8 +2,8 @@ interface Device : LKM
 {
     provided type   AbstractDevice
     {
+        decl        data_types();
         chunk       LKM::includes();
-        method      decl();
         method      init();
     }
 }

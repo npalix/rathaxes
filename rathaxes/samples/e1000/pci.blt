@@ -7,12 +7,12 @@ with PCI, LKM, Log
             #include <linux/pci.h>
         }
 
-        chunk   ::decl()
+        decl    data_types()
         {
             struct pci_dev;
         }
 
-        chunk ::init(PCI::Device)
+        method init(PCI::Device)
         {
         }
 

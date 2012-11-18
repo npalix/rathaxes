@@ -30,7 +30,7 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
-    saveProject("__04_C_rtx_01_parse__.tree", source);
+    saveProject("__04_H_rtx_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
@@ -55,11 +55,13 @@ generateString({
 
         interface LKM : Builtin
         {
-            provided builtintype String;
+            provided builtintype    String;
+            provided pointcut       insert_type();
 
             provided type Bomb
             {
-                method pouet(Context);
+                decl insert_type();
+                chunk pouet(String);
             }
         }
 @}, dummy, input);
@@ -67,3 +69,5 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
+
+

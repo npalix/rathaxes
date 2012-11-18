@@ -62,11 +62,12 @@ generateString({
 
             provided type               LKM::Context
             {
-                chunk   LKM::data();
+                decl    LKM::data();
             }
 
             provided type               LKM::Buffer
             {
+                decl LKM::data();
                 attribute Builtin::number size;
             }
         
@@ -103,6 +104,10 @@ generateString({
                                 ${self.type}         REG_${self.name};
                                 ${pointcut              Builtin::register_fields(self)};
                         }
+
+                        map
+                        {
+                        }
                 }
 
                 template builtintype register_field()
@@ -113,6 +118,10 @@ generateString({
                                 {
                                         ${pointcut Builtin::register_values(self)},
                                 };
+                        }
+
+                        map
+                        {
                         }
                 }
 
@@ -126,6 +135,10 @@ generateString({
                         chunk Builtin::register_values_value(Builtin::register_field field)
                         {
                                 ${self.value}       
+                        }
+
+                        map
+                        {
                         }
                 }        
         }
@@ -224,6 +237,10 @@ generateString({
 
                 template type LKM::Context()
                 {
+                        decl ::data()
+                        {
+                        }
+
                         map
                         {
                                 name : ${self};
@@ -443,6 +460,11 @@ traceLine("====>BACK META,TH,Intro,Gen");
 rtxMeta(source);
 rtxTypeHash(source);
 rtxIntrospect(source);
+if (rtxTpl_TypeCheck(source) == false)
+{
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
+}
 rtxGenerate(source);
 saveProject("__04_C_rtx_03_back.tree", source);
 
@@ -451,11 +473,6 @@ traceLine("====>REGISTER CACHE 1");
 if (rtxLink_RegisterToCache(source) == false)
 {       error("Can't REGISTER CACHE");}
 saveProject("__04_C_rtx_04_cache1.tree", this);
-/*if (rtxTpl_TypeCheck(source) == false)
-{
-        traceLine("Template Type Checking failed. Stopping template compilation.");
-        exit(1);
-}*/
 
 // FRONT PASS
 traceLine("====>FRONT TYPE CHECK");

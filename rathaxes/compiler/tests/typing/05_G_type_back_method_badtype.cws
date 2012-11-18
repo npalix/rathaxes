@@ -65,21 +65,17 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided builtintype    Number;
-
-            provided pointcut       testChunk(Builtin::Number);
-            provided pointcut       testChunk(LKM::Number);
-
             provided type           Bomb
             {
-                chunk                       testChunk(Builtin::Number);
-                chunk                       testChunk(LKM::Number);
-                attribute Builtin::Number   numeric;
+                decl                insert_types();
+                method              testMethod();
+                attribute Number    numeric;
             }
         }
 
@@ -87,7 +83,56 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk testChunk(Number paf)
+                decl insert_types()
+                {
+                }
+
+                method testMethod(Number paf)
+                {
+                }
+
+                map
+                {
+                    numeric: 43;
+                }
+            }
+        }
+@}, dummy, input);
+
+local ret = checkInput(input, "INPUT.TXT");
+if (ret == 1)
+    exit(1);
+
+clearVariable(this);
+clearVariable(dummy);
+clearVariable(input);
+generateString({
+        interface Builtin
+        {
+            provided builtintype    Number;
+            provided builtintype    String;
+            provided pointcut       insert_types();
+        }
+
+        interface LKM : Builtin
+        {
+            provided type   Bomb
+            {
+                decl                insert_types();
+                method              testMethod(String);
+                attribute Number    numeric;
+            }
+        }
+
+        with LKM
+        {
+            template type LKM::Bomb()
+            {
+                decl insert_types()
+                {
+                }
+
+                method testMethod(Number paf)
                 {
                 }
 
@@ -102,5 +147,3 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
-
-

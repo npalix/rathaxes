@@ -11,37 +11,34 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
     provided type   Context
     {
         chunk       Ethernet::SubContext();
-        method      decl();
+        decl        data_types();
         method      init();
     }
 
     provided type   RxDescriptor
     {
         chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
         method      init();
     }
 
     provided type   TxDescriptor
     {
-        chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
         method      init();
     }
 
     provided type   RxRing
     {
-        chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
         method      init();
     }
 
     provided type   TxRing
     {
-        chunk       LKM::includes();
         chunk       LKM::prototypes();
         chunk       LKM::code();
-        method      decl();
+        decl        data_types();
         method      init();
 
         /* Clean the ring (i.e: move the head closer to the tail): */
@@ -59,21 +56,18 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
      */
     provided type   Register
     {
-        chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
         method      init(Builtin::number);
     }
 
     provided type   Commands
     {
-        chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
     }
 
     provided type   TxDescriptorFlags
     {
-        chunk       LKM::includes();
-        chunk       ::decl();
+        decl        data_types();
     }
 
     provided sequence   create_device()

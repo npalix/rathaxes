@@ -20,7 +20,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 
     template type Algorithms::Buffer()
     {
-        chunk ::decl()
+        decl INCLUDE_DEPENDENCIES()
         {
             struct buf
             {
@@ -31,6 +31,7 @@ values LKM::OS=linux, LKM::version >= 2.6.24
 
         map
         {
+            size: ${self}.sz;
         }
     }
 }

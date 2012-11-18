@@ -65,15 +65,20 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided type   Bomb
+            provided builtintype    Number;
+
+            provided type           Bomb
             {
-                method              testMethod();
-                attribute Number    numeric;
+                decl                        insert_types();
+                method                      testMethod(Builtin::Number);
+                method                      testMethod(LKM::Number);
+                attribute Builtin::Number   numeric;
             }
         }
 
@@ -81,45 +86,10 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                method testMethod(Number paf)
+                decl insert_types()
                 {
                 }
 
-                map
-                {
-                    numeric: 43;
-                }
-            }
-        }
-@}, dummy, input);
-
-local ret = checkInput(input, "INPUT.TXT");
-if (ret == 1)
-    exit(1);
-
-clearVariable(this);
-clearVariable(dummy);
-clearVariable(input);
-generateString({
-        interface Builtin
-        {
-            provided builtintype Number;
-            provided builtintype String;
-        }
-
-        interface LKM : Builtin
-        {
-            provided type   Bomb
-            {
-                method              testMethod(String);
-                attribute Number    numeric;
-            }
-        }
-
-        with LKM
-        {
-            template type LKM::Bomb()
-            {
                 method testMethod(Number paf)
                 {
                 }
@@ -135,3 +105,4 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
+

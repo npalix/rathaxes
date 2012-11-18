@@ -1,7 +1,7 @@
 interface LKM : Builtin
 {
     provided pointcut   includes();
-    /* maybe it should be possible to use chunk ::decl in sequence templates? */
+    provided pointcut   data_types();
     provided pointcut   prototypes();
     provided pointcut   data();
     provided pointcut   code();

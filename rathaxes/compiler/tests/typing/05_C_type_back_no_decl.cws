@@ -52,12 +52,11 @@ function checkInput(input : node, inputsave : value)
     if (rtxTpl_TypeCheck(source) == false)
     {
         traceLine("Type Checking failed at Backend step as expected");
-        return 1;
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
-
 
 
 local dummy;
@@ -65,23 +64,16 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided builtintype String;
-
-            provided pointcut    pouet(LKM::String);
-
-            provided type Bomb
+            provided type           Bomb
             {
-                chunk               pouet(String);
-
-                method              Explode(Number timer);
-
-                attribute String    s;
-                attribute Number    nb;
+                decl                insert_types();
+                attribute Number    num;
             }
         }
 
@@ -89,14 +81,9 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk pouet(String) {}
-
-                method Explode(Number) {}
-
                 map
                 {
-                    nb:  42;
-                    s:   "KABOOM !";
+                    num: 43;
                 }
             }
         }
@@ -105,5 +92,3 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
-
-

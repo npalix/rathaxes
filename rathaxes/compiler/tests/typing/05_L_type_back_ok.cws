@@ -52,10 +52,10 @@ function checkInput(input : node, inputsave : value)
     if (rtxTpl_TypeCheck(source) == false)
     {
         traceLine("Type Checking failed at Backend step as expected");
-        return 0;
+        return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 
@@ -65,16 +65,25 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided pointcut   testChunk(Number);
+            provided builtintype    String;
 
-            provided type       Bomb
+            provided pointcut       pouet(LKM::String);
+
+            provided type           Bomb
             {
-                attribute Number    numeric;
+                decl                insert_types();
+                chunk               pouet(String);
+
+                method              Explode(Number timer);
+
+                attribute String    s;
+                attribute Number    nb;
             }
         }
 
@@ -82,59 +91,29 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk testChunk(Number paf)
+                decl insert_types()
+                {
+                }
+
+                chunk pouet(String)
+                {
+                }
+
+                method Explode(Number)
                 {
                 }
 
                 map
                 {
-                    numeric: 43;
+                    nb:  42;
+                    s:   "KABOOM !";
                 }
             }
         }
 @}, dummy, input);
 
 local ret = checkInput(input, "INPUT.TXT");
-if (ret == 1)
-    exit (1);
-
-clearVariable(this);
-clearVariable(input);
-clearVariable(dummy);
-generateString({
-        interface Builtin
-        {
-            provided builtintype Number;
-        }
-
-        interface LKM : Builtin
-        {
-            provided pointcut   testChunk(Number);
-            provided pointcut   testChunk();
-
-            provided type   Bomb
-            {
-                chunk               testChunk();
-                attribute Number    numeric;
-            }
-        }
-
-        with LKM
-        {
-            template type LKM::Bomb()
-            {
-                chunk testChunk(Number paf)
-                {
-                }
-
-                map
-                {
-                    numeric: 43;
-                }
-            }
-        }
-@}, dummy, input);
-local ret = checkInput(input, "INPUT2.TXT");
 
 exit (ret);
+
 

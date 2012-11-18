@@ -5,11 +5,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         chunk   LKM::includes()
         {
             #include <linux/types.h>
-
-            static const ${e1000::RxDescriptor} force_rtx_e1000_rx_descriptor_decl;
         }
 
-        chunk   ::decl()
+        decl    data_types()
         {
             struct rtx_e1000_rx_descriptor
             {
@@ -22,7 +20,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init()
+        method init()
         {
         }
 
@@ -42,12 +40,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
      */
     template type   e1000::TxDescriptor()
     {
-        chunk   LKM::includes()
-        {
-            static const ${e1000::TxDescriptor} force_rtx_e1000_tx_descriptor_decl;
-        }
-
-        chunk   ::decl()
+        decl    data_types()
         {
             struct rtx_e1000_tx_descriptor
             {
@@ -75,7 +68,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init()
+        method init()
         {
         }
 
@@ -97,12 +90,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
      */
     template type   e1000::RxRing()
     {
-        chunk   LKM::includes()
-        {
-            static const ${e1000::RxRing}   force_rtx_e1000_rx_ring_decl;
-        }
-
-        chunk   ::decl()
+        decl    data_types()
         {
             struct rtx_e1000_rx_ring
             {
@@ -113,7 +101,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init()
+        method init()
         {
         }
 
@@ -141,12 +129,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
      */
     template type   e1000::TxRing()
     {
-        chunk   LKM::includes()
-        {
-            static const ${e1000::TxRing}   force_rtx_e1000_tx_ring_decl;
-        }
-
-        chunk   ::decl()
+        decl    data_types()
         {
             struct rtx_e1000_tx_ring
             {
@@ -233,31 +216,31 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             }
         }
 
-        chunk   clean()
+        method   clean()
         {
             rtx_e1000_tx_ring_clean(${self});
         }
 
-        chunk   descriptors_remaining()
+        method   descriptors_remaining()
         {
             rtx_e1000_tx_ring_descriptors_remaining(${self});
         }
 
-        chunk   tso_cksum_offload(Socket::SKBuff skb)
+        method   tso_cksum_offload(Socket::SKBuff skb)
         {
         }
 
-        chunk   put(Socket::SKBuff skb)
+        method   put(Socket::SKBuff skb)
         {
             rtx_e1000_tx_ring_put(${self}, &${skb});
         }
 
-        chunk   start_xmit(e1000::Context ctx)
+        method   start_xmit(e1000::Context ctx)
         {
             rtx_e1000_tx_ring_start_xmit(${self}, ${ctx});
         }
 
-        chunk   ::init()
+        method init()
         {
         }
 
@@ -278,7 +261,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             ${e1000::Context}   hw_ctx;
         }
 
-        chunk   ::decl()
+        decl    data_types()
         {
             /*
              * Yes, this typedef looks ugly but read the remark about
@@ -298,7 +281,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init()
+        method init()
         {
         }
 
@@ -310,12 +293,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template type   e1000::Register()
     {
-        chunk   LKM::includes()
-        {
-            static const ${e1000::Register}  force_enum_rtx_e1000_registers_decl;
-        }
-
-        chunk   ::decl()
+        decl    data_types()
         {
             enum rtx_e1000_registers
             {
@@ -353,7 +331,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        chunk   ::init(Builtin::number value)
+        method init(Builtin::number value)
         {
             ${self} = ${value};
         }
@@ -365,12 +343,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template type   e1000::Commands()
     {
-        chunk   LKM::includes()
-        {
-            static const ${e1000::Commands} force_enum_rtx_e1000_commands_decls;
-        }
-
-        chunk   ::decl()
+        decl    data_types()
         {
             enum rtx_e1000_commands
             {
@@ -440,12 +413,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template type   e1000::TxDescriptorFlags()
     {
-        chunk LKM::includes()
-        {
-            static const ${e1000::TxDescriptorFlags}  force_enum_rtx_e1000_tx_descriptor_flags_decl;
-        }
-
-        chunk ::decl()
+        decl  data_types()
         {
             enum    rtx_e1000_tx_descriptor_flags
             {

@@ -18,7 +18,7 @@ declare function instanceMapping<T>(resVals : node, c_tree : node, source_tree :
  * or erroneous variables.... (never planned on supporting multiple nested types : ${local.array.memory.test()} )
  */
 declare function type_map<T>(resolverValues : node, theRtype : node, mappedIds : node, placeHolder : node, out_node : node, source_tree : reference);
-declare function type_call<T>(resolverValues : node, chunkName : value, placeHolder : node, source_tree : reference);
+declare function type_call<T>(resolverValues : node, methodProto : value, placeHolder : node, source_tree : reference);
 
 // Injection functions
 declare function inject<sNodeType>(resolverValues : node, treeNode : node, local_node : node, source_tree : reference);
@@ -110,58 +110,6 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
 }
 
 
-
-function    rtxResolve_insertTypeMap(theType : node, source_tree : reference)
-{
-    if (!existVariable(source_tree.c_types))
-        insert source_tree.c_types;
-
-    localref    mapping = source_tree.c_types;
-
-    if (theType.ctype.storage != "typedef")
-    {
-        // Check if the specifier is not already inserted (struct, union, etc...)
-        if (!findElement(theType.ctype.specifier, mapping))
-            insert mapping[theType.ctype.specifier];
-        // Then it's already defined.
-        if (findElement(theType.ctype.identifier, mapping[theType.ctype.specifier]))
-            return;
-        insert mapping[theType.ctype.specifier][theType.ctype.identifier];
-        ref mapping = mapping[theType.ctype.specifier][theType.ctype.identifier];
-    }
-    else
-    {
-        // If it's already defined, then it's ok.
-        if (findElement(theType.name, mapping))
-            return;
-        insert mapping[theType.name];
-        ref mapping = mapping[theType.name];
-    }
-
-    // First, insert the type into the type map.
-    insert mapping.c_decl;
-    setall mapping.c_decl = theType;
-    // Then, go through the types dependencies.
-    insert mapping.deps;
-    foreach subtype in theType.ctype.body.block
-    {
-        localref theCtype = subtype.ctype;
-        if (theCtype.storage == "typedef")
-        {
-            if (!findElement(theCtype.name, mapping.deps))
-                insert mapping.deps[theCtype.name];
-        }
-        else
-        {
-            if (!findElement(theCtype.specifier, mapping.deps))
-                insert mapping.deps[theCtype.specifier];
-            if (!findElement(theCtype.identifier, mapping.deps[theCtype.specifier]))
-                insert mapping.deps[theCtype.specifier][theCtype.identifier];
-        }
-    }
-    return;
-}
-
 /*
  * This function takes the node of the variable declaration as theDecl,
  * and the resolved chunk of the type's declaration as typeDeclBlock
@@ -193,16 +141,12 @@ function    rtxResolve_InsertType(theDecl : node, typeDeclBlock : node, source_t
     }
     if (hasTypeDef == 1)
     {
-        // First, insert the type definition into a map of defined types.
-        rtxResolve_insertTypeMap(typeDef, source_tree);
-        // Then, replace the type by the typedef if there's one
+        // replace the type by the typedef if there's one
         theDecl.identifier = typeDef.name;
     }
     else if (hasTypeDecl)
     {
-        // One variable or one structure -> insert the type into the type map.
-        rtxResolve_insertTypeMap(typeDecl, source_tree);
-        // Now, set the type into the variable decl.
+        // set the type into the variable decl.
         theDecl.specifier = typeDecl.ctype.specifier;
         theDecl.identifier = typeDecl.ctype.identifier;
     }
@@ -431,42 +375,26 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
 
     while ($startIdx < getArraySize(theSeq.body.block)$)
     {
-        localref call = theSeq.body.block#[startIdx];
-        local   templateCache;
-        local   chunkCache;
-        local   chunkTree;
-        if (!rtxLink_findTemplates(call.rtype, templateCache))
-        {
-            traceLine(RED + "[Error] Could not find template "
-                      + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
-                      + DEFAULT_COLOR);
-            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
-            return false;
-        }
-        if (!rtxLink_selectUniqueTemplate(templateCache, source_tree.config))
-        {
-            traceLine(RED + "[Error] Could not select an unique template"
-                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
-                      + DEFAULT_COLOR);
-            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
-            return false;
-        }
-        if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
-        {
-            traceLine(RED + "[Error] Could not select chunk '::CALL'"
-                      + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
-                      + DEFAULT_COLOR);
-            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
-            return false;
-        }
+        localref    call = theSeq.body.block#[startIdx];
+        local       chunkTree;
+        local       callRtype;
+        local       callProto;
 
-        // Now that we have selected the decl chunk, load the tree & script
-        if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
+        // The Call's rtype is almost the same as the template's, so use it as a basis.
+        setall callRtype = call.rtype;
+        callRtype.name.name = "CALL";
+        callRtype.name.scope = "";
+        callRtype.name.global = true;
+        clearVariable(callRtype.params); // Force 0 params for the CALL
+        callProto = rtxRTypeFullQualifiedName<"pointcut">(callRtype, dummy);
+
+        // Now load the call's chunk
+        if (rtxLink_LoadTplChunk(call.rtype, callProto, source_tree.config, chunkTree, true, "sequence") == false)
         {
             traceLine(RED + "[Error] Could not load script or tree associated to sequence "
                       + rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy)
                       + DEFAULT_COLOR);
-            traceLine(RED + "        at " + theSeq.location + "." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSeq#parent.location + "." + DEFAULT_COLOR);
             return false;
         }
 
@@ -577,42 +505,18 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             // -> Then get varName
             varName = theDecl.name;
 
-            local   theRtype;
-            setall theRtype = theChunk.type_map[varName];
-            // First we must select an unique template matching the rtype and config
-            local   templates;
-            local   declChunk;
-            if (!rtxLink_findTemplates(theRtype, templates))
-            {
-                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not find template "
-                          + "associated to type "
-                          + rtxRTypeName<theRtype.type>(theRtype));
-                return false;
-            }
-            if (!rtxLink_selectUniqueTemplate(templates, source_tree.config))
-            {
-                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not select an unique template"
-                          + " associated to type "
-                          + rtxRTypeName<theRtype.type>(theRtype));
-                return false;
-            }
-            if (!rtxLink_selectChunkFromTemplate(templates, "::decl", declChunk))
-            {
-                traceLine("inject<\"__rtx_var__\">:<ERROR> Could not select chunk '::decl'"
-                          + " associated to type "
-                          + rtxRTypeName<theRtype.type>(theRtype));
-                return false;
-            }
-
-            // Now that we have selected the decl chunk, load the tree & script
+            local   tplRtype;
+            setall tplRtype = theChunk.type_map[varName];
             local   subtree;
-            rtxLink_LoadItem(declChunk, subtree);
+            // First we must select an unique template matching the rtype and config
+            if (rtxLink_LoadTypeDecl(tplRtype, source_tree.config, subtree) == false)
+                return false;
 
             // Then resolve the possible placeHolders inside the type's definition.
             if (instanceChunk<subtree.instanceKey>(resolverValues, subtree.body, source_tree) == false)
             {
                 traceLine(RED + "[Error] Could not resolve placeHolders for type declaration of "
-                          + rtxRTypeName<theRtype.type>(theRtype) + DEFAULT_COLOR);
+                          + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
                 traceLine(RED + "        for use at " + local_node#parent.location + "." + DEFAULT_COLOR);
                 return false;
             }
@@ -833,16 +737,16 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     }
 
     // Two variables to create the rtype associated to the sequence call
-    local       theRtype;
+    local       tplRtype;
     local       paramTypes;
 
     // Tree variables to help manipulate the cache
-    local       templateCache;
-    local       chunkCache;
     local       chunkTree;
+    local       callRtype;
+    local       callProto;
 
     // First, build the rtype node.
-    rtxNodeRType(theRtype, local_node.body.seqName, paramTypes);
+    rtxNodeRType(tplRtype, local_node.body.seqName, paramTypes);
     foreach param in local_node.body.seqArgs
     {
         if (existVariable(param.rtype))
@@ -859,37 +763,19 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         }
     }
 
-    // Then load the chunk ::CALL to resolve.
-    if (!rtxLink_findTemplates(theRtype, templateCache))
-    {
-        traceLine(RED + "[Error] Could not find template "
-                  + "associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
-                  + DEFAULT_COLOR);
-        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
-    if (!rtxLink_selectUniqueTemplate(templateCache, source_tree.config))
-    {
-        traceLine(RED + "[Error] Could not select an unique template"
-                  + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
-                  + DEFAULT_COLOR);
-        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
-    if (!rtxLink_selectChunkFromTemplate(templateCache, "::CALL", chunkCache))
-    {
-        traceLine(RED + "[Error] Could not find '::CALL' chunk"
-                  + " associated to sequence " + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
-                  + DEFAULT_COLOR);
-        traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
+    // The Call's rtype is almost the same as the template's, so use it as a basis.
+    setall callRtype = tplRtype;
+    callRtype.name.name = "CALL";
+    callRtype.name.scope = "";
+    callRtype.name.global = true;
+    clearVariable(callRtype.params); // Force 0 params for the CALL
+    callProto = rtxRTypeFullQualifiedName<"pointcut">(callRtype, dummy);
 
-    // Now that we have selected the decl chunk, load the tree & script
-    if (rtxLink_LoadItem(chunkCache, chunkTree) == false)
+    // Now load the call's chunk
+    if (rtxLink_LoadTplChunk(tplRtype, callProto, source_tree.config, chunkTree, true, "sequence") == false)
     {
         traceLine(RED + "[Error] Could not load script or tree associated to sequence "
-                  + rtxRTypeFullQualifiedName<"sequence">(theRtype, dummy)
+                  + rtxRTypeFullQualifiedName<"sequence">(tplRtype, dummy)
                   + DEFAULT_COLOR);
         traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
@@ -900,7 +786,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     rtxResolve_BuildFrontResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree);
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
-        traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(theRtype,dummy) + DEFAULT_COLOR);
+        traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(tplRtype,dummy) + DEFAULT_COLOR);
         traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
@@ -937,6 +823,8 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     localref theParent = local_node#parent.ref_placeholder#parent;
     localref thePointcut = local_node#parent;
     local pointcutName = rtxRTypeName<local_node.body.name.type>(local_node.body.name);
+    local dummy;
+    local full_pointcut_name = rtxRTypeFullQualifiedName<"pointcut">(local_node.body.rtype, dummy);
     // Variables for the node replacement
     local phName = thePointcut.block_idx;
     local phIdx = 0;
@@ -946,10 +834,11 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     local   errcount = 0;
 
     // First, search every chunk associated to the pointcut...
-    traceLine(">>pointcut:" + toString(local_node.body.name));
-    if (rtxLink_findChunks(local_node.body.name, chunks) == false)
+    if (rtxLink_findChunks(full_pointcut_name, chunks) == false)
+    {
         traceLine(YELLOW + "[Warning] inject_pointcut<\""+T+"\">: No chunk associated with"
-                  +" the pointcut " + pointcutName + DEFAULT_COLOR);
+                  +" the pointcut " + full_pointcut_name + DEFAULT_COLOR);
+    }
 
     // If we cannot find any chunk, let's use default behaviour (if there's one)
     if (isEmpty(chunks)
@@ -1051,6 +940,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
                 increment(errcount);
             }
         }
+        local theDecl;
         if (errcount != 0)
             return false;
     }
@@ -1176,37 +1066,16 @@ function    inject<"__rtx_pointcut__">(resolverValues   : node,
  *
  */
 function    type_call<T>(resolverValues : node,
-                         chunkName : value,
+                         methodProto : value,
                          placeHolder : node, 
                          source_tree : reference)
 {
-    local   templates;
-    local   theChunk;
-    localref theRtype = placeHolder.body.rtype;
+    localref tplRtype = placeHolder.body.rtype;
     local   startIdx;
-    if (!rtxLink_findTemplates(theRtype, templates))
-    {
-        traceLine(RED + "[Error] type_call<"+T+">: Could not find template " + rtxRTypeName(theRtype));
-        traceLine(RED + "        used at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
-    if (!rtxLink_selectUniqueTemplate(templates, source_tree.config))
-    {
-        traceLine(RED + "[Error] type_call<"+T+">: Could not select an unique template for " + rtxRTypeName(theRtype));
-        traceLine(RED + "        used at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
-    if (!rtxLink_selectChunkFromTemplate(templates, chunkName, theChunk))
-    {
-        traceLine(RED + "[Error] type_call<"+T+">: Could not select chunk '" + chunkName
-                  + "' from type " + rtxRTypeName(theRtype));
-        traceLine(RED + "        called from " + placeHolder#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
-
-    // Now that we have selected the decl chunk, load the tree & script
     local   subtree;
-    rtxLink_LoadItem(theChunk, subtree);
+
+    if (rtxLink_LoadTypeMethod(tplRtype, methodProto, source_tree.config, subtree) == false)
+        return false;
 
     // To actually resolve this, we need :
     //  * Current resolverValues (OK)
@@ -1220,7 +1089,7 @@ function    type_call<T>(resolverValues : node,
     rtxResolve_BuildParameterResVals(resolverValues, placeHolder.body.parameters,
                                      resVals, subtree.parameters, source_tree);
 
-    traceLine("type_call<"+T+">:<LOG> Resolving chunk " + chunkName + "... ");
+    traceLine("type_call<"+T+">:<LOG> Resolving chunk " + methodProto + "... ");
     if (instanceChunk<subtree.instanceKey>(resVals, subtree.body, source_tree) == false)
     {
         traceLine(RED + "[Error] type_call<\""+T+"\">: Could not instance Chunk '"+subtree.instanceKey+"'.");
@@ -1240,7 +1109,7 @@ function    type_call<T>(resolverValues : node,
     rtxResolve_InsertCode(theBlock.block, startIdx,
                           theCall.ref_placeholder, phIdx, subtree.body);
 
-    traceLine("type_call<"+T+">:<LOG> Resolved call to chunk " + chunkName + "...");
+    traceLine("type_call<"+T+">:<LOG> Resolved call to chunk " + methodProto + "...");
     return true;
 }
 
@@ -1265,28 +1134,16 @@ function type_map<T>(resolverValues : node,
                      placeHolder : node, out_node : node, source_tree : reference)
 {
     traceLine("rtxResolve:<LOG> type_map<"+T+"> for variable '"+mappedIds#[0]+"' ("+toString(mappedIds)+")");
-    // First we must select an unique template matching the rtype and config
-    local   templates;
-    if (!rtxLink_findTemplates(theRtype, templates))
-    {
-        traceLine(RED + "[Error] type_map<"+T+">: Could not find template associated to type "
-                  + rtxRTypeName<theRtype.type>(theRtype));
-        traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
+    local   theTemplate;
+
+    if (rtxLink_FindUniqueTemplate(theRtype, source_tree.config, theTemplate) == false)
         return false;
-    }
-    if (!rtxLink_selectUniqueTemplate(templates, source_tree.config))
-    {
-        traceLine(RED + "[Error] type_map<"+T+">: Could not select an unique template associated"
-                  " to type " + rtxRTypeName<theRtype.type>(theRtype));
-        traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
-        return false;
-    }
 
     if (getArraySize(mappedIds) > 1)
     {
         // Now that we have selected an unique template, load the tree+script
         local   subtree;
-        rtxLink_LoadItem(templates, subtree);
+        rtxLink_LoadItem(theTemplate, subtree);
         localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
 
         // Call the right mapping function (based on hash + identifier mapped).

@@ -65,35 +65,41 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype String;
-            provided pointcut    pouet(String);
-            provided pointcut    insert_types();
-
-            provided type Bomb
-            {
-                decl insert_types();
-                attribute String   s;
-            }
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided builtintype String;
-            provided pointcut    pouet(LKM::String);
+            provided builtintype    Number;
 
-            provided type Bomb
+            provided pointcut       testChunk(Builtin::Number);
+            provided pointcut       testChunk(LKM::Number);
+
+            provided type           Bomb
             {
-                decl insert_types();
-                attribute LKM::String   s;
+                decl                        insert_types();
+                chunk                       testChunk(Builtin::Number);
+                chunk                       testChunk(LKM::Number);
+                attribute Builtin::Number   numeric;
             }
         }
 
         with LKM
         {
-            template type Bomb()
+            template type LKM::Bomb()
             {
+                decl insert_types()
+                {
+                }
+
+                chunk testChunk(Number paf)
+                {
+                }
+
                 map
                 {
+                    numeric: 43;
                 }
             }
         }
@@ -102,7 +108,5 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
-
-
 
 

@@ -4,7 +4,7 @@ interface Main : Builtin
     provided pointcut   main();
 
     provided type       Arguments {
-        chunk   ::decl();
+        decl    include_headers();
         method  ::init(Builtin::number, Builtin::symbol, Builtin::symbol);
         method  ::log();
     }

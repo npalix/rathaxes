@@ -2,6 +2,7 @@ with LKM
 {
     /* Skel of the generated C file: */
     ${pointcut LKM::includes()};
+    ${pointcut LKM::data_types()};
     ${pointcut LKM::prototypes()};
     ${pointcut LKM::data()};
     ${pointcut LKM::code()};
