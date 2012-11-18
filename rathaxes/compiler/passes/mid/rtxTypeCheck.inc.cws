@@ -159,7 +159,7 @@ function        rtxItfCheckTypesDeclarations<"pointcut">(currentDeclaration : no
     {
         if (currentDeclaration.rtype.name.scope != "" && currentDeclaration.rtype.name.scope != currentInterface.name)
             traceLine(YELLOW + "[Warning] Interface of pointcut '" + currentDeclaration.rtype.name.name
-                      + "' is not set to" + " container interface. Enforcing '" + currentInterface.name
+                      + "' is not set to container interface. Enforcing '" + currentInterface.name
                       + "'." + DEFAULT_COLOR);
         currentDeclaration.rtype.name.scope = currentInterface.name;
     }
@@ -202,6 +202,7 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                                                      interfacesList : node)
 {
     local errcount = 0;
+    local n_decls = 0;
 
     if (currentDeclaration.rtype.name.global == false)
     {
@@ -214,7 +215,10 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
 
     /*
      * Type-check whatever we can check in the type:
+     *  - decl,
      *  - chunks,
+     *  - methods,
+     *  - pointcuts,
      *  - mapping's parameters'types,
      *  - attribute's types
      *
@@ -226,7 +230,7 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
         switch (decl.type)
         {
         case "__rtx_itf_pointcut__":
-            // This call prints an error if there is 
+            // This call prints an error if any
             // But for the registration, we must enforce the presence of the .specifier
             insert decl.specifier = "pointcut";
             if (rtxItfCheckTypesDeclarations<"pointcut">(decl, currentInterface, interfacesList) == false)
@@ -286,6 +290,34 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
                     increment(errcount);
             }
             break ;
+        case "__rtx_itf_typedecl__":
+            increment(n_decls);
+            if (0 != getArraySize(decl.pointcut.params))
+            {
+                local dummy;
+                traceLine(RED + "[Error] Declaration of decl '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(decl.pointcut, dummy) + "' in type "
+                          + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
+                          + " takes " + getArraySize(decl.pointcut.params) + " parameters instead of none"
+                          + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
+                increment(errcount);
+                break ;
+            }
+            if (rtxTypeCheck_ItfCheckPointcut(decl.pointcut, currentInterface) == false)
+            {
+                local dummy;
+                traceLine(RED + "[Error] Declaration of decl '"
+                          + rtxRTypeFullQualifiedName<"pointcut">(decl.pointcut, dummy) + "' in type "
+                          + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
+                          + " could not be associated to a pointcut" + DEFAULT_COLOR);
+                traceLine(RED + "        at " + currentDeclaration.location + "." + DEFAULT_COLOR);
+                increment(errcount);
+                break ;
+            }
+            if (rtxItfAddDeclToType(currentDeclaration, decl) == false)
+                increment(errcount);
+            break ;
         case "__rtx_itf_attribute__":
             // In case of success the rtype's name.scope field is updated properly
             if (rtxInterfaceHasType(decl.rtype, currentInterface) == false)
@@ -311,18 +343,26 @@ function        rtxItfCheckTypesDeclarations<"type">(currentDeclaration : node,
             break ;
         }
     }
-    if (errcount != 0)
-        return false;
+    if (n_decls != 1)
+    {
+        traceLine(RED + "[Error] Declaration of type template "
+                  + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype) + " defined decl "
+                  + n_decls + " times instead of once."+ DEFAULT_COLOR);
+        increment(errcount);
+    }
 
     if (getArraySize(currentDeclaration.methods) == 0
         && getArraySize(currentDeclaration.attributes) == 0
         && getArraySize(currentDeclaration.chunks) == 0)
     {
-        traceLine(RED + "[Error] Type declaration contains an empty body. "
-                  + "This type cannot be used." + DEFAULT_COLOR);
-        traceLine(RED + "        from " + currentDeclaration.location + "." + DEFAULT_COLOR);
-        return false;
+        traceLine(YELLOW + "[Warning] Type '"
+                  + rtxRTypeName<currentDeclaration.rtype.type>(currentDeclaration.rtype)
+                  +  "' declaration contains an empty body. This type may not be usable." + DEFAULT_COLOR);
+        traceLine(YELLOW + "        from " + currentDeclaration.location + "." + DEFAULT_COLOR);
     }
+
+    if (errcount != 0)
+        return false;
 
     return true;
 }
@@ -339,6 +379,12 @@ function        rtxItfCheckTypesDeclarations<"builtintype">(currentDeclaration :
     // This checks for multiple definition
     if (rtxItfAddTypeToList(currentDeclaration, currentInterface.types) == false)
         return false;
+
+    if (existVariable(currentDeclaration.body))
+    {
+        if (rtxItfCheckTypesDeclarations<"type">(currentDeclaration, currentInterface, interfacesList) == false)
+            return false;
+    }
 
     return true;
 }

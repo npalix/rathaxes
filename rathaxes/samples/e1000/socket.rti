@@ -4,15 +4,14 @@ interface Socket : LKM, Device
     provided type   AbstractSKBuff
     {
         chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
     }
 
     provided type   SKBuff
     {
-        chunk       LKM::includes();
         chunk       LKM::prototypes();
         chunk       LKM::code();
-        method      decl();
+        decl        data_types();
         method      init(Socket::AbstractSKBuff);
         method      dump_infos();
         method      map_to(Device::AbstractDevice);

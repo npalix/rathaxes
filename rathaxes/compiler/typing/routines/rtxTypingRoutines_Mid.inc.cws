@@ -332,7 +332,6 @@ function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, in
         // builtin item management.
         switch (pointcutRtype.name.name)
         {
-        case "decl":
         case "IMPLEMENTATION":
         case "CALL":
             return true;

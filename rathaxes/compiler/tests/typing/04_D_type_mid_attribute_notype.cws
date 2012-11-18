@@ -30,28 +30,13 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
+    saveProject("__04_D_rtx_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
     if (rtxMiddle_TypeCheck(source) == false)
     {
-        traceLine("Type Checking failed at MiddleEnd step: unexpected");
-        return 1;
-    }
-
-    // REGISTER TO CACHE
-    traceLine("====>REGISTERING INTO THE CACHE");
-    if (rtxLink_RegisterToCache(source) == false)
-    {
-        traceLine("Registration failed.");
-        return 1;
-    }
-
-    // BACK PASS
-    traceLine("====>BACK TYPE CHECK");
-    if (rtxTpl_TypeCheck(source) == false)
-    {
-        traceLine("Type Checking failed at Backend step as expected");
+        traceLine("Type Checking failed at MiddleEnd step as expected");
         return 0;
     }
 
@@ -63,35 +48,13 @@ function checkInput(input : node, inputsave : value)
 local dummy;
 local input;
 generateString({
-        interface Builtin
+        interface LKM
         {
-            provided builtintype Number;
-        }
-
-        interface LKM : Builtin
-        {
-            provided builtintype Number;
-
-            provided type   Bomb
+            provided pointcut insert_type();
+            provided type Bomb
             {
-                method                      testMethod(Builtin::Number);
-                method                      testMethod(LKM::Number);
-                attribute Builtin::Number   numeric;
-            }
-        }
-
-        with LKM
-        {
-            template type LKM::Bomb()
-            {
-                method testMethod(Number paf)
-                {
-                }
-
-                map
-                {
-                    numeric: 43;
-                }
+                decl insert_type();
+                attribute Builtin::String field;
             }
         }
 @}, dummy, input);
@@ -99,4 +62,5 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
+
 

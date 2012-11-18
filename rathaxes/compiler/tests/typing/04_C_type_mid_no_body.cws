@@ -30,17 +30,17 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
-    saveProject("__04_C_rtx_01_parse__.tree", source);
+    saveProject("__04_C_rtx_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
     if (rtxMiddle_TypeCheck(source) == false)
     {
-        traceLine("Type Checking failed at MiddleEnd step as expected");
-        return 0;
+        traceLine("Type Checking should not have failed for an empty body, only warn.");
+        return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 
@@ -48,19 +48,11 @@ function checkInput(input : node, inputsave : value)
 local dummy;
 local input;
 generateString({
-        interface Builtin
+        interface LKM
         {
-            provided builtintype String;
-        }
-
-        interface LKM : Builtin
-        {
-            provided builtintype String;
-            provided pointcut    pouet(LKM::String);
-
-            provided type Bomb
-            {
-                chunk pouet(Context);
+            provided pointcut insert_type();
+            provided type Bomb {
+                decl insert_type();
             }
         }
 @}, dummy, input);
@@ -68,5 +60,4 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
-
 

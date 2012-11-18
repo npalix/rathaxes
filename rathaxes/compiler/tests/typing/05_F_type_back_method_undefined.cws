@@ -65,44 +65,82 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype String;
-            provided pointcut    pouet(String);
-            provided pointcut    insert_types();
-
-            provided type Bomb
-            {
-                decl insert_types();
-                attribute String   s;
-            }
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided builtintype String;
-            provided pointcut    pouet(LKM::String);
-
-            provided type Bomb
+            provided type   Bomb
             {
-                decl insert_types();
-                attribute LKM::String   s;
+                decl                insert_types();
+                attribute Number    numeric;
             }
         }
 
         with LKM
         {
-            template type Bomb()
+            template type LKM::Bomb()
             {
+                decl insert_types()
+                {
+                }
+
+                chunk testMethod(Number paf)
+                {
+                }
+
                 map
                 {
+                    numeric: 43;
                 }
             }
         }
 @}, dummy, input);
 
 local ret = checkInput(input, "INPUT.TXT");
+if (ret == 1)
+    exit (1);
+
+clearVariable(this);
+clearVariable(input);
+clearVariable(dummy);
+generateString({
+        interface Builtin
+        {
+            provided builtintype    Number;
+            provided pointcut       insert_types();
+        }
+
+        interface LKM : Builtin
+        {
+            provided type           Bomb
+            {
+                decl                insert_types();
+                method              testMethod();
+                attribute Number    numeric;
+            }
+        }
+
+        with LKM
+        {
+            template type LKM::Bomb()
+            {
+                decl insert_types()
+                {
+                }
+
+                method testMethod(Number paf)
+                {
+                }
+
+                map
+                {
+                    numeric: 43;
+                }
+            }
+        }
+@}, dummy, input);
+local ret = checkInput(input, "INPUT2.TXT");
 
 exit (ret);
-
-
-
-

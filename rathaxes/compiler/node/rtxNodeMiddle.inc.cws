@@ -242,6 +242,29 @@ function rtxNodeItfTypeMethodDeclaration(local_node : node,
     return true;
 }
 
+function rtxNodeItfTypeDeclDeclaration(local_node : node,
+                                       theIdentifier : node,
+                                       theTypes : node)
+{
+    local rtype_out_ref;
+    local dummy_paramids;
+    local dummy_body;
+    local paramtypes_out;
+
+    rtxNode(local_node);
+    rtxNodeChunk(local_node, rtype_out_ref, dummy_paramids, dummy_body);
+    local_node.type = "__rtx_itf_typedecl__";
+
+    rtxNodeRType(rtype_out_ref, theIdentifier, paramtypes_out);
+    foreach type in theTypes
+    {
+        pushItem paramtypes_out;
+        setall paramtypes_out#back = type;
+    }
+
+    return true;
+}
+
 function rtxItfAddDeclToType(theNode : node, theDecl : node)
 {
     local dummy_ids;
@@ -275,6 +298,18 @@ function rtxItfAddDeclToType(theNode : node, theDecl : node)
         decl_key = theDecl.pointcut.name.name;
         qualified_name = rtxRTypeFullQualifiedName<"pointcut">(theDecl.pointcut, dummy_ids);
         ref insert_ref = theDecl;
+        break ;
+    case "__rtx_itf_typedecl__":
+        // In the case of a type decl, it must only be defined once.
+        if (existVariable(theNode.decl))
+        {
+            traceLine(RED + "[Error] Type's decl is defined more than once at " + theDecl.location + DEFAULT_COLOR);
+            traceLine(RED + "        Previous declaration at " + theNode.decl.location + "." + DEFAULT_COLOR);
+            return false;
+        }
+        insert theNode.decl;
+        ref theNode.decl = theDecl;
+        return true;
         break ;
     case "__rtx_itf_attribute__":
         if (!existVariable(theNode.attributes))

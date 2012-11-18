@@ -65,17 +65,17 @@ local input;
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
+            provided pointcut       insert_types(Number);
         }
 
         interface LKM : Builtin
         {
-            provided pointcut   testChunk();
-
-            provided type   Bomb
+            provided type           Bomb
             {
-                chunk               testChunk();
-                attribute Number    numeric;
+                decl                insert_types();
+                attribute Number    num;
             }
         }
 
@@ -83,40 +83,41 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk testChunk(Number paf)
+                decl insert_types(Number n)
                 {
                 }
 
                 map
                 {
-                    numeric: 43;
+                    num: 43;
                 }
             }
         }
 @}, dummy, input);
 
 local ret = checkInput(input, "INPUT.TXT");
-if (ret == 1)
-    exit(1);
 
-clearVariable(this);
+
+traceLine(BLUE + "================= Next part of the test ================" + DEFAULT_COLOR);
+
+
 clearVariable(dummy);
 clearVariable(input);
+clearVariable(this);
 generateString({
         interface Builtin
         {
-            provided builtintype Number;
-            provided builtintype String;
+            provided builtintype    Number;
+            provided pointcut       insert_types();
         }
 
         interface LKM : Builtin
         {
-            provided pointcut   testChunk(String);
-
-            provided type       Bomb
+            provided pointcut       insert_types();
+            provided type           Bomb
             {
-                chunk               testChunk(String);
-                attribute Number    numeric;
+                decl                Builtin::insert_types();
+                attribute Number    num;
             }
         }
 
@@ -124,19 +125,20 @@ generateString({
         {
             template type LKM::Bomb()
             {
-                chunk testChunk(Number paf)
+                decl LKM::insert_types() 
                 {
                 }
 
                 map
                 {
-                    numeric: 43;
+                    num: 43;
                 }
             }
         }
 @}, dummy, input);
 
-local ret = checkInput(input, "INPUT.TXT");
+if (checkInput(input, "INPUT.TXT") == true
+    || ret == 1)
+    exit (1);
 
-exit (ret);
-
+exit 0;

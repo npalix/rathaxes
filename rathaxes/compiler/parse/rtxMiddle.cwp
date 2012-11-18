@@ -116,7 +116,7 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
 ;
 
 rtx_itf_type_body_stmt ::=
-    "attribute" | "method" | "chunk" | "pointcut"
+    "attribute" | "method" | "decl" | "chunk" | "pointcut"
 ;
 
 rtx_itf_type_body_declaration(theBlock : node) ::=
@@ -175,6 +175,18 @@ rtx_itf_type_stmt<"method">(theDecl : node) ::=
     #continue(sError, "Expected parameters to method '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
     #check(rtxNodeItfTypeMethodDeclaration(theDecl, theName, theParamTypes))
+;
+
+rtx_itf_type_stmt<"decl">(theDecl : node) ::=
+    => local theName;
+    => local theParamTypes;
+    => local dummy_ids;
+    #continue(sError, "Expected name for decl in type's declaration.")
+    rtx_scoped_identifier(theName)
+    #check(rtxNode_InfoLocation(theDecl))
+    #continue(sError, "Expected parameters to decl '"+rtxRTypeName<theName.type>(theName)+"'.")
+    rtx_parameter_list(theParamTypes, dummy_ids)
+    #check(rtxNodeItfTypeDeclDeclaration(theDecl, theName, theParamTypes))
 ;
 
 

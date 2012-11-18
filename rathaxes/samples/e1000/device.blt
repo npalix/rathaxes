@@ -5,16 +5,14 @@ with Device, LKM
         chunk   LKM::includes()
         {
             #include <linux/device.h>
-
-            static const ${Device::AbstractDevice}  force_rtx_device_decl;
         }
 
-        chunk   decl()
+        decl   data_types()
         {
             typedef struct device   *rtx_device_p;
         }
 
-        chunk   init()
+        method   init()
         {
         }
 

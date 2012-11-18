@@ -55,11 +55,11 @@ function addChunk(cache1 : node, cache2 : node, template : node, chunk : node)
     pushItem cache1.chunks[chunk.name];
     setall cache1.chunks[chunk.name]#back = chunk;
     // Now insert the template containing the inserted chunk...
-    if (!findElement(chunk.tpl_id, cache1.templates))
-        insert cache1.templates[chunk.tpl_id];
-    pushItem cache1.templates[chunk.tpl_id];
-    setall cache1.templates[chunk.tpl_id]#back = template;
-    insert cache1.templates[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
+    if (!findElement(chunk.tpl_id, cache1.templates.sequences))
+        insert cache1.templates.sequences[chunk.tpl_id];
+    pushItem cache1.templates.sequences[chunk.tpl_id];
+    setall cache1.templates.sequences[chunk.tpl_id]#back = template;
+    insert cache1.templates.sequences[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
 
     if (!findElement(chunk.name, cache2.chunks))
         insert cache2.chunks[chunk.name];
@@ -67,11 +67,11 @@ function addChunk(cache1 : node, cache2 : node, template : node, chunk : node)
     pushItem cache2.chunks[chunk.name];
     setall cache2.chunks[chunk.name]#back = chunk;
     // Now insert the template containing the inserted chunk...
-    if (!findElement(chunk.tpl_id, cache2.templates))
-        insert cache2.templates[chunk.tpl_id];
-    pushItem cache2.templates[chunk.tpl_id];
-    setall cache2.templates[chunk.tpl_id]#back = template;
-    insert cache2.templates[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
+    if (!findElement(chunk.tpl_id, cache2.templates.sequences))
+        insert cache2.templates.sequences[chunk.tpl_id];
+    pushItem cache2.templates.sequences[chunk.tpl_id];
+    setall cache2.templates.sequences[chunk.tpl_id]#back = template;
+    insert cache2.templates.sequences[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
 }
 
 function createTemplateCacheItem(tmp : node, nb : value)
@@ -158,14 +158,20 @@ clearVariable(cache2);
 insert cache1.interfaces;
 insert cache1.global_code;
 insert cache1.templates;
+insert cache1.templates.sequences;
+insert cache1.templates.types;
 insert cache1.chunks;
 insert cache2.interfaces;
 insert cache2.global_code;
 insert cache2.templates;
+insert cache2.templates.sequences;
+insert cache2.templates.types;
 insert cache2.chunks;
 insert expected.interfaces;
 insert expected.global_code;
 insert expected.templates;
+insert expected.templates.sequences;
+insert expected.templates.types;
 insert expected.chunks;
 
 createGlobalCacheItem(tmp, "1");

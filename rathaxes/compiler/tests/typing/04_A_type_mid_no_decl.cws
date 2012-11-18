@@ -30,7 +30,7 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
-    saveProject("__04_C_rtx_01_parse__.tree", source);
+    saveProject("__04_A_rtx_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");

@@ -7,7 +7,7 @@ with Main
     /* Definitions */
     template type Arguments()
     {
-        chunk ::decl()
+        decl Main::include_headers()
         {
             struct rtx_args
             {
@@ -17,14 +17,14 @@ with Main
             };
         }
 
-        chunk ::init(Builtin::number argc, Builtin::symbol argv, Builtin::symbol env)
+        method ::init(Builtin::number argc, Builtin::symbol argv, Builtin::symbol env)
         {
             ${self}.argc = ${argc};
             ${self}.argv = ${argv};
             ${self}.env = ${env};
         }
 
-        chunk ::log()
+        method ::log()
         {
             puts("Arguments:");
             {

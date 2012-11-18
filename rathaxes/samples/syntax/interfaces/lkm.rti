@@ -8,10 +8,10 @@ interface Builtin
     provided builtintype        register_value;
 }
 
-interface LKM : Algorithms
+interface LKM : Builtin
 {
     provided builtintype        Device_list;
-    provided builtintype	Symbol;
+    provided builtintype	    Symbol;
 
     provided pointcut           INCLUDE_DEPENDENCIES();
     provided pointcut           GLOBAL_DATA_DECLARATION();
@@ -34,10 +34,11 @@ interface LKM : Algorithms
     optional variable Builtin::numser       arch;
 }
 
-interface Algorithms : Builtin
+interface Algorithms : LKM, Builtin
 {
     provided type               Buffer {
-        chunk ::decl();
+        decl                        LKM::INCLUDE_DEPENDENCIES();
+        attribute Builtin::number   size;
     }
 
     provided sequence   log(Builtin::string)
@@ -58,7 +59,7 @@ interface Algorithms : Builtin
     required variable Builtin::number size;
 }
 
-interface User : LKM
+interface User : Algorithms
 {
     provided builtintype        Context;//why not device?
 

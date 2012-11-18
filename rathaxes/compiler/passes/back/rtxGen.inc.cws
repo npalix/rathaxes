@@ -119,15 +119,18 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
         local temp_expr = replaceString("\"", "\\\"", replaceString("\n", " ", item.template_expr));
         insert item.cws_expr = temp_expr;
         insert item.key = theKey;
-        insert item.chunkName = rtxRTypeName<item.node.body.chunk.type>(item.node.body.chunk);
-        item.tpl_hash = rtxRTypeName<item.node.body.rtype.type>(item.node.body.rtype)+"_"+this.chunkName;
+
+        // Here, build the actual rtype of the call
+        local dummy;
+        insert item.chunkProto = rtxRTypeFullQualifiedName<"pointcut">(item.node.body.call_rtype, dummy);
+        item.tpl_hash = rtxRTypeName<item.node.body.rtype.type>(item.node.body.rtype)+"_"+this.chunkProto;
         generateString({
                 // Resolving LINK (place Holder @this.key@)
                 traceLine("Generated Script : inject for key @this.key@ : "
                           + "(@this.node.body.type@: @this.cws_expr@)");
                 if (type_call<"@this.tpl_hash@">(
                             resVals,
-                            "@this.chunkName@",
+                            "@this.chunkProto@",
                             c_tree.compile["@this.key@"].node, source_tree) == false)
                 {
                     traceLine(RED + "[Error] Could not resolve chunk call '@this.cws_expr@'"
@@ -139,7 +142,7 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
                 }
         @}, item, item.cws_expr);
         removeVariable(item.key);
-        removeVariable(item.chunkName);
+        removeVariable(item.chunkProto);
 }
 
 function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey : value)
@@ -467,7 +470,8 @@ function	rtxGen<"__rtx_tpl__">(local_node : node, uid : node)
                 setall chunk.tpl_params = local_node.prototype.identifiers;
                 rtxGen<chunk.type>(chunk, uid);
         }
-        if (local_node.prototype.tpl_type == "type")
+        if (local_node.prototype.tpl_type == "type"
+            || local_node.prototype.tpl_type == "builtintype")
         {
                 // Go mapping
                 hashTemplatePrototype(local_node.prototype.rtype, local_node.tpl_hash);

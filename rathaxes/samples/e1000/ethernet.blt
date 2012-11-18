@@ -35,12 +35,12 @@ with Ethernet, PCI, LKM, Log
             }
         }
 
-        chunk decl()
+        decl data_types()
         {
             typedef unsigned short  rtx_ether_protocol_id;
         }
 
-        chunk to_str()
+        method to_str()
         {
             rtx_ethernet_protocol_id_to_str(${self});
         }
@@ -57,7 +57,7 @@ with Ethernet, PCI, LKM, Log
             #include <linux/netdevice.h>
         }
 
-        chunk ::decl()
+        decl  data_types()
         {
             typedef struct net_device *net_devp;
         }
@@ -74,7 +74,7 @@ with Ethernet, PCI, LKM, Log
             #include <linux/etherdevice.h>
         }
 
-        chunk ::decl()
+        decl  data_types()
         {
             /*
              * So, at first sight, it sucks to typedef it as pointer but (for
@@ -100,7 +100,7 @@ with Ethernet, PCI, LKM, Log
             } *rtx_ethernet_dev_p;
         }
 
-        chunk ::init(Ethernet::AbstractDevice net_dev, PCI::Device pci_dev)
+        method init(Ethernet::AbstractDevice net_dev, PCI::Device pci_dev)
         {
             ${self} = netdev_priv(${net_dev});
             /*

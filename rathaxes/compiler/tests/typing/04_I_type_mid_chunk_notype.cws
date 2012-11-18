@@ -30,28 +30,13 @@ function checkInput(input : node, inputsave : value)
     // PARSING PASS
     traceLine("====>PARSE");
     rtxParseString(source, input);
+    saveProject("__04_I_rtx_parse__.tree", source);
 
     // MIDDLE PASS
     traceLine("====>MIDDLE TYPE CHECK");
     if (rtxMiddle_TypeCheck(source) == false)
     {
-        traceLine("Type Checking failed at MiddleEnd step: unexpected");
-        return 1;
-    }
-
-    // REGISTER TO CACHE
-    traceLine("====>REGISTERING INTO THE CACHE");
-    if (rtxLink_RegisterToCache(source) == false)
-    {
-        traceLine("Registration failed.");
-        return 1;
-    }
-
-    // BACK PASS
-    traceLine("====>BACK TYPE CHECK");
-    if (rtxTpl_TypeCheck(source) == false)
-    {
-        traceLine("Type Checking failed at Backend step as expected");
+        traceLine("Type Checking failed at MiddleEnd step as expected");
         return 0;
     }
 
@@ -66,35 +51,18 @@ generateString({
         interface Builtin
         {
             provided builtintype String;
-            provided pointcut    pouet(String);
-            provided pointcut    insert_types();
-
-            provided type Bomb
-            {
-                decl insert_types();
-                attribute String   s;
-            }
         }
 
         interface LKM : Builtin
         {
-            provided builtintype String;
-            provided pointcut    pouet(LKM::String);
+            provided builtintype    String;
+            provided pointcut       pouet(LKM::String);
+            provided pointcut       insert_type();
 
             provided type Bomb
             {
-                decl insert_types();
-                attribute LKM::String   s;
-            }
-        }
-
-        with LKM
-        {
-            template type Bomb()
-            {
-                map
-                {
-                }
+                decl insert_type();
+                chunk pouet(Context);
             }
         }
 @}, dummy, input);
@@ -102,7 +70,5 @@ generateString({
 local ret = checkInput(input, "INPUT.TXT");
 
 exit (ret);
-
-
 
 

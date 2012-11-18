@@ -3,7 +3,7 @@ interface PCI : LKM
     provided type   PCI::Device
     {
         chunk       LKM::includes();
-        method      decl();
+        decl        data_types();
         method      init(PCI::Device);
     }
 
