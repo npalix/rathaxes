@@ -199,8 +199,8 @@ function rtxLink_SessionRegisterTpl<"type">(local_node : node,
 
             if (rtxNodeTpl_HasMapping(local_node))
             {
-                insert cache.script_file = local_node.script_file;
-                insert cache.tree_file = local_node.tree_file;
+                insert cacheTpl.script_file = local_node.script_file;
+                insert cacheTpl.tree_file = local_node.tree_file;
             }
         }
 
