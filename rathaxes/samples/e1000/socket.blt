@@ -57,7 +57,8 @@ with Socket, LKM, Device, Ethernet
                         "\t      len = %-5u data_len = %-5u head_len = %-5u\n"
                         "\t nr_frags = %u\n"
                         "\t gso_size = %-5u gso_segs = %-5u gso_type = %-5u",
-                        ethernet_proto, rtx_ethernet_protocol_id_to_str(ethernet_proto) /* XXX: ${local.ethernet_proto.to_str()} */,
+                        /* XXX: can't use ${local.ethernet_proto.id} here (issue #52): */
+                        ethernet_proto, ${local.ethernet_proto.str},
                         self->skbuff->ip_summed, ip_summed_values[self->skbuff->ip_summed],
                         self->skbuff->len, self->skbuff->data_len, skb_headlen(self->skbuff),
                         shinfo->nr_frags, shinfo->gso_size, shinfo->gso_segs, shinfo->gso_type

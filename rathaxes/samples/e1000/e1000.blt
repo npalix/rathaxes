@@ -2,11 +2,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 {
     template type   e1000::RxDescriptor()
     {
-        chunk   LKM::includes()
-        {
-            #include <linux/types.h>
-        }
-
         decl    data_types()
         {
             struct rtx_e1000_rx_descriptor
@@ -20,7 +15,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             };
         }
 
-        method init()
+        chunk   LKM::includes()
+        {
+            #include <linux/types.h>
+        }
+
+        method  init()
         {
         }
 
@@ -492,7 +492,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
     }
 
     /* TODO: make that a method of e1000::Context */
-    template sequence   e1000::print_status(Ethernet::Device ctx)
+    template sequence   e1000::print_status(Ethernet::Device rtx_ether_ctx)
     {
         chunk   LKM::prototypes()
         {
@@ -501,9 +501,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   LKM::code()
         {
-            static void rtx_e1000_print_status(struct rtx_e1000_ctx *ctx)
+            static void rtx_e1000_print_status(struct rtx_e1000_ctx *hw_ctx)
             {
-                unsigned int status = rtx_e1000_register_read32(ctx, E1000_STATUS);
+                unsigned int status = rtx_e1000_register_read32(hw_ctx, E1000_STATUS);
                     ${Log::info("card status:")};
                 /*
                  * we can't use Log::info below because it just accept a string
@@ -519,7 +519,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   ::CALL()
         {
-            rtx_e1000_print_status(&${ctx}->hw_ctx);
+            rtx_e1000_print_status(&${rtx_ether_ctx}->hw_ctx);
         }
     }
 
@@ -625,7 +625,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         }
     }
 
-    template sequence   e1000::setup_interrupt_handler(Ethernet::Device ctx)
+    template sequence   e1000::setup_interrupt_handler(Ethernet::Device rtx_ether_ctx)
     {
         chunk   LKM::includes()
         {
@@ -639,15 +639,15 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   LKM::code()
         {
-            static int e1000_setup_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx)
+            static int e1000_setup_interrupt_handler(struct rtx_ethernet_dev *rtx_ether_ctx)
             {
                 int error;
 
-                error = request_irq(ethernet_ctx->hw_ctx.irq,
+                error = request_irq(rtx_ether_ctx->hw_ctx.irq,
                         rtx_ethernet_interrupt_handler,
                         IRQF_SHARED,
                         ${config.name},
-                        ethernet_ctx);
+                        rtx_ether_ctx);
 
                 if (error)
                     ${Log::info("cannot register the interrupt handler")};
@@ -658,7 +658,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   ::CALL()
         {
-                int error = e1000_setup_interrupt_handler(${ctx});
+                int error = e1000_setup_interrupt_handler(${rtx_ether_ctx});
                 if (error)
                 {
                         return error;
@@ -666,32 +666,32 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         }
     }
 
-    template sequence   free_interrupt_handler(Ethernet::Device ctx)
+    template sequence   free_interrupt_handler(Ethernet::Device rtx_ether_ctx)
     {
         chunk   prototypes()
         {
-            static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx);
+            static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *rtx_ether_ctx);
         }
 
         chunk code()
         {
-            static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *ethernet_ctx)
+            static void e1000_free_interrupt_handler(struct rtx_ethernet_dev *rtx_ether_ctx)
             {
-                free_irq(ethernet_ctx->hw_ctx.irq, ethernet_ctx);
+                free_irq(rtx_ether_ctx->hw_ctx.irq, rtx_ether_ctx);
             }
         }
 
         chunk ::CALL()
         {
-            e1000_free_interrupt_handler(${ctx});
+            e1000_free_interrupt_handler(${rtx_ether_ctx});
         }
     }
 
-    template sequence   activate_device_interruption(Ethernet::Device ctx)
+    template sequence   activate_device_interruption(Ethernet::Device rtx_ether_ctx)
     {
         chunk  ::CALL()
         {
-            rtx_e1000_register_write32(&${ctx}->hw_ctx, E1000_IMS,
+            rtx_e1000_register_write32(&${rtx_ether_ctx}->hw_ctx, E1000_IMS,
                                        E1000_INTR_TXDW |
                                        E1000_INTR_TXQE |
                                        E1000_INTR_LSC  |
@@ -708,7 +708,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
      *
      * Also it should use the new methods in Socket::SKbuff.
      */
-    template sequence   set_up_device(Ethernet::Device ctx)
+    template sequence   set_up_device(Ethernet::Device rtx_ether_ctx)
     {
         chunk  ::CALL()
         {
@@ -727,7 +727,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              * the struct net_device)
              */
             ${e1000::Context} *hw_ctx;
-            hw_ctx = &${ctx}->hw_ctx;
+            hw_ctx = &${rtx_ether_ctx}->hw_ctx;
 
             /*
              * "General Configuration" (section 14.3):
@@ -787,13 +787,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
             /* (We should use uint{32,16}_t but CNorm doesn't know them yet) */
             rtx_e1000_register_write32(hw_ctx, E1000_RAL,
-                    *(unsigned int *)(${ctx}->net_dev->dev_addr));
+                    *(unsigned int *)(${rtx_ether_ctx.dev_addr}));
             /*
              * The 16 upper bits of RAH also store the AS bits (which should be
              * 0) and the AV bit (should be 1 to set the address as valid).
              */
             rtx_e1000_register_write32(hw_ctx, E1000_RAH,
-                    *(unsigned short *)(&${ctx}->net_dev->dev_addr[4]));
+                    *(unsigned short *)(&${rtx_ether_ctx.dev_addr}[4]));
             rtx_e1000_register_set32(hw_ctx, E1000_RAH, E1000_RAH_AV);
 
             ${Log::info("setup_device: receive address programmed")};
@@ -811,7 +811,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             hw_ctx->rx_ring.size = ${config.rx_ring_size} * sizeof(*hw_ctx->rx_ring.base);
             hw_ctx->rx_ring.size = ALIGN(hw_ctx->rx_ring.size, 4096);
             hw_ctx->rx_ring.base = dma_alloc_coherent(
-                    &${ctx}->pci_dev->dev,
+                    &${rtx_ether_ctx.device},
                     hw_ctx->rx_ring.size,
                     &hw_ctx->rx_ring.dma_base,
                     GFP_KERNEL);
@@ -830,7 +830,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             for (i = 0; i != ${config.rx_ring_size}; ++i)
             {
                 hw_ctx->rx_ring.skbuffs[i].skbuff = netdev_alloc_skb(
-                        ${ctx}->net_dev,
+                        ${rtx_ether_ctx.net_device},
                         ${config.rx_buffer_len});
                 if (!hw_ctx->rx_ring.skbuffs[i].skbuff)
                 {
@@ -838,11 +838,11 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                     goto err_skbuffs_alloc;
                 }
                 hw_ctx->rx_ring.skbuffs[i].dma_handle = dma_map_single(
-                        &${ctx}->pci_dev->dev,
+                        &${rtx_ether_ctx.device},
                         hw_ctx->rx_ring.skbuffs[i].skbuff->data,
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
-                int dma_error = dma_mapping_error(&${ctx}->pci_dev->dev,
+                int dma_error = dma_mapping_error(&${rtx_ether_ctx.device},
                         hw_ctx->rx_ring.skbuffs[i].dma_handle);
                 if (dma_error)
                 {
@@ -894,7 +894,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             hw_ctx->tx_ring.size = ${config.tx_ring_size} * sizeof(*hw_ctx->tx_ring.base);
             hw_ctx->tx_ring.size = ALIGN(hw_ctx->tx_ring.size, 4096);
             hw_ctx->tx_ring.base = dma_alloc_coherent(
-                    &${ctx}->pci_dev->dev,
+                    &${rtx_ether_ctx.device},
                     hw_ctx->tx_ring.size,
                     &hw_ctx->tx_ring.dma_base,
                     GFP_KERNEL);
@@ -937,7 +937,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             while (i--)
             {
                 dma_unmap_single(
-                        &${ctx}->pci_dev->dev,
+                        &${rtx_ether_ctx.device},
                         hw_ctx->rx_ring.skbuffs[i].dma_handle,
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
@@ -945,7 +945,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                 dev_kfree_skb(hw_ctx->rx_ring.skbuffs[i].skbuff);
             }
 
-            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->rx_ring.size,
+            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->rx_ring.size,
                     hw_ctx->rx_ring.base, hw_ctx->rx_ring.dma_base);
         err_rx_ring_alloc:
             return -ENOMEM;
@@ -959,12 +959,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
      * Refactor into two methods (one in RxRing and one in TxRing) and make use
      * of the new methods in Socket::SKBuff.
      */
-    template sequence   free_rx_tx(Ethernet::Device ctx)
+    template sequence   free_rx_tx(Ethernet::Device rtx_ether_ctx)
     {
         chunk   ::CALL()
         {
             ${e1000::Context} *hw_ctx;
-            hw_ctx = &${ctx}->hw_ctx;
+            hw_ctx = &${rtx_ether_ctx}->hw_ctx;
 
             /*
              * Free the rx ring:
@@ -974,13 +974,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             for (int i = 0; i != ${config.rx_ring_size}; ++i)
             {
                 dma_unmap_single(
-                        &${ctx}->pci_dev->dev,
+                        &${rtx_ether_ctx.device},
                         (dma_addr_t)hw_ctx->rx_ring.skbuffs[i].dma_handle,
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
                 dev_kfree_skb(hw_ctx->rx_ring.skbuffs[i].skbuff);
             }
-            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->rx_ring.size,
+            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->rx_ring.size,
                     hw_ctx->rx_ring.base, hw_ctx->rx_ring.dma_base);
             ${Log::info("free_rx_tx: rx ring free'ed")};
 
@@ -988,33 +988,33 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              * Free the tx ring:
              * - Free the descriptors array.
              */
-            dma_free_coherent(&${ctx}->pci_dev->dev, hw_ctx->tx_ring.size,
+            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->tx_ring.size,
                     hw_ctx->tx_ring.base, hw_ctx->tx_ring.dma_base);
             ${Log::info("free_rx_tx: tx ring free'ed")};
         }
     }
 
-    template sequence   handle_interrupt(Ethernet::Device ctx)
+    template sequence   handle_interrupt(Ethernet::Device rtx_ether_ctx)
     {
         chunk   ::CALL()
         {
-            unsigned int icr = rtx_e1000_register_read32(&${ctx}->hw_ctx, E1000_ICR);
+            unsigned int icr = rtx_e1000_register_read32(&${rtx_ether_ctx}->hw_ctx, E1000_ICR);
             pr_info("%s: interrupt received, ICR: 0x%x", ${config.name}, icr);
             if (icr)
             {
                 if (icr & E1000_INTR_LSC)
                 {
                     ${Log::info("handle_interrupt: cable link status changed, dumping card status:")};
-                    ${e1000::print_status(ctx)};
+                    ${e1000::print_status(rtx_ether_ctx)};
                 }
                 if (icr & (E1000_INTR_TXQE|E1000_INTR_TXDW))
                 {
                     ${Log::info("handle_interrupt: TxRing: packet(s) sent")};
                     /*
                      * XXX Do a Rathaxes call (how can I bind
-                     * "&${ctx}->hw_ctx.tx_ring" to e1000::TxRing easily?)
+                     * "&${rtx_ether_ctx}->hw_ctx.tx_ring" to e1000::TxRing easily?)
                      */
-                    rtx_e1000_tx_ring_clean(&${ctx}->hw_ctx.tx_ring);
+                    rtx_e1000_tx_ring_clean(&${rtx_ether_ctx}->hw_ctx.tx_ring);
                 }
                 if (icr & E1000_INTR_RXT0)
                 {
@@ -1030,7 +1030,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         }
     }
 
-    template sequence   e1000::xmit(Ethernet::Device ctx, Socket::AbstractSKBuff kernel_skb)
+    template sequence   e1000::xmit(Ethernet::Device rtx_ether_ctx, Socket::AbstractSKBuff kernel_skb)
     {
         chunk   ::CALL()
         {
@@ -1045,9 +1045,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             ${Device::AbstractDevice} dev;
 
             ${local.skb.init(kernel_skb)};
-            hw_ctx = &${ctx}->hw_ctx;
+            hw_ctx = &${rtx_ether_ctx}->hw_ctx;
             tx_ring = &hw_ctx->tx_ring;
-            dev = &${ctx}->pci_dev->dev;
+            dev = &${rtx_ether_ctx.device};
 
             ${Log::info("xmit: skbuff details:")};
             /*

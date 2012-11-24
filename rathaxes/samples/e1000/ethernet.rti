@@ -8,7 +8,9 @@ interface Ethernet : Socket, PCI, LKM, Builtin
          chunk       LKM::data();
          chunk       LKM::code();
          decl        data_types();
-         method      to_str();
+
+         attribute  Builtin::number id;
+         attribute  Builtin::string str;
      }
 
     provided type   AbstractDevice
@@ -24,8 +26,15 @@ interface Ethernet : Socket, PCI, LKM, Builtin
         method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
         pointcut    Ethernet::HardwareContext();
 
+        attribute   Device::AbstractDevice      device;
         attribute   PCI::AbstractDevice         pci_device;
         attribute   Ethernet::AbstractDevice    net_device;
+        /*
+         * I'd like to use better names here, but I'd like to understand the
+         * difference between the two first:
+         */
+        attribute   Builtin::symbol             perm_addr;
+        attribute   Builtin::symbol             dev_addr;
     }
 
     required sequence   open(Ethernet::Device)
