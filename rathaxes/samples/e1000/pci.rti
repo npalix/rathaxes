@@ -1,14 +1,41 @@
-interface PCI : LKM
+interface PCI : LKM, Builtin, Device
 {
-    provided type   PCI::AbstractDevice
-    {
-        chunk       LKM::includes();
-        decl        data_types();
-        method      init(PCI::AbstractDevice);
-    }
-
+    required variable Builtin::string  LKM::name;
     required variable Builtin::number  PCI::vendor_id;
     required variable Builtin::number  PCI::product_id;
+
+    provided type   PCI::AbstractDevice
+    {
+        decl        data_types();
+
+        chunk       LKM::includes();
+        method      init(PCI::AbstractDevice);
+        method      set_context(Builtin::symbol);
+
+        attribute   Builtin::symbol context;
+    }
+
+    provided type   PCI::Device
+    {
+        decl        data_types();
+
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+
+        method      init(PCI::AbstractDevice);
+        method      enable();
+        method      disable();
+        method      select_ioaddr(Builtin::number);
+        method      set_context(Builtin::symbol);
+
+        attribute   Builtin::symbol         context;
+        attribute   Device::AbstractDevice  device;
+        attribute   PCI::AbstractDevice     pci_device;
+        attribute   Builtin::symbol         ioaddr;
+        attribute   Builtin::number         BAR_0;
+        attribute   Builtin::number         irq;
+        attribute   Builtin::number         bars;
+    }
 
     provided sequence   register()
     {
@@ -28,7 +55,7 @@ interface PCI : LKM
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
 
-        provided pointcut   PCI::pci_probe_hook(PCI::AbstractDevice);
+        provided pointcut   PCI::pci_probe_hook(PCI::Device);
     }
 
     provided sequence   remove()
@@ -36,6 +63,6 @@ interface PCI : LKM
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
 
-        provided pointcut   PCI::pci_remove_hook(PCI::AbstractDevice);
+        provided pointcut   PCI::pci_remove_hook(PCI::Device);
     }
 }

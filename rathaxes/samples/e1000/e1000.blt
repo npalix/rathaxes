@@ -1,4 +1,4 @@
-with e1000, Ethernet, Socket, PCI, LKM, Log
+with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 {
     template type   e1000::RxDescriptor()
     {
@@ -251,22 +251,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template type   e1000::Context()
     {
-        chunk   Ethernet::SubContext()
-        {
-            /*
-             * Force the generation of the structure in the "headers" part, we
-             * have to do this since we do not use the structure in this blt
-             * (we hacked a bit and used it in ethernet.blt directly).
-             */
-            ${e1000::Context}   hw_ctx;
-        }
-
         decl    data_types()
         {
-            /*
-             * Yes, this typedef looks ugly but read the remark about
-             * Ethernet::Device in ethernet.blt.
-             */
             struct rtx_e1000_ctx
             {
                 int                         bars;
@@ -281,8 +267,68 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
             };
         }
 
-        method init()
+        chunk   Ethernet::SubContext()
         {
+            /*
+             * Force the generation of the structure in the "headers" part, we
+             * have to do this since we do not use the structure in this blt
+             * (we hacked a bit and used it in ethernet.blt directly).
+             */
+            ${e1000::Context}   hw_ctx;
+        }
+
+        chunk   Ethernet::adapter_init_context(Ethernet::Device rtx_ether_ctx,
+                                               Builtin::number bars,
+                                               Builtin::symbol ioaddr,
+                                               Builtin::number irq)
+        {
+            {
+                struct rtx_e1000_ctx *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                hw_ctx->bars = ${bars};
+                hw_ctx->ioaddr = ${ioaddr};
+                hw_ctx->irq = ${irq};
+            }
+        }
+
+        chunk   Ethernet::adapter_reset(Ethernet::Device rtx_ether_ctx)
+        {
+            {
+                struct rtx_e1000_ctx *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                rtx_e1000_register_write32(hw_ctx, E1000_CTRL, E1000_CMD_RST);
+                udelay(10);
+            }
+        }
+
+        chunk   Ethernet::adapter_load_mac_address(Ethernet::Device rtx_ether_ctx)
+        {
+            {
+                struct rtx_e1000_ctx *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                /* Shamelessly borrowed from Minix */
+                for (int i = 0; i < 3; ++i)
+                {
+                    rtx_e1000_register_write32(hw_ctx, E1000_EEPROM_READ, (i << 8) | 1);
+                    int value;
+                    do
+                        value = rtx_e1000_register_read32(hw_ctx, E1000_EEPROM_READ);
+                    while ((value & (1 << 4)) == 0);
+                    value >>= 16;
+                    /*
+                     * XXX: The net_dev manipulations here should take place in the
+                     * ethernet templates:
+                     * TODO: recevoir un Builtin::symbol avec le tableau ici pour
+                     * pouvoir les remonter directement.
+                     */
+                    ${rtx_ether_ctx}->net_dev->dev_addr[i * 2] = value & 0xff;
+                    ${rtx_ether_ctx}->net_dev->dev_addr[i * 2 + 1] = (value >> 8) & 0xff;
+                }
+
+                /* TODO: deplacer ça dans Ethernet (see above point): */
+                memcpy(${rtx_ether_ctx}->net_dev->perm_addr,
+                       ${rtx_ether_ctx}->net_dev->dev_addr,
+                       ${rtx_ether_ctx}->net_dev->addr_len);
+
+                ${Log::info("e1000::create: mac address loaded from the EEPROM")};
+            }
         }
 
         map
@@ -441,91 +487,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
 
         map
-        {
-        }
-    }
-
-    template sequence   e1000::create_device()
-    {
-        chunk Ethernet::create_device(PCI::AbstractDevice pdev, Ethernet::Device rtx_ether_ctx)
-        {
-            /*
-             * PCI init stuff:
-             *
-             * Some of that code should certainly be moved in the PCI/Ethernet
-             * blts, also at some point maybe we could do that completely
-             * automatically in the PCI/Ethernet blts.
-             */
-
-            /*
-             * We could have used an init function here but since we can't init
-             * all the fields at once (see, ioaddr) and cannot call a C
-             * function within a placeholder (${}), it wasn't really worth it.
-             */
-            ${rtx_ether_ctx}->hw_ctx.bars = pci_select_bars(${pdev}, IORESOURCE_MEM);
-            ${rtx_ether_ctx}->hw_ctx.irq = ${pdev}->irq;
-
-            if (pci_enable_device_mem(${pdev}))
-                ${Log::info("e1000::create: pci_enable_device_mem failed")};
-            if (pci_request_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars, ${config.name}))
-                ${Log::info("e1000::create: pci_request_selected_regions failed")};
-            if (${config.set_master})
-                pci_set_master(${pdev});
-
-            /* 0 here is for BAR_0: */
-            ${rtx_ether_ctx}->hw_ctx.ioaddr = pci_ioremap_bar(${pdev}, 0);
-            if (!${rtx_ether_ctx}->hw_ctx.ioaddr)
-                ${Log::info("e1000::create: pci_ioremap_bar failed")};
-
-            /*
-             * The really device specific algorithm starts here (so it should
-             * certainly be written in the frontend):
-             */
-
-            /* Reset the card */
-            rtx_e1000_register_write32(&${rtx_ether_ctx}->hw_ctx, E1000_CTRL, E1000_CMD_RST);
-            udelay(10);
-
-            /* Now we can load its mac address (thanks minix code) */
-            for (int i = 0; i < 3; ++i)
-            {
-                rtx_e1000_register_write32(&${rtx_ether_ctx}->hw_ctx, E1000_EEPROM_READ, (i << 8) | 1);
-
-                int value;
-                do
-                    value = rtx_e1000_register_read32(&${rtx_ether_ctx}->hw_ctx, E1000_EEPROM_READ);
-                while ((value & (1 << 4)) == 0);
-                value >>= 16;
-
-                ${rtx_ether_ctx}->net_dev->dev_addr[i * 2] = value & 0xff;
-                ${rtx_ether_ctx}->net_dev->dev_addr[i * 2 + 1] = (value >> 8) & 0xff;
-            }
-
-            memcpy(${rtx_ether_ctx}->net_dev->perm_addr,
-                   ${rtx_ether_ctx}->net_dev->dev_addr,
-                   ${rtx_ether_ctx}->net_dev->addr_len);
-
-            ${Log::info("e1000::create: mac address loaded from the EEPROM")};
-        }
-
-        chunk ::CALL()
-        {
-        }
-    }
-
-    template sequence   e1000::destroy_device()
-    {
-        chunk   Ethernet::destroy_device(PCI::AbstractDevice pdev, Ethernet::Device rtx_ether_ctx)
-        {
-            /*
-             * Here, we should have some checks to avoid to free resources that
-             * haven't been allocated. (e.g: in case of previous errors).
-             */
-            iounmap(${rtx_ether_ctx}->hw_ctx.ioaddr);
-            pci_release_selected_regions(${pdev}, ${rtx_ether_ctx}->hw_ctx.bars);
-        }
-
-        chunk   ::CALL()
         {
         }
     }

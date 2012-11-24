@@ -1,4 +1,4 @@
-interface Ethernet : Socket, PCI, LKM
+interface Ethernet : Socket, PCI, LKM, Builtin
 {
     required variable   Builtin::string ifname;
 
@@ -23,6 +23,9 @@ interface Ethernet : Socket, PCI, LKM
         decl        data_types();
         method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
         pointcut    Ethernet::SubContext();
+
+        attribute   PCI::AbstractDevice         pci_device;
+        attribute   Ethernet::AbstractDevice    net_device;
     }
 
     required sequence   open(Ethernet::Device)
@@ -52,15 +55,18 @@ interface Ethernet : Socket, PCI, LKM
     provided sequence   init()
     {
         provided chunk  LKM::data();
-        provided chunk  PCI::pci_probe_hook(PCI::AbstractDevice);
+        provided chunk  PCI::pci_probe_hook(PCI::Device);
 
-        provided pointcut   Ethernet::create_device(PCI::AbstractDevice, Ethernet::Device);
+        provided pointcut   Ethernet::adapter_init_context(Ethernet::Device,
+                                                           Builtin::number,
+                                                           Builtin::symbol,
+                                                           Builtin::number);
+        provided pointcut   Ethernet::adapter_reset(Ethernet::Device);
+        provided pointcut   Ethernet::adapter_load_mac_address(Ethernet::Device);
     }
 
     provided sequence   exit()
     {
-        provided chunk  PCI::pci_remove_hook(PCI::AbstractDevice);
-
-        provided pointcut   Ethernet::destroy_device(PCI::AbstractDevice, Ethernet::Device);
+        provided chunk  PCI::pci_remove_hook(PCI::Device);
     }
 }

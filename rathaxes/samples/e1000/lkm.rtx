@@ -74,7 +74,6 @@ configuration
      */
     PCI::vendor_id = 0x8086;
     PCI::product_id = 0x100e;
-    PCI::set_master = true;
 
     Ethernet::ifname = "rtx%d";
 
