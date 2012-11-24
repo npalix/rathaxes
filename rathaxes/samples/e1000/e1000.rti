@@ -72,13 +72,13 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
 
     provided sequence   create_device()
     {
-        provided chunk  Ethernet::create_device(PCI::Device, Ethernet::Device);
+        provided chunk  Ethernet::create_device(PCI::AbstractDevice, Ethernet::Device);
         provided chunk  ::CALL();
     }
 
     provided sequence   destroy_device()
     {
-        provided chunk  Ethernet::destroy_device(PCI::Device, Ethernet::Device);
+        provided chunk  Ethernet::destroy_device(PCI::AbstractDevice, Ethernet::Device);
         provided chunk  ::CALL();
     }
 

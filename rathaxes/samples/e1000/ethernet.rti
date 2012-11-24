@@ -17,16 +17,11 @@ interface Ethernet : Socket, PCI, LKM
         decl        data_types();
     }
 
-    /*
-     * Unlike PCI::Device, Ethernet::Device doesn't match the struct net_device
-     * from Linux. Ethernet::Device is the type that we use in the private
-     * field of the struct net_device.
-     */
     provided type   Device
     {
         chunk       LKM::includes();
         decl        data_types();
-        method      init(Ethernet::AbstractDevice, PCI::Device);
+        method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
         pointcut    Ethernet::SubContext();
     }
 
@@ -57,15 +52,15 @@ interface Ethernet : Socket, PCI, LKM
     provided sequence   init()
     {
         provided chunk  LKM::data();
-        provided chunk  PCI::pci_probe_hook(PCI::Device);
+        provided chunk  PCI::pci_probe_hook(PCI::AbstractDevice);
 
-        provided pointcut   Ethernet::create_device(PCI::Device, Ethernet::Device);
+        provided pointcut   Ethernet::create_device(PCI::AbstractDevice, Ethernet::Device);
     }
 
     provided sequence   exit()
     {
-        provided chunk  PCI::pci_remove_hook(PCI::Device);
+        provided chunk  PCI::pci_remove_hook(PCI::AbstractDevice);
 
-        provided pointcut   Ethernet::destroy_device(PCI::Device, Ethernet::Device);
+        provided pointcut   Ethernet::destroy_device(PCI::AbstractDevice, Ethernet::Device);
     }
 }
