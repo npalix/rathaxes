@@ -638,11 +638,11 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : no
                     ref paramType = theChunk.variables[theVar.name].type_node.name;
                 else
                 {
-                    // That's it : It's a Builtin::Symbol, then.
+                    // That's it : It's a Builtin::symbol, then.
                     local id;
                     local dummy;
                     // The param type shall be a rtxNodeIdentifier
-                    rtxNodeIdentifier(paramType, "Symbol", "Builtin");
+                    rtxNodeIdentifier(paramType, "symbol", "Builtin");
                 }
             }
             else
