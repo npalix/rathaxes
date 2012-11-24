@@ -1,10 +1,10 @@
 interface PCI : LKM
 {
-    provided type   PCI::Device
+    provided type   PCI::AbstractDevice
     {
         chunk       LKM::includes();
         decl        data_types();
-        method      init(PCI::Device);
+        method      init(PCI::AbstractDevice);
     }
 
     required variable Builtin::number  PCI::vendor_id;
@@ -28,7 +28,7 @@ interface PCI : LKM
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
 
-        provided pointcut   PCI::pci_probe_hook(PCI::Device);
+        provided pointcut   PCI::pci_probe_hook(PCI::AbstractDevice);
     }
 
     provided sequence   remove()
@@ -36,6 +36,6 @@ interface PCI : LKM
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
 
-        provided pointcut   PCI::pci_remove_hook(PCI::Device);
+        provided pointcut   PCI::pci_remove_hook(PCI::AbstractDevice);
     }
 }

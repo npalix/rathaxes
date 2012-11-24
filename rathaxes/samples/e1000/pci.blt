@@ -1,6 +1,6 @@
 with PCI, LKM, Log
 {
-    template type   PCI::Device()
+    template type   PCI::AbstractDevice()
     {
         chunk   LKM::includes()
         {
@@ -12,7 +12,7 @@ with PCI, LKM, Log
             struct pci_dev;
         }
 
-        method init(PCI::Device)
+        method init(PCI::AbstractDevice)
         {
         }
 
@@ -41,7 +41,7 @@ with PCI, LKM, Log
                     goto fail;
 
                 /* Use local. to reference a local C variable: */
-                ${cast local.pdev as PCI::Device};
+                ${cast local.pdev as PCI::AbstractDevice};
                 ${pointcut PCI::pci_probe_hook(local.pdev)};
 
                 return 0;
@@ -68,7 +68,7 @@ with PCI, LKM, Log
         {
             static void rtx_pci_remove(struct pci_dev *pdev)
             {
-                ${cast local.pdev as PCI::Device};
+                ${cast local.pdev as PCI::AbstractDevice};
                 ${pointcut PCI::pci_remove_hook(local.pdev)};
 
                 pci_disable_device(pdev);

@@ -86,7 +86,7 @@ with Ethernet, PCI, LKM, Log
             typedef struct rtx_ethernet_dev
             {
                 /*
-                 * I think it's useless to use the ${PCI::Device} "abstraction"
+                 * I think it's useless to use the ${PCI::AbstractDevice} "abstraction"
                  * here, since we already are in a Linux specific context.
                  */
                 struct pci_dev          *pci_dev;
@@ -100,7 +100,7 @@ with Ethernet, PCI, LKM, Log
             } *rtx_ethernet_dev_p;
         }
 
-        method init(Ethernet::AbstractDevice net_dev, PCI::Device pci_dev)
+        method init(Ethernet::AbstractDevice net_dev, PCI::AbstractDevice pci_dev)
         {
             ${self} = netdev_priv(${net_dev});
             /*
@@ -211,7 +211,7 @@ with Ethernet, PCI, LKM, Log
         }
 
         /* For now the type is not handled, so we just omit it (see #17) */
-        chunk PCI::pci_probe_hook(PCI::Device pdev)
+        chunk PCI::pci_probe_hook(PCI::AbstractDevice pdev)
         {
             /*
              * This typedef is needed to workaround a bug in CNorm __std__
@@ -262,7 +262,7 @@ with Ethernet, PCI, LKM, Log
 
     template sequence   Ethernet::exit()
     {
-        chunk   PCI::pci_remove_hook(PCI::Device pdev)
+        chunk   PCI::pci_remove_hook(PCI::AbstractDevice pdev)
         {
             /* workaround for cnorm unstrict */
             struct net_device *net_dev = pci_get_drvdata(${pdev});

@@ -447,7 +447,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::create_device()
     {
-        chunk Ethernet::create_device(PCI::Device pdev, Ethernet::Device rtx_ether_ctx)
+        chunk Ethernet::create_device(PCI::AbstractDevice pdev, Ethernet::Device rtx_ether_ctx)
         {
             /*
              * PCI init stuff:
@@ -515,7 +515,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
 
     template sequence   e1000::destroy_device()
     {
-        chunk   Ethernet::destroy_device(PCI::Device pdev, Ethernet::Device rtx_ether_ctx)
+        chunk   Ethernet::destroy_device(PCI::AbstractDevice pdev, Ethernet::Device rtx_ether_ctx)
         {
             /*
              * Here, we should have some checks to avoid to free resources that
