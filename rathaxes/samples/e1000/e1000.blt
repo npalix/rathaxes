@@ -1069,13 +1069,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log
         }
     }
 
-    template sequence   e1000::_xmit_tso_cksum_offload(Ethernet::Device ctx, Socket::SKBuff skb)
-    {
-        chunk   ::CALL()
-        {
-        }
-    }
-
     template sequence   e1000::xmit(Ethernet::Device ctx, Socket::AbstractSKBuff kernel_skb)
     {
         chunk   ::CALL()
