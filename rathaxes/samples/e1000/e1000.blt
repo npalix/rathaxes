@@ -267,7 +267,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             };
         }
 
-        chunk   Ethernet::SubContext()
+        chunk   Ethernet::HardwareContext()
         {
             /*
              * Force the generation of the structure in the "headers" part, we
