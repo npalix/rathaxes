@@ -7,7 +7,7 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
 
     provided type   Context
     {
-        chunk       Ethernet::SubContext();
+        chunk       Ethernet::HardwareContext();
         decl        data_types();
 
         /* Callbacks/Hooks which should probably be in the front-end: */
