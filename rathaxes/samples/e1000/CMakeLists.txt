@@ -15,8 +15,8 @@ ADD_RATHAXES_SOURCES(e1000_src
                      pci.blt
                      device.blt
                      socket.blt
-                     ethernet.blt
-                     e1000.blt)
+                     e1000.blt
+                     ethernet.blt)
 
 IF (LINUX_KBUILD_DIR)
     ADD_RATHAXES_LKM(e1000 e1000_src)
