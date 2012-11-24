@@ -12,15 +12,105 @@ with PCI, LKM, Log
             struct pci_dev;
         }
 
-        method init(PCI::AbstractDevice)
+        method  init(PCI::AbstractDevice)
         {
+        }
+
+        method  set_context(Builtin::symbol ctx)
+        {
+            pci_set_drvdata(${self}, ${ctx});
         }
 
         map
         {
+            context: pci_get_drvdata(${self});
         }
     }
 
+    template type   PCI::Device()
+    {
+        decl    data_types()
+        {
+            struct rtx_pci_dev
+            {
+                struct pci_dev              *pdev;
+                int                         bars;
+                /* It could be an array at some point: */
+                unsigned char /* __iomem */ *ioaddr;
+                void                        *context;
+            };
+        }
+
+        method  init(PCI::AbstractDevice pdev)
+        {
+            ${self}->pdev = ${pdev};
+            ${self}->bars = pci_select_bars(${pdev}, IORESOURCE_MEM);
+            ${self}->ioaddr = NULL;
+            ${self}->context = NULL;
+        }
+
+        chunk   LKM::prototypes()
+        {
+            static int  rtx_pci_device_enable(struct rtx_pci_dev *);
+            static void rtx_pci_device_disable(struct rtx_pci_dev *);
+        }
+
+        chunk   LKM::code()
+        {
+            static int rtx_pci_device_enable(struct rtx_pci_dev *self)
+            {
+                int error;
+                error = pci_enable_device(self->pdev);
+                if (error)
+                    return error;
+                error = pci_request_selected_regions(self->pdev, self->bars, ${config.name});
+                if (error)
+                    return error;
+                pci_set_master(self->pdev);
+                return 0;
+            }
+
+            static void rtx_pci_device_disable(struct rtx_pci_dev *self)
+            {
+                if (self->ioaddr)
+                    iounmap(self->ioaddr);
+                pci_release_selected_regions(self->pdev, self->bars);
+                pci_disable_device(self->pdev);
+            }
+        }
+
+        method  enable()
+        {
+            rtx_pci_device_enable(${self});
+        }
+
+        method  disable()
+        {
+            rtx_pci_device_disable(${self});
+        }
+
+        method  select_ioaddr(Builtin::number bar)
+        {
+            ${self}->ioaddr = pci_ioremap_bar(${self}->pdev, ${bar});
+        }
+
+        method  set_context(Builtin::symbol ctx)
+        {
+            ${self}->context = ctx;
+        }
+
+        map
+        {
+            context: ${self}->context;
+            device: &${self}->pdev->dev;
+            pci_device: ${self}->pdev;
+            irq: ${self}->pdev->irq;
+            bars: ${self}->bars;
+            ioaddr: ${self}->ioaddr;
+            BAR_0: 0;
+         }
+     }
+ 
     template sequence   probe()
     {
         chunk LKM::prototypes()
@@ -34,24 +124,67 @@ with PCI, LKM, Log
             static int /* __devinit */  rtx_pci_probe(struct pci_dev *pdev,
                                                       const struct pci_device_id *pdev_id)
             {
-                int             err;
-
-                err = pci_enable_device(pdev);
-                if (err < 0)
-                    goto fail;
-
-                /* Use local. to reference a local C variable: */
                 ${cast local.pdev as PCI::AbstractDevice};
-                ${pointcut PCI::pci_probe_hook(local.pdev)};
+                int error;
+                ${PCI::Device} *rtx_pci_dev;
+
+                rtx_pci_dev = kmalloc(sizeof(*rtx_pci_dev), GFP_KERNEL);
+                if (!rtx_pci_dev)
+                {
+                    ${Log::info("cannot allocate the pci device context")};
+                    error = -ENOMEM;
+                    goto fail;
+                }
+
+                /*
+                 * XXX: I'm getting placeholder in the generated code if I don't
+                 * open a scope here:
+                 */
+                {
+                    ${local.rtx_pci_dev.init(local.pdev)};
+                }
+
+                /* ${local.pdev.set_context(local.rtx_pci_dev)}; */
+                pci_set_drvdata(pdev, rtx_pci_dev);
+
+                /* ${local.rtx_pci_dev.enable()}; */
+                error = rtx_pci_device_enable(rtx_pci_dev);
+                if (error)
+                {
+                    ${Log::info("rtx_pci_device_enable failed")};
+                    goto fail;
+                }
+
+                /* ${local.rtx_pci_dev.select_ioaddr(local.rtx_pci_dev.BAR_0)}; */
+                rtx_pci_dev->ioaddr = pci_ioremap_bar(
+                    rtx_pci_dev->pdev, ${local.rtx_pci_dev.BAR_0}
+                );
+                if (!${local.rtx_pci_dev.ioaddr})
+                {
+                    ${Log::info("can't map the device address space")};
+                    error = 1; /* XXX anything more approriate? */
+                    goto fail;
+                }
+
+                /*
+                 * XXX: We have to cast here because the compiler is
+                 * confused by the fact that rtx_pci_dev is a
+                 * pointer.
+                 */
+                ${cast local.rtx_pci_dev as PCI::Device};
+                ${pointcut PCI::pci_probe_hook(local.rtx_pci_dev)};
 
                 return 0;
 
-                fail:
-                    return err;
+            fail:
+                /* ${local.pdev.set_context(NULL)}; */
+                pci_set_drvdata(pdev, NULL);
+                kfree(rtx_pci_dev);
+                return error;
             }
         }
 
-        /* This chunk should be remove (see #26) */
+        /* This chunk should be removed (see #26) */
         chunk   ::CALL()
         {
         }
@@ -69,9 +202,16 @@ with PCI, LKM, Log
             static void rtx_pci_remove(struct pci_dev *pdev)
             {
                 ${cast local.pdev as PCI::AbstractDevice};
-                ${pointcut PCI::pci_remove_hook(local.pdev)};
+                ${PCI::Device} *rtx_pci_dev = ${local.pdev.context};
 
-                pci_disable_device(pdev);
+                BUG_ON(!rtx_pci_dev);
+
+                /* XXX: compiler confused by the pointer type. */
+                ${cast local.rtx_pci_dev as PCI::Device};
+                ${pointcut PCI::pci_remove_hook(local.rtx_pci_dev)};
+
+                /* ${local.rtx_pci_dev.disable()}; */
+                rtx_pci_device_disable(rtx_pci_dev);
             }
         }
 

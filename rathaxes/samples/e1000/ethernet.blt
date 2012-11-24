@@ -113,6 +113,8 @@ with Ethernet, PCI, LKM, Log
 
         map
         {
+            pci_device: ${self}->pci_dev;
+            net_device: ${self}->net_dev;
         }
     }
 
@@ -210,48 +212,72 @@ with Ethernet, PCI, LKM, Log
             };
         }
 
-        /* For now the type is not handled, so we just omit it (see #17) */
-        chunk PCI::pci_probe_hook(PCI::AbstractDevice pdev)
+        /*
+         * NOTE: for now, the error handling is leaking from PCI::probe(), but
+         * it's better than doing it at all.
+         *
+         * XXX: the chunk argument isn't correctly expanded by the
+         * compiler I have to use the same name as the actual C
+         * variable:
+         */
+        chunk PCI::pci_probe_hook(PCI::Device rtx_pci_dev)
         {
-            /*
-             * This typedef is needed to workaround a bug in CNorm __std__
-             * dialect.
-             */
             ${Ethernet::Device} rtx_ether_ctx;
-            struct net_device *net_dev;
-            int error;
+            ${Ethernet::AbstractDevice} net_dev;
 
-            /* Initialize the net_device structure */
             net_dev = alloc_etherdev(sizeof(*rtx_ether_ctx));
-            if (net_dev == 0)
+            if (!net_dev)
             {
-                ${Log::info("cannot allocate memory")};
-                /*
-                 * Again, the error should be "raised" in the parent context.
-                 *
-                 * Here we know that we can return ENOMEM because *we* wrote
-                 * the parent context.
-                 */
-                return -ENOMEM;
+                ${Log::info("cannot allocate the ethernet device context")};
+                error = -ENOMEM;
+                goto fail;
             }
-            SET_NETDEV_DEV(net_dev, &${pdev}->dev);
+            SET_NETDEV_DEV(net_dev, ${rtx_pci_dev.device});
             strlcpy(net_dev->name, ${config.ifname}, sizeof(net_dev->name));
-            net_dev->irq = ${pdev}->irq;
+            net_dev->irq = ${rtx_pci_dev.irq};
             net_dev->netdev_ops = &rtx_ether_ops;
 
             error = register_netdev(net_dev);
             if (error)
             {
                 ${Log::info("cannot register the driver in the net subsystem")};
-                return error;
+                goto fail;
             }
 
             /* Initialize our context held by the net_device structure */
-            ${rtx_ether_ctx.init(local.net_dev, pdev)};
+            /*
+             * XXX: the cast is here because the compiler resolve the
+             * type of rtx_pci_dev.pci_device to the type of
+             * rtx_pci_dev instead of the type of rtx_pci_dev.pci_device.
+             *
+             * Also, I'm getting placeholder in the generated code if
+             * I don't open a scope here.
+             */
+            {
+                struct pci_dev *pci_device = ${rtx_pci_dev.pci_device};
+                ${cast local.pci_device as PCI::AbstractDevice};
+                ${local.rtx_ether_ctx.init(local.net_dev, local.pci_device)};
+            }
 
-            pci_set_drvdata(${pdev}, net_dev);
+            /* Register ourselves in the parent context: */
+            /* ${rtx_pci_dev.set_context(local.rtx_ether_ctx)}; */
+            ${rtx_pci_dev}->context = rtx_ether_ctx;
 
-            ${pointcut Ethernet::create_device(pdev, local.rtx_ether_ctx)};
+            /*
+             * XXX: the asssignments/casts are here to circumvent
+             * typing issues in the compiler (see previous XXX).
+             */
+            int bars = ${rtx_pci_dev.bars};
+            unsigned char /* __iomem */ *ioaddr = ${rtx_pci_dev.ioaddr};
+            int irq = ${rtx_pci_dev.irq};
+            ${cast local.bars as Builtin::number};
+            ${cast local.irq as Builtin::number};
+            ${pointcut Ethernet::adapter_init_context(local.rtx_ether_ctx,
+                                                      local.bars,
+                                                      local.ioaddr,
+                                                      local.irq)};
+            ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
+            ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
         }
 
         /* This chunk should be removed (see #26) */
@@ -262,16 +288,18 @@ with Ethernet, PCI, LKM, Log
 
     template sequence   Ethernet::exit()
     {
-        chunk   PCI::pci_remove_hook(PCI::AbstractDevice pdev)
+        /*
+         * XXX: We have to use the same name as the C variable for
+         * the chunk argument...
+         */
+        chunk   PCI::pci_remove_hook(PCI::Device rtx_pci_dev)
         {
-            /* workaround for cnorm unstrict */
-            struct net_device *net_dev = pci_get_drvdata(${pdev});
-            ${Ethernet::Device} rtx_ether_ctx = netdev_priv(net_dev);
+            ${Ethernet::Device} rtx_ether_ctx = ${rtx_pci_dev.context};
 
-            ${pointcut Ethernet::destroy_device(pdev, local.rtx_ether_ctx)};
+            BUG_ON(!rtx_ether_ctx);
 
-            unregister_netdev(net_dev);
-            free_netdev(net_dev);
+            unregister_netdev(${local.rtx_ether_ctx.net_device});
+            free_netdev(${local.rtx_ether_ctx.net_device});
         }
 
         /* This chunk should be removed (see #26) */

@@ -1,8 +1,5 @@
 interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
 {
-    /* XXX: This should be in pci.rti, also maybe we need a bool type */
-    required variable   Builtin::symbol set_master;
-
     required variable   Builtin::number rx_ring_size;
     required variable   Builtin::number tx_ring_size;
     required variable   Builtin::number rx_buffer_len;
@@ -12,7 +9,14 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
     {
         chunk       Ethernet::SubContext();
         decl        data_types();
-        method      init();
+
+        /* Callbacks/Hooks which should probably be in the front-end: */
+        chunk       Ethernet::adapter_init_context(Ethernet::Device,
+                                                   Builtin::number,
+                                                   Builtin::symbol,
+                                                   Builtin::number);
+        chunk       Ethernet::adapter_reset(Ethernet::Device);
+        chunk       Ethernet::adapter_load_mac_address(Ethernet::Device);
     }
 
     provided type   RxDescriptor
@@ -68,18 +72,6 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
     provided type   TxDescriptorFlags
     {
         decl        data_types();
-    }
-
-    provided sequence   create_device()
-    {
-        provided chunk  Ethernet::create_device(PCI::AbstractDevice, Ethernet::Device);
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   destroy_device()
-    {
-        provided chunk  Ethernet::destroy_device(PCI::AbstractDevice, Ethernet::Device);
-        provided chunk  ::CALL();
     }
 
     /*
