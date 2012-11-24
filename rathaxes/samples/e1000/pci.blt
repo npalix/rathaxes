@@ -2,14 +2,14 @@ with PCI, LKM, Log
 {
     template type   PCI::AbstractDevice()
     {
-        chunk   LKM::includes()
-        {
-            #include <linux/pci.h>
-        }
-
         decl    data_types()
         {
             struct pci_dev;
+        }
+
+        chunk   LKM::includes()
+        {
+            #include <linux/pci.h>
         }
 
         method  init(PCI::AbstractDevice)
@@ -41,14 +41,6 @@ with PCI, LKM, Log
             };
         }
 
-        method  init(PCI::AbstractDevice pdev)
-        {
-            ${self}->pdev = ${pdev};
-            ${self}->bars = pci_select_bars(${pdev}, IORESOURCE_MEM);
-            ${self}->ioaddr = NULL;
-            ${self}->context = NULL;
-        }
-
         chunk   LKM::prototypes()
         {
             static int  rtx_pci_device_enable(struct rtx_pci_dev *);
@@ -77,6 +69,14 @@ with PCI, LKM, Log
                 pci_release_selected_regions(self->pdev, self->bars);
                 pci_disable_device(self->pdev);
             }
+        }
+
+        method  init(PCI::AbstractDevice pdev)
+        {
+            ${self}->pdev = ${pdev};
+            ${self}->bars = pci_select_bars(${pdev}, IORESOURCE_MEM);
+            ${self}->ioaddr = NULL;
+            ${self}->context = NULL;
         }
 
         method  enable()
@@ -225,10 +225,6 @@ with PCI, LKM, Log
     {
         chunk LKM::data()
         {
-            /*
-             * CNorm doesn't seem to like "dynamic" arrays (i.e: you always
-             * have to specify the exact size).
-             */
             static struct pci_device_id rtx_pci_device_table[] = {
                 { ${config.vendor_id}, ${config.product_id}, PCI_ANY_ID, PCI_ANY_ID },
                 { 0, }
