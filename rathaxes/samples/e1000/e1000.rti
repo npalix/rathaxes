@@ -128,11 +128,6 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
         provided chunk  ::CALL();
     }
 
-    provided sequence   _xmit_tso_cksum_offload(Ethernet::Device, Socket::SKBuff)
-    {
-        provided chunk  ::CALL();
-    }
-
     provided sequence   xmit(Ethernet::Device, Socket::AbstractSKBuff)
     {
         provided chunk  ::CALL();
