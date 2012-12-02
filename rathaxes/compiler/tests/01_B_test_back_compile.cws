@@ -1,0 +1,29 @@
+/*
+	TEST for template code placeHolder compilation
+*/
+
+#include  "01_A_test_back_parse.cws"
+
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_B_test_back_compile";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+
+#include "passes/back/rtxPlaceHolders.inc.cws"
+foreach item in source.block
+{
+    traceLine("compiling item : "+key(item));
+	rtxPH_walk<item.type>(item);
+}
+
+traceLine("====>Result of placeHolder compilation : __02_rtx_compil__.tree");
+saveProject("__02_rtx_compil__.tree", source);

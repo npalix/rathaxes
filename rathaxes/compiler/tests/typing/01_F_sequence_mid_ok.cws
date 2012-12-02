@@ -1,0 +1,73 @@
+/*
+ *	TEST for type checking
+ */
+#include "misc/rtxTools.inc.cws"
+#include "misc/colors.cws"
+#include "parse/rtxParse.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+local working_directory = "__cache";
+if (!existDirectory(working_directory))
+{
+        traceLine("Creating directory: " + working_directory);
+        createDirectory(working_directory);
+}
+changeDirectory(working_directory);
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+function checkInput(input : node, inputsave : value)
+{
+    traceLine("input:\n" + input);
+    saveToFile(inputsave, input);
+
+    local source;
+
+    // PARSING PASS
+    traceLine("====>PARSE");
+    rtxParseString(source, input);
+    saveProject("__04_C_rtx_01_parse__.tree", source);
+
+    // MIDDLE PASS
+    traceLine("====>MIDDLE TYPE CHECK");
+    if (rtxMiddle_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at MiddleEnd step: "+sError);
+        return 0;
+    }
+
+    return 0;
+}
+
+
+
+local dummy;
+local input;
+generateString({
+
+        interface Builtin
+        {
+            provided builtintype String;
+        }
+
+        interface LKM : Builtin
+        {
+            provided pointcut           testpointcut();
+
+            required sequence           LKM::required_notype() { provided chunk testpointcut(); }
+            required sequence           LKM::required_notype(String) { provided chunk testpointcut(); }
+
+            optional sequence           LKM::optional_notype() { provided chunk testpointcut(); }
+            optional sequence           LKM::optional_notype(String) { provided chunk testpointcut(); }
+
+            provided sequence           LKM::provided_notype() { provided chunk testpointcut(); }
+            provided sequence           LKM::provided_notype(String) { provided chunk testpointcut(); }
+        }
+@}, dummy, input);
+
+local ret = checkInput(input, "INPUT.TXT");
+
+exit (ret);
+

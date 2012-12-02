@@ -1,0 +1,50 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+local sourceFile = "simplified_lkm.rti"; // From samples/rs232_mockup
+local input = loadFile(sourceFile);
+
+/* Switch to a tmp dir */
+local working_directory = "__02_B_test_middle_parse_rti_file";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+    removeDirectory(working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+local dummy;
+
+#include "misc/colors.cws"
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+
+#include "node/rtxNode.inc.cws"
+#include "passes/mid/rtxTypeCheck.inc.cws"
+#include "typing/rtxTyping.inc.cws"
+
+traceLine("Input from file " + sourceFile + ":\n" + input + "\nEnd of input");
+
+local source;
+cnormDialect<"__std__">(source);
+parseStringAsBNF("parse/rtx.cwp", source, input);
+// remove the dialect
+removeVariable(source.dialect);
+
+saveProject("__02_rtx_parse__.tree", source);
+/* traceLine("Result of parsing:\n" + toString(source, true)); */
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}

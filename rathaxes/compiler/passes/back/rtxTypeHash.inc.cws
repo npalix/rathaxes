@@ -1,0 +1,95 @@
+
+#if !existFunction(rtxTypeHash_version)
+
+function rtxTypeHash_version()
+{return "1.0";}
+
+
+declare function rtxTypeHash_walk<T>(local_node : node, type_map : node);
+declare function rtxTypeHash(local_node : node);
+
+function rtxTypeHash_walk<T>(local_node : node, type_map : node)
+{ error(RED + "rtxTypeHash_walk<" + T + "> not implemented yet." + DEFAULT_COLOR); }
+
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxTypeHash_walk<"__rtx_itf__">(local_node : node, type_map : node)
+{       return true;}
+function rtxTypeHash_walk<"__rtx_device__">(local_node : node, type_map : node)
+{       return true;}
+function rtxTypeHash_walk<"__rtx_config__">(local_node : node, type_map : node)
+{       return true;}
+/**/
+
+function rtxTypeHash_walk<"__root_block__">(local_node : node, type_map : node)
+{
+    foreach item in local_node.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__block__">(local_node : node, type_map : node)
+{
+    foreach item in local_node.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__rtx_with__">(local_node : node, type_map : node)
+{
+    // Iterate on templates and rtx statements.
+    foreach item in local_node.body.block
+    { rtxTypeHash_walk<item.type>(item, type_map); }
+}
+
+function rtxTypeHash_walk<"__rtx_tpl__">(local_node : node, type_map : node)
+{
+    // First, retrieve accessible types from the prototype
+    rtxTypeHash_walk<local_node.prototype.type>(local_node.prototype, type_map);
+    
+    // Next, iterate on the chunks to annotate them
+    foreach chunk in local_node.body.block
+    { rtxTypeHash_walk<chunk.type>(chunk, type_map); }
+
+    // Now that it's used, delete its content.
+    clearVariable(type_map);
+}
+
+function rtxTypeHash_walk<"__rtx_tpl_proto__">(local_node : node,
+                                               type_map : node)
+{
+    local id;
+    local emptynode; // no parameters to a template type...
+    foreach type in local_node.rtype.params
+    {
+        id = local_node.identifiers[key(type)];
+        insert type_map[id];
+        rtxNodeRType(type_map[id], type, emptynode);
+    }
+}
+
+function rtxTypeHash_walk<"__rtx_chunk__">(local_node : node, type_map : node)
+{
+    insert local_node.type_map;
+    setall local_node.type_map = type_map;
+
+    // Useless, now...
+    //foreach ph in local_node.body.compile
+    //{
+    //    rtxTypeHash_placeHolder<ph.node.body.type>(ph.node.body, type_map);
+    //}
+
+    foreach type in local_node.pointcut.params
+    {
+        local id = local_node.parameters.list#[index(type)];
+        insert local_node.type_map[id];
+        setall local_node.type_map[id] = type;
+    }
+}
+
+function rtxTypeHash(local_node : node)
+{
+    local dummy;
+    rtxTypeHash_walk<local_node.type>(local_node, dummy);
+}
+
+
+#end

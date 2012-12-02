@@ -1,0 +1,81 @@
+interface Ethernet : Socket, PCI, LKM, Builtin
+{
+    required variable   Builtin::string ifname;
+
+     provided type   ProtocolId
+     {
+         chunk       LKM::prototypes();
+         chunk       LKM::data();
+         chunk       LKM::code();
+         decl        data_types();
+
+         attribute  Builtin::number id;
+         attribute  Builtin::string str;
+     }
+
+    provided type   AbstractDevice
+    {
+        chunk       LKM::includes();
+        decl        data_types();
+    }
+
+    provided type   Device
+    {
+        chunk       LKM::includes();
+        decl        data_types();
+        method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
+        pointcut    Ethernet::HardwareContext();
+
+        attribute   Device::AbstractDevice      device;
+        attribute   PCI::AbstractDevice         pci_device;
+        attribute   Ethernet::AbstractDevice    net_device;
+        /*
+         * I'd like to use better names here, but I'd like to understand the
+         * difference between the two first:
+         */
+        attribute   Builtin::symbol             perm_addr;
+        attribute   Builtin::symbol             dev_addr;
+    }
+
+    required sequence   open(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   send(Ethernet::Device, Socket::AbstractSKBuff)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   close(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    required sequence   interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+    }
+
+    provided sequence   init()
+    {
+        provided chunk  LKM::data();
+        provided chunk  PCI::pci_probe_hook(PCI::Device);
+
+        provided pointcut   Ethernet::adapter_init_context(Ethernet::Device,
+                                                           Builtin::number,
+                                                           Builtin::symbol,
+                                                           Builtin::number);
+        provided pointcut   Ethernet::adapter_reset(Ethernet::Device);
+        provided pointcut   Ethernet::adapter_load_mac_address(Ethernet::Device);
+    }
+
+    provided sequence   exit()
+    {
+        provided chunk  PCI::pci_remove_hook(PCI::Device);
+    }
+}

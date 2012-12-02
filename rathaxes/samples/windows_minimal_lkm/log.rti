@@ -1,0 +1,7 @@
+interface Log : Builtin
+{
+    provided sequence   info(Builtin::string)
+    {
+        provided chunk  ::CALL();
+    }
+}

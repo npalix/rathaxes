@@ -1,0 +1,513 @@
+/*
+	TEST for template code parsing
+*/
+#include "misc/rtxTools.inc.cws"
+#include "misc/colors.cws"
+#include "parse/rtxParse.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+// new gen passes
+#include "passes/front/rtxFrontGenerate.inc.cws"
+
+local working_directory = "__04_C_test_front_parse";
+if (!existDirectory(working_directory))
+{
+        traceLine("Creating directory: " + working_directory);
+        createDirectory(working_directory);
+}
+changeDirectory(working_directory);
+
+local dummy;
+local input;
+generateString({    
+
+
+        interface Builtin
+        {
+            provided pointcut           Builtin::types();
+
+            provided builtintype        base_adr;
+            provided builtintype        string;
+            provided builtintype        number;
+            provided builtintype        symbol;
+
+            provided builtintype        register
+            {
+                chunk                   Builtin::types();
+                pointcut                Builtin::register_fields(Builtin::register);
+            }
+
+            provided builtintype        register_field
+            {
+                chunk                   Builtin::register_fields(Builtin::register);
+                pointcut                Builtin::register_values_name(Builtin::register_field);
+                pointcut                Builtin::register_values_value(Builtin::register_field);
+            }
+
+            provided builtintype        register_value
+            {
+                chunk                   Builtin::register_values_name(Builtin::register_field);
+                chunk                   Builtin::register_values_value(Builtin::register_field);
+            }
+        }
+
+        interface LKM : Builtin
+        {
+            provided pointcut           LKM::includes();
+            provided pointcut           LKM::prototypes();
+            provided pointcut           LKM::data();
+            provided pointcut           LKM::code();
+
+            provided type               LKM::Context
+            {
+                decl    LKM::data();
+            }
+
+            provided type               LKM::Buffer
+            {
+                decl LKM::data();
+                attribute Builtin::number size;
+            }
+        
+            required sequence           LKM::open(LKM::Context);
+            required sequence           LKM::close(LKM::Context);
+
+            optional sequence           LKM::read(LKM::Context, LKM::Buffer);
+            optional sequence           LKM::write(LKM::Context, LKM::Buffer);
+            optional sequence           LKM::on_plug(LKM::Context, LKM::Buffer);
+
+        }
+
+        interface Generic : LKM
+        {
+            provided sequence           Generic::set(LKM::Context, Builtin::register_value)
+            {
+                    provided chunk              ::CALL();
+            }
+
+            provided sequence           Generic::set(LKM::Context, Builtin::register_field, Builtin::number)
+            {
+                    provided chunk              ::CALL();
+            }
+
+            provided sequence           Generic::LOG(Builtin::string);
+        }
+        
+        with Builtin
+        {
+                template builtintype Builtin::register()
+                {
+                        chunk Builtin::types()
+                        {
+                                ${self.type}         REG_${self.name};
+                                ${pointcut              Builtin::register_fields(self)};
+                        }
+
+                        map
+                        {
+                        }
+                }
+
+                template builtintype register_field()
+                {
+                        chunk Builtin::register_fields(Builtin::register reg)
+                        {
+                                enum    FIELD_${reg.name}
+                                {
+                                        ${pointcut Builtin::register_values(self)},
+                                };
+                        }
+
+                        map
+                        {
+                        }
+                }
+
+                template builtintype register_value()
+                {
+                        chunk Builtin::register_values_name(Builtin::register_field field)
+                        {
+                                ${self.name}
+                        }
+
+                        chunk Builtin::register_values_value(Builtin::register_field field)
+                        {
+                                ${self.value}       
+                        }
+
+                        map
+                        {
+                        }
+                }        
+        }
+        
+        with Generic
+        {
+                
+                template sequence Generic::set(LKM::Context ctx, Builtin::register_value  regval)
+                {
+                /*
+                        chunk           LKM::prototypes()
+                        {
+                                #define REG_ADDR(base, reg) \
+                                        ((uint32_t *) (base + reg))
+	
+                        	#define REG_READ(base, reg) (pio_read_32(REG_ADDR(base, reg)))
+                        	
+                        	#define REG_WRITE(base, reg, value) (pio_write_32(REG_ADDR(base, reg), value))
+                        
+                        }
+                  */      
+                        chunk           ::CALL()
+                        {
+                                        typedef         unsigned int    uint32_t; // to put in proto :(
+                                {
+                                        printf("PLOP");
+                                        uint32_t       reg_${regval.regname} = REG_READ(${ctx}, ${regval.offset});
+                                        reg_${regval.regname} |= ${regval.value};
+                                        REG_WRITE(${ctx}, ${regval.offset}, reg_${regval.regname});
+                                }
+                        }
+                }
+
+                template sequence Generic::set(LKM::Context ctx, Builtin::register_field  regfield, Builtin::number num)
+                {
+                /*
+                        chunk           LKM::prototypes()
+                        {
+                                #define SET_FIELD_PROTO  !!!
+                        }
+                  */      
+                        chunk           ::CALL()
+                        {
+                                        typedef         unsigned int    uint32_t; // to put in proto :(
+                                {
+                                        printf("PLUP");
+                                        reg_${regfield.regname}.${regfield.fieldname} = ${num};
+                                }
+                        }
+                }
+
+        }
+
+        with LKM 
+        {
+                /* AUTO GENERATED FILE*/
+                        ${pointcut      LKM::includes()};
+        
+                        ${pointcut      LKM::prototypes()};
+                        
+                        ${pointcut      LKM::data()};
+                        
+                        ${pointcut      LKM::code()};
+                /* END*/
+        
+                template sequence LKM::open(LKM::Context ctx)
+                {
+                        chunk           LKM::code()
+                        {
+                                int     main(int ac, char **av)
+                                {
+                                        f1();
+                                        int     base_addr = 0x1234;
+                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
+                                }
+                        }
+                }
+        
+                template sequence LKM::close(LKM::Context ctx)
+                {
+                        chunk           LKM::includes()
+                        {
+                                #include <stdio.h>
+                        }
+        
+                        chunk           LKM::code()
+                        {
+                                int     f1()
+                                {
+                                        printf("tata");
+                                        int     base_addr = 0x1234;
+                                        ${pointcut ::IMPLEMENTATION(local.base_addr)};
+                                }
+                        }
+                }
+
+                template type LKM::Context()
+                {
+                        decl ::data()
+                        {
+                        }
+
+                        map
+                        {
+                                name : ${self};
+                        }
+                }
+        }
+
+	device RS232
+	use LKM, Generic
+	{
+		register byte rcv_buf mode R like (........) at 0;
+		register byte snd_buf mode R like (........) at 0;
+		
+		register byte IER mode RW like (.........) at 1
+		{
+			[0] as data_available;
+			[1] as transmitter_empty;
+			[2] as line_status_change;
+			[3] as modem_status_change;
+			[4] as sleep_mode;
+			[5] as low_power_mode;
+		}
+
+		register byte LCR mode RW like (........) at 3
+		{
+			[0..1] as word_lengh
+			{
+				(00) -> _5bits;
+				(01) -> _6bits;
+				(10) -> _7bits;
+				(11) -> _8bits;
+			}
+
+			[2] as stop_bits
+			{
+				(0) -> _1stop_bits;
+				(1) -> _2stop_bits;
+			}
+
+			[3..5] as parity_type
+			{
+				(000) -> none;
+				(001) -> odd;
+				(011) -> even;
+				(101) -> high;
+				(111) -> low;
+			}
+
+			[6] as break_signal
+			{
+				(0) -> disable;
+				(1) -> enable;
+			}
+
+			[7] as dlab
+			{
+				(0) -> buffers;
+				(1) -> clock;
+			}
+		}
+
+		register byte MCR mode RW like (****.*..) at 4
+		{
+			[0] as dtr;
+			[1] as rts;
+			[3] as ao2;
+		}
+
+		register byte DLL mode RW like (........) at 0;
+
+		register byte DLM mode RW like (........) at 1;
+
+		register byte LSR mode RW like (........) at 5
+		{
+			[0] as data_available
+			{
+				(0) -> FALSE;
+				(1) -> TRUE;
+			}
+
+			[1] as overrun
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[2] as parity
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[3] as framing
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+
+			[4] as break_signal
+			{
+				(0) -> FALSE;
+				(1) -> TRUE;
+			}
+
+			[5] as thr_state
+			{
+				(0) -> transmitting;
+				(1) -> empty_idle;
+			}
+
+			[6] as thr_and_line
+			{
+				(0) -> transmitting;
+				(1) -> empty_idle;
+			}
+
+			[7] as data_fifo
+			{
+				(0) -> good;
+				(1) -> error;
+			}
+		}
+
+
+		public property word divisor//(LKM::Context ctx, Builtin::number value)
+		{
+			set
+			{
+				Generic::set(ctx, LCR->dlab.clock);
+				Generic::set(ctx, DLL, value[0..7]);
+				Generic::set(ctx, DLM, value[8..15]);
+				Generic::set(ctx, LCR->dlab.buffers);
+			}
+	
+			get
+			{
+				Generic::set(ctx, LCR->dlab.clock);
+				Generic::set(ctx, value[0..7], DLM);
+				Generic::set(ctx, value[8..15], DLL);
+				Generic::set(ctx, LCR->dlab.buffers);
+			}
+		}
+
+		LKM::read(LKM::Context ctx, LKM::Buffer output)
+		{
+		 //   LOG("my RS232 [read]\n");
+                    
+		/*    CONCAT(output, rcv_buf)
+		    {
+		    	PRECONDITION {WAIT(LSR->data_available.TRUE);}
+		    }
+                    */
+		}
+
+		LKM::write(LKM::Context ctx, LKM::Buffer input)
+		{
+		//	LOG("my RS232 [write]\n");
+		/*	COPY(snd_buf, input)
+			{
+				PRECONDITION {WAIT(LSR->thr_state.empty);}
+			} */
+		}
+
+		LKM::open(LKM::Context ctx)
+		{
+		//	LOG("my RS232 [open]\n");
+		}
+
+		LKM::close(LKM::Context ctx)
+		{
+		//	LOG("my RS232 [close]\n");
+		}
+
+		LKM::on_plug(LKM::Context ctx, LKM::Buffer buf)
+		{
+		//	LOG("my RS232 [on_plug]\n");
+                        //divisor(ctx, 0x0C);
+			Generic::set(ctx, LCR->word_lengh._8bits);
+		}
+
+	}
+
+    configuration
+    {
+        devices = RS232;
+        arch = x86;
+        OS = Linux
+        {
+            major = 2;
+            minor = 6;
+            patch = 24;
+        }
+    }
+@}, dummy, input);
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+traceLine("input:\n" + input);
+saveToFile("INPUT.TXT", input);
+
+
+local source;
+
+// PARSING PASS
+traceLine("====>PARSE");
+rtxParseString(source, input);
+saveProject("__04_C_rtx_01_parse__.tree", source);
+
+// MIDDLE PASS
+traceLine("====>MIDDLE TYPE CHECK");
+rtxMiddle_TypeCheck(source);
+saveProject("__04_C_rtx_02_midpass__.tree", source);
+
+
+// BACK PASS
+traceLine("====>BACK META,TH,Intro,Gen");
+rtxMeta(source);
+rtxTypeHash(source);
+rtxIntrospect(source);
+if (rtxTpl_TypeCheck(source) == false)
+{
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
+}
+rtxGenerate(source);
+saveProject("__04_C_rtx_03_back.tree", source);
+
+// CACHE LOADING
+traceLine("====>REGISTER CACHE 1");
+if (rtxLink_RegisterToCache(source) == false)
+{       error("Can't REGISTER CACHE");}
+saveProject("__04_C_rtx_04_cache1.tree", this);
+
+// FRONT PASS
+traceLine("====>FRONT TYPE CHECK");
+rtxFront_TypeCheck(source);
+saveProject("__04_C_rtx_05_frontpass.tree", source);
+
+traceLine("====>CONF RETRIEVE");
+if (rtxFront_RetrieveConfig(source, source.config_block) == false)
+{
+        traceLine(RED + "[Error] Front-end configuration could not be" + " transformed for use in generation." + DEFAULT_COLOR);
+        exit(-1);
+}
+
+traceLine("====>CONF BUILD");
+if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
+{
+        traceLine(RED + "[Error] Could not build Constraint node from configuration." + DEFAULT_COLOR);
+        exit(-1);
+}
+
+//traceLine("====>GENERATE");
+rtxFrontGenerate(source);
+//traceLine("====>NEWGENERATE");
+//rtxFrontGenAll(source);
+
+traceLine(" CTYPES:\n" + toString(source.c_types));
+saveProject("__04_C_rtx_06_frontgen.tree", source);
+
+traceLine("====>CODE");
+local code = cnorm2c(source.c_tree.c_block);
+traceLine("Resulting code: " + code);
+
+traceLine("====>End");
+if (existVariable(source.error))
+{
+        traceLine(rtxError2String(source.error));
+        exit(-1);
+}

@@ -1,0 +1,92 @@
+#if !existFunction(rtxFront_TypeCheck_version)
+
+function rtxFront_TypeCheck_version()
+{ return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
+
+declare function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node);
+declare function rtxFront_TypeCheck(local_node : node);
+
+
+
+/*
+ * This set of templated functions walk through the front-end tree,
+ * and call the right type-checking functions for each type of node.
+ */
+declare function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node);
+function rtxFront_TypeCheckNode<T>(local_node : node, itf_list : node)
+{ error("rtxFront_TypeCheckNode<"+T+"> not implemented."); }
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxFront_TypeCheckNode<"__rtx_itf__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxFront_TypeCheckNode<"__rtx_tpl__">(local_node : node, itf_list : node)
+{       return true;}
+function rtxFront_TypeCheckNode<"__rtx_with__">(local_node : node, itf_list : node)
+{       return true;}
+/**/
+
+function rtxFront_TypeCheckNode<"__rtx_register__">(local_node : node, itf_list : node)
+{
+    return rtxTypeCheck_Register(local_node);
+}
+
+function rtxFront_TypeCheckNode<"__rtx_sequence__">(local_node : node, itf_list : node)
+{
+    return rtxTypeCheck_Sequence(local_node, itf_list);
+}
+
+function rtxFront_TypeCheckNode<"__rtx_device__">(local_node : node, itf_list : node)
+{
+    local errcount = 0;
+
+    // Check each item independantly first
+    if (rtxFront_TypeCheckNode<"__block__">(local_node.body, local_node.use) == false)
+        increment(errcount);
+
+    // And then check the respect of the interfaces by the device.
+    if (rtxTypeCheck_Device(local_node) == false)
+        increment(errcount);
+
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+function rtxFront_TypeCheckNode<"__rtx_config__">(local_node : node, itf_list : node)
+{
+    return rtxTypeCheck_Config(local_node);
+}
+
+function rtxFront_TypeCheckNode<"__rtx_property__">(local_node : node, itf_list : node)
+{
+        // TODO: FIXME
+        return true;
+}
+
+function rtxFront_TypeCheckNode<"__block__">(local_node : node, itf_list : node)
+{
+    local errcount = 0;
+    foreach item in local_node.block
+    {
+        if (rtxFront_TypeCheckNode<item.type>(item, itf_list) == false)
+            increment(errcount);
+    }
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+function rtxFront_TypeCheckNode<"__root_block__">(local_node : node, itf_list : node)
+{ return rtxFront_TypeCheckNode<"__block__">(local_node, itf_list); }
+
+
+function rtxFront_TypeCheck(local_node : node)
+{
+    local dummy;
+    return rtxFront_TypeCheckNode<local_node.type>(local_node, dummy);
+}
+
+
+#end

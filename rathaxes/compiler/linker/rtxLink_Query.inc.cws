@@ -1,0 +1,502 @@
+#if !existFunction(rtxLink_Query_version)
+
+function rtxLink_Query_version()
+{ return "1.0"; }
+
+/*
+ *
+ * This file contains the functions to be used by the compiler code
+ * to retrieve informations from the cache.
+ *
+ */
+
+/*
+ * New API
+ * Its goal is to simplify the use of the cache from the resolver code.
+ */
+declare function rtxLink_LoadTplChunk(tplRtype : node, chunkProto : value,  config : node, out_ref_tree : reference, load_script : value = true, specifier = "unknown");
+
+declare function rtxLink_LoadTypeDecl(tplRtype : node, config : node, out_ref_tree : reference, load_script : value = true);
+declare function rtxLink_LoadTypeMethod(tplRtype : node, methodProto : value, config : node, out_ref_tree : reference, load_script : value = true);
+
+declare function rtxLink_FindUniqueTemplate(tplRtype : node, config : node, out_ref_tpl : reference);
+
+/*
+ *  Old API (or internal API)
+ */
+
+declare function rtxLink_LoadItem(cache_node : node, out_ref_tree : reference, load_script : value = true);
+declare function rtxLink_findGlobalCode(with_values : node, list_code_ref : node);
+declare function rtxLink_findInterface(itfName : value, out_itf_ref : reference);
+declare function rtxLink_selectExtendedInterfaces(interface : node, with_values : node, out_ext_list : node);
+declare function rtxLink_selectUniqueTemplate(templates : reference, config : node);
+declare function rtxLink_selectChunkFromTemplate(theTemplate : node, chunkName : value, theChunk : reference);
+declare function rtxLink_findTemplates(theRtype : node, out_tpls : node, specifier : value);
+declare function rtxLink_selectCompatibleChunks(chunks : node, config : node);
+declare function rtxLink_findChunks(pointcutProto : node, out_chunks : node);
+
+/*
+ * This function loads the tree and the script for a given cache node.
+ * and next loads the tree file into a tree ref.
+ *
+ * In order to load only the tree and not the script
+ * (This is the case for the interface nodes), the third parameter must
+ * be set to false.
+ */
+function rtxLink_LoadItem(cache_node : node,
+                          out_ref_tree : reference,
+                          load_script : value = true)
+{
+    // out_ref_tree is overwrite
+    clearVariable(out_ref_tree);
+    // cache_node must be valid
+    if ((load_script == true && !existVariable(cache_node.script_file))
+        || !existVariable(cache_node.tree_file))
+        error("rtxLink:<ERROR> The node does not contain any script or tree to load!");
+    // local cache overload global cache
+    // for treefile
+    local sTreeFile;
+    local workingFile = catPath("./", cache_node.tree_file);
+    local localFile = catPath(this.local_backlib_path, cache_node.tree_file);
+    local backFile = catPath(this.backlib_path, cache_node.tree_file);
+    if (existFile(workingFile))
+    { sTreeFile = workingFile;}
+    else if (existFile(localFile))
+    {  sTreeFile = localFile;}
+    else if (existFile(backFile))
+    {  sTreeFile = backFile;}
+    else
+    {error("Cache Error: inexistant " + cache_node.tree_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
+    // for script
+    local sCwsFile;
+    if (load_script != false && !existVariable(cache_node.load))
+    {
+        workingFile = catPath("./", cache_node.script_file);
+        localFile = catPath(this.local_backlib_path, cache_node.script_file);
+        backFile = catPath(this.backlib_path, cache_node.script_file);
+        if (existFile(workingFile))
+        { sCwsFile = workingFile;}
+        else if (existFile(localFile))
+        { sCwsFile = localFile;}
+        else if (existFile(backFile))
+        { sCwsFile = backFile;}
+        else
+        {error("Cache Error: inexistant " + cache_node.script_file + " in " + this.local_backlib_path + " nor " + this.backlib_path);}
+    }
+    // load Files
+    if (sCwsFile != "")
+    {
+        traceLine("rtxLink:<LOG> LOADING Script '" + sCwsFile + "'");
+        try {extendExecutedScript(loadFile(sCwsFile));}
+        catch (sError) 
+        {
+                traceLine(YELLOW+"rtxLink:<ERROR> Could not load resolution script : "+RED+sError+DEFAULT_COLOR);
+                error(sError + " in file " + sCwsFile); 
+        }
+        insert cache_node.load = true;
+    }
+    else if (load_script != false)
+    {   traceLine("rtxLink:<LOG> Script Already loaded !");}
+    traceLine("rtxLink:<LOG> LOADING TreeFile '" + sTreeFile + "'");
+    cwLoadProject(sTreeFile, out_ref_tree);
+    traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
+    return true;
+}
+
+function rtxLink_LoadTplChunk(tplRtype : node, chunkProto : value,
+                              config : node,
+                              out_ref_tree : reference,
+                              load_script : value = true,
+                              specifier : value = "unknown")
+{
+    local dummy;
+    local templates;
+    local declChunk;
+
+    if (!rtxLink_findTemplates(tplRtype, templates, specifier))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTplChunk: Could not find template "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(templates, config))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTplChunk: Could not select an unique template for "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectChunkFromTemplate(templates, chunkProto, declChunk))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTplChunk: Could not select chunk '"
+                  + chunkProto + "' associated to template "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Now that we have selected the decl chunk, load the tree & script
+    rtxLink_LoadItem(declChunk, out_ref_tree, load_script);
+
+    return true;
+}
+
+function rtxLink_LoadTypeDecl(tplRtype : node,
+                              config : node,
+                              out_ref_tree : reference,
+                              load_script : value = true)
+{
+    local theTemplate;
+    local theDecl;
+
+    if (!rtxLink_findTemplates(tplRtype, theTemplate, "type"))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTypeDecl: Could not find template "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(theTemplate, config))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTypeDecl: Could not select an unique template for "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+
+    if (!existVariable(theTemplate.decl))
+    {
+        error(RED + "[Error] rtxLink_LoadTypeDecl: Template " + rtxRTypeName<tplRtype.type>(tplRtype)
+                  + " is not a Type template: Cannot load decl "
+                  + "." + DEFAULT_COLOR);
+    }
+    if (!rtxLink_selectChunkFromTemplate(theTemplate, theTemplate.decl, theDecl))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTypeDecl: Could not select decl '"
+                  + theTemplate.decl + "' associated to template "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+
+    rtxLink_LoadItem(theDecl, out_ref_tree, load_script);
+
+    return true;
+}
+
+function rtxLink_LoadTypeMethod(tplRtype : node, methodProto : value,
+                                config : node,
+                                out_ref_tree : reference,
+                                load_script : value = true)
+{
+    local dummy;
+    local theTemplate;
+    local theChunk;
+
+    if (!rtxLink_findTemplates(tplRtype, theTemplate, "type"))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTypeMethod: Could not find template "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(theTemplate, config))
+    {
+        traceLine(RED + "[Error] rtxLink_LoadTypeMethod: Could not select an unique template for "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+
+    if (!existVariable(theTemplate.methods))
+    {
+        error(RED + "[Error] rtxLink_LoadTypeMethod: Template " + rtxRTypeName<tplRtype.type>(tplRtype)
+                  + " is not a Type template: Cannot load method " + methodProto
+                  + "." + DEFAULT_COLOR);
+    }
+
+    local found = 0;
+    foreach method in theTemplate.methods
+    {
+        if (key(method) == methodProto)
+        {
+            ref theChunk = method;
+            found = 1;
+            break ;
+        }
+    }
+    if (found == 0)
+    {
+        error(RED + "[Error] rtxLink_LoadTypeMethod: Template " + rtxRTypeName<tplRtype.type>(tplRtype)
+                  + " does not contain the method " + methodProto
+                  + "." + DEFAULT_COLOR);
+    }
+
+    // Now that we have selected the decl chunk, load the tree & script
+    rtxLink_LoadItem(theChunk, out_ref_tree, load_script);
+
+    return true;
+}
+
+function rtxLink_FindUniqueTemplate(tplRtype : node,
+                                    config : node,
+                                    out_ref_tpl : reference)
+{
+    if (!rtxLink_findTemplates(tplRtype, out_ref_tpl, "type"))
+    {
+        traceLine(RED + "[Error] rtxLink_FindUniqueTemplate: Could not find any template matching "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    if (!rtxLink_selectUniqueTemplate(out_ref_tpl, config))
+    {
+        traceLine(RED + "[Error] rtxLink_FindUniqueTemplate Could not select an unique template for "
+                  + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
+        return false;
+    }
+    return true;
+}
+
+
+/*
+ * This function returns the first global_code cache node found matching the
+ * configuration block.
+ */
+function rtxLink_findGlobalCode(with_values : node, list_code_ref : node)
+{
+    if (!existVariable(this.session))
+        error("rtxLink:<ERROR> The cache was not loaded before use !");
+
+    traceLine("Globale CODE:" + toString(this.session.global_code, true));
+    
+    foreach item in this.session.global_code
+    {
+        if (rtxLink_IsWithNodeCompatible(item.with, with_values))
+        {
+            pushItem list_code_ref;
+            ref list_code_ref#back = item;
+        }
+    }
+    if ($getArraySize(list_code_ref) > 0$)
+    {   return true;}
+    return false;
+}
+
+/*
+ * This function returns the interface if it was found within the cache.
+ * Otherwise, it returns false.
+ */
+function rtxLink_findInterface(itfName : value, out_itf_ref : reference)
+{
+    if (!findElement(itfName, this.session.interfaces))
+        return false;
+    ref out_itf_ref = this.session.interfaces[itfName];
+    return true;
+}
+
+
+/*
+ * This function takes the interface's cache node, and a configuration node.
+ * It fills the last parameters with a copy of the list of the interfaces'
+ * extensions that were selected through the configuration.
+ */
+function rtxLink_selectExtendedInterfaces(interface : node,
+                                          with_values : node,
+                                          out_ext_list : node)
+{
+    foreach ext in interface.extensions
+    {
+        if (rtxLink_IsWithNodeCompatible(ext.with, with_values))
+        {
+            pushItem out_ext_list;
+            setall out_ext_list#back = ext;
+        }
+    }
+    return true;
+}
+
+
+
+/*
+ * This function takes an array of template cache nodes and a configuration
+ * block and tries to select only one template for the future resolution.
+ */
+function rtxLink_selectUniqueTemplate(templates : reference, config : node)
+{
+    local keys_to_remove;
+    insert keys_to_remove.sequences;
+    // First find every non-compatible sequence template.
+    foreach tpl in templates.sequences
+    {
+        if (rtxLink_IsWithNodeCompatible(tpl.with, config) == false)
+        {
+            pushItem keys_to_remove.sequences;
+            keys_to_remove.sequences#back = key(tpl);
+        }
+        else
+        {
+            insert tpl.cache_idx = key(tpl);
+            insert tpl.hash;
+            hashTemplatePrototype(tpl.rtype, tpl.hash);
+        }
+    }
+    // First find every non-compatible type template.
+    foreach tpl in templates.types
+    {
+        if (rtxLink_IsWithNodeCompatible(tpl.with, config) == false)
+        {
+            pushItem keys_to_remove.types;
+            keys_to_remove.types#back = key(tpl);
+        }
+        else
+        {
+            insert tpl.cache_idx = key(tpl);
+            insert tpl.hash;
+            hashTemplatePrototype(tpl.rtype, tpl.hash);
+        }
+    }
+    // Keep only the matching template(s) in the user's array
+    foreach tpl in keys_to_remove.sequences
+        removeElement(templates.sequences, tpl);
+    foreach tpl in keys_to_remove.types
+        removeElement(templates.types, tpl);
+
+    // Check the number of results. 1 mean that only one template matches
+    // the search : We're good, and change the array into a template node.
+    // Otherwise, it's an error.
+    if ($getArraySize(templates.sequences) + getArraySize(templates.types)$ != 1)
+    {
+        traceLine(RED + "[ERROR] No unique template matching the configuration." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Here, we find the associated chunk in order to set the script_file
+    // And the tree_file, and set them into the tpl node in order to allow
+    // A generic script function loading.
+
+    // A little trick is necessary to reference correctly the selected template in
+    // the node instead of the list.
+    local temp;
+    if (getArraySize(templates.sequences) != 0)
+    {
+        setall temp = templates.sequences[0];
+        ref templates = this.session.templates.sequences[temp.hash][temp.cache_idx];
+    }
+    else 
+    {
+        setall temp = templates.types[0];
+        ref templates = this.session.templates.types[temp.hash][temp.cache_idx];
+    }
+
+    return true;
+}
+
+
+/*
+ * This function selects a chunk from an unique template cache node.
+ */
+function rtxLink_selectChunkFromTemplate(theTemplate : node,
+                                         chunkName : value,
+                                         theChunk : reference)
+{
+    foreach chunk in theTemplate.chunks
+    {
+        if (key(chunk) == chunkName)
+        {
+            if (!findElement(chunkName, this.session.chunks)
+                || !findElement(chunk, this.session.chunks[chunkName]))
+                error("rtxLink:<ERROR> The chunk '"+chunkName+"' associated to"
+                      + " the template "
+                      + rtxRTypeName<theTemplate.rtype.type>(theTemplate.rtype)
+                      + " could not be found within the cache.");
+
+            ref theChunk = this.session.chunks[chunkName][chunk];
+            return true;
+        }
+    }
+    return false;
+}
+
+
+/*
+ * This functino returns a collection of template cache nodes for a given
+ * template prototype (hashed).
+ */
+function rtxLink_findTemplates(theRtype : node, out_tpls : node, specifier : value)
+{
+    if (!existVariable(this.session))
+        error("rtxLink:<ERROR> The cache was not loaded before use !");
+
+    local hash;
+    hashTemplatePrototype(theRtype, hash);
+
+    if (specifier != "type")
+    {
+        if (!findElement(hash, this.session.templates.sequences))
+            return false;
+
+        insert out_tpls.sequences;
+        setall out_tpls.sequences = this.session.templates.sequences[hash];
+    }
+    if (specifier != "sequence")
+    {
+        if (!findElement(hash, this.session.templates.types))
+            return false;
+
+        insert out_tpls.types;
+        setall out_tpls.types = this.session.templates.types[hash];
+    }
+
+    return true;
+}
+
+
+/*
+ * This function reduces an array of chunk cache nodes by filtering them
+ * with a given configuration block.
+ */
+function rtxLink_selectCompatibleChunks(chunks : node, config : node)
+{
+    local keys_to_remove;
+    local ret_chunks;
+
+    foreach chunk in chunks
+    {
+        pushItem ret_chunks;
+        ref ret_chunks#back = chunk;
+    }
+
+    // First find every non-compatible template.
+    clearVariable(chunks);
+    foreach chunk in ret_chunks
+    {
+        if (rtxLink_IsWithNodeCompatible(chunk.with, config) == true)
+        {
+            pushItem chunks;
+            ref chunks#back = chunk;
+        }
+    }
+
+    // Check if there's any compatible chunk in the end...
+    if (isEmpty(chunks) == false)
+        return true;
+
+    // Otherwise, it's an error (no compatible chunk).
+    return false;
+}
+
+/*
+ * This function returns an array of chunk cache nodes that are associated to
+ * a given pointcut.
+ */
+function rtxLink_findChunks(pointcutProto : node, out_chunks : node)
+{
+    if (!existVariable(this.session))
+        error("rtxLink:<ERROR> The cache was not loaded before use !");
+
+    if (findElement(pointcutProto, this.session.chunks))
+    {
+        foreach chunk in this.session.chunks[pointcutProto]
+        {
+            pushItem out_chunks;
+            ref out_chunks#back = chunk;
+        }
+        return true;
+    }
+    return false;
+}
+
+#end

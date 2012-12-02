@@ -1,0 +1,67 @@
+/*
+ *	TEST for type checking
+ */
+#include "misc/rtxTools.inc.cws"
+#include "misc/colors.cws"
+#include "parse/rtxParse.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+local working_directory = "__cache";
+if (!existDirectory(working_directory))
+{
+        traceLine("Creating directory: " + working_directory);
+        createDirectory(working_directory);
+}
+changeDirectory(working_directory);
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+// This function returns 0 in case of failure, since we expected a failure.
+// Otherwise it returns 1.
+function checkInput(input : node, inputsave : value)
+{
+    traceLine("input:\n" + input);
+    saveToFile(inputsave, input);
+
+    local source;
+
+    // PARSING PASS
+    traceLine("====>PARSE");
+    rtxParseString(source, input);
+    saveProject("__04_B_rtx_parse__.tree", source);
+
+    // MIDDLE PASS
+    traceLine("====>MIDDLE TYPE CHECK");
+    if (rtxMiddle_TypeCheck(source) == false)
+    {
+        traceLine("Type Checking failed at MiddleEnd step as expected");
+        return 0;
+    }
+
+    return 1;
+}
+
+
+
+local dummy;
+local input;
+generateString({
+        interface Builtin
+        {
+            provided builtintype String;
+        }
+        interface LKM : Builtin
+        {
+            provided pointcut insert_type(String);
+            provided type Bomb {
+                decl insert_type(String);
+            }
+        }
+@}, dummy, input);
+
+local ret = checkInput(input, "INPUT.TXT");
+
+exit (ret);
+

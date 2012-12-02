@@ -1,0 +1,133 @@
+/*
+        Usefull functions for rathaxes
+*/
+
+#if !existFunction(rtxTools_version)
+
+#include "cwTool.inc.cws"
+
+function        rtxTools_version()
+{       return "1.0";}
+
+declare function        rtxError2String(errnode : node, with_stack : value = true);
+declare function        stringToArray(str : value, list : node);
+declare function        bitArrayValue(list : node);
+declare function        bitToValue(str : value);
+declare function        valueToHex(num : value);
+declare function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference);
+
+
+function rtxError2String(errnode : node, with_stack : value = true)
+{
+        local out = "An error Occured while parsing :" + endl();
+        if (with_stack != false)
+        {
+            out = out + "Trace:" + endl();
+            foreach stack_line in errnode[0].trace
+                out += stack_line;
+            out += endl();
+        }
+        out += "Error: " + errnode[0].msg;
+        return out;
+}
+
+// transform a string into his array representation
+function        stringToArray(str : value, list : node)
+{
+        local sz = lengthString(str);
+        local i = 0;
+        while ($i < sz$)
+        {
+                pushItem list = charAt(str, i);
+                i = $i + 1$;
+        }
+}
+
+// to transform a bit array representation into a value
+function        bitArrayValue(list : node)
+{
+        local res = 0;
+        foreach bit in list
+        {
+                res = $(res + bit)$;
+                if (!last(bit))
+                {       res = $res << 1$;}
+        }
+        return res;
+}
+
+// convert a binary string representation to integer value
+function        bitToValue(str : value)
+{
+        local   bitArray;
+        stringToArray(str, bitArray);
+        return bitArrayValue(bitArray);
+}
+
+// convert a binary string representation to integer value
+function        valueToHex(num : value)
+{
+        local   repr = {"0", "1", "2", "3", "4","5","6","7","8","9","A","B","C","D","E", "F"};
+        local   res;
+        if ($num == 0$)
+        {       return "0";}
+        while ($num > 0$)
+        {
+                res = repr[$num % 16$] + res;
+                num = $num >> 4$;
+        }
+        return res;
+}
+
+// extract from a bitarray a sub part for a mask value (allow .,0,1 in pattern, disallow *)
+// assume begin and end in the range of the bit array
+// assume list in MSB order
+// result: a mask in {.and, .or} form 
+function        bitArrayExtractMask(list : node, begin : value, end : value, mask : reference)
+{
+        insert mask.and = "";
+        insert mask.or = "";
+        local idx = 0;
+        foreach thebit in reverse list
+        {
+                if ($idx >= begin$ && $idx <= end$)
+                {
+                        switch (thebit)
+                        {
+                                case '.':
+                                        mask.and = '1' + mask.and;
+                                        mask.or = '0' + mask.or;
+                                        break;
+                                case '1':
+                                        mask.and = '0' + mask.and;
+                                        mask.or = '1' + mask.or;
+                                        break;
+                                case '0':
+                                        mask.and = '0' + mask.and;
+                                        mask.or = '0' + mask.or;
+                                        break;
+                                case '*':
+                                default:
+                                        return false;
+                        }
+                }
+                idx = $idx + 1$;
+        }
+        insert mask.and_int = bitToValue(mask.and);
+        insert mask.or_int = bitToValue(mask.or);
+        insert mask.and_hex = valueToHex(mask.and_int);
+        insert mask.or_hex = valueToHex(mask.or_int);
+        return true;
+}
+
+function isString(theNode : node)
+{
+    local attr_list;
+
+    getVariableAttributes(theNode, attr_list);
+    if ($getArraySize(theNode) == 0$ && $getArraySize(attr_list) == 0$)
+        return true; // Only have a string
+    return false;
+}
+
+#end

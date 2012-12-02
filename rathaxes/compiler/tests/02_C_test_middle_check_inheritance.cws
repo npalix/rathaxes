@@ -1,0 +1,34 @@
+/*
+	TEST GENERAL DU MIDDLE
+*/
+
+#include "02_B_test_middle_parse_rti_file.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__02_C_test_middle_check_inheritance";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+    removeDirectory(working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+traceLine("Checking inheritance");
+#include "passes/mid/rtxTypeCheck.inc.cws"
+
+foreach itf_node in source.block
+{
+        if (rtxItfCheckInheritance_walk<itf_node.type>(itf_node, source.interfaces) == false)
+        {
+                traceLine("Error while checking inheritance");
+                exit 1;
+        }
+}
+
+local savePath = "__02_rtx_parse__.tree";
+traceLine("Writing tree to: " + savePath);
+saveProject(savePath, source);

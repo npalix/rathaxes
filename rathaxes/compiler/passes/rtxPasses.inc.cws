@@ -1,0 +1,23 @@
+#if !existFunction(rtxPasses_version)
+
+function rtxPasses_version()
+{ return "1.0"; }
+
+
+#include "common/rtxResolve.inc.cws"
+
+#include "front/rtxGenerate.inc.cws"
+#include "front/rtxTools.inc.cws"
+#include "front/rtxTypeCheck.inc.cws"
+
+#include "mid/rtxTypeCheck.inc.cws"
+
+#include "back/rtxPlaceHolders.inc.cws"
+#include "back/rtxMeta.inc.cws"
+#include "back/rtxTypeHash.inc.cws"
+#include "back/rtxIntrospect.inc.cws"
+#include "back/rtxTypeCheck.inc.cws"
+#include "back/rtxGen.inc.cws"
+
+
+#end

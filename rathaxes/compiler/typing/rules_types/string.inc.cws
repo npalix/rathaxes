@@ -1,0 +1,58 @@
+function        rtxType_Parse<"string.inc.cws">(src : value, out_type : node)
+{
+        parseStringAsBNF({
+                string ::= ['"' ->[~'\\' '"']]:str
+                        =>{
+                                this.rtype = "";
+                                local nameId;
+                                rtxNodeIdentifier(nameId, "string", "Builtin");
+                                local dummy;
+                                rtxNodeRType(this.rtype, nameId, dummy);
+                                insert this.type = "__rtx_string__";
+                                insert this.val = str;
+                        }
+                ;
+        }, out_type, src);
+        if (out_type.rtype == "unknown")
+        {       return false;}
+//        traceLine("FOUND:" + toString(out_type));
+        return true;
+}
+
+function        rtxNode2cnormNode<"__rtx_string__">(in_param : node, out_param : node)
+{
+    return cnormNode_TerminalLiteral(out_param, in_param.val);
+}
+
+function type_map<"Builtin::string">(resolverValues : node,
+                                     theRtype : node, mappedIds : node,
+                                     placeHolder : node, out_node : node, source_tree : reference)
+{
+    if (getArraySize(mappedIds) == 1)
+    {
+        // Here, the data should already be a cnorm Literal node.
+        local tplVarName = resolverValues["self"].body;
+        localref data = resolverValues[tplVarName].body;
+
+        // Here, we only need the pure literal data
+        if (existVariable(data.operator) && data.operator == "__id__")
+            setall out_node = data.id;
+        else
+            setall out_node = data.literal;
+        return true;
+    }
+    else
+    {
+        traceLine(RED + "[Error] Identifier '"+mappedIds#[0]+"' not mapped for type '::string'." + DEFAULT_COLOR);
+        traceLine(RED + "        at" + placeHolder.location + DEFAULT_COLOR);
+    }
+    return false;
+}
+
+/*
+ * The only comparison operator valid for a string is the equal.
+ */
+function rtxLink_CompareEqual<"Builtin::string">(ref : node, val : node)
+{
+    return (ref.val == val.val);
+}

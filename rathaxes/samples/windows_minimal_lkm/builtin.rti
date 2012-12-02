@@ -1,0 +1,6 @@
+interface Builtin
+{
+    provided builtintype    string;
+    provided builtintype    number;
+    provided builtintype    symbol;
+}

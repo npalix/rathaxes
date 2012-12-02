@@ -1,0 +1,246 @@
+#include "misc/colors.cws"
+#include "cnorm.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+function addItf(cache1 : node, cache2 : node, item : node)
+{
+    insert cache1.interfaces[item.name];
+    insert cache2.interfaces[item.name];
+    setall cache1.interfaces[item.name] = item;
+    setall cache2.interfaces[item.name] = item;
+}
+
+function createInterface(tmp : node, name : value, tree_flag : value = false)
+{
+    clearVariable(tmp);
+    insert tmp.name = name;
+    if (tree_flag == true)
+        insert tmp.tree_file = name + ".tree";
+    insert tmp.extensions;
+}
+
+function addExtension(itf : node, id : value)
+{
+    pushItem itf.extensions;
+    insert itf.extensions#back.with;
+    insert itf.extensions#back.tree_file = "trololofile"+id+".tree";
+}
+
+function addGlobal(cache1 : node, cache2 : node, item : node)
+{
+    pushItem cache1.global_code;
+    pushItem cache2.global_code;
+    setall cache1.global_code#back = item;
+    setall cache2.global_code#back = item;
+}
+
+function createGlobalCacheItem(tmp : node, nb : value)
+{
+    clearVariable(tmp);
+    insert tmp.with;
+    insert tmp.script_file = "global_code_script_"+nb+".cws";
+    insert tmp.tree_file = "global_code_tree_"+nb+".tree";
+}
+
+function addChunk(cache1 : node, cache2 : node, template : node, chunk : node)
+{
+    local chunk_id;
+
+    hashTemplatePrototype(template.rtype, chunk.tpl_id);
+
+    if (!findElement(chunk.name, cache1.chunks))
+        insert cache1.chunks[chunk.name];
+    chunk_id = getArraySize(cache1.chunks[chunk.name]);
+    pushItem cache1.chunks[chunk.name];
+    setall cache1.chunks[chunk.name]#back = chunk;
+    // Now insert the template containing the inserted chunk...
+    if (!findElement(chunk.tpl_id, cache1.templates.sequences))
+        insert cache1.templates.sequences[chunk.tpl_id];
+    pushItem cache1.templates.sequences[chunk.tpl_id];
+    setall cache1.templates.sequences[chunk.tpl_id]#back = template;
+    insert cache1.templates.sequences[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
+
+    if (!findElement(chunk.name, cache2.chunks))
+        insert cache2.chunks[chunk.name];
+    chunk_id = getArraySize(cache2.chunks[chunk.name]);
+    pushItem cache2.chunks[chunk.name];
+    setall cache2.chunks[chunk.name]#back = chunk;
+    // Now insert the template containing the inserted chunk...
+    if (!findElement(chunk.tpl_id, cache2.templates.sequences))
+        insert cache2.templates.sequences[chunk.tpl_id];
+    pushItem cache2.templates.sequences[chunk.tpl_id];
+    setall cache2.templates.sequences[chunk.tpl_id]#back = template;
+    insert cache2.templates.sequences[chunk.tpl_id]#back.chunks[chunk.name] = chunk_id;
+}
+
+function createTemplateCacheItem(tmp : node, nb : value)
+{
+    local type_id;
+    local params;
+    local chunk_idx;
+
+    clearVariable(tmp);
+    insert tmp.with;
+    insert tmp.rtype;
+    rtxNodeIdentifier(type_id, "tpl_"+nb+"LKM");
+    rtxNodeRType(tmp.rtype, type_id, params);
+    pushItem params;
+    rtxNodeIdentifier(params#back, "Context");
+    if ($nb % 2$ == 1)
+    {
+        insert tmp.script_file = "template_mapping_script_"+nb+".cws";
+        insert tmp.tree_file = "template_mapping_tree_"+nb+".tree";
+    }
+    insert tmp.chunks;
+}
+
+function createChunkCacheItem(tmp : node, nb : value)
+{
+    clearVariable(tmp);
+    insert tmp.name = "chunk_"+$nb % 2$;
+    insert tmp.with;
+    insert tmp.with.chnk_ver = 0;
+    insert tmp.tpl_id;
+    insert tmp.script_file = "chunk_script_"+nb+".cws";
+    insert tmp.tree_file = "chunk_tree_"+nb+".tree";
+}
+
+/*
+ * First, build two fake cache trees to check against the expected result.
+ */
+local cache1;
+local cache2;
+local result;
+local expected;
+
+local tmp;
+local tmp2;
+
+
+local ret = 0;
+
+// Test conflict for itfs
+insert cache1.interfaces;
+insert cache1.global_code;
+insert cache1.templates;
+insert cache1.chunks;
+insert cache2.interfaces;
+insert cache2.global_code;
+insert cache2.templates;
+insert cache2.chunks;
+
+createInterface(tmp, "LKM", true);
+addExtension(tmp, "1");
+addExtension(tmp, "2");
+addExtension(tmp, "3");
+addItf(cache1, cache2, tmp);
+
+try
+{
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw an itf conflict error.");
+} catch (sError) {
+    traceLine("Error thrown by the merge cache function: The simple itf conflict was detected.");
+}
+
+
+
+
+
+// For now, do not test the conflicts over the global codes.
+/*
+ * Create two global_code items into each cache.
+clearVariable(expected);
+clearVariable(cache1);
+clearVariable(cache2);
+insert cache1.interfaces;
+insert cache1.global_code;
+insert cache1.templates;
+insert cache1.templates.sequences;
+insert cache1.templates.types;
+insert cache1.chunks;
+insert cache2.interfaces;
+insert cache2.global_code;
+insert cache2.templates;
+insert cache2.templates.sequences;
+insert cache2.templates.types;
+insert cache2.chunks;
+insert expected.interfaces;
+insert expected.global_code;
+insert expected.templates;
+insert expected.templates.sequences;
+insert expected.templates.types;
+insert expected.chunks;
+
+createGlobalCacheItem(tmp, "1");
+addGlobal(cache1, expected, tmp);
+createGlobalCacheItem(tmp, "3");
+addGlobal(cache1, expected, tmp);
+
+createGlobalCacheItem(tmp, "1");
+addGlobal(cache2, expected, tmp);
+createGlobalCacheItem(tmp, "4");
+addGlobal(cache2, expected, tmp);
+
+
+// Test conflict for glob
+try {
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw a glob conflict error.");
+} catch (sError) {
+    traceLine("Error thrown by the merge cache function: The simple glob conflict was detected.");
+}
+
+ */
+
+
+
+/*
+ * Then create two templates items into each cache, with their associated chunk.
+ */
+clearVariable(expected);
+clearVariable(cache1);
+clearVariable(cache2);
+insert cache1.interfaces;
+insert cache1.global_code;
+insert cache1.templates;
+insert cache1.chunks;
+insert cache2.interfaces;
+insert cache2.global_code;
+insert cache2.templates;
+insert cache2.chunks;
+insert expected.interfaces;
+insert expected.global_code;
+insert expected.templates;
+insert expected.chunks;
+
+createTemplateCacheItem(tmp, "1");
+createChunkCacheItem(tmp2, "1");
+addChunk(cache2, expected, tmp, tmp2);
+
+createTemplateCacheItem(tmp, "3");
+createChunkCacheItem(tmp2, "3");
+addChunk(cache2, expected, tmp, tmp2);
+
+createTemplateCacheItem(tmp, "1");
+createChunkCacheItem(tmp2, "1");
+addChunk(cache2, expected, tmp, tmp2);
+
+createTemplateCacheItem(tmp, "2");
+createChunkCacheItem(tmp2, "2");
+addChunk(cache2, expected, tmp, tmp2);
+
+
+// Test conflict for tpls
+try {
+    rtxLink_MergeCaches(cache1, cache2, result);
+    increment(ret);
+    traceLine("Merge cache function did not throw a tpl conflict error.");
+} catch (sError) {
+    traceLine("Error thrown by the merge cache function: The simple tpl conflict was detected.");
+}
+
+exit(ret);

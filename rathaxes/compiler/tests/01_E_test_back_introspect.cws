@@ -1,0 +1,70 @@
+
+#include  "01_D_test_back_type_hash.cws"
+
+// The previous test's code has already created a directory.
+// Change to our own...
+working_directory = "../__01_E_test_back_introspect";
+if (existDirectory(working_directory))
+{
+    traceLine("Directory " + working_directory + " already exists");
+    traceLine("Removing directory: " + working_directory);
+}
+traceLine("Creating directory: " + working_directory);
+createDirectory(working_directory);
+changeDirectory(working_directory);
+
+#include "passes/back/rtxIntrospect.inc.cws"
+
+// Apply the introspection pass...
+rtxIntrospect(source);
+
+local ret = 0;
+foreach template in source.block[0].body.block
+{
+    foreach chunk in template.body.block
+    {
+        select placeHolder in chunk.body.compile[].node.body
+        {
+            switch (placeHolder.type)
+            {
+            case "__rtx_pointcut__":
+            case "__rtx_tpl_sequence_call__":
+            case "__rtx_tpl_chunk_call__":
+                if (existVariable(placeHolder.rtype))
+                {
+                    traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
+                              + " of chunk " + chunk.pointcut.name.scope + "::"
+                              + chunk.pointcut.name.name + " updated by introspection.");
+                }
+                else
+                {
+                    traceLine("<ERROR>:   PlaceHolder " +key(placeHolder)
+                              + " of chunk " + chunk.pointcut.name.scope + "::"
+                              + chunk.pointcut.name.name
+                              + " was not updated by introspection");
+                    traceLine(toString(placeHolder,true));
+                    increment(ret);
+                }
+                break ;
+            case "__rtx_var__": // always valid
+                traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
+                          + " of chunk " + chunk.pointcut.name.scope + "::"
+                          + chunk.pointcut.name.name + " updated by introspection.");
+                break ;
+            case "__rtx_tpl_cast__": // shouldnt be kept in the compile so error.
+            default:
+                traceLine("<ERROR>: unknown type of placeholder: "+placeHolder.node.type);
+                increment(ret);
+            }
+        }
+    }
+}
+
+saveProject("introspection.tree", source);
+
+if (ret != "0")
+{
+    exit(ret);
+}
+
+traceLine("====>Result of Introspection pass : __01_E_test_back_introspect/*.tree");

@@ -1,0 +1,213 @@
+
+
+#include "cnorm2c/cnorm2c.inc.cws"
+
+function rtxGenerate_version()
+{ return "1.0"; }
+
+/*
+        Entry point for front end generation
+*/
+declare function rtxFrontGenerate(local_node : node);
+
+declare function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node);
+declare function rtxFrontGen_Itf(itfName : node, itfUsedList : node);
+declare function rtxFrontGen_Device(theDevice : node, source_tree : reference);
+declare function rtxFrontGen_iterate<T>(local_node : node, source_tree : reference);
+
+
+function rtxFrontGenerate(local_node : node)
+{
+    insert local_node.c_types;
+
+    // correct this block to be the root block
+    cnormNodeRoot(local_node.c_tree.c_block);
+    // generate all
+    if (rtxFrontGen_iterate<local_node.type>(local_node, local_node) == false)
+    {
+        traceLine(RED + "[Error] Driver could not be generated." + DEFAULT_COLOR);
+        exit(6);
+    }
+
+        // TODO: Translate the following code
+   /*  
+    local include;
+    cnormNodeRoot(include);
+    foreach  item in local_node.c_types
+    {
+        if (existVariable(item.c_decl))
+        {
+            pushItem include.block;
+            setall include.block#back = item.c_decl;
+        }
+        else // specifier sublist
+        {
+            foreach  specitem in item
+            {
+                pushItem include.block;
+                setall include.block#back = specitem.c_decl;
+            }
+        }
+    }
+*/
+
+}
+
+function rtxFrontGen_BuildResValFromDevice(resVals : node, theDevice : node)
+{
+}
+
+/*
+ *
+ * This function recursively iterates on an interface's inheritance
+ * tree, and instanciate each interface's templates when unwinding.
+ * While doing that, it sets a flag into the itfUsedList in order to
+ * prevent any interface from being instanciated twice.
+ *
+ */
+function rtxFrontGen_Itf(itfName : node, itfUsedList : node)
+{
+    local itfNode;
+    local itfTree;
+
+    // If there is no explicit interface, we must check each interface in the dependencies.
+    // First, load the interface's tree...
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName + "' "
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '" + itfName
+                  + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Iterates on the parents to instanciate them first.
+    foreach parent in itfTree.inheritance
+    {
+        if (!findElement(parent, itfUsedList) || isEmpty(itfUsedList[parent]))
+            rtxFrontGen_Itf(parent, itfUsedList);
+    }
+}
+
+/*
+ *
+ * This function generates the driver for a given device node.
+ * In order to do so, It first lists every interface that is declared
+ * as necessary by the device block.
+ *
+ * It then builds a list of templates to instanciate, in order to
+ * instanciate every template, depending on whether they're
+ * used or not, and on the qualifiers (provided, auto, required, optional).
+ *
+ */
+function rtxFrontGen_Device(theDevice : node, source_tree : reference)
+{
+        local errcount = 0;
+        local itfList;
+        local itfUsed;
+
+        // insert using interfaces in the itfList
+        foreach itfName in theDevice.use
+        {
+                if (!findElement(itfName, itfList))
+                        insert itfList[itfName];
+        }
+
+        // XXX TODO FIXME
+        // For now, we will instanciate EVERYTHING.
+        //
+        // setall itfUsed = itfList;
+        // foreach itf in itfList
+        // {
+        //     if (rtxFrontGen_Itf(itf, itfUsed) == falsE)
+        //         increment(errcount);
+        // }
+
+        local listGlobNode;
+        local resVals;
+
+        if (rtxLink_findGlobalCode(theDevice#root.config, listGlobNode) == false)
+        {
+                traceLine(RED + "[Error] Could not find global code to start"
+                                + " generation for device '" + theDevice.name + "'." + DEFAULT_COLOR);
+                return false;
+        }
+
+        foreach withNode in listGlobNode
+        {
+                traceLine("GLOBAL CODE FOUND!!:" + toString(withNode, true));
+                local theTree;
+                if (rtxLink_LoadItem(withNode, theTree) == false)
+                {
+                        traceLine(RED + "[Error] Could not load script for global code generation." + DEFAULT_COLOR);
+                        return false;
+                }
+
+                rtxFrontGen_BuildResValFromDevice(resVals, theDevice);
+
+                //its an interface, so we should use the c_block field.
+                traceLine("Device c_tree:" + theTree.instanceKey);
+                if (instanceChunk<theTree.instanceKey>(resVals, theTree.c_block, source_tree) == false)
+                {
+                        traceLine(RED + "[Error] Could not resolve global code." + DEFAULT_COLOR);
+                        return false;
+                }
+                // after template instanciation copy all C tree in the global tree
+                cnormNodeBlock_CopyBlock(source_tree.c_tree.c_block, theTree.c_block);
+        }
+
+        if (errcount != 0)
+                return false;
+
+        return true;
+}
+
+function rtxFrontGen_iterate<T>(local_node : node, source_tree : reference)
+{ error("rtxFrontGen_iterate<"+T+"> not implemented."); }
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxFrontGen_iterate<"__rtx_itf__">(local_node : node, source_tree : reference)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_tpl__">(local_node : node, source_tree : reference)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_with__">(local_node : node, source_tree : reference)
+{       return true;}
+function rtxFrontGen_iterate<"__rtx_config__">(local_node : node, source_tree : reference)
+{ return true; }
+/**/
+
+/*
+ *
+ * The iterating functions allow to generate a pilot for each device described/
+ * in the front-end.
+ *
+ */
+function rtxFrontGen_iterate<"__rtx_device__">(local_node : node, source_tree : reference)
+{
+    return rtxFrontGen_Device(local_node, source_tree);
+}
+
+function rtxFrontGen_iterate<"__block__">(local_node : node, source_tree : reference)
+{
+    local errcount = 0;
+
+    foreach item in local_node.block
+    {
+        if (rtxFrontGen_iterate<item.type>(item, source_tree) == false)
+            increment(errcount);
+    }
+
+    if (errcount != 0)
+        return false;
+    return true;
+}
+
+function rtxFrontGen_iterate<"__root_block__">(local_node : node, source_tree : reference)
+{ return rtxFrontGen_iterate<"__block__">(local_node, source_tree); }
+
+
+#end

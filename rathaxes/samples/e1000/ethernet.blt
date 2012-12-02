@@ -1,0 +1,311 @@
+with Ethernet, PCI, LKM, Log
+{
+    template type   Ethernet::ProtocolId()
+    {
+        decl data_types()
+        {
+            typedef unsigned short  rtx_ether_protocol_id;
+        }
+
+        chunk LKM::prototypes()
+        {
+            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short);
+        }
+
+        chunk LKM::data()
+        {
+            static const struct
+            {
+                unsigned short  id;
+                const char      *name;
+            } rtx_ethernet_proto_table[] =
+            {
+                { ETH_P_IP,     "IPv4"  },
+                { ETH_P_IPV6,   "IPv6"  },
+                { ETH_P_ARP,    "ARP"   },
+            };
+        }
+
+        chunk LKM::code()
+        {
+            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short proto_id)
+            {
+                for (int i = 0;
+                     i != sizeof(rtx_ethernet_proto_table) / sizeof(rtx_ethernet_proto_table[0]);
+                     i++)
+                    if (proto_id == rtx_ethernet_proto_table[i].id)
+                        return rtx_ethernet_proto_table[i].name;
+
+                return "Unknown";
+            }
+        }
+
+        map
+        {
+            id: ${self};
+            str: rtx_ethernet_protocol_id_to_str(${self});
+        }
+    }
+
+    template type   Ethernet::AbstractDevice()
+    {
+        decl  data_types()
+        {
+            struct net_device;
+        }
+
+        chunk LKM::includes()
+        {
+            #include <linux/netdevice.h>
+        }
+
+        map
+        {
+        }
+    }
+
+    template type   Ethernet::Device()
+    {
+        decl  data_types()
+        {
+            struct rtx_ethernet_dev
+            {
+                /*
+                 * I think it's useless to use the ${PCI::AbstractDevice} "abstraction"
+                 * here, since we already are in a Linux specific context.
+                 */
+                struct pci_dev          *pci_dev;
+                struct net_device       *net_dev;
+
+                /*
+                 * In the long-term, this may disappear for a new concept allowing
+                 * to embbed a descriptor defined and manipulated by the front-end
+                 */
+                ${pointcut Ethernet::HardwareContext()};
+            };
+        }
+
+        chunk LKM::includes()
+        {
+            #include <linux/etherdevice.h>
+        }
+
+        method init(Ethernet::AbstractDevice net_dev, PCI::AbstractDevice pci_dev)
+        {
+            ${self} = netdev_priv(${net_dev});
+            /*
+             * We can use -> because we know that ${self} will be always a
+             * pointer, but the ambiguity sucks.
+             */
+            ${self}->pci_dev = ${pci_dev};
+            ${self}->net_dev = ${net_dev};
+        }
+
+        map
+        {
+            device: ${self}->pci_dev->dev;
+            pci_device: ${self}->pci_dev;
+            net_device: ${self}->net_dev;
+            perm_addr: ${self}->net_dev->perm_addr;
+            dev_addr: ${self}->net_dev->dev_addr;
+        }
+    }
+
+    template sequence   Ethernet::open(Ethernet::Device dev)
+    {
+        chunk LKM::prototypes()
+        {
+            static int  rtx_ethernet_open(struct net_device *);
+        }
+
+        chunk LKM::code()
+        {
+            static int  rtx_ethernet_open(struct net_device *dev)
+            {
+                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(dev);
+
+                ${cast local.rtx_ether_ctx as Ethernet::Device};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
+
+                return 0;
+            }
+        }
+    }
+
+    template sequence   Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
+    {
+        chunk LKM::prototypes()
+        {
+            static int  rtx_ethernet_xmit(struct sk_buff* skb, struct net_device *dev);
+        }
+
+        chunk LKM::code()
+        {
+            static int  rtx_ethernet_xmit(struct sk_buff* kernel_skb, struct net_device *net_dev)
+            {
+                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(net_dev);
+                ${cast local.kernel_skb as Socket::AbstractSKBuff};
+
+                ${cast local.rtx_ether_ctx as Ethernet::Device};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx, local.kernel_skb)};
+            }
+        }
+    }
+
+    template sequence   Ethernet::close(Ethernet::Device dev)
+    {
+        chunk LKM::prototypes()
+        {
+            static int  rtx_ethernet_close(struct net_device *);
+        }
+
+        chunk LKM::code()
+        {
+            static int  rtx_ethernet_close(struct net_device *dev)
+            {
+                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(dev);
+
+                ${cast local.rtx_ether_ctx as Ethernet::Device};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
+
+                return 0;
+            }
+        }
+    }
+
+    template sequence   Ethernet::interrupt_handler(Ethernet::Device dev)
+    {
+        /*
+         * We can't use the irqreturn_t type here because CNornm doesn't know
+         * it.
+         */
+        chunk LKM::prototypes()
+        {
+            static enum irqreturn   rtx_ethernet_interrupt_handler(int, void *);
+        }
+
+        chunk LKM::code()
+        {
+            static enum irqreturn   rtx_ethernet_interrupt_handler(int irq, void *dev_id)
+            {
+                ${Ethernet::Device} *rtx_ether_ctx = dev_id;
+
+                ${cast local.rtx_ether_ctx as Ethernet::Device};
+                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
+
+                return IRQ_NONE;
+            }
+        }
+    }
+
+    template sequence   Ethernet::init()
+    {
+        chunk LKM::data()
+        {
+            static const struct net_device_ops  rtx_ether_ops =
+            {
+                .ndo_open = rtx_ethernet_open,
+                .ndo_stop = rtx_ethernet_close,
+                .ndo_start_xmit = rtx_ethernet_xmit,
+            };
+        }
+
+        /*
+         * NOTE: for now, the error handling is leaking from PCI::probe(), but
+         * it's better than doing it at all.
+         *
+         * XXX: the chunk argument isn't correctly expanded by the
+         * compiler I have to use the same name as the actual C
+         * variable:
+         */
+        chunk PCI::pci_probe_hook(PCI::Device rtx_pci_dev)
+        {
+            ${Ethernet::Device} *rtx_ether_ctx;
+            ${Ethernet::AbstractDevice} *net_dev;
+
+            net_dev = alloc_etherdev(sizeof(*rtx_ether_ctx));
+            if (!net_dev)
+            {
+                ${Log::info("cannot allocate the ethernet device context")};
+                error = -ENOMEM;
+                goto fail;
+            }
+            SET_NETDEV_DEV(net_dev, ${rtx_pci_dev.device});
+            strlcpy(net_dev->name, ${config.ifname}, sizeof(net_dev->name));
+            net_dev->irq = ${rtx_pci_dev.irq};
+            net_dev->netdev_ops = &rtx_ether_ops;
+
+            error = register_netdev(net_dev);
+            if (error)
+            {
+                ${Log::info("cannot register the driver in the net subsystem")};
+                goto fail;
+            }
+
+            /* Initialize our context held by the net_device structure */
+            /*
+             * XXX: the cast is here because the compiler resolve the
+             * type of rtx_pci_dev.pci_device to the type of
+             * rtx_pci_dev instead of the type of rtx_pci_dev.pci_device.
+             *
+             * Also, I'm getting placeholder in the generated code if
+             * I don't open a scope here.
+             */
+            {
+                struct pci_dev *pci_device = ${rtx_pci_dev.pci_device};
+                ${cast local.pci_device as PCI::AbstractDevice};
+                ${local.rtx_ether_ctx.init(local.net_dev, local.pci_device)};
+            }
+
+            /* Register ourselves in the parent context: */
+            /* ${rtx_pci_dev.set_context(local.rtx_ether_ctx)}; */
+            ${rtx_pci_dev}->context = rtx_ether_ctx;
+
+            /*
+             * XXX: the asssignments/casts are here to circumvent
+             * typing issues in the compiler (see previous XXX).
+             */
+            int bars = ${rtx_pci_dev.bars};
+            unsigned char /* __iomem */ *ioaddr = ${rtx_pci_dev.ioaddr};
+            int irq = ${rtx_pci_dev.irq};
+            ${cast local.bars as Builtin::number};
+            ${cast local.irq as Builtin::number};
+            ${cast local.rtx_ether_ctx as Ethernet::Device};
+            ${pointcut Ethernet::adapter_init_context(local.rtx_ether_ctx,
+                                                      local.bars,
+                                                      local.ioaddr,
+                                                      local.irq)};
+            ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
+            ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
+        }
+
+        /* This chunk should be removed (see #26) */
+        chunk   ::CALL()
+        {
+        }
+    }
+
+    template sequence   Ethernet::exit()
+    {
+        /*
+         * XXX: We have to use the same name as the C variable for
+         * the chunk argument...
+         */
+        chunk   PCI::pci_remove_hook(PCI::Device rtx_pci_dev)
+        {
+            ${Ethernet::Device} *rtx_ether_ctx = ${rtx_pci_dev.context};
+
+            BUG_ON(!rtx_ether_ctx);
+
+            ${cast local.rtx_ether_ctx as Ethernet::Device};
+            unregister_netdev(${local.rtx_ether_ctx.net_device});
+            free_netdev(${local.rtx_ether_ctx.net_device});
+        }
+
+        /* This chunk should be removed (see #26) */
+        chunk ::CALL()
+        {
+        }
+    }
+}
+

@@ -1,0 +1,25 @@
+interface LKM : Builtin
+{
+    provided pointcut   includes();
+    provided pointcut   data_types();
+    provided pointcut   prototypes();
+    provided pointcut   data();
+    provided pointcut   code();
+
+    required variable Builtin::string  author;
+    required variable Builtin::string  description;
+    required variable Builtin::string  license;
+
+    required sequence   init()
+    {
+        provided chunk      includes();
+        provided chunk      code();
+        provided pointcut   init_bus_hook();
+    }
+
+    required sequence   exit()
+    {
+        provided chunk      code();
+        provided pointcut   deinit_bus_hook();
+    }
+}

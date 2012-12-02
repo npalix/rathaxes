@@ -1,0 +1,93 @@
+device LKM use LKM, PCI, Ethernet, Log, Socket
+{
+    Ethernet::open(Ethernet::Device dev)
+    {
+        Log::info("opening the device");
+
+        /*
+         * Maybe e1000::create_device should be called from here, to be
+         * more coherent.
+         */
+
+        e1000::setup_interrupt_handler(dev);
+        Log::info("interrupt handler installed");
+
+        e1000::set_up_device(dev);
+        Log::info("device activated");
+
+        e1000::activate_device_interruption(dev);
+        Log::info("interruption enabled");
+
+        e1000::print_status(dev);
+    }
+
+    Ethernet::close(Ethernet::Device dev)
+    {
+        Log::info("closing the device");
+
+        /*
+         * Note: some calls to release resources must be done when IRQs are
+         * enabled (dma_free_coherent() for example). So we have to cleanup our
+         * stuff before free_interrupt_handler().
+         */
+        e1000::free_rx_tx(dev);
+        Log::info("free'ed up rx/tx resources");
+
+        e1000::free_interrupt_handler(dev);
+        Log::info("interrupt handler free'ed");
+    }
+
+    Ethernet::interrupt_handler(Ethernet::Device dev)
+    {
+        Log::info("got an interruption");
+        e1000::handle_interrupt(dev);
+    }
+
+    Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
+    {
+        Log::info("we have one packet to transmit!");
+        e1000::xmit(dev, skb);
+    }
+
+    LKM::init()
+    {
+        Log::info("loading module");
+    }
+
+    LKM::exit()
+    {
+        Log::info("unloading module");
+    }
+}
+
+configuration
+{
+    LKM::name = "rtx_e1k";
+    LKM::author = "Rathaxes";
+    LKM::description = "Hello World Loadable Kernel Module (LKM)";
+    LKM::license = "GPL";
+
+    /*
+     * See section 5.2 of the Intel manual for all the values
+     * - 0x100e is for the 82540EM-A;
+     * - 0x100f, apparently found on vmware by default, is for the 82545EM-A.
+     */
+    PCI::vendor_id = 0x8086;
+    PCI::product_id = 0x100e;
+
+    Ethernet::ifname = "rtx%d";
+
+    e1000::rx_ring_size = 256; /* Number of incoming packets we can buffer */
+    e1000::tx_ring_size = 256; /* Mumber of buffers we can have in the tx queue */
+    /*
+     * The e1000 supports seven receive buffer sizes: 256, 512, 1024, 2048,
+     * 4096, 8192 and 16384 bytes:
+     */
+    e1000::rx_buffer_len = 2048;
+    /*
+     * 4096 bytes maximum per transmit descriptor is used on Linux and FreeBSD,
+     * 2048 on Minix and HelenOS, I can't find why. If I understand the Intel
+     * manual correctly, the maximum should be 16288 (see section 3.3.3).
+     */
+     e1000::tx_max_data_per_desc = 4096;
+}

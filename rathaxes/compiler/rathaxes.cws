@@ -1,0 +1,327 @@
+// Define some color if available
+#include "misc/colors.cws"
+
+/*
+ * Include Parsing dependencies.
+ */
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "node/rtxNode.inc.cws"
+
+/*
+ * Include the type-checking routines
+ */
+#include "typing/rtxTyping.inc.cws"
+
+/*
+ * Include the cache-managing script
+ */
+#include "linker/rtxLink.inc.cws"
+
+/*
+ * Include Parse and Passes routines
+ */
+#include "parse/rtxParse.inc.cws"
+#include "passes/rtxPasses.inc.cws"
+
+function usage()
+{
+    /*
+     * We use /o options because codeworker doesn't have a way to escape
+     * options (i.e: --)...
+     */
+    traceLine(  "Usage: rathaxes generate [/o output.c] (linux|openbsd|windows) file.rtx" + endl()
+                + "    or rathaxes rti-check    (file.rti|file.rtx)" + endl()
+                + "    or rathaxes rti-register (file.rti|file.rtx)" + endl()
+                + "    or rathaxes blt-check    (file.blt|file.rtx)" + endl()
+                + "    or rathaxes blt-register (file.blt|file.rtx)" + endl()
+                + "    or cache install" + endl()
+                + "    or cache clear");
+}
+
+function rtxParseGenerateOptions(argv : node, options : node)
+{
+    local to_remove;
+    foreach item in argv
+    {
+        switch (item)
+        {
+            case "/o":
+                local arg_key = $item.key() + 1$;
+                if (findElement(arg_key, argv) && charAt(argv[arg_key], 0) != "/")
+                {
+                    insert options["output"] = argv[arg_key];
+                    pushItem to_remove = item.key();
+                    pushItem to_remove = arg_key;
+                    break ;
+                }
+                error("Missing argument for option /o");
+            default:
+                break ;
+        }
+    }
+
+    foreach item in to_remove
+        removeElement(argv, item);
+}
+
+/*
+ * First, setup the paths 
+ */
+insert this.rathaxes_path = _ARGS[0];
+insert this.scripts_path  = this.rathaxes_path + "/" + "compiler"        + "/";
+insert this.backlib_path  = this.rathaxes_path + "/" + "backend_library" + "/";
+insert this.cache_path    = this.rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.rathaxes_path)){ createDirectory(this.rathaxes_path); }
+if (!existDirectory(this.backlib_path)) { createDirectory(this.backlib_path); }
+if (!existDirectory(this.cache_path))   { createDirectory(this.cache_path); }
+
+insert this.local_rathaxes_path = _ARGS[1];
+insert this.local_backlib_path  = this.local_rathaxes_path + "/" + "backend_library" + "/";
+insert this.local_cache_path    = this.local_rathaxes_path + "/" + "cache"           + "/";
+if (!existDirectory(this.local_rathaxes_path))  { createDirectory(this.local_rathaxes_path); }
+if (!existDirectory(this.local_backlib_path))   { createDirectory(this.local_backlib_path); }
+if (!existDirectory(this.local_cache_path))     { createDirectory(this.local_cache_path); }
+
+insert this.operation = _ARGS[2];
+
+if (toLowerString(this.operation) == "generate")
+{
+    local options;
+
+    rtxParseGenerateOptions(_ARGS, options);
+
+    /*
+     * rtxParseGenerateOptions will have messed up the keys to remove the
+     * options from _ARGS so use "absolute" indexes with the # notation
+     */
+    local target_os = toLowerString(_ARGS#[3]);
+    local inputFile = _ARGS#[4];
+
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
+
+//
+local source;
+// PARSING PASS
+traceLine("====>PARSE");
+rtxParseFile(source, inputFile);
+
+// MIDDLE PASS
+traceLine("====>MIDDLE TYPE CHECK");
+if (rtxMiddle_TypeCheck(source) == false)
+{
+    traceLine("Middle-End Type Checking failed. Stopping compilation.");
+    exit(1);
+}
+
+// BACK PASS
+traceLine("====>BACK META,TH,Intro,Gen");
+rtxMeta(source);
+rtxTypeHash(source);
+rtxIntrospect(source);
+rtxGenerate(source);
+
+// CACHE LOADING
+traceLine("====>REGISTER CACHE 1");
+if (rtxLink_RegisterToCache(source) == false)
+{       error("Can't REGISTER CACHE");}
+/*
+if (rtxTpl_TypeCheck(source) == false)
+{
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
+}*/
+
+// FRONT PASS
+traceLine("====>FRONT TYPE CHECK");
+if (rtxFront_TypeCheck(source) == false)
+{
+        traceLine("Front-End Type Checking failed. Stopping driver generation.");
+        exit(1);
+}
+
+traceLine("====>CONF RETRIEVE");
+if (rtxFront_RetrieveConfig(source, source.config_block) == false)
+{
+        traceLine(RED + "[Error] Front-end configuration could not be" + " transformed for use in generation." + DEFAULT_COLOR);
+        exit(-1);
+}
+
+traceLine("====>CONF BUILD");
+if (rtxNodeWith_BuildFromConfig(source.config_block, source.config) == false)
+{
+        traceLine(RED + "[Error] Could not build Constraint node from configuration." + DEFAULT_COLOR);
+        exit(-1);
+}
+
+traceLine("====>GENERATE");
+rtxFrontGenerate(source);
+// TODO: Soon In rtxFrontGenerate
+    /*
+     * For the code to compile, we need to have the types declared.
+     * Here is the "include" code generation:
+     */
+    
+    local include;
+    cnormNodeRoot(include);
+    foreach  item in source.c_types
+    {
+        if (existVariable(item.c_decl))
+        {
+            pushItem include.block;
+            setall include.block#back = item.c_decl;
+        }
+        else // specifier sublist
+        {
+            foreach  specitem in item
+            {
+                pushItem include.block;
+                setall include.block#back = specitem.c_decl;
+            }
+        }
+    }
+    
+    /*
+     * This is our final code, tell cnorm2c that this is a root block,
+     * otherwise it will scope the whole thing inside braces.
+     */
+    local include_code = cnorm2c(include);
+    local code = cnorm2c(source.c_tree.c_block);
+    traceLine("Resulting include:" + include_code);
+    traceLine("Resulting code: " + code);
+
+    if (findElement("output", options))
+    {
+        traceLine("Writing to file: " + options["output"]);
+        saveToFile(options["output"], include_code + code + endl());
+    }
+}
+else if (   toLowerString(this.operation) == "blt-check"
+         || toLowerString(this.operation) == "blt-register")
+{
+    local inputFile = _ARGS[3];
+    local source;
+
+    // Load cache first
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
+
+    //rtxType_Load(source);
+    traceLine("====> READ:" + inputFile);
+    //rtxParse(inputFile, source);
+    rtxParseFile(source, inputFile);
+    traceLine("====> END READ:" + inputFile);
+
+    // Compile the Meta Instructions aka ${}
+    traceLine("====> COMPILE META:" + inputFile);
+    if (!rtxMeta(source))
+    {
+        exit(-1);
+    }
+    traceLine("====> END META:" + inputFile);
+
+    // Now, use the two passes to annotate the types and 
+    traceLine("=====> Hashing types in instrumented C code...:" + inputFile);
+    rtxTypeHash(source);
+    traceLine("======> Introspecting Instrumented C code...:" + inputFile);
+    rtxIntrospect(source);
+
+    // After annotating the knowledge tree, We can now
+    // check each template against the associated interfaces
+    traceLine("======> Type Check...:" + inputFile);
+    if (rtxTpl_TypeCheck(source) == false)
+    {
+        traceLine("Template Type Checking failed. Stopping template compilation.");
+        exit(1);
+    }
+    traceLine("Template type checking suceeded");
+
+    traceLine("======> Generate...:" + inputFile);
+    // Now generate the trees and codeworker files
+    foreach item in source.block
+    {
+        local uid = 0;
+        rtxGen<item.type>(item, uid);
+        uid = $uid + 1$;
+    }
+
+    // And register the whole thing into the cache session.
+    traceLine("======> Register To Cache...:" + inputFile);
+    if (rtxLink_RegisterToCache(source) == false)
+    {
+        error("Could not register file into the cache !");
+    }
+
+    if (toLowerString(this.operation) == "blt-register")
+    {
+        traceLine("======> Save Cache...:" + inputFile);
+        if (rtxLink_SaveCache() == false)
+            error("Could not save cache !");
+    }
+}
+else if (toLowerString(this.operation) == "rti-check"
+         || toLowerString(this.operation) == "rti-register")
+{
+    local inputFile = _ARGS[3];
+    local source;
+
+    // Load cache first
+    if (rtxLink_LoadCache() == false)
+        traceLine("Could not load cache. Trying to do without it...");
+
+    //rtxType_Load(source);
+    //rtxParse(inputFile, source);
+    rtxParseFile(source, inputFile);
+
+    // XXX TODO FIXME
+    // This snippet of code does not manage interfaces extensions.
+    // Check that the interface's dependencies are valid.
+    if (rtxItfCheckInheritance_walk<source.type>(source, source.interfaces) == false)
+        exit(1);
+
+    // Check that every type/pointcut used is defined in a parent interface.
+    if (rtxItfCheckTypesDeclarations_walk(source, source.interfaces) == false)
+        exit(2);
+    
+    // And register the whole thing into the cache session.
+    if (rtxLink_RegisterToCache(source) == false)
+    {
+        error("Could not register file into the cache !");
+    }
+
+    if (toLowerString(this.operation) == "rti-register")
+    {
+        if (rtxLink_SaveCache() == false)
+            error("Could not save cache !");
+    }
+}
+else if (toLowerString(this.operation) == "cache")
+{
+    insert this.subop = _ARGS[3];
+    if (toLowerString(this.subop) == "clear")
+    {
+        rtxLink_LoadCache();
+        clearVariable(this.caches.local);
+        rtxLink_SaveCache();
+    }
+    else if (toLowerString(this.subop) == "install")
+    {
+        rtxLink_InstallLocalCache();
+    }
+    else
+    {
+        usage();
+        exit(1);
+    }
+
+}
+else
+{
+    usage();
+    exit(1);
+}
+
+exit (0);

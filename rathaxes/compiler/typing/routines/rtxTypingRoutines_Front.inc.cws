@@ -1,0 +1,281 @@
+#if !existFunction(rtxTypingRoutines_Front_version)
+
+#include "misc/colors.cws"
+#include "misc/rtxTools.inc.cws"
+#include "linker/rtxLink.inc.cws"
+
+function        rtxTypingRoutines_Front_version()
+{ return "1.0"; }
+
+
+
+/*
+ *
+ * This function checks if a sequence matching itfSeqNode is implemented
+ * inside the device block.
+ *
+ */
+function rtxTypeCheck_DeviceHasSequence(theDevice : node, itfSeqNode : node)
+{
+    local dummy;
+    local itfSeqProto = rtxRTypeFullQualifiedName<"sequence">(itfSeqNode.rtype, dummy);
+    foreach item in theDevice.body.block
+    {
+        if (item.type == "__rtx_sequence__"
+            && itfSeqProto == rtxRTypeFullQualifiedName<"sequence">(item.rtype, dummy))
+            return true;
+    }
+    return false;
+}
+
+
+/*
+ * This function loads the tree of the interface given in itfName from the cache,
+ * and checks that every 'required' sequence is defined in the Device.
+ */
+function rtxTypeCheck_DeviceRespectsItf(theDevice : node, itfName : value)
+{
+    local itfNode;
+    local itfTree;
+    local errcount = 0;
+
+    if (itfName == "")
+    {
+        traceLine(RED + "[Error] No interface given to respect for"
+                  + " the device." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName
+                  + "' could not be found within the cache." + DEFAULT_COLOR);
+        traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '" + itfName
+                  + "' tree." + DEFAULT_COLOR);
+        traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
+        return false;
+    }
+
+    // now iterate on the itf, to check for every sequence.
+    foreach item in itfTree.body.block
+    {
+        if (item.type == "__rtx_itf_decl__"
+            && item.specifier == "sequence" && item.qualifier == "required")
+        {
+            if (item.rtype.name.scope == "")
+                item.rtype.name.scope = itfTree.name;
+            if (rtxTypeCheck_DeviceHasSequence(theDevice, item) == false)
+            {
+                traceLine(RED + "[Error] Sequence '"
+                          + rtxRTypeName<item.rtype.type>(item.rtype)
+                          + "' not implemented in device block." + DEFAULT_COLOR);
+                traceLine(RED + "        for sequence at " + item.location + DEFAULT_COLOR);
+                traceLine(RED + "        for device at " + theDevice.location + DEFAULT_COLOR);
+                increment(errcount);
+            }
+        }
+    }
+    if (errcount != "0")
+        return false;
+
+    return true;
+}
+
+
+
+/*
+ *
+ * This function checks whether the described register is coherent or not
+ * (Masks, values, etc...)
+ *
+ */
+function rtxTypeCheck_Register(theRegister : node)
+{
+        // get the pattern in usefull way
+        local   likePattern;
+        stringToArray(theRegister.like.pattern, likePattern);
+        local   bitsize = getArraySize(likePattern);
+        insert theRegister.bitsize = bitsize;
+        // TODO: check that the pattern match the bitsize of the register type
+        //...
+        // foreach fields
+        foreach field in theRegister.body.block
+        {
+                // check that begin and end are ordered
+                if (existVariable(field.map.end) && $field.map.begin >= field.map.end$)
+                {
+                        local tmp = field.map.end;
+                        field.map.end = field.map.begin;
+                        field.map.begin = tmp;
+                }
+                // check that the field is in the pattern
+                if (
+                        ($field.map.begin < 0$ || $field.map.begin > bitsize - 1$)
+                        || (existVariable(field.map.end) && $field.map.end > bitsize - 1$)
+                )
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                + "[" + field.map.begin + ".." + field.map.end + "] is outside range 0.." + $bitsize - 1$ + "\n"
+                                + DEFAULT_COLOR);
+                        traceLine(RED + "        at " + theRegister.location + DEFAULT_COLOR);
+                        return false;
+                }
+                // calc the size of the field in bitsize
+                local field_bitsize = 1;
+                if (existVariable(field.map.end))
+                {       field_bitsize = $1 + field.map.end - field.map.begin$;}
+                insert field.bitsize = field_bitsize;
+                // check that the range don't have * and calc the mask
+                insert field.maskPattern;
+                local end = field.map.begin;
+                if (existVariable(field.map.end))
+                {       end = field.map.end;}
+                if (!bitArrayExtractMask(likePattern, field.map.begin, end, field.maskPattern))
+                {
+                        traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                        + "Can't extract * value in pattern :" + likePattern 
+                                        + " for range [" + field.map.begin + ".." + end + "]\n"
+                                        + DEFAULT_COLOR);
+                        traceLine(RED + "        for register at " + theRegister.location + DEFAULT_COLOR);
+                        return false;
+                }
+                // foreach value in field
+                foreach value in field.listmask
+                {
+                        local   valuePattern;
+                        stringToArray(value.mask, valuePattern);
+                        local   value_bitsize = getArraySize(valuePattern);
+                        // check that the value_bitsize == field_bitsize
+                        if (value_bitsize != field_bitsize)
+                        {
+                                traceLine(RED + "[Error] Mapping error in register :" + theRegister.name + " in field: " + field.name + ".\n"
+                                                + "the value " + value.mask + " is outside the range value for the field\n"
+                                                + DEFAULT_COLOR);
+                                traceLine(RED + "        for register at " + theRegister.location + DEFAULT_COLOR);
+                                return false;
+                        }
+                        insert  value.bitsize = value_bitsize;
+                        insert  value.value = $bitArrayValue(valuePattern) << field.map.begin$;
+                        // TODO: ... duplicate value, completude, value inclusion
+                }
+        }
+        return true;
+}
+
+/*
+ *
+ * This function checks whether the front implementation of a sequence is okay
+ * (prototype and implementation)
+ *
+ * It first checks if the prototype is defined in the associated interface,
+ * And next checks the prototypes and types of each call in the implementation code.
+ *
+ */
+function rtxTypeCheck_Sequence(theSequence : node, interface_list : node)
+{
+    local dummy;
+    local errcount = 0;
+    local prototype = rtxRTypeFullQualifiedName<"sequence">(theSequence.rtype, dummy);
+    local qualifier = "";
+
+    // Check that the prototype exists...
+    if (rtxTypeCheck_ItfNameDefinesSequence(theSequence.rtype,
+                                            theSequence.rtype.name.scope,
+                                            interface_list, qualifier) == false
+        || qualifier == "provided")
+    {
+        if (qualifier == "provided")
+            traceLine(RED + "[Error] A provided sequence cannot be implemented." + DEFAULT_COLOR);
+        else
+            traceLine(RED + "[Error] Sequence " + prototype
+                      + " does not comply to the available interfaces." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Now
+    foreach call in theSequence.body.block
+    {
+        rtxNodeCall_toRtype(call, theSequence, call.rtype);
+        local dummy;
+        local cFullName = rtxRTypeFullQualifiedName<"sequence">(call.rtype, dummy);
+        if (rtxTypeCheck_ItfNameDefinesSequence(call.rtype, call.rtype.name.scope,
+                                                interface_list, qualifier) == false
+            || qualifier != "provided")
+        {
+            if (qualifier != "provided")
+                traceLine(RED + "[Error] A sequence not provided cannot be called ("+cFullName+")." + DEFAULT_COLOR);
+            else
+                traceLine(RED + "[Error] The call " + cFullName + " in sequence " + prototype
+                          + " does not comply to the available interfaces ->"+toString(call,true) + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+/*
+ * This function checks wether the device offered all required implementations
+ * depending on the "use" statement that defines which interfaces are implemented.
+ *
+ * XXX TODO FIXME
+ * This function does not manage the checks over interfaces extensions, depending
+ * on the configuration, since it was not implemented when this function was coded.
+ */
+function rtxTypeCheck_Device(theDevice : node)
+{
+    local errcount = "0";
+
+    // Then, check wether every sequence required by the interfaces
+    // are implemented
+    foreach itfName in theDevice.use
+    {
+        if (rtxTypeCheck_DeviceRespectsItf(theDevice, itfName) == false)
+        {
+            traceLine(RED + "[Error] Device " + theDevice.name
+                      + " does not comply to the requirements of interface "
+                      + itfName + "." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+    }
+
+    if (errcount != "0")
+        return false;
+    return true;
+}
+
+
+/*
+ * This function checks wether the config offers all required variable values.
+ * We check whether each variable exists, and for each interface used, whether
+ * every required variable was defined with a value or not.
+ *
+ * XXX TODO FIXME
+ * This function does not manage the checks over interfaces extensions, since it
+ * was not implemented when this function was coded.
+ */
+function rtxTypeCheck_Config(theConfig : node)
+{
+    local interfaces;
+
+    foreach item in theConfig.body.block
+    {
+//       if (!findElement(###, interfaces))
+//       {
+//           pushItem interfaces;
+//           interfaces#back = ###;
+//       }
+    }
+
+    // FIXME For now, return true to avoid error because not implemented.
+    return true;
+}
+
+
+#end    /* !existFunction(rtxTypingRoutines_Front_version) */

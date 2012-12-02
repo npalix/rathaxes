@@ -1,0 +1,398 @@
+#if !existFunction(rtxTypingRoutines_Mid_version)
+
+function rtxTypingRoutines_Mid_version()
+{ return "1.0"; }
+
+#include "typing/routines/rtxTypingRoutines_Common.inc.cws"
+
+function        rtxItfIdNodeToRType(idNode: node, rtypeNode : node)
+{
+    local dummy_out_ref;
+
+    rtxNodeRType(rtypeNode, idNode, dummy_out_ref);
+}
+
+/*
+ * This function checks whether an interface contains a type described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxInterfaceHasType_recursive(rtypeNode : node, interfaceNode : node,
+                                              possibilities : node)
+{
+    if (rtypeNode.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + rtypeNode.type);
+
+    local name = rtypeNode.name.name;
+    // Unkown scope and not explicit global ?
+    // In this case, we'll check ALL possibilities. and decide afterwards.
+    if (rtypeNode.name.scope == "" && rtypeNode.name.global == false)
+    {
+        // We are searching for qualified items, thus set the scope before checking.
+        // Check current interface.
+        if (findElement(name, interfaceNode.types) == true)
+        {
+            // Add the interface possibility to the list.
+            pushItem possibilities;
+            possibilities#back = interfaceNode.name;
+        }
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            // Load the itf's tree in order to refer to it's sequence node.
+            local loaded = false;
+            local itfNode;
+            local itfName = key(parentInterface);
+
+            // Here, we must manage two distinct cases:
+            //  - Parent Interface written within the same source file = node already loaded (may not be present in cache)
+            //  - Parent Interface not loaded (to be loaded)
+            if (!existVariable(parentInterface.name))
+            {
+                if (rtxLink_findInterface(itfName, itfNode) == true)
+                {
+                    if (rtxLink_LoadItem(itfNode, interfaceNode.inheritance[key(parentInterface)], false) == true)
+                        loaded = true;
+                    else
+                        traceLine(YELLOW + "Could not load interface '" + itfName + "' from cache for type-checking." + DEFAULT_COLOR);
+                }
+                else
+                    traceLine(YELLOW + "Could not find interface '" + itfName + "' in cache for type-checking." + DEFAULT_COLOR);
+            }
+            else
+                loaded = true;
+
+            if (loaded)
+            {
+                // Here, we don't care about success or failure in the parent interfaces
+                // The wrapper function will sort out things depending
+                // on the variable 'possibilities'
+                rtxInterfaceHasType_recursive(rtypeNode, parentInterface, possibilities);
+            }
+        }
+    }
+    else if (rtypeNode.name.global == false) // known scope
+    {
+        if (rtypeNode.name.scope != interfaceNode.name)
+        {
+            // If it's not a direct inheritance, try out by going through the parent first to find the itf...
+            if (!findElement(rtypeNode.name.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxInterfaceHasType_recursive(rtypeNode, parentInterface,
+                                                      possibilities) == true)
+                    {
+                        return true;
+                    }
+                }
+                traceLine(RED + "[Error] Could not find interface '"
+                          + rtypeNode.name.scope
+                          + "' in inheritance tree." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
+                return false;
+            }
+            // If it's a direct inheritance, snoop through the types list.
+            else
+            {
+                if (findElement(name, interfaceNode.inheritance[rtypeNode.name.scope].types) != false)
+                    return true;
+            }
+        }
+        else if (findElement(name, interfaceNode.types) == true)
+            return true;
+    }
+    else // explicit global == true
+    {
+        // XXX FIXME TODO
+        // builtin item management.
+        if (rtypeNode.name.name == "register")
+            return true;
+        if (rtypeNode.name.name == "register_field")
+            return true;
+        if (rtypeNode.name.name == "register_value")
+            return true;
+        if (rtypeNode.name.name == "string")
+            return true;
+        if (rtypeNode.name.name == "number")
+            return true;
+        if (rtypeNode.name.name == "numser")
+            return true;
+    }
+
+    return false;
+}
+
+/*
+ * This wrapper to rtxInterfaceHasType_recursive takes care of checking
+ * and ambiguous type use. Read code for more information.
+ */
+function        rtxInterfaceHasType(rtypeNode : node, interfaceNode : node)
+{
+    local match_count = 0;
+    local unique_possibilities;
+    local possibilities;
+    local message;
+
+    if (rtxInterfaceHasType_recursive(rtypeNode, interfaceNode,
+                                      possibilities) == true)
+        return true;
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+            insert unique_possibilities[entry] = entry;
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        rtypeNode.name.scope = unique_possibilities#front;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach entry in unique_possibilities
+        {
+            message += key(entry) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify type '" + rtypeNode.name.name
+                    + "': No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+// This one merely checks a list of interfaces instead of an interface node.
+function    rtxInterfaceNameHasType(rtypeNode : node, rtypeItfName : value, interface_list : node)
+{
+    local match_count = 0;
+    local unique_possibilities;
+    local possibilities;
+    local message;
+    // To load the trees.
+    local itfNode;
+    local itfTree;
+
+    if (rtypeItfName != "")
+    {
+        // Load the itf's tree in order to refer to it's sequence node.
+        if (rtxLink_findInterface(rtypeItfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + rtypeItfName
+                      + "' containing the template"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '"
+                      + rtypeItfName + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for template at " + rtypeNode#parent.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
+                                          possibilities) == true)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    foreach itfName in interface_list
+    {
+        // Load the itf's tree in order to refer to it's sequence node.
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName
+                      + "' containing the template"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + rtypeNode#parent.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '"
+                      + itfName + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for template at " + rtypeNode#parent.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxInterfaceHasType_recursive(rtypeNode, itfTree,
+                                          possibilities) == true)
+        {
+            return true;
+        }
+    }
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(entry, unique_possibilities) == false)
+            insert unique_possibilities[entry] = entry;
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        rtypeNode.name.scope = unique_possibilities#front;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify type's interface: "
+                    + "found " + match_count + " matching interfaces[ ";
+        foreach entry in unique_possibilities
+        {
+            message += key(entry) + ", " ;
+        }
+        message += "]." + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify type '" + rtypeNode.name.name
+                    + "': No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+/*
+ * This function checks whether an interface declares a pointcut described
+ * by a RType node, by checking inside its tree.
+ */
+function        rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype : node, interfaceNode : node,
+                                                        possibilities : node)
+{
+    local dummy;
+
+    if (pointcutRtype.type != "__rtx_rtype__")
+        error("Bad node type. Received: " + pointcutRtype.type);
+
+    // Unkown scope and not explicit global ?
+    if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
+    {
+        if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode,
+                                            dummy, possibilities) == true)
+        {
+            // Add interface name into possibilities list
+            pushItem possibilities;
+            possibilities#back = interfaceNode.name;
+        }
+
+        // Recursive check in parents interfaces.
+        foreach parentInterface in interfaceNode.inheritance
+        {
+            // Here don't check the return value as we want to try with every interface
+            rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype, parentInterface,
+                                                    possibilities);
+        }
+    }
+    else if (pointcutRtype.name.global == false) // known scope
+    {
+        if (pointcutRtype.name.scope != interfaceNode.name && !isEmpty(interfaceNode.inheritance))
+        {
+            if (!findElement(pointcutRtype.name.scope, interfaceNode.inheritance))
+            {
+                foreach parentInterface in interfaceNode.inheritance
+                {
+                    if (rtxTypeCheck_ItfCheckPointcut_recursive(pointcutRtype, parentInterface,
+                                                                possibilities) == true)
+                        return true;
+                }
+                traceLine(RED + "[Error] The interface "+interfaceNode.name
+                          +" does not depend on interface '"+pointcutRtype.name.scope
+                          +"': The pointcut cannot be declared." + DEFAULT_COLOR);
+                traceLine(RED + "        at " + pointcutRtype#parent.location + DEFAULT_COLOR);
+                return false;
+            }
+
+            if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype,
+                                                interfaceNode.inheritance[pointcutRtype.name.scope],
+                                                dummy, possibilities) == true)
+                return true;
+        }
+        else if (rtxTypeCheck_ItfDefinesPointcut(pointcutRtype, interfaceNode
+                                                 , dummy, possibilities) == true)
+            return true;
+
+    }
+    else // explicit global == true
+    {
+        // XXX TODO FIXME
+        // builtin item management.
+        switch (pointcutRtype.name.name)
+        {
+        case "IMPLEMENTATION":
+        case "CALL":
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * This wrapper to rtxTypeCheck_ItfCheckPointcut_recursive takes care of checking
+ * and ambiguous type use. Read code for more information.
+ */
+function        rtxTypeCheck_ItfCheckPointcut(rtypeNode : node, interfaceNode : node)
+{
+    local match_count = 0;
+    local unique_possibilities;
+    local possibilities;
+    local message;
+
+    if (rtxTypeCheck_ItfCheckPointcut_recursive(rtypeNode, interfaceNode,
+                                                possibilities) == true)
+        return true;
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        // findElements checks the key, not the content...
+        if (findElement(key(entry), unique_possibilities) == false)
+        {
+            insert unique_possibilities[key(entry)];
+            setall unique_possibilities[key(entry)] = entry;
+        }
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        setall rtypeNode = unique_possibilities#front.rtype;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify pointcut ("
+                    + "found " + match_count + " matching interfaces):";
+        foreach entry in unique_possibilities
+        {
+            message += endl() + key(entry);
+        }
+        message += DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify pointcut: No match in the dependency tree." + DEFAULT_COLOR;
+    traceLine(message);
+
+    return false;
+}
+
+
+
+
+
+#end

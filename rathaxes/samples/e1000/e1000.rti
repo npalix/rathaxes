@@ -1,0 +1,155 @@
+interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
+{
+    required variable   Builtin::number rx_ring_size;
+    required variable   Builtin::number tx_ring_size;
+    required variable   Builtin::number rx_buffer_len;
+    required variable   Builtin::number tx_max_data_per_desc;
+
+    provided type   Context
+    {
+        chunk       Ethernet::HardwareContext();
+        decl        data_types();
+
+        /* Callbacks/Hooks which should probably be in the front-end: */
+        chunk       Ethernet::adapter_init_context(Ethernet::Device,
+                                                   Builtin::number,
+                                                   Builtin::symbol,
+                                                   Builtin::number);
+        chunk       Ethernet::adapter_reset(Ethernet::Device);
+        chunk       Ethernet::adapter_load_mac_address(Ethernet::Device);
+    }
+
+    provided type   RxDescriptor
+    {
+        chunk       LKM::includes();
+        decl        data_types();
+        method      init();
+    }
+
+    provided type   TxDescriptor
+    {
+        decl        data_types();
+        method      init();
+    }
+
+    provided type   RxRing
+    {
+        decl        data_types();
+        method      init();
+    }
+
+    provided type   TxRing
+    {
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+        decl        data_types();
+        method      init();
+
+        /* Clean the ring (i.e: move the head closer to the tail): */
+        method      clean();
+        /* Return the number of clean descriptors left in the ring: */
+        method      descriptors_remaining();
+        method      tso_cksum_offload(Socket::SKBuff);
+        method      put(Socket::SKBuff);
+        /* Signal the device that new dirty descriptors are on the ring: */
+        method      start_xmit(e1000::Context);
+    }
+
+    /*
+     * These two types should actually be registers definitions in the frontend:
+     */
+    provided type   Register
+    {
+        decl        data_types();
+        method      init(Builtin::number);
+    }
+
+    provided type   Commands
+    {
+        decl        data_types();
+    }
+
+    provided type   TxDescriptorFlags
+    {
+        decl        data_types();
+    }
+
+    /*
+     * This should take an e1000::Context as the first argument but this was
+     * not working as wished.
+     */
+    provided sequence   print_status(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   setup_interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::includes(); // works without this one
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   free_interrupt_handler(Ethernet::Device)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   activate_device_interruption(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   set_up_device(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   free_rx_tx(Ethernet::Device dev)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   handle_interrupt(Ethernet::Device)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   xmit(Ethernet::Device, Socket::AbstractSKBuff)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_read32(e1000::Context, e1000::Register)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_write32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_set32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   register_unset32(e1000::Context, e1000::Register, ::number)
+    {
+        provided chunk  LKM::prototypes();
+        provided chunk  LKM::code();
+        provided chunk  ::CALL();
+    }
+}

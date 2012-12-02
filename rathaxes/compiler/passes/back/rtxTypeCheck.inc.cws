@@ -1,0 +1,87 @@
+#if !existFunction(rtxBack_TypeCheck_version)
+
+function rtxBack_TypeCheck_version()
+{ return "1.0"; }
+
+#include "typing/rtxTyping.inc.cws"
+
+declare function rtxTpl_TypeCheckFor<T>(local_node : node, interfaces : node);
+declare function rtxTpl_TypeCheck(local_node : node);
+
+
+
+function rtxTpl_TypeCheckFor<T>(local_node : node, interfaces : node)
+{
+    error("rtxTpl_TypeCheck unmanaged type "+T);
+}
+
+/* Allow middle or back code portion in one big RTX file */
+function rtxTpl_TypeCheckFor<"__rtx_itf__">(local_node : node, interfaces : node)
+{       return true;}
+function rtxTpl_TypeCheckFor<"__rtx_device__">(local_node : node, interfaces : node)
+{       return true;}
+function rtxTpl_TypeCheckFor<"__rtx_config__">(local_node : node, interfaces : node)
+{       return true;}
+/**/
+
+function    rtxTpl_TypeCheckFor<"__rtx_tpl__">(local_node : node, interfaces : node)
+{
+    return rtxTypeCheck_Template(local_node.prototype.rtype, local_node, interfaces);
+}
+
+function rtxTpl_TypeCheckFor<"__block__">(local_node : node, interfaces : node)
+{
+    local count;
+    foreach item in local_node.block
+    {
+        if (rtxTpl_TypeCheckFor<item.type>(item, interfaces) == false)
+            increment(count);
+    }
+    return count;
+}
+
+function    rtxTpl_TypeCheckFor<"__rtx_with__">(local_node : node, interfaces : node)
+{
+    local errcount = 0;
+    local dummy_itf;
+
+    if (rtxTpl_TypeCheckFor<"__block__">(local_node.body, local_node.interfaces) == false)
+        increment(errcount);
+
+    // If there's a C block, check the placeHolders
+    insert dummy_itf.name;
+    foreach ph in local_node.c_block.compile
+    {
+        if (ph.node.body.type == "__rtx_pointcut__")
+        {
+            dummy_itf.name = ph.node.body.name.scope;
+            insert ph.node.body.rtype;
+            local dummy;
+            rtxNodeRType(ph.node.body.rtype, ph.node.body.name, dummy);
+        }
+        if (rtxTypeCheck_CheckPlaceholder<ph.node.body.type>(ph.node.body, local_node.c_block,
+                                                             dummy_itf, local_node.interfaces) == false)
+            increment(errcount);
+    }
+
+    if (errcount != 0)
+        return false;
+
+    return true;
+}
+
+function rtxTpl_TypeCheckFor<"__root_block__">(local_node : node, interfaces : node)
+{
+    return rtxTpl_TypeCheckFor<"__block__">(local_node, interfaces);
+}
+
+
+
+function rtxTpl_TypeCheck(local_node : node)
+{
+    local dummy;
+    return rtxTpl_TypeCheckFor<local_node.type>(local_node, dummy);
+}
+
+
+#end

@@ -1,0 +1,32 @@
+interface Main : Builtin
+{
+    provided pointcut   include_headers();
+    provided pointcut   main();
+
+    provided type       Arguments {
+        decl    include_headers();
+        method  ::init(Builtin::number, Builtin::symbol, Builtin::symbol);
+        method  ::log();
+    }
+
+    /* This sequence is required, i.e: its implementation is in the .rtx */
+    required sequence   start(Main::Arguments)
+    {
+        provided chunk  include_headers();
+        provided chunk  main();
+    }
+
+    /*
+     * This sequence is provided i.e: its implementation is in the .blt (it's
+     * called from the .rtx).
+     */
+    provided sequence   log(Main::Arguments)
+    {
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   exit(Builtin::number)
+    {
+        provided chunk  ::CALL();
+    }
+}

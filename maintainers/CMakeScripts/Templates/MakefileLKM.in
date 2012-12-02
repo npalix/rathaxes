@@ -1,0 +1,16 @@
+# Disable this "coding-style" warning (seriously, you have to compile with
+# -pedantic to get it...)
+EXTRA_CFLAGS	= -Wno-declaration-after-statement -std=gnu99
+
+KDIR		= /lib/modules/$(shell uname -r)/build
+obj-m		:= @LKM_OBJECTS@
+
+all:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(shell pwd) modules
+
+install:
+	$(MAKE) -C $(KDIR) SUBDIRS=$(shell pwd) modules_install
+	depmod -a
+clean:
+	rm -rf *~
+	$(MAKE) -C $(KDIR) M=$(PWD) clean

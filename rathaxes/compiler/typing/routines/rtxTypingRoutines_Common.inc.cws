@@ -1,0 +1,330 @@
+#if !existFunction(rtxTypingRoutines_Common_version)
+
+function rtxTypingRoutines_Common_version()
+{ return "1.0"; }
+
+
+function        rtxTypeCheck_ParametersMatch(rtype1 : node, rtype2 : node, qualifier : value)
+{
+    local tmp1;
+    local tmp2;
+    local dummy;
+
+    setall tmp1 = rtype1;
+    setall tmp2 = rtype2;
+
+    tmp1.name.scope = "";
+    tmp1.name.name = "InternalTest";
+    tmp1.name.global = true;
+    tmp2.name.scope = "";
+    tmp2.name.name = "InternalTest";
+    tmp2.name.global = true;
+
+    return (rtxRTypeFullQualifiedName<qualifier>(tmp1,dummy) == rtxRTypeFullQualifiedName<qualifier>(tmp2,dummy));
+}
+
+/*
+ * This function checks whether the pointcut is declared by the itfTree
+ * by going through the whole tree..
+ *
+ * This function shoul only be used while type-checking the interface.
+ * A simpler one shall be available for the other parts of type-checking.
+ */
+function        rtxTypeCheck_ItfDefinesPointcut(pointcutRtype : node, itfTree : node,
+                                                out_qualifiers : node, out_possibilities : node)
+{
+    local proto_is_qualified = 1;
+
+    local dummy;
+
+    if (findElement(pointcutRtype.name.name, itfTree.pointcuts) == true)
+    {
+        // Go through the proto's types to check wether it's fully qualified or not
+        foreach type in pointcutRtype.params
+        {
+            if (type.global == false && type.scope == "")
+            {
+                proto_is_qualified = 0;
+                break ;
+            }
+        }
+        if (pointcutRtype.name.scope == "" && pointcutRtype.name.global == false)
+            proto_is_qualified = 0;
+
+        // Then search, depending on the qualification
+        if (proto_is_qualified == 1)
+        {
+            // In this case, only check wether the pointcutRtype in the keys match.
+            local dummy;
+            pointcutRtype.name.scope = itfTree.name;
+            local qualifiedName = rtxRTypeFullQualifiedName<"pointcut">(pointcutRtype, dummy);
+            if (findElement(qualifiedName, itfTree.pointcuts[pointcutRtype.name.name]) == true)
+            {
+                // Add the match to the possibilities, and return true since
+                // there's no other possibility for this peculiar interface
+                insert out_possibilities[qualifiedName];
+                setall out_possibilities[qualifiedName] = itfTree.pointcuts[pointcutRtype.name.name][qualifiedName];
+                insert out_qualifiers[qualifiedName];
+                out_qualifiers[qualifiedName] = itfTree.pointcuts[pointcutRtype.name.name][qualifiedName].qualifier;
+                return true;
+            }
+        }
+        else
+        {
+            local dummy;
+            // If not fully qualified, then for each possibility, go through the types
+            foreach refPointcut in itfTree.pointcuts[pointcutRtype.name.name]
+            {
+                local match = 1;
+                if (getArraySize(refPointcut.rtype.params) == getArraySize(pointcutRtype.params))
+                {
+                    foreach type in refPointcut.rtype.params
+                    {
+                        localref reftype = refPointcut.rtype.params[index(type)];
+                        localref param    = pointcutRtype.params[index(type)];
+                        // if param name differs, or param scope differs.
+                        if (reftype.name != param.name
+                            || (param.global == false && param.scope != "" && param.scope != reftype.scope))
+                        {
+                            match = 0;
+                            break ;
+                        }
+                    }
+                    if (match == 1)
+                    {
+                        // Add the match to the possibilities before trying out others
+                        // Since it's not the right one for sure in this interface.
+                        insert out_possibilities[key(refPointcut)];
+                        setall out_possibilities[key(refPointcut)] = refPointcut;
+                        insert out_qualifiers[key(refPointcut)];
+                        out_qualifiers[key(refPointcut)] = refPointcut.qualifier;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+/*
+ * This function checks whether the sequence is declared by the itfTree.
+ * It returns true if the match is without a doubt.
+ * False otherwise, after appending the possibilities to out_possibilities.
+ */
+function        rtxTypeCheck_ItfDefinesSequence(prototype : node, itfTree : node,
+                                                out_qualifiers : node, out_possibilities : node)
+{
+    local scope_save = prototype.name.scope;
+    local proto_is_qualified = 1;
+
+    if (findElement(prototype.name.name, itfTree.sequences) == true)
+    {
+        // Go through the proto's types to check wether it's fully qualified or not
+        foreach type in prototype.params
+        {
+            if (type.global == false && type.scope == "")
+            {
+                proto_is_qualified = 0;
+                break ;
+            }
+        }
+        if (prototype.name.scope == "" && prototype.name.global == false)
+            proto_is_qualified = 0;
+
+        // Then search, depending on the qualification
+        if (proto_is_qualified == 1)
+        {
+            // In this case, only check wether the prototype in the keys match.
+            local dummy;
+            prototype.name.scope = itfTree.name;
+            local qualifiedName = rtxRTypeFullQualifiedName<"sequence">(prototype, dummy);
+            if (findElement(qualifiedName, itfTree.sequences[prototype.name.name]) == true)
+            {
+                // Add the match to the possibilities, and return true since
+                // there's no other possibility for this peculiar interface
+                prototype.name.scope = scope_save;
+                pushItem out_possibilities;
+                setall out_possibilities#back = itfTree.sequences[prototype.name.name][qualifiedName];
+                pushItem out_qualifiers;
+                out_qualifiers#back = itfTree.sequences[prototype.name.name][qualifiedName].qualifier;
+                return true;
+            }
+        }
+        else
+        {
+            local dummy;
+            // If not fully qualified, then for each possibility, go through the types
+            foreach seq in itfTree.sequences[prototype.name.name]
+            {
+                local match = 1;
+                if (getArraySize(seq.rtype.params) == getArraySize(prototype.params))
+                {
+                    foreach type in seq.rtype.params
+                    {
+                        localref reftype = prototype.params[index(type)];
+                        // Either the type's name is different, of the checked
+                        // type's scope is not empty and differs. In those cases,
+                        // the type does not match, and so does the sequence's prototype.
+                        if (reftype.name != type.name
+                            || (reftype.global == false && reftype.scope != ""
+                                && reftype.scope != type.scope))
+                        {
+                            match = 0;
+                            break ;
+                        }
+                    }
+                    if (match == 1)
+                    {
+                        // Add the match to the possibilities before trying out others
+                        // Since it's not the right one for sure in this interface.
+                        prototype.name.scope = scope_save;
+                        pushItem out_possibilities;
+                        setall out_possibilities#back = seq;
+                        pushItem out_qualifiers;
+                        out_qualifiers#back = seq.qualifier;
+                    }
+                }
+            }
+        }
+    }
+
+    prototype.name.scope = scope_save;
+
+    return false;
+}
+
+/*
+ *
+ * This function searches the declaration of the sequence matching theSequence
+ * inside the interface named by 'itfName'. If itfName has no value, then the
+ * function tries to find the sequence in any of the interfaces present in
+ * interface_list.
+ *
+ *
+ * XXX TODO FIXME
+ * The function currently does not manage ambiguous declarations, and accepts
+ * the first possibility matched (ie: if two interface define the sequence, and
+ * it does not explicit its containing interface, then the first one matched
+ * will be seend a the right one, instead of giving an ambiguous error).
+ *
+ */
+function rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence : node, itfName : value,
+                                                       interface_list : node,
+                                                       out_qualifiers : node,
+                                                       out_possibilities : node)
+{
+    local itfNode;
+    local itfTree;
+    local dummy_list;
+
+    if (itfName != "")
+    {
+        if (rtxLink_findInterface(itfName, itfNode) == false)
+        {
+            traceLine(RED + "[Error] Interface '" + itfName + "' containing the sequence"
+                      + " could not be found within the cache." + DEFAULT_COLOR);
+            traceLine(RED + "        at " + theSequence.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+        {
+            traceLine(RED + "[Error] Could not load interface's '" + itfName
+                      + "' tree." + DEFAULT_COLOR);
+            traceLine(RED + "        for sequence at " + theSequence.location + DEFAULT_COLOR);
+            return false;
+        }
+        if (rtxTypeCheck_ItfDefinesSequence(theSequence, itfTree,
+                                            out_qualifiers, out_possibilities) != false)
+        {
+            theSequence.name.scope = itfName;
+            return true;
+        }
+
+        // Else, try to iterate over the inheritances...
+        foreach itf in itfTree.inheritance
+        {
+            // Since we don't know if it's the right interface, just try every one,
+            // And the caller will check the possibilities...
+            rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, key(itf), dummy_list,
+                                                          out_qualifiers, out_possibilities);
+        }
+    }
+    else
+    {
+        // try the list of explicit interfaces, since we've no itfTree to go through...
+        foreach itf in interface_list
+        {
+            // Since we don't know if it's the right interface, just try every one,
+            // And the caller will check the possibilities...
+            rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, itf, dummy_list,
+                                                          out_qualifiers, out_possibilities);
+        }
+    }
+
+    return false;
+}
+
+function rtxTypeCheck_ItfNameDefinesSequence(theSequence : node, itfName : value,
+                                             interface_list : node,
+                                             out_qualifier : node)
+{
+    local dummy;
+    local match_count;
+    local unique_possibilities;
+    local possibilities;
+    local qualifiers;
+    local message;
+
+
+    if (rtxTypeCheck_ItfNameDefinesSequence_recursive(theSequence, itfName, interface_list,
+                                                      qualifiers, possibilities) == true)
+    {
+        out_qualifier = qualifiers#front;
+        return true;
+    }
+
+    // First, create a list of unique elements.
+    foreach entry in possibilities
+    {
+        local fullName = rtxRTypeFullQualifiedName<"sequence">(entry.rtype, dummy);
+        // findElements checks the key, not the content, so insert as a key
+        if (findElement(fullName, unique_possibilities) == false)
+        {
+            insert unique_possibilities[fullName];
+            setall unique_possibilities[fullName] = entry.rtype;
+        }
+    }
+
+    match_count = getArraySize(unique_possibilities);
+    if (match_count == 1)
+    {
+        // Copy in order to copy all non-qualified fields all at once
+        setall theSequence = unique_possibilities#front;
+        out_qualifier = qualifiers#front;
+        return true;
+    }
+
+    if (match_count != 0)
+    {
+        message = RED + "[Error] Could not identify sequence: "
+                    + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
+                    + "found " + match_count + " matching sequences:";
+        foreach entry in unique_possibilities
+        {
+            message += endl() + key(entry);
+        }
+        message += "" + DEFAULT_COLOR;
+    }
+    else
+        message = RED + "[Error] Could not identify sequence "
+                    + rtxRTypeFullQualifiedName<"sequence">(theSequence, dummy)
+                    + ": No possible match in the dependency tree." + DEFAULT_COLOR;
+
+    traceLine(message);
+
+    return false;
+}
+
+#end

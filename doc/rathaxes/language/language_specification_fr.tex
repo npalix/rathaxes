@@ -1,0 +1,709 @@
+\documentclass[french]{rtxreport}
+
+\usepackage{color}
+\usepackage{listings}
+
+\author{Thomas Sanchez}
+
+\title{Spécification du language}
+\usepackage[utf8]{inputenc}
+\rtxdoctype{Spécification du language}
+\rtxdocref{fr\_specification}
+\rtxdocversion{0.1}
+\rtxdocstatus{Brouillon}
+
+\rtxdochistory{
+0.1 & 27/01/2011 & Thomas Sanchez & Spécification du langage \\
+}
+
+\newcommand{\note}[1]{\marginpar{\scriptsize{\textdagger\ #1}}}
+
+
+
+\definecolor{lstbackground}{rgb}{0.95, 0.95, 0.95}
+\definecolor{lstcomment}{rgb}{0, 0.12, 0.76}
+\definecolor{lstkeyword}{rgb}{0.66, 0.13, 0.78}
+\definecolor{lststring}{rgb}{0.67, 0.7, 0.13}
+\definecolor{lstidentifier}{rgb}{0.1, 0.1, 0.1}
+
+\lstset{
+        tabsize=2,
+        captionpos=b,
+        emptylines=1,
+        frame=single,
+        breaklines=true,
+        extendedchars=true,
+        showstringspaces=false,
+        showspaces=false,
+        showtabs=false,
+        basicstyle=\color{black}\small\ttfamily,
+        numberstyle=\scriptsize\ttfamily,
+        keywordstyle=\color{lstkeyword},
+        commentstyle=\color{lstcomment},
+        identifierstyle=\color{lstidentifier},
+        stringstyle=\color{lststring},
+        backgroundcolor=\color{lstbackground}
+}
+
+\definecolor{grey}{rgb}{0.90,0.90,0.90}
+\definecolor{rBlue}{rgb}{0.0,0.24,0.96}
+\definecolor{rRed}{rgb}{0.6,0.0,0.0}
+\definecolor{rGreen}{rgb}{0.0,0.4,0.0}
+
+\lstdefinelanguage{rathaxes}%
+{
+	morekeywords={DECLARE, SEQUENCE, INTERFACE, IMPLEMENTATION, FROM, READ, OPTIONAL, CONFIGURATION_VARIABLE, USE, AS, WITH, SEQUENCES, ON, ELSE, LET, PROVIDES, REQUIRE, THROWS, FINALLY, FOREACH, IN, AND, OR, THROW, HANDLE_ERROR, NOT, REGISTER, LIKE, BIT, INTEGER, DOUBLE, BOOLEAN, STRING, MAPPED_AT, PCI},%
+	sensitive=true,%
+	morecomment=[l][\color{rRed}]{//},%
+	morecomment=[l][\color{rRed}]{\#},%
+	morecomment=[s][\color{rRed}]{/*}{*/},%
+	morestring=[b][\color{rGreen}]",%
+	morestring=[b][\color{rGreen}]',%
+	keywordstyle={\color{rBlue}}%
+}[keywords,comments,strings]
+
+
+
+
+
+\begin{document}
+
+\maketitle
+
+\rtxmaketitleblock
+
+\tableofcontents
+
+\abstract{}
+
+\lstset{language=rathaxes}
+\section*{Introduction}
+
+Spécifier un langage est quelque chose de difficile. Cela requiert de connaitre tous les cas dans lequel il va être utilisé.
+
+Par chance, nous n’avons qu’un DSL à spécifier, donc quelque chose par nature spécifique a une tache. Cependant, la conception d’un driver est quelque chose de complexe et demande d’être sur et sans bugs.
+
+Comment proposer un langage de ce genre ?
+
+L’équipe de Rathaxes 2009 a fait un bon boulot en défrichant le sujet, beaucoup de concepts en seront donc retirés.
+
+Le seul reproche que l’on pourrait leur faire est le manque d’expressivité. Par expressivité, je veux dire qu’il ne permet pas d’exprimer certains concepts liés aux pilotes.
+
+Le langage que je vais vous proposer va essayer de répondre à ces besoins. Il sera très verbeux et différent des langages qu’on a l’habitude de voir par sa syntaxe. Il n’y aura qu’un moyen d’écrire une instruction. Par exemple en C, on peut incrémenter une variable comme ceci :
+
+\begin{lstlisting}
+i++
+\end{lstlisting}
+Mais aussi:
+\begin{lstlisting}
+++i
+\end{lstlisting}
+Ou encore
+\begin{lstlisting}
+i += 1
+\end{lstlisting}
+
+Cela rend la lecture, compliqué, et d’infimes différences peuvent être présentes (pré/post incrémentation). J’ai comme ambition de proposer un langage qui n’en aura aucune.
+
+\chapter{Survol du langage}
+Lors de la conception d’un pilote, nous devons manipuler plusieurs types de structure de données différentes. Que ce soit du côté système, ou de ce que le périphérique nous impose.
+
+Ces structures de données vont varier selon le sous-système que l’on va utiliser. Prenons un exemple sur les sk\_buff.
+
+Les sk\_buff (socket buffer) sont des structures représentant un paquet à envoyer sur le réseau (ou à lire sur la carte). Elles ne seront donc utilisées que dans un pilote s’enregistrant dans le sous-système.
+
+Je n’ai pas déterminé s’il valait mieux créer des interfaces de manipulation de ces structures ou si c’est plus cohérent d’appeler certaines fonctions qui, elles, manipuleront un sk\_buff (je penche pour la seconde).
+
+Je n’ai pas non plus détermine les interfaces de communication avec le sous-système voulu. Ça ne relève pas du langage, mais de l’implémentation. Cependant, on peut légitimement se dire qu’on devra respecter l’interface publique du sous-système dont on veut bénéficier. On peut s’inspirer des interfaces du Java/Objective-C/C\#.
+
+
+J’ai défini/gardé quelques règles : 
+\begin{itemize}
+	\item Toute déclaration devra commencer par un DECLARE 
+	\item Le langage devra donner l’impression de coder dans un système événementiel ; 
+	\item De la redondance ; 
+	\item Aucune ambiguïté ;
+	\item Pas de condition impérative (if, while, for, etc.) ; 
+	\item Qu’une seule manière de faire quelque chose.
+\end{itemize}
+
+Je vais aussi essayer de m’inspirer du concept des langages fonctionnels, à savoir: pas d’effet de bords. On dit d’une fonction fonctionnelle que pour une entrée donnée le résultat sera toujours le même. Par exemple, une fonction d’addition de deux entiers est fonctionnelle. Il serait donc intéressant de proposer des algorithmes qui le sont. Bien évidemment, tout ne pourra pas l’être.
+
+\chapter{Les sous-systèmes}
+
+\section{Les interfaces}
+
+Declaration d'une interface:
+
+\begin{lstlisting}
+
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE f1(ARGS, ARGS2);
+	};
+
+	REQUIRE SEQUENCE default_func(A1);
+	OPTIONAL SEQUENCE medium(A1);
+	OPTIONAL SEQUENCE best(A1);
+};
+
+\end{lstlisting}
+
+L’implémentation (on n’implémente évidemment que les \texttt{SEQUENCES} dans \texttt{PROVIDES}) :
+\begin{lstlisting}
+
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			ON EXISTS(best) LET best(param)
+			ON EXISTS(medium) LET medium(param)
+			ELSE LET default_func(param);
+		};
+	};
+};
+\end{lstlisting}
+Une implémentation ne pourra pas implémenter une \texttt{SEQUENCE} de même nom présente dans les deux interfaces.
+
+Les fonctions qui sont \texttt{REQUIRE}s ou \texttt{OPTIONAL}s, sont les fonctions que devra fournir le code qui utilise vraiment l’interface.
+
+Par exemple:
+
+\begin{lstlisting}
+DECLARE INTERFACE interface_name {
+	PROVIDES {
+		SEQUENCE f1(ARGS, ARGS2);
+	};
+
+	REQUIRE SEQUENCE default_func(A1);
+	OPTIONAL SEQUENCE medium(A1);
+	OPTIONAL SEQUENCE best(A1);
+};
+
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			ON EXISTS(best) LET best(param)
+			ON EXISTS(medium) LET medium(param)
+			ELSE LET default_func(param);
+		};
+	};
+};
+
+DECLARE DRIVER e1000 USE interface_name interface_name2{
+	DECLARE SEQUENCE medium(ARG a) {
+	};
+};
+\end{lstlisting}
+Qu’en pensez-vous ?
+
+Je ne pense pas qu’être un peu bâtard sur l’écriture des interfaces est un peu moins grave si on gagne en lisibilité dans le DSL.
+
+Je reconnais que je préférerais ce genre d’écriture (j'y reviendrai plus tard):
+
+\begin{lstlisting}
+DECLARE IMPLEMENTATION implementation_name FROM interface_name interface_name2 {
+	PROVIDES {
+		SEQUENCE f1 (ARGS1, ARGS2) {
+			LET functor FIRST_NON_NULL FROM SEQUENCES[best, medium, default_func] {
+				functor(param);
+			};
+		};
+	};
+};
+\end{lstlisting}
+
+
+\chapter{La configuration et les sections}
+
+Dans la première version de Rathaxes, le DSL était divisé en quatre parties : 
+\begin{itemize}
+	\item La déclaration des registres ; 
+	\item La déclaration/implémentation des SEQUENCES ; 
+	\item La déclaration/implémentation des interfaces système ;
+	\item La configuration. 
+\end{itemize}
+
+J’aimerais qu’il n’y en ait plus que deux : 
+\begin{itemize}
+	\item La configuration ; 
+	\item Le reste. 
+\end{itemize}
+
+Pourquoi ? 
+
+Au premier abord, je trouve que c’est une très bonne idée, MAIS, lorsqu’on va dire que notre driver va utiliser tel ou tel sous système, qu’il va devoir implémenter certaines méthodes, ou en utiliser ça va juste être le bordel. Pour cela, je pense qu’une section code et une section configuration sont amplement suffisantes. Donc les mots clefs, \texttt{DRIVER}, \texttt{SEQUENCES}, \texttt{KERNEL\_INTERFACES} et \texttt{DEVICE} disparaissent. 
+
+Lorsqu’on fait un driver, par exemple un pilote de type \texttt{CHAR}, on a besoin de définir un \texttt{minor} et un \texttt{major} qui sera utilisé lors de l’enregistrement du périphérique. Le sous-système \emph{devra} savoir quoi mettre pour ces valeurs, mais \emph{comment} peut-il les récupérer ?
+
+Je ne suis pas pour faire une craderie du genre :
+
+\begin{lstlisting}
+DECLARE INTERFACE subsystem {
+	FROM CONFIGURATION GET minor;
+	FROM CONFIGURATION GET major;
+};
+\end{lstlisting}
+Même si la configuration est très liée au pilote, mais cela ne doit pas faire partie de l’interface, car cela ne nous aidera pas à savoir ce que le sous-système propose, ensuite selon les OS cela variera.
+
+Donc je pense que l’on devrait gérer la configuration, comme des variables d’environnement :
+\begin{itemize}
+	\item Quelque chose de souvent facultatif ; 
+	\item Disponible dans tous le programme.
+\end{itemize}
+
+Et de proposer une syntaxe comme celle ci:
+
+\begin{lstlisting}
+READ OPTIONAL CONFIGURATION_VARIABLE minor AS minor;
+READ CONFIGURATION_VARIABLE major AS jefaischiermonmonde;
+\end{lstlisting}
+Le \texttt{AS} pourra être optionnel. Si le champ de la configuration donné n’est pas trouvé, et qu’il est obligatoire, le compilateur devra donner un message clair d’erreur.
+
+On a donc une expression claire des données relatives à la configuration qui pourra être utilise lors de l’implémentation d’interface pour un OS, sans pour autant alourdir la lecture des en-têtes.
+
+Je ne me rends pas bien compte si on a besoin ou pas de spécifier le type de la variable de configuration. Je pense que non : il sera possible de faire de l’inférence de type selon ou la valeur sera dans l’arbre et si besoin de rajouter des " autour ou pas (typiquement ça sera soit des \texttt{strings}, ou des \texttt{int}).
+
+\chapter{Les erreurs}
+
+\emph{Ce chapitre sera aussi a completer etant donne que je n'ai pas assez de recul pour arriver a tout determiner.}
+
+Remonter et traiter une erreur est quelque chose de pénible, redondant, et particulièrement difficile à faire correctement. Plusieurs questions sont soulevées lorsqu’on s’attelle à une gestion d’erreur :
+\begin{itemize}
+	\item D’où est-ce qu’elle part ?
+	\item Comment je la remonte ?
+	\item Où je la récupère ?
+	\item Ai-je géré tous les cas ?
+\end{itemize}
+
+Je vais essayer de proposer des mécanismes rendant ce processus bien moins pénible pour les utilisateurs.
+
+\section{Quand ?}
+Une erreur surgira à partir du moment ou on appelle une fonction du système. Cependant, l’utilisateur ne sait pas forcement quand une fonction système sera appelé. Il faut partir du principe qu’il ne connait pas le système du tout.
+
+Les langages comme le java proposent un système assez robuste quant à s’assurer qu’un utilisateur gère les erreurs : les exceptions potentiellement levées font partie de la signature :
+
+\lstset{language=java}
+\begin{lstlisting}
+class C1
+{
+  void methode1() throws MyException
+  {
+    throw new MyException ();
+  }
+}
+\end{lstlisting}
+\lstset{language=rathaxes}
+
+Donc à partir du moment où methode1 est appelée, il faut que l’appelant : 
+\begin{itemize}
+	\item entoure d’un bloc capturant (try-catch) l’exception ; 
+	\item ou déclare que lui-même peut remonter l’exception. 
+\end{itemize}
+
+Bien évidemment le compilateur refusera de compiler le dit programme. Donc je propose qu’à partir du moment ou une fonction pourra lancer une exception l’utilisateur ai a la traiter OBLIGATOIREMENT.
+
+Bien evidemment le compilateur refusera de compiler le dit programme.
+
+Donc je propose qu'a partir du moment ou une fonction pourra lancer une exception
+l'utilisateur ai à la traiter OBLIGATOIREMENT.
+
+\section{Comment ?}
+
+Comment l’implémenter reste une question ouverte. Voici mes propositions : tout d’abord, les noms des erreurs devront être explicite a la manière des exceptions (pas de valeur magique) : NotEnoughtMemoryException, NullValueException, \ldots
+
+Derrière, on est assez libre de faire ce que l’on veut. De manière générale, les erreurs sont des entiers retournés ou NULL. Lorsqu’on génère une fonction qui doit retourner une valeur appartenant à un ensemble qui ne nous permet pas de retourner de valeur d’erreur, on pourra toujours la générer avec un paramètre implicite prenant une référence sur le code d’erreur.
+
+Syntaxiquement, je verrais beaucoup une syntaxe style LISP. Le LISP gère ses erreurs comme ceci :
+
+\lstset{language=Lisp}
+\begin{lstlisting}
+(handler-case
+  (progn
+    (error-prone-function-1)
+    (error-prone-function-2)
+    (error-prone-function-3))
+  (exception-type-1 (exception-instance-1) (recovery-1 exception-instance-1))
+  (exception-type-2 (exception-instance-2) (recovery-2 exception-instance-2))
+  (exception-type-3 (exception-instance)-3 (recovery-3 exception-instance-3)))
+\end{lstlisting}
+
+C'est équivalent au code python ci-dessous:
+\lstset{language=Python}
+\begin{lstlisting}
+try:
+	error_prone_function_1()
+	error_prone_function_2()
+	error_prone_function_3()
+except Exception_type_1, exception_instance_1:
+	recovery_1(exception_instance_1)
+except Exception_type_2, exception_instance_2:
+	recovery_2(exception_instance_2)
+except Exception_type_3, exception_instance_3:
+	recovery_3(exception_instance_3)
+\end{lstlisting}
+
+\lstset{language=rathaxes}
+
+Alors pour un système proche de celui du Lisp ?
+Simplement parce qu'il ressemble à un modèle événementiel !
+
+Voici comment je le verrais dans Rathaxes:
+
+La récupération de l'erreur:
+\begin{lstlisting}
+FUNC_THAT_RAISE_ERROR()
+	ON ERROR_TYPE_1 {
+		RECOVERY_1();
+	}
+	ON ERROR_TYPE_2 {
+		RECOVERY_2();
+	}
+	ON ERROR_TYPE_3 OR ERROR_TYPE_4 {
+	}
+	FINALLY {
+	};
+\end{lstlisting}
+
+Notez que ce n’est qu’une et une seule expression. Je ne sais pas s’il faut proposer un moyen de regrouper plusieurs expressions pouvant lancer des erreurs avec les mêmes gestionnaires.
+
+Je proposerais une syntaxe ressemblant à celle-ci pour gérer les erreurs en bloc.
+
+\begin{lstlisting}
+HANDLE_ERROR {
+	FUNC_THAT_RAISE_ERROR_1();
+	FUNC_THAT_RAISE_ERROR_2();
+	FUNC_THAT_RAISE_ERROR_3();
+}
+ON ERROR_TYPE_1 {
+	RECOVERY_1();
+}
+ON ERROR_TYPE_2 {
+	RECOVERY_2();
+}
+ON ERROR_TYPE_3 OR ERROR_TYPE_4 {
+}
+FINALLY {
+};
+\end{lstlisting}
+
+Spécifier qu’une fonction lance une erreur :
+
+\begin{lstlisting}
+
+DECLARE SEQUENCE func_name(...) THROWS	ERROR_TYPE_1
+					ERROR_TYPE_2
+					ERROR_TYPE_3 {
+		THROW ERROR_TYPE_1;
+		THROW ERROR_TYPE_2;
+		THROW ERROR_TYPE_3;
+};
+
+\end{lstlisting}
+
+
+\chapter{Les structures conditionnelles}
+
+\section{Les conditions}
+Décrire un pilote est une chose complexe. Il existe bien des DSL qui ne requièrent pas de condition ou de boucle. Cependant, je ne pense pas que Rathaxes puisse se permettre ce luxe. Il existe des actions qui ne se feront que dans certains cas, sur certaines cartes, et même éventuellement certaines versions du système d’exploitation.
+
+Pour gérer cela, nous devons proposer un système de condition. 
+
+Nous n’avons besoin que d’un mot clef pour cela, et nous l’avons déjà utilisé : ON.
+\begin{lstlisting}
+ON expression LET sequence(param);
+\end{lstlisting}
+
+\section{Les connecteurs logiques}
+\begin{lstlisting}
+ON expression1 OR expression2 LET sequence1(param)
+ON expression3 AND expression4 LET sequence2(param)
+ON expression5 AND NOT expression6 LET sequence3(param)
+ELSE sequence4(param);
+\end{lstlisting}
+
+\section{Boucles}
+Cette partie des structures conditionnelles est un peu plus compliquée. Les boucles sont les structures de contrôle les plus sujettes à erreur : boucle infinie, dépassement de mémoire\ldots
+
+Afin d’éviter l’introduction de bug, les conditions de bouclage seront gérées automatiquement.
+
+Ça introduit une très grosse complexité pour nous afin de déterminer le type de l’élément traverse. Il faudra savoir déterminer si on se bat avec une liste chainée, un tableau d’entier, un pointeur sur char, etc.
+
+Je ne prétends pas avoir la réponse à tout, mais je pense qu’on peut arriver à le faire relativement facilement : les seules fonctions dont on ne maitrisera pas la taille des éléments seront les paramètres des appels systèmes qu’on implémente (open, write, etc.).
+
+Donc voici la syntaxe :
+\begin{lstlisting}
+FOREACH TYPE e IN collection {
+	// do something
+};
+\end{lstlisting}
+
+Reste à voir si on gère des listes de types hétérogènes et on fait sauter le \texttt{TYPE}. Les types seront abordés dans le prochain chapitre.
+
+Parfois, les boucles sont utilisées afin de générer une séquence d’éléments. Par exemple les 10 premiers entiers. Je dois reconnaitre que je ne vois pas pourquoi on aurait besoin de faire ça, donc je ne pense pas ça vaille la peine qu’on se penche dessus.
+
+D’autres algorithmes sont très utiles comme le MAP/REDUCE. Cela demanderait de pouvoir traiter nos séquences comme des objets, ainsi que d’avoir des valeurs de retour sur les \texttt{SEQUENCE}s afin de régénérer des listes d’objets. Cependant niveau syntaxique et expressivité on peut difficilement faire plus clair que :
+\begin{lstlisting}
+
+DECLARE SEQUENCE seq(DESCRIPTORS desc) {
+	ON desc.ready LET RETURN desc;
+	RETURN NULL;
+};
+
+DECLARE LIST OF DESCIPTORS my_list
+	LET DO SEQUENCE seg ON my_descriptors_list;
+
+REMOVE-IF IS_NULL my_list;
+
+\end{lstlisting}
+
+\chapter{Les types}
+
+Rathaxes a pour but de proposer un langage de description de pilote de périphérique complet et sûr. Afin de pouvoir proposer une vérification la plus exhaustive possible du code écrit, le langage doit forcement proposer des types explicites.
+
+De plus, comme nous générerons du C derrière, c’est plus facile de faire correspondre les types Rathaxes à des implémentations en C.
+
+\section{Les registres}
+
+Les registres représentent des cases mémoires particulières, souvent associées à une adresse particulière, et/ou chaque bit a une fonction particulière.
+
+Par exemple pour activer une fonction d’un périphérique particulier, un changement de bit dans un registre donne peut-être requis.
+
+La spécification des registres dans la première version de Rathaxes est très complète, cependant quelques petites modifications doivent être apportées afin de s’adapter aux nouveaux besoins.
+Il y a deux soucis majeurs selon moi dans le type \texttt{REGISTER} : 
+\begin{itemize}
+	\item L’impossibilité de créer plusieurs instances d’un registre ; 
+	\item L’affectation en dur de l’adresse du registre. 
+\end{itemize}
+
+Je propose donc une utilisation du \texttt{REGISTER} plus comme une définition de type : on définit un type \texttt{REGISTER} et on l’instancie. Et on fait pareil pour tous les autres types dans un souci de cohérence.
+
+Voici la syntaxe que je propose :
+\begin{lstlisting}
+DECLARE REGISTER(RW) BIT[8] Register_Type LIKE(........);
+\end{lstlisting}
+Rien ne change si ce n’est le \texttt{DECLARE} qui a été ajouté. On pourrait assimiler cette déclaration à un \texttt{typedef} du C/C++.
+
+L’instanciation se ferait comme ça :
+\begin{lstlisting}
+DECLARE REGISTER Register_type Register_name Register_type MAPPED_AT address;
+\end{lstlisting}
+Le type du registre pourrait permettre de spécifier le bus sur lequel il se trouve. Cela pourra permettre de coder des accès à ces registres de manière différente selon là ou ils sont (ioport, pci, \ldots).
+
+Exemple:
+\begin{lstlisting}
+DECLARE REGISTER SomeE1000Register eerd PCI MAPPED_AT PCI_BAR_1 + some_offset;
+\end{lstlisting}
+
+Le reste quant à la déclaration d'un registre n'a pas changé.
+
+\section{Les types primitifs}
+Il y a de grandes chances pour qu’on ait à manipuler des types simples comme des entiers, chaines de caractères et booléen.
+
+Pour cela, je propose la définition de plusieurs types simples :
+\begin{lstlisting}
+DECLARE INTEGER i_name = 123;
+DECLARE DOUBLE d_name = 123.123;
+DECLARE BOOLEAN b = TRUE OR FALSE;
+DECLARE STRING str = "hello, world !";
+\end{lstlisting}
+
+\section{Les adresses}
+
+Un type \texttt{ADDRESS} peut être utile : 
+\begin{itemize}
+	\item Cela pourrait permettre a l’utilisateur de faire de l’arithmétique de pointeur ; 
+	\item On peut contrôler si elle est valide ou pas ;
+	\item On peut gérer l’alignement nous-mêmes ; 
+	\item \ldots
+\end{itemize}
+
+
+\begin{lstlisting}
+DECLARE ADDRESS addr1 ALIGNED_ON nbrbits OFFSET off;
+\end{lstlisting}
+
+Cependant, on ne pourra pas vérifier qu’il reste dans des limites valides, mais bon, je doute qu’on puisse arriver à éviter toutes les bêtises que peuvent faire les développeurs.
+
+\section{Les mémoires tampon}
+
+Beaucoup de périphériques aujourd’hui nous permettent d’acquérir des données, ou d’en envoyer : webcam, scanneur, carte son, carte vidéo, carte réseau\ldots Cela passe par la manipulation de ces données, que ce soit pour les décoder, les encoder, ou seulement les données a l’utilisateur.
+
+Pour permettre cela, nous devons proposer un type \texttt{BUFFER}.
+
+Je resterais sur l’exemple de la carte réseau afin de déterminer ce que moi j’aimerais y voir. Je ne peux promettre que ça corresponde à tous les besoins.
+
+Il faut pouvoir:
+\begin{enumerate}
+	\item Accéder aux données grâce à un index ; 
+	\item Le copier/vider ; 
+	\item Diviser son espace en champ nomme ; 
+	\item Spécifier sa taille (en octet) et un alignement particulier (en bit).
+\end{enumerate}
+
+Pour la troisième proposition, je pense qu’on peut reprendre la notation des registres:
+
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16;
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer[3], unoctet);
+\end{lstlisting}
+
+Ou encore:
+
+\begin{lstlisting}
+DECLARE BUFFER MyBufferType SIZE 2048 ADDRESS_ALIGNED_ON 16 {
+
+	[0..4] AS low_address;
+	[5] AS status {
+		(0) -> OK;
+		(1) -> ERROR;
+	};
+};
+
+DECLARE MyBufferType mybuffer;
+
+SET(my_buffer.status, MyBufferType.status.OK);
+\end{lstlisting}
+
+Je ne sais pas du tout si on doit proposer la gestion d’erreur d’allocation mémoire. Je pense que oui.
+
+Sinon, il faut aussi se poser la question : est-ce qu’on propose le fait de pouvoir spécifier dans quelle mémoire on alloue? (DMA, HM, LM\ldots). Je pense que dans un premier temps ce n’est pas la peine. On risque de s’embêter pour quelque chose qui ne sera pas utile avant quelque temps.
+Il y a aussi une autre question qui rentre en compte : quand faire la désallocation ?
+
+J’y reviendrais après.
+
+\section{Les collections}
+Il arrive que l’on ait besoin parfois de gérer une collection d’objets. Par exemple des descripteurs dans une carte réseau. Pour cela on doit proposer des mécanismes simples.
+
+Je pense que 2 types de collection différents suffisent. Pour ceux-là je me suis inspiré du C++.
+
+Dans un premier temps, nous devons proposer un type assez statique qui nous permettra de stocker un ensemble d’objets de même type. C’est la définition d’un vecteur.
+
+\begin{lstlisting}
+DECLARE VECTOR VectorType ELEMENT_TYPE MyBufferType SIZE 10;
+
+DECLARE VectorType my_vector;
+PUSH(my_vector, element);
+POP(my_vector);
+
+REALLOC_VECTOR(my_vector, new_size);
+\end{lstlisting}
+
+Le vecteur aura certainement des meta-données, il faudra donc prendre certaine précaution : une carte E1000 demande a faire un tableau de descripteurs et mettre son adresse dans un registre particulier. L’implémentation réelle de ce type devra faire attention à mettre la zone alloue EN PREMIER dans la structure afin d’éviter les problèmes.
+
+L’autre type nécessaire est le type \texttt{LIST}. Nous aurons besoin d’avoir un type dynamique et léger.
+\begin{lstlisting}
+DECLARE LIST ListType ELEMENT_TYPE MyBufferType;
+DECLARE ListType my_list;
+
+PUSH(my_list, element);
+PUSH(my_list, element);
+PUSH(my_list, element);
+
+POP(my_list);
+POP(my_list);
+POP(my_list);
+
+PUSH_AFTER(my_list, ref, element);
+\end{lstlisting}
+
+\section{la desallocation}
+On est tous d’accord sur le fait que l’utilisateur ne doit absolument pas gérer sa mémoire à la main. Pour éviter cela je propose qu’on implémente un compteur de référence sur les objets qui seront alloués.
+
+Cela reste le plus simple.
+
+\section{La definition de types}
+C’est la partie ou je sèche un peu. La manière dont j’ai spécifié les autres types est à la fois similaire et complètement différente. Elle demande la possibilité de rajouter des mots clefs au langage. Ou alors de pouvoir nous scripter nous-mêmes a la manière du LISP. Je pense que ça devient douloureux ce niveau-là d’implémenter le langage. Donc peut-être qu’il vaudrait mieux que ces types soient built-in.
+
+\chapter{Les algorithmes}
+
+Ce chapitre va présenter les dernières briques du langage.
+
+\section{L'affectation}
+\begin{lstlisting}
+DECLARE INTEGER i = 2; // Premiere initialisation
+
+i = 3; // ERROR
+SET(i, 3); // OK
+
+// Le comportement dans ce cas reste a determiner:
+DECLARE VECTOR vtype.....;
+DECLARE vtype v;
+
+SET(v, ...); // ERREUR ?
+\end{lstlisting}
+
+\section{L'attente}
+
+L’attente est un peu particulière. Il y a plusieurs modes d’attente : l’attente passive et l’attente active.
+
+L’attente passive est une attente ou le processus nous exécutant est recruté pour faire quelque chose de plus intéressant que nous attendre. L’attente active (ou "polling") est une boucle sur la condition tant qu’elle n’est pas vraie.
+
+Le problème est que chacune de ces attentes ne s’utilise pas n’importe quand !
+
+Je pense donc qu’il vaudrait mieux que ces algorithmes fassent partie de la bibliothèque standard de Rathaxes.
+
+\section{POST/PRE condition}
+
+Rien ne change.
+
+\section{Atomicite}
+Il y a plusieurs atomicités possibles. La première étant beaucoup plus haut niveau que ce qu’on pourrait penser : le fait qu’il y ai plusieurs appels simultanés à l’appel système implémenté !
+
+Nous devons donc donner la possibilité de spécifier qu’un bloc de code doit s’exécuter de manière atomique.
+
+Le Java propose une implémentation d’un mécanisme appelée "monitor" si je me souviens bien. Dans la signature de la méthode il suffit de rajouter \texttt{synchronized} ou dans une méthode, pour une partie du code, il faut passer l’objet manipule en paramètre.
+
+Il est vraiment très compliqué d’implémenter ce mécanisme, car il est similaire au mécanisme d’attente. Nous ne pouvons pas faire un \texttt{spinlock} si dans le code protégé, un appel de fonction est susceptible de mettre le processus courant en attente. Pareil si on est dans un gestionnaire d’interruption\ldots
+
+Sinon niveau syntaxe, je propose :
+\begin{lstlisting}
+
+DECLARE SEQUENCE seq () {
+
+	ATOMIC {
+		// code goes here
+	};
+
+};
+
+\end{lstlisting}
+
+Il faut se préparer mentalement au fait de devoir rajouter de la décoration afin d’être sûr qu’un code ne mettra pas le processus en attente. Il faudra peut-être rajouter un décorateur du genre \texttt{NOWAIT} dans la déclaration d’une séquence.
+
+Par extension, si une séquence ne fait appel qu’à des séquences \texttt{NOWAIT} alors elle est elle même \texttt{NOWAIT}.
+
+Ce décorateur s’ajoutera surtout sur les appels directs au \emph{wrapper} des codes C.
+
+Je ne parle même pas des sauvegardes des interruptions et autre\ldots
+
+
+\chapter{Conclusion}
+Voilà ma proposition pour le langage. Je ne pense pas qu’elle soit totalement complète cependant elle offre plein de pistes de réflexion.
+
+C’est quand même un exercice qui est compliqué, et avant de m’y mettre je ne soupçonne pas que j’y passerais autant de temps !
+
+Comme vous pouvez le voir je me suis inspiré pas mal de langage existant, notamment de certains mécanismes de la programmation fonctionnels et du LISP dans l’expression de certains concepts.
+
+Ce qui m’a été le plus dur à conserver a été le fait que les séquences ne renvoient rien. Ça nous limite dans le chainage d’action et notamment sur la programmation d’ordre supérieur.
+
+Il y a aussi notamment quelque chose dont je me suis aperçu un peu tard: ce n’est pas possible de remplacer un paramètre qui nous est envoyé.
+
+Par exemple :
+\lstset{language=C}
+\begin{lstlisting}
+void test(char* t) {
+	t = "coucou";
+}
+\end{lstlisting}
+
+
+On a le même problème dans Rathaxes. Après je ne sais pas si c’est grave ou pas.
+
+Vous remarquerez que je ne parle quasiment pas des systèmes et des algorithmes, je ne pense pas qu’ils doivent être built-in dans le langage, mais implémentés dedans. Malheureusement, je n’ai pas trouvé de manière élégante de définir un nouveau type sans pour autant partir dans un langage très complique.
+
+Par ailleurs, j’ai pensé au langage comme si c’était quelqu’un d’autre qui allé faire le travail, je n’ai donc pas essayé de le rendre plus simple ou quoi que se soit d’autre. Du fait de mon manque d’expérience aussi, il est très possible que l’expressivité ne soit pas encore optimale.
+
+J’espère que vous avez passé une bonne lecture et que vous aurez plein de choses à me dire !
+\end{document}

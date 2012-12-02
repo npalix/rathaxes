@@ -1,0 +1,199 @@
+#if !existFunction(rtxNodeFront_version)
+
+function rtxNodeFront_version()
+{return "1.0";}
+
+// Front-end config nodes (see rtxNode.inc.cws to see )
+declare function rtxNodeConfig(local_node : node, out_ref_body : reference);
+declare function rtxNodeConfigField(local_node : node, out_ref_id : reference, out_ref_val : reference);
+declare function rtxNodeConfig_BodyAddField(local_node : node, field : node);
+declare function rtxNodeConfigField_Extend(local_node : node, out_ref_body : reference);
+// The device block functions
+declare function rtxNodeDevice(local_node : node, name : value, out_ref_body : reference);
+declare function rtxNodeDevice_AddUseInterface(local_node : node, name : value);
+// The sequence implem function
+declare function rtxNodeSequence(local_node : node, rtype : node, seqparamname : node, body : reference);
+// Register-related functions
+declare function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : reference, visibility : value);
+declare function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference);
+declare function rtxNodeRegister_addMap(local_node : node);
+declare function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value);
+declare function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : reference);
+declare function rtxNodeRegMap_addMask(local_node : node);
+
+
+
+
+function rtxNodeConfig(local_node   : node,
+                       out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_config__";
+
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+
+    return true;
+}
+
+function rtxNodeConfigField(local_node  : node,
+                            out_ref_id  : reference,
+                            out_ref_val : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_config_field__";
+
+    insert local_node.id;
+    insert local_node.val;
+
+    ref out_ref_id = local_node.id;
+    ref out_ref_val = local_node.val;
+
+    return true;
+}
+
+function rtxNodeConfig_BodyAddField(local_node  : node,
+                                    field       : node)
+{
+    if ((local_node#parent.type != "__rtx_config__"
+         && local_node#parent.type != "__rtx_config_field__")
+        || local_node.type != "__block__")
+        return false;
+
+    pushItem local_node.block;
+    setall local_node.block#back = field;
+    
+    return true;
+}
+
+function rtxNodeConfigField_Extend(local_node   : node,
+                                   out_ref_body : reference)
+{
+    if (local_node.type != "__rtx_config_field__")
+        return false;
+
+    insert local_node.extension;
+    cnormNodeBlock(local_node.extension);
+    ref out_ref_body = local_node.extension;
+
+    return true;
+}
+
+function rtxNodeDevice(local_node : node, name : value, out_ref_body : reference)
+{
+    rtxNode(local_node);
+    local_node.type = "__rtx_device__";
+    insert local_node.name = name;
+    insert local_node.body;
+    cnormNodeBlock(local_node.body);
+    ref out_ref_body = local_node.body;
+    return true; 
+}
+
+function rtxNodeDevice_AddUseInterface(local_node : node, name : value)
+{
+    if (!existVariable(local_node.use))
+    {	insert local_node.use;}
+    pushItem local_node.use = name;
+    return true;
+}
+
+function rtxNodeProperty(local_node : node, type_ref : reference, body_ref : reference, visibility : value)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_property__";
+        if (visibility == "")
+        {       visibility = "private";}
+        insert local_node.visibility = visibility;
+        insert local_node.rtype;
+        insert local_node.body;
+        cnormNodeBlock(local_node.body);
+        ref type_ref = local_node.rtype;
+        ref body_ref = local_node.body;
+        return true;
+}
+
+function rtxNodeRegister(local_node : node, regtype_ref : reference, like_ref : reference, body_ref : reference)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_register__";
+	insert local_node.name;
+	insert local_node.regtype;
+	insert local_node.like;
+	insert local_node.body;
+	cnormNodeBlock(local_node.body);
+	ref regtype_ref = local_node.regtype;
+	ref like_ref = local_node.like;
+	ref body_ref = local_node.body;
+	return true;
+}
+
+function rtxNodeRegister_addMap(local_node : node)
+{
+        if (!existVariable(local_node#root.map.registers))
+        {       insert local_node#root.map.registers;}
+        localref regmap_ref = local_node#root.map.registers;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
+        return true;
+}
+
+function rtxNodeLike(local_node : node, mode : value, pattern : value, offset : value)
+{
+	rtxNode(local_node);
+	local_node.type = "__rtx_like__";
+	insert local_node.mode = mode;
+	insert local_node.pattern = pattern;
+	insert local_node.offset = offset;
+	return true;
+}
+
+function rtxNodeRegMap(local_node : node, name : value, map : node, listmask : reference)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_map__";
+        insert local_node.name = name;
+        insert local_node.map;
+        setall local_node.map = map;
+        insert local_node.listmask;
+        ref listmask = local_node.listmask;
+        if (!existVariable(local_node#root.map.registers[local_node#parent#parent#parent.name].map))
+        { insert local_node#root.map.registers[local_node#parent#parent#parent.name].map;}
+        localref regmap_ref = local_node#root.map.registers[local_node#parent#parent#parent.name].map;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
+        insert local_node.to_register;
+        ref local_node.to_register = regmap_ref;
+        return true;
+}
+
+function rtxNodeRegMap_addMask(local_node : node)
+{
+        local nameField = local_node#parent#parent.name;
+        local nameReg = local_node#parent#parent#parent#parent#parent.name;
+        if (!existVariable(local_node#root.map.registers[nameReg].map[nameField].map))
+        { insert local_node#root.map.registers[nameReg].map[nameField].map;}
+        localref regmap_ref = local_node#root.map.registers[nameReg].map[nameField].map;
+        insert regmap_ref[local_node.name].ref;
+        ref regmap_ref[local_node.name].ref = local_node;
+        insert local_node.to_field;
+        ref local_node.to_field = regmap_ref;
+        return true;
+}
+
+function rtxNodeSequence(local_node : node, rtype : node, seqparamname : node, body : reference)
+{
+        rtxNode(local_node);
+        local_node.type = "__rtx_sequence__";
+        insert local_node.rtype;
+        setall local_node.rtype = rtype;
+        insert local_node.seqParamName;
+        setall local_node.seqParamName = seqparamname;
+        insert local_node.body;
+        cnormNodeBlock(local_node.body);
+        ref body = local_node.body;
+        return true;
+}
+
+#end

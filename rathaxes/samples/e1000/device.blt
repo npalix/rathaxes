@@ -1,0 +1,23 @@
+with Device, LKM
+{
+    template type   Device::AbstractDevice()
+    {
+        chunk   LKM::includes()
+        {
+            #include <linux/device.h>
+        }
+
+        decl   data_types()
+        {
+            typedef struct device   *rtx_device_p;
+        }
+
+        method   init()
+        {
+        }
+
+        map
+        {
+        }
+    }
+}

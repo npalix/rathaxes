@@ -1,0 +1,99 @@
+with LKM, User
+values LKM::OS=Windows, LKM::version = XP
+{
+    template sequence open(Context ctx)
+    {
+    }
+
+    template sequence close(Context ctx)
+    {
+    }
+
+    template sequence read(Context ctx, Buffer buf)
+    {
+        chunk GLOBAL_CODE_DEFINITION
+        {
+            void ${config.device_name}IoRead(void* Queue, void* Request, int size)
+            {
+                void*   						memory;
+                int     						status;
+                unsigned char					output;
+                int								current_size = 0;
+  
+                /*
+                 * Here was included the declaration of pointers on each register...
+                 */
+  
+                status = WdfRequestRetrieveOutputMemory(Request, &memory);
+                if(status)
+                {
+                     output = MmAllocateNonCachedMemory(size);
+                     memset(output, 0, size);
+                     
+                     /*
+                      * Here was included the code of the associated FRONTEND sequence
+                      */
+  
+     	            ${pointcut ALGO};
+                     
+                     status = WdfMemoryCopyFromBuffer(memory, 0, output, current_size);	
+                     WdfRequestCompleteWithInformation(Request, status, current_size);
+                     MmFreeNonCachedMemory(output, size);
+                }
+                else
+                {
+                    WdfRequestComplete(Request, status);
+                }
+            }
+        }
+
+        chunk INIT_LKM_FPTRS(init)
+        {
+		    ${init}.EvtIoRead      = &${config.device_name}IoRead;
+        }
+    }
+
+    template sequence write(Context ctx, Buffer buf)
+    {
+        chunk GLOBAL_CODE_DEFINITION
+        {
+            void ${config.device_name}IoWrite(void* Queue, void* Request, int size)
+            {
+                void*                       memory;
+                int     					status;
+                unsigned char				input;
+                int                         current_size = 0;
+
+                /*
+                 * Here was included the register' declaration
+                 */
+
+                KdPrint(("-->EvtIoWrite\n"));
+                status = WdfRequestRetrieveInputMemory(Request, &memory);
+                if(!NT_SUCCESS(status))
+                {
+                    KdPrint(("EvtIoWrite Could not get request memory buffer 0x%x\n",
+                             status));
+                    WdfRequestComplete(Request, status);
+                    KdPrint(("<-- EvtDeviceIoWrite\n"));
+                    return;
+                }
+                input = WdfMemoryGetBuffer(memory, &size);
+                KdPrint(("Sending a buffer of %d bytes\n", size));
+
+                /*
+                 * Here were included the FRONTEND-s algorithms
+                 */
+
+                WdfRequestCompleteWithInformation(Request, status, current_size);
+                KdPrint(("<--EvtIoWrite\n"));
+            }
+        }
+
+        chunk INIT_LKM_FPTRS(init)
+        {
+		    ${init}.EvtIoWrite      = &${config.device_name}IoWrite;
+        }
+    }
+}
+

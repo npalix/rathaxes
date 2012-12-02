@@ -1,0 +1,56 @@
+with LKM
+{
+    /* Skel of the generated C file: */
+    ${pointcut LKM::includes()};
+    ${pointcut LKM::data_types()};
+    ${pointcut LKM::prototypes()};
+    ${pointcut LKM::data()};
+    ${pointcut LKM::code()};
+
+    template sequence   LKM::init()
+    {
+        chunk   LKM::includes()
+        {
+            #include <linux/module.h>
+            #include <linux/kernel.h>
+        }
+
+        chunk   LKM::data()
+        {
+            MODULE_DESCRIPTION(${config.description});
+            MODULE_AUTHOR(${config.author});
+            MODULE_LICENSE(${config.license});
+        }
+
+        chunk   LKM::code()
+        {
+            /*
+             * Rathaxes doesn't yet support arbitrary "decorators" like __init
+             * or __exit.
+             */
+            static int __attribute__((__section__(".init.text")))  rtx_module_init(void)
+            {
+                ${pointcut ::IMPLEMENTATION()};
+                ${pointcut LKM::init_bus_hook()};
+
+                return 0;
+            }
+
+            module_init(rtx_module_init);
+        }
+    }
+
+    template sequence   LKM::exit()
+    {
+        chunk   LKM::code()
+        {
+            static void __attribute__((__section__(".exit.text")))   rtx_module_exit(void)
+            {
+                ${pointcut ::IMPLEMENTATION()};
+                ${pointcut LKM::deinit_bus_hook()};
+            }
+
+            module_exit(rtx_module_exit);
+        }
+    }
+}
