@@ -111,6 +111,8 @@ rtx_type_map_identifier(theMap : node) ::=
         // C expression here.
 /**/    #continue(sError, "No C code defined for the mapping of identifier " + sId)
         rtx_templatedLang_single_stmt<"C">(mapped_body)
+        // pass to handle .unknown in C
+        => rtx_templatedLang_normalize<"C">(mapped_body);
 ;
 
 
@@ -227,6 +229,8 @@ rtx_stmt_chunk_common(theChunk : node) ::=
         rtx_parameter_list(param_types, param_ids)
 /**/    #continue(sError, "Expected block after chunk declaration.")
         rtx_templatedLang_body<"C">(body)
+        // pass to handle .unknown in C
+        => rtx_templatedLang_normalize<"C">(body);
 ;
 
 rtx_stmt<"chunk">(theBlock : node) ::=

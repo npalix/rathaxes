@@ -102,6 +102,10 @@ generateString({
                         chunk Builtin::types()
                         {
                                 ${self.type}         REG_${self.name};
+                                struct  tutu
+                                {
+                                        int_t   blabla;
+                                } t_niania;
                                 ${pointcut              Builtin::register_fields(self)};
                         }
 
