@@ -230,7 +230,7 @@ generateString({
         
                         chunk           LKM::code()
                         {
-                                int     f1()
+                                int     f1(f*,z)
                                 {
                                         printf("tata");
                                         int     base_addr = 0x1234;
