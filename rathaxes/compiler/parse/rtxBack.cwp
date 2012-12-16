@@ -262,13 +262,12 @@ rtx_stmt<"decl">(theBlock : node) ::=
         rtx_scoped_identifier(pointcutId)
         #check(rtxNode_InfoLocation(theChunk))
         #check(rtxNodeRType(pointcut, pointcutId, param_types))
+        #check(rtxNodeChunk_SetType(theChunk, "decl"))
         #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<pointcut.type>(pointcut)+"'.")
         rtx_parameter_list(param_types, param_ids)
 
         #continue(sError, "Expected block after decl's pointcut.")
         rtx_templatedLang_typedecl<"C">(theChunk, chunk_body)
-
-        #check(rtxNodeChunk_SetType(theChunk, "decl"))
 ;
 
 
@@ -281,5 +280,6 @@ rtx_stmt<"method">(theBlock : node) ::=
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, theChunk))
 
         rtx_stmt_chunk_common(theChunk)
+
         #check(rtxNodeChunk_SetType(theChunk, "method"))
 ;

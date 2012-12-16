@@ -87,6 +87,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 chunk testChunk(Number paf)
@@ -134,6 +135,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 chunk testChunk(Number paf)

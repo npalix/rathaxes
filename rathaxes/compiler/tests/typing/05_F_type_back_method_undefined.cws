@@ -84,6 +84,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 chunk testMethod(Number paf)
@@ -92,7 +93,7 @@ generateString({
 
                 map
                 {
-                    numeric: 43;
+                    numeric: ${self.i};
                 }
             }
         }
@@ -128,6 +129,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 method testMethod(Number paf)

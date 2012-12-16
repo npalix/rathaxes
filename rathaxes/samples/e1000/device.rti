@@ -5,5 +5,6 @@ interface Device : LKM
         decl        data_types();
         chunk       LKM::includes();
         method      init();
+        attribute   Builtin::symbol data;
     }
 }

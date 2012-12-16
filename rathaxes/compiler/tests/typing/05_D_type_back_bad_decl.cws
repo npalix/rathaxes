@@ -85,6 +85,7 @@ generateString({
             {
                 decl insert_types(Number n)
                 {
+                    int i;
                 }
 
                 map
@@ -127,6 +128,7 @@ generateString({
             {
                 decl LKM::insert_types() 
                 {
+                    int i;
                 }
 
                 map

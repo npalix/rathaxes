@@ -6,7 +6,6 @@ with LKM
     ${pointcut LKM::INCLUDE_DEPENDENCIES()};
     ${pointcut LKM::GLOBAL_DATA_DECLARATION()};
     ${pointcut LKM::GLOBAL_CODE_DEFINITION()};
-    ${pointcut LKM::BASE_LKM_CODE_DEFINITION()};
 
 // END OF FILE
 }

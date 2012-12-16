@@ -370,7 +370,7 @@ function        rtxNodeRType(local_node     : node,
 
 function        rtxRTypeName(theNode : node)
 {
-    error(toString(theNode#parent,true));
+    error(RED + "[Error] No node type given to rtxRTypeName for node:" + toString(theNode#parent,true) + DEFAULT_COLOR);
 }
 
 function        rtxRTypeName<T>(theNode : node)
