@@ -29,7 +29,7 @@ generateString({
         struct { ${test_name} nia;}     plop;       
         union ${test_struct} {int a;}   plop;
 
-        inf     nia(${toto}*,z);
+        inf     nia(${toto}*, ${titi});
 
         int     main()
         {
@@ -88,6 +88,16 @@ generateString({
                 ${a4}->tutu = 12;
                 ${a5}[14] = 12;
                 ${a6}(1, 2, 3);
+                // cast
+                f = 4 + (${tutu}) z;
+                const int a = (${toto}) z + sizeof(${plop});
+                int bubu : (${nia}) z;
+                int tab[1 + sizeof(${bobo})];
+                if (a == (${jiji})b)
+                {
+                        for (int a = sizeof(${jiji}); a < sizeof(${bubu}); j += sizeof(${koko}))
+                        {}
+                }
         }        
 @}, dummy, input);
 
