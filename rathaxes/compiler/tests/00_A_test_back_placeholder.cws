@@ -98,6 +98,7 @@ generateString({
                         for (int a = sizeof(${jiji}); a < sizeof(${bubu}); j += sizeof(${koko}))
                         {}
                 }
+                func(nia, (${nini}) truc);
         }        
 @}, dummy, input);
 

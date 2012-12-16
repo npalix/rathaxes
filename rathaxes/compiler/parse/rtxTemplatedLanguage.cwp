@@ -52,9 +52,9 @@ function        rtx_templatedLang_cnormcheck(item : reference)
         }
         if (existVariable(item.ctype.list))
         {
-                foreach it in item.ctype.list
+                foreach subitem in item.ctype.list
                 {
-                        traceLine("[]");
+                        localref it = subitem;
                         rtx_templatedLang_cnormcheck(it);
                 }
         }
@@ -99,6 +99,14 @@ function        rtx_templatedLang_cnormcheck(item : reference)
                 //traceLine("INC");
                 rtx_templatedLang_cnormcheck(item.increment);
         }
+        if (existVariable(item.list))
+        {
+                foreach subitem in item.list
+                {
+                        localref        it = subitem;
+                        rtx_templatedLang_cnormcheck(it);
+                }
+        }
         if (existVariable(item.body))
         { rtx_templatedLang_normalize<"C">(item.body);}
         if (existVariable(item.then))
@@ -113,20 +121,10 @@ function        rtx_templatedLang_normalize<"C">(theBlock : reference)
 {
         if ((theBlock.type == "__block__" || theBlock.type == "__root_block__") && $getArraySize(theBlock.block) > 0$)
         {
-                try
+                foreach subitem in theBlock.block
                 {
-                        local it;
-                        if !createIterator(it, theBlock.block) error("CAN'T CREATE ITERATOR");
-                        do
-                        {
-                                localref item = it;
-                                rtx_templatedLang_cnormcheck(item);
-                        }
-                        while (next(it));
-                }
-                catch (sError)
-                {
-                        traceLine("EXECPT:" + sError);
+                        localref it = subitem;
+                        rtx_templatedLang_cnormcheck(it);
                 }
         }
         return true;
