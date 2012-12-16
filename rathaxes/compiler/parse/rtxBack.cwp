@@ -245,18 +245,35 @@ rtx_stmt<"chunk">(theBlock : node) ::=
         #check(rtxNodeChunk_SetType(theChunk, "chunk"))
 ;
 rtx_stmt<"decl">(theBlock : node) ::=
-/**/    => traceLine("CHUNK");
+/**/    => traceLine("DECL");
 /**/    #continue(sError, "Expected pointcut associated to chunk declaration.")
         // Create an item in the Block list to host the chunk
 /**/    #pushItem(theBlock.block)
 /**/    => local theChunk;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, theChunk))
 
-        rtx_stmt_chunk_common(theChunk)
+        // Now retrieve the pointcut as well as the beginning of the instrumented Lang block
+/**/    => local pointcutId;
+/**/    => local param_types;
+/**/    => local param_ids;
+/**/    => local pointcut;
+/**/    => local chunk_body;
+/**/    #check(rtxNodeChunk(theChunk, pointcut, param_ids, chunk_body))
+        rtx_scoped_identifier(pointcutId)
+        #check(rtxNode_InfoLocation(theChunk))
+        #check(rtxNodeRType(pointcut, pointcutId, param_types))
+        #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<pointcut.type>(pointcut)+"'.")
+        rtx_parameter_list(param_types, param_ids)
+
+        #continue(sError, "Expected block after decl's pointcut.")
+        rtx_templatedLang_typedecl<"C">(theChunk, chunk_body)
+
         #check(rtxNodeChunk_SetType(theChunk, "decl"))
 ;
+
+
 rtx_stmt<"method">(theBlock : node) ::=
-/**/    => traceLine("CHUNK");
+/**/    => traceLine("METHOD");
 /**/    #continue(sError, "Expected pointcut associated to chunk declaration.")
         // Create an item in the Block list to host the chunk
 /**/    #pushItem(theBlock.block)

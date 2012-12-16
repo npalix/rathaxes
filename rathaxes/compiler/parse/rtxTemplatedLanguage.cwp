@@ -136,7 +136,28 @@ rtx_templatedLang_single_stmt<T>(theBody : node) ::= =>error("Not supported lang
 rtx_templatedLang_body<T>(theBody : node) ::= =>error("Not supported language:" + T);
 ;
 
+rtx_templatedLang_typedecl<T>(theChunk : node, theBody : node) ::= =>error("Not supported language:" + T);
+;
+
 /////////////////////// C LANGUAGE
+
+// declaration
+rtx_templatedLang_typedecl<"C">(theChunk : node, theBody : node) ::=
+    '{'
+        /*
+         * Here, we manage Either the Values definitions of an enum
+         * Or the definition of a type.
+         */
+        [
+          [ declaration(theBody) | unstrict(theBody) ]+
+          |
+/**/      => local enumCtype;
+          #check(rtxNodeChunk_EnumContent(theChunk, enumCtype))
+          enumerator_list(enumCtype)
+        ]
+    #continue(sError, "Expected end of block for decl.")
+    '}'
+;
 
 rtx_templatedLang_single_stmt<"C">(theBody : node) ::= single_statement(theBody)
 ;
