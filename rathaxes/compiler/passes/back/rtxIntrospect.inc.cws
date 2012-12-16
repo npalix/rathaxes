@@ -208,10 +208,21 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
                              tmpPlaceHolder.node.body.identifiers[0], emptynode);
             }
         }
+
 		// recurse param list
-		//...
+		if (existVariable(ctype_ref.list))
+        {
+            foreach param in ctype_ref.list
+            {
+                if (existVariable(param.type))
+                    rtxIntrospect_code<param.type>(param, theChunk, blockIds);
+            }
+        }
+
 		// recurse field list
-		//...
+		if (existVariable(ctype_ref.body))
+            rtxIntrospect_code<ctype_ref.body.type>(ctype_ref.body, theChunk, blockIds);
+
 		if (!existVariable(ctype_ref.pointer))
 		{break;}
 		// deref

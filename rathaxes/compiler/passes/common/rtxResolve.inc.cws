@@ -534,31 +534,11 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     {
     case "target_decl": // it's a type declaration (i.e. "${Builtin::Buffer} buf;")
         {
-            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name.");
-            // first, retrieve the name of the variable associated to the type or pointer
-            // when pointing on a ctype, parent.name is the varName.
-            // -> For this, we need to rewind the levels of pointer up until the 'root' decl.
-            localref   theDecl = local_node#parent.ref_placeholder#parent;
-            while (theDecl#parent.type == "__decl__" || theDecl#parent.type == "__ctype__")
-            { ref theDecl = theDecl#parent; }
-            // -> Then get varName
-            varName = theDecl.name;
-
             local   tplRtype;
-            setall tplRtype = theChunk.type_map[varName];
-            local   subtree;
-            // First we must select an unique template matching the rtype and config
-            if (rtxLink_LoadTypeDecl(tplRtype, source_tree.config, subtree) == false)
-                return false;
+            local   dummy_params;
+            rtxNodeRType(tplRtype, local_node.body.identifiers#front, dummy_params);
 
-            // Then resolve the possible placeHolders inside the type's definition.
-            if (instanceChunk<subtree.instanceKey>(resolverValues, subtree.body, source_tree) == false)
-            {
-                traceLine(RED + "[Error] Could not resolve placeHolders for type declaration of "
-                          + rtxRTypeName<tplRtype.type>(tplRtype) + DEFAULT_COLOR);
-                traceLine(RED + "        for use at " + local_node#parent.location + "." + DEFAULT_COLOR);
-                return false;
-            }
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name: " + rtxRTypeName<"__rtx_rtype__">(tplRtype) + ".");
 
             // We want to set the mangled typedef name into the ctype's identifier:
             // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
@@ -571,7 +551,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
         //traceLine("inject<\"__rtx_var__\">:<LOG> ID:varName: "+ toString(varName, true));
         //traceLine("inject<\"__rtx_var__\">:<LOG> ID:resolverValues: " + toString(resolverValues, true));
         //traceLine("inject<\"__rtx_var__\">:<LOG> ID:treeNode: " + toString(treeNode, true));
-        traceLine("inject<\"__rtx_var__\">:<LOG> ID:local_node: " + toString(local_node, true));
+        traceLine("inject<\"__rtx_var__\">:<LOG> ID:local_node: " + toString(local_node#parent, true) + toString(local_node#parent.ref_placeholder,true));
         //traceLine("inject<\"__rtx_var__\">:<LOG> ID:source_tree: " + toString(source_tree, true));
         local fieldValue;
         // TODO: obsolete when builtintype will be typed
@@ -924,13 +904,25 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
     // and then insert them in-place of the pointcut.
     else
     {
+        // Here, we should be in the following case:
+        //  - A field declaration within a block
+
+        traceLine(GREEN + "Node containing ph '" + local_node#parent.template_expr + "' is of type '" + theParent.type
+                  +"' and its parent is a '"+theParent#parent.type
+                  +"' with a '"+theParent#parent#parent.type
+                  +"' as a parent"+DEFAULT_COLOR);
+        traceLine(GREEN + local_node#parent.type_target + " => " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
+
+        localref pBlock = theParent#parent;
+        if (pBlock.type == "")
+            ref pBlock = pBlock#parent;
         if (theParent.type != "__field_decl__"
-            && theParent#parent.type != "__block__"
-            && theParent#parent.type != "__block_init__")
+            && pBlock.type != "__block__"
+            && pBlock.type != "__block_init__")
         {
             error(RED + "[Error] inject_pointcut<T(\""+T+"\")>: parent of placeholder ("
                   + local_node#parent.type_target + ") is not an expected node type ("
-                  + theParent.type + " or " + theParent#parent.type + ")"
+                  + theParent.type + " or " + pBlock.type + ")"
                   + " at " + local_node#parent.location + "." + DEFAULT_COLOR);
         }
 
@@ -941,10 +933,24 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
 
         // First, remove the current placeHolder, in case there was no statement
         local theBlock;
-        if (local_node#parent.type_target == "target_identifier")
-            ref theBlock = theParent#parent;
-        else
+        switch (local_node#parent.type_target)
+        {
+        case "target_identifier": // The ref_placeholder points on the identifier
             ref theBlock = theParent;
+            // Thus, wind-up until we find the block
+            while (theBlock#parent.type != "__block__" && theBlock#parent.type != "__block_init__")
+            { ref theBlock = theBlock#parent; }
+            break;
+        case "target_expr": // The ref_placeholder points on the expr node
+            ref theBlock = theParent;
+            break;
+        case "target_pointcut": // The ref_placeholder points on the whole statement/expr/decl
+            ref theBlock = theParent;
+            break;
+        default:
+            error(RED + "[Error] Unmanaged placeholder target_type for pointcut: " + local_node#parent.type_target + DEFAULT_COLOR);
+        }
+
         insertModifier(theBlock, thePointcut);
         startIdx = thePointcut.block_idx;
         foreach chunk in chunks

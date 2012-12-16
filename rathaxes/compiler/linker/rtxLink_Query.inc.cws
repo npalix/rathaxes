@@ -86,7 +86,7 @@ function rtxLink_LoadItem(cache_node : node,
     // load Files
     if (sCwsFile != "")
     {
-        traceLine("rtxLink:<LOG> LOADING Script '" + sCwsFile + "'");
+        //traceLine("rtxLink:<LOG> LOADING Script '" + sCwsFile + "'");
         try {extendExecutedScript(loadFile(sCwsFile));}
         catch (sError) 
         {
@@ -97,9 +97,9 @@ function rtxLink_LoadItem(cache_node : node,
     }
     else if (load_script != false)
     {   traceLine("rtxLink:<LOG> Script Already loaded !");}
-    traceLine("rtxLink:<LOG> LOADING TreeFile '" + sTreeFile + "'");
+    //traceLine("rtxLink:<LOG> LOADING TreeFile '" + sTreeFile + "'");
     cwLoadProject(sTreeFile, out_ref_tree);
-    traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
+    //traceLine("rtxLink:<LOG> Resolution script and tree loaded.");
     return true;
 }
 

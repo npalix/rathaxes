@@ -12,7 +12,8 @@ interface PCI : LKM, Builtin, Device
         method      init(PCI::AbstractDevice);
         method      set_context(Builtin::symbol);
 
-        attribute   Builtin::symbol context;
+        attribute   Builtin::symbol data;
+        attribute   Builtin::symbol drv_data;
     }
 
     provided type   PCI::Device

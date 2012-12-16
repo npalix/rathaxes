@@ -546,6 +546,42 @@ function     rtxTypeCheck_TemplateBuiltinItems(tplRtype : node, tplTree : node, 
 }
 
 
+/*
+ * This function checks the content of a type's decl chunk.
+ * The idea is to make sure no type is defined in there, only variables.
+ */
+function rtxTypeCheck_TypeDecl(theChunk : node, typeRtype : node)
+{
+    local errcount = "0";
+    local varcount = "0";
+    local typename = rtxRTypeName<typeRtype.type>(typeRtype);
+
+    if (theChunk.decl_type == "enum")
+        return true;
+
+    foreach decl in theChunk.body.block
+    {
+        if (!existVariable(decl.name) || decl.name == "")
+        {
+            traceLine(RED + "[Error] The declaration does not define a variable name" + endl()
+                          + "        in Decl chunk of type " + typename + " at "
+                          + decl.location + "." + DEFAULT_COLOR);
+            increment(errcount);
+        }
+        if (decl.ctype.storage != "typedef" && decl.name != "")
+            increment(varcount);
+    }
+    if (varcount == "0")
+    {
+        traceLine(RED + "[Error] Type decl does not contain any variable declaration." + DEFAULT_COLOR);
+        increment(errcount);
+    }
+
+    if (errcount != "0")
+        return false;
+
+    return true;
+}
 
 /*
  *
@@ -812,7 +848,12 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
         if (entry.type == "__rtx_chunk__")
         {
             if (entry.chunk_type == "decl")
+            {
+                // Checks that a type's DECL chunk contains at least ONE variable decl
+                if (rtxTypeCheck_TypeDecl(entry, tplRtype) == false)
+                    increment(errcount);
                 increment(n_decls);
+            }
 
             if (rtxTypeCheck_ItfTypeDefinesChunk(itfTypeNode, entry.pointcut, entry.chunk_type) == false)
             {
@@ -913,6 +954,7 @@ function rtxTypeCheck_TemplateSpec<"type">(tplRtype : node, tplTree : node,
 
     if (errcount != "0")
         return false;
+
     return true;
 }
 
