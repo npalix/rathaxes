@@ -115,6 +115,7 @@ insert this.scripts_path = _ARGS[0] + "/compiler/";
 insert this.c_types;
 parseStringAsBNF({
         #include "cnorm.cwp"
+        #include "node/rtxNode.inc.cws"
         #include "parse/rtxTemplatedLanguage.cwp"
 
         #overload

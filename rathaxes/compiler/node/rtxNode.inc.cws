@@ -45,6 +45,7 @@ declare function rtxNodePointcut(local_node : node, out_ref_pointcut : reference
 declare function rtxNodePointcut_Default(local_node : node, body : reference);
 declare function rtxNodeChunk(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_body : reference);
 declare function rtxNodeChunk_SetType(local_node : node, type : value);
+declare function rtxNodeChunk_SetDeclType(local_node : node, type : value);
 declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
 declare function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node);
 declare function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node);
@@ -503,6 +504,16 @@ function rtxNodeChunk_SetType(local_node : node, type : value)
         return false;
 
     insert local_node.chunk_type = type;
+    return rtxNodeChunk_SetDeclType(local_node, "block");
+}
+
+function rtxNodeChunk_SetDeclType(local_node : node, type : value)
+{
+    if (local_node.type  != "__rtx_chunk__")
+        return false;
+
+    insert local_node.decl_type = type;
+
     return true;
 }
 
