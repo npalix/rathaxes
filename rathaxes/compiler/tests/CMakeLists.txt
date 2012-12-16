@@ -1,3 +1,7 @@
+# First, do the tests for the internals (algos and such) of the compiler
+ADD_SUBDIRECTORY(internals)
+
+
 # Pure backend compilation and resolution tests
 # (without interaction with other parts of the language)
 ADD_RATHAXES_CWS_TEST(01_A_test_back_parse.cws)
