@@ -498,8 +498,8 @@ function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
  *  .compile = {
  *      [
  *          "_X" : {
- *              .node = {
- *                  .body = {   <-- local_node
+ *              .node = {   <-- local_node
+ *                  .body = {
  *                  }
  *              }
  *              ...
@@ -507,6 +507,20 @@ function    inject<"__rtx_tpl_placeHolder__">(resolverValues    : node,
  *      ]
  *  }
  */
+function    inject<"__rtx_rtype__">(resolverValues : node, treeNode : node,
+                                    local_node : node, source_tree : reference)
+{
+    localref    theRtype = local_node.body;
+
+    traceLine("inject<\"__rtx_rtype__\">:<LOG> Injecting a type name: " + rtxRTypeName<theRtype.type>(theRtype) + ".");
+
+    // We want to set the mangled typedef name into the ctype's identifier:
+    // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
+    local_node#parent.ref_placeholder.identifier = rtxResolve_MangleTypeName(theRtype, false);
+    
+    return true;
+}
+
 function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                                       local_node : node, source_tree : reference)
 {
@@ -532,19 +546,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     // First, check that there is not prefix or suffix.
     switch (local_node#parent.type_target)
     {
-    case "target_decl": // it's a type declaration (i.e. "${Builtin::Buffer} buf;")
-        {
-            local   tplRtype;
-            local   dummy_params;
-            rtxNodeRType(tplRtype, local_node.body.identifiers#front, dummy_params);
-
-            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type name: " + rtxRTypeName<"__rtx_rtype__">(tplRtype) + ".");
-
-            // We want to set the mangled typedef name into the ctype's identifier:
-            // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
-            local_node#parent.ref_placeholder.identifier = rtxResolve_MangleTypeName(tplRtype, false);
-        }
-        break ;
     case "target_identifier":
         traceLine("inject<\"__rtx_var__\">:<LOG> Injecting an identifier");
         //traceLine("inject<\"__rtx_var__\">:<LOG> ID:theChunk: " + toString(theChunk, true));
@@ -712,6 +713,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             }
         }
         break ;
+    case "target_decl": // it's a type declaration, should not reach here.
     default:
         error(RED + "[Error] Target type " + local_node#parent.type_target + " is not managed  (from "
               + local_node#parent.location + DEFAULT_COLOR);
