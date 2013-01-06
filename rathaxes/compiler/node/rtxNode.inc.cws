@@ -36,6 +36,7 @@ declare function rtxNodeWith_BuildFromConfig(local_node : node, out_config : nod
  * The Rtype node represents a rathaxes type (like the ctype for C types)
  */
 declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
+declare function rtxNodeRType_SetQualifier(local_node : node, qualifier : value);
 declare function rtxRTypeName<T>(theNode : node);
 declare function rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node);
 /*
@@ -362,8 +363,20 @@ function        rtxNodeRType(local_node     : node,
     insert local_node.name;
     setall local_node.name = name;
 
+    insert local_node.qualifier = "scalar";
+
     insert local_node.params;
     ref out_ref_params = local_node.params;
+
+    return true;
+}
+
+function rtxNodeRType_SetQualifier(local_node : node, qualifier : value)
+{
+    if (local_node.type != "__rtx_rtype__")
+        return false;
+
+    insert local_node.qualifier = qualifier;
 
     return true;
 }

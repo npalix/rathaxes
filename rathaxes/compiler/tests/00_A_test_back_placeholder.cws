@@ -19,6 +19,8 @@ local dummy;
 local input;
 generateString({
         ${test_name}                    test_id;
+        ${test_name.scalar}             test_id_scalar;
+        ${test_name.ref}                test_id_ref;
         // test unstrict mode
         NTSTATUS        funTamere(bla a);
         int                             f1() { ${body}; }

@@ -307,6 +307,23 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         #check(rtxNodeCast(theCast, varName, typeId))
                 ;
 
+                tpl_type_qualifier ::=
+                    "scalar" | "ref"
+                ;
+
+                tpl_type(theType : node) ::=
+/**/                => local sQualifier = "scalar";
+/**/                => local theId;
+/**/                => local dummy;
+                    rtx_scoped_identifier(theId, true)
+                    [
+                        "."
+                        tpl_type_qualifier:sQualifier
+                    ]?
+                    #check(rtxNodeRType(theType, theId, dummy))
+                    #check(rtxNodeRType_SetQualifier(theType, sQualifier))
+                ;
+
                 rtx_placeholder_noconcat(theNode : node) ::=
                         "${"
                         [
@@ -327,6 +344,8 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         [ rootidentifier:theNode.prefix ]?
                         "${"
                         [
+                                tpl_type(theNode.body)
+                                |
                                 rtx_composed_identifier(theNode.body)
                         ]
                         '}'
@@ -353,9 +372,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 traceLine(YELLOW + out + DEFAULT_COLOR);
                 return false;
         }
-        traceLine("Built node for template_expr : " + compile.template_expr);
         insert compile.node;
         setall compile.node = treepart;
+        traceLine("Built node for template_expr : " + compile.template_expr + " -> " + toString(compile.node, true));
         return true;
 }
 
