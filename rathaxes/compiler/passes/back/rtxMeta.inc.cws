@@ -374,7 +374,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
         }
         insert compile.node;
         setall compile.node = treepart;
-        traceLine("Built node for template_expr : " + compile.template_expr + " -> " + toString(compile.node, true));
+        traceLine("Built node for template_expr : " + compile.template_expr);
         return true;
 }
 

@@ -204,8 +204,14 @@ function rtxIntrospect_code<"__decl__">(local_node : node, theChunk : node,
                 local theRtype;
                 insert theChunk.type_map[local_node.name];
                 // Build the associated Rtype node into the type_map
-                rtxNodeRType(theChunk.type_map[local_node.name],
-                             tmpPlaceHolder.node.body.identifiers[0], emptynode);
+                if (tmpPlaceHolder.node.body.type != "__rtx_rtype__")
+                {
+                    traceLine(YELLOW + "[Warning] Placeholder for a type is not of the expected type (rtype): " + tmpPlaceHolder.node.body.type + DEFAULT_COLOR);
+                    rtxNodeRType(theChunk.type_map[local_node.name],
+                            tmpPlaceHolder.node.body.identifiers[0], emptynode);
+                }
+                else
+                    setall theChunk.type_map[local_node.name] = tmpPlaceHolder.node.body;
             }
         }
 
@@ -622,6 +628,24 @@ function rtxIntrospect_InferPlaceHolderTypes<T>(local_node : node, theChunk : no
     error(RED + "[Error] rtxIntrospect_InferPlaceHolderTypes<'"+T+"'> is not implemented." + DEFAULT_COLOR);
 }
 
+function rtxIntrospect_InferPlaceHolderTypes<"__rtx_rtype__">(local_node : node, theChunk : node)
+{
+    // Make sure it's a target_decl, otherwise there was an error
+    if (local_node#parent#parent.type_target != "target_decl")
+        error(RED + "[Error] Type Placeholder has type_target != target_decl: " + local_node#parent#parent.type_target + DEFAULT_COLOR);
+
+    // Here, it should be type within a decl, thus the ref_placeHolder points to the ctype.
+    localref theDecl = local_node#parent#parent.ref_placeholder#parent;
+
+    if (!existVariable(theChunk.variables[theDecl.name]))
+        insert theChunk.variables[theDecl.name];
+
+    insert theChunk.variables[theDecl.name].type = "rtxtype";
+    insert theChunk.variables[theDecl.name].type_node;
+    setall theChunk.variables[theDecl.name].type_node = local_node;
+    return true;
+}
+
 function rtxIntrospect_InferPlaceHolderTypes<"__rtx_var__">(local_node : node, theChunk : node)
 {
     return true;
@@ -666,9 +690,7 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : no
         else // should be a template argument then
         {
             if (findElement(theVar.name, theChunk.type_map))
-            {
                 ref paramType = theChunk.type_map[theVar.name];
-            }
         }
 
         pushItem param_types;
