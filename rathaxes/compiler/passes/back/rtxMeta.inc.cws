@@ -190,22 +190,6 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 ;
         
 
-                // read all ${...} forms
-                rtx_place_holder(theNode : node) ::=
-                        [ rootidentifier:theNode.prefix ]?
-                        "${"
-                        [
-                                tpl_sequence_call(theNode.body)
-                                |
-                                tpl_chunk_call(theNode.body)
-                                |
-                                rtx_composed_identifier(theNode.body)
-                        ]
-                        '}'
-                        [ rootidentifier:theNode.suffix ]?
-                        [ ";" ]?//>>>>>????????????
-                ;
-
                 //Parse a chunk call (i.e. "${local.buf.init()}" )
                 tpl_chunk_call(theCall : node) ::=
 /**/                    => local parameters;
@@ -324,8 +308,30 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 ;
 
                 rtx_placeholder_noconcat(theNode : node) ::=
-                        "${" [ tpl_pointcut(theNode.body) | tpl_cast(theNode.body) ] '}' 
+                        "${"
+                        [
+                            tpl_pointcut(theNode.body)
+                            |
+                            tpl_cast(theNode.body)
+                            |
+                            tpl_sequence_call(theNode.body)
+                            |
+                            tpl_chunk_call(theNode.body)
+                        ]
+                        '}'
                         [ ';' ]? //>>>????
+                ;
+
+                // read all ${...} forms
+                rtx_place_holder(theNode : node) ::=
+                        [ rootidentifier:theNode.prefix ]?
+                        "${"
+                        [
+                                rtx_composed_identifier(theNode.body)
+                        ]
+                        '}'
+                        [ rootidentifier:theNode.suffix ]?
+                        [ ";" ]?//>>>>>????????????
                 ;
 
         }, treepart, compile.template_expr);
