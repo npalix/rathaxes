@@ -108,7 +108,7 @@ with PCI, LKM, Log
         map
         {
             context: ${self}->context;
-            device: pci_get_drvdata(&${self}->pdev->data);
+            device: &${self}->pdev->data.dev;
             pci_device: ${self}->pdev;
             irq: ${self}->pdev->data.irq;
             bars: ${self}->bars;
