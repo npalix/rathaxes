@@ -597,6 +597,17 @@ function rtxTypeCheck_CheckPlaceholder<T>(placeHolder : node, theChunk : node, i
     return false;
 }
 
+function rtxTypeCheck_CheckPlaceholder<"__rtx_rtype__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
+{
+    local itfType;
+    if (rtxTypeCheck_GetType(placeHolder, itfType) == false)
+    {
+        traceLine(RED + "[Error] Type placeholder refers to an unkown type: " + rtxRTypeName<"__rtx_rtype__">(placeHolder) + DEFAULT_COLOR);
+        return false;
+    }
+    return true;
+}
+
 function rtxTypeCheck_CheckPlaceholder<"__rtx_var__">(placeHolder : node, theChunk : node, itfTree : node, interface_list  : node)
 {
     return true;
@@ -611,9 +622,11 @@ function rtxTypeCheck_CheckPlaceholder<"__rtx_tpl_chunk_call__">(placeHolder : n
 
     if (rtxTypeCheck_GetType(placeHolder.rtype, itfType) == false)
     {
-        error(RED + "[Error] Could not find type "
-              + rtxRTypeName<placeHolder.rtype.type>(placeHolder.rtype)
-              + " within the cache." + DEFAULT_COLOR);
+        traceLine(RED + "[Error] Could not find type "
+                //+ rtxRTypeName<placeHolder.rtype.type>(placeHolder.rtype)
+                + toString(placeHolder#parent, true)
+                + " within the cache." + DEFAULT_COLOR);
+        return false;
     }
 
     foreach chunk in itfType.body.block
