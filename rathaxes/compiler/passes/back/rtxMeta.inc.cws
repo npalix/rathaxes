@@ -243,7 +243,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 tpl_sequence_call(theCall : node) ::=
 /**/                    => local seqName;
 /**/                    => local seqArgs;
-                        rtx_scoped_identifier(seqName)
+                        rtx_scoped_identifier(seqName, false)
                         #check(rtxNode_InfoLocation(seqName))
                         '('
 /**/                            #continue(sError, "Expected closing parenthesis in sequence call :'" 
@@ -288,7 +288,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/                    => local theDefault;
 /**/                    #check(rtxNodePointcut(thePointcut, pointcutId, theParams, theDefault))
 /**/                    #check(rtxNodeVarList(theParams))
-                        rtx_scoped_identifier(pointcutId)
+                        rtx_scoped_identifier(pointcutId, false)
                         #continue(sError, "Expected parameters to definition of pointcut '"+rtxRTypeName<pointcutId.type>(pointcutId)+"'")
                         tpl_pointcut_parameters(theParams)
                         [ tpl_pointcut_default(theDefault) ]?
@@ -303,7 +303,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         #continue(sError, "Expected 'as' token for a rathaxes cast.")
                         "as"
                         #continue(sError, "Expected Type name for casting type.")
-                        rtx_scoped_identifier(typeId)
+                        rtx_scoped_identifier(typeId, false)
                         #check(rtxNodeCast(theCast, varName, typeId))
                 ;
 
