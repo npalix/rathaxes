@@ -199,7 +199,7 @@ rtx_stmt_with_constraints(theList: node) ::=
 rtx_stmt_with_constraint(theList : node) ::=
 /**/    #pushItem(theList)
 /**/    => local identifier;
-        rtx_scoped_identifier(identifier)
+        rtx_scoped_identifier(identifier, false)
         rtx_stmt_with_operator:sOperator
 /**/    => local theVal;
 /**/    #check(rtxNodeWithConstraint(theList#back, identifier, sOperator, theVal))
@@ -221,7 +221,7 @@ rtx_stmt_chunk_common(theChunk : node) ::=
 /**/    => local body;
 /**/    => local pointcut;
 /**/    #check(rtxNodeChunk(theChunk, pointcut, param_ids, body))
-        rtx_scoped_identifier(pointcutId)
+        rtx_scoped_identifier(pointcutId, false)
         #check(rtxNode_InfoLocation(theChunk))
         #check(rtxNodeRType(pointcut, pointcutId, param_types))
 
@@ -259,7 +259,7 @@ rtx_stmt<"decl">(theBlock : node) ::=
 /**/    => local pointcut;
 /**/    => local chunk_body;
 /**/    #check(rtxNodeChunk(theChunk, pointcut, param_ids, chunk_body))
-        rtx_scoped_identifier(pointcutId)
+        rtx_scoped_identifier(pointcutId, false)
         #check(rtxNode_InfoLocation(theChunk))
         #check(rtxNodeRType(pointcut, pointcutId, param_types))
         #check(rtxNodeChunk_SetType(theChunk, "decl"))
