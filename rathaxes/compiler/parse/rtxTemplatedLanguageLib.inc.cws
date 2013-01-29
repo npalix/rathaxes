@@ -1,0 +1,149 @@
+/*
+    LIB FOR EXTERNAL LANGUAGE SUPPORT:
+
+        External languages templated by rathaxes:
+        - C (for now)
+        - C++ (one day for Darwin driver)
+        - Java? (why not)
+        - Other? (!!!)
+*/
+
+
+function        rtx_templatedLang_normalize<T>(theBlock : reference)
+{
+        error("Not supported language:" + T);
+}
+
+// guess type from unknown
+function        rtx_templatedLang_cnormpass(theDecl : reference)
+{
+        if (existVariable(theDecl.ctype.unknown) && $getArraySize(theDecl.ctype.unknown) > 0$ && theDecl.ctype.identifier == "auto")
+        {
+                //traceLine("Possible Declaration:" + toString(theDecl, true));
+                // take the last unknown and transform it into type
+                local it;
+                if (createIterator(it, theDecl.ctype.unknown) && last(it))
+                {
+                        theDecl.ctype.identifier = key(it);
+                        removeLastElement(theDecl.ctype.unknown);
+                        if ($getArraySize(theDecl.ctype.unknown) == 0$)
+                        {       removeVariable(theDecl.ctype.unknown);}
+                }
+        }
+        else if (existVariable(theDecl.ctype.unknown) && $getArraySize(theDecl.ctype.unknown) > 0$ && theDecl.ctype.storage == "typedef")
+        {
+            local bCond = false;
+            if ((existVariable(theDecl.name) && theDecl.name == "") || !existVariable(theDecl.name))
+            { bCond = true;}
+            if (bCond)
+            {
+                local it;
+                if (createIterator(it, theDecl.ctype.unknown) && last(it))
+                {
+                        insert theDecl.name = key(it);
+                        removeLastElement(theDecl.ctype.unknown);
+                        if ($getArraySize(theDecl.ctype.unknown) == 0$)
+                        {       removeVariable(theDecl.ctype.unknown);}
+                }
+            }
+        }
+}
+
+// check if a C decl need normalization
+function        rtx_templatedLang_cnormcheck(item : reference)
+{
+        if (item.type == "__decl__" || item.type == "__field_decl__" || item.type == "__param_decl__")
+        { rtx_templatedLang_cnormpass(item);}
+        else if (item.type == "__block__")
+        { rtx_templatedLang_normalize<"C">(item);}
+        if (existVariable(item.ctype.pointer))
+        { 
+                //traceLine("POINTER!!");
+                rtx_templatedLang_cnormcheck(item.ctype.pointer);
+        }
+        if (existVariable(item.ctype.body))
+        { rtx_templatedLang_normalize<"C">(item.ctype.body);}
+        if (existVariable(item.ctype.param))
+        { 
+                //traceLine("PARAM!!");
+                rtx_templatedLang_normalize<"C">(item.ctype.param);
+        }
+        if (existVariable(item.ctype.list))
+        {
+                foreach subitem in item.ctype.list
+                {
+                        localref it = subitem;
+                        rtx_templatedLang_cnormcheck(it);
+                }
+        }
+        // EXPR ZONE
+        if (existVariable(item.expr))
+        {
+                //traceLine("EXPR");
+                rtx_templatedLang_cnormcheck(item.expr);
+        }
+        if (existVariable(item.assign_expr))
+        {
+                //traceLine("ASSEXPR");
+                rtx_templatedLang_cnormcheck(item.assign_expr);
+        }
+        if (existVariable(item.colon_expr))
+        {
+                //traceLine("COLOEXPR");
+                rtx_templatedLang_cnormcheck(item.colon_expr);
+        }
+        if (existVariable(item.left))
+        {
+                //traceLine("LEFT");
+                rtx_templatedLang_cnormcheck(item.left);
+        }
+        if (existVariable(item.right))
+        {
+                //traceLine("RIGHT");
+                rtx_templatedLang_cnormcheck(item.right);
+        }
+        if (existVariable(item.condition))
+        {
+                //traceLine("COND");
+                rtx_templatedLang_cnormcheck(item.condition);
+        }
+        if (existVariable(item.initialize))
+        {
+                //traceLine("INIT");
+                rtx_templatedLang_normalize<"C">(item.initialize);
+        }
+        if (existVariable(item.increment))
+        {
+                //traceLine("INC");
+                rtx_templatedLang_cnormcheck(item.increment);
+        }
+        if (existVariable(item.list))
+        {
+                foreach subitem in item.list
+                {
+                        localref        it = subitem;
+                        rtx_templatedLang_cnormcheck(it);
+                }
+        }
+        if (existVariable(item.body))
+        { rtx_templatedLang_normalize<"C">(item.body);}
+        if (existVariable(item.then))
+        { rtx_templatedLang_normalize<"C">(item.then);}
+        if (existVariable(item.else))
+        { rtx_templatedLang_normalize<"C">(item.else);}
+}
+
+// normalize a C chunk tree
+// - fix type
+function        rtx_templatedLang_normalize<"C">(theBlock : reference)
+{
+        if ((theBlock.type == "__block__" || theBlock.type == "__root_block__") && $getArraySize(theBlock.block) > 0$)
+        {
+                foreach subitem in theBlock.block
+                {
+                        localref it = subitem;
+                        rtx_templatedLang_cnormcheck(it);
+                }
+        }
+        return true;
+}

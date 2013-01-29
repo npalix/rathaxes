@@ -48,6 +48,7 @@ typedef union
 #include "node/rtxNode.inc.cws"
 #include "linker/rtxLink.inc.cws"
 #include "passes/common/rtxResolve.inc.cws"
+#include "parse/rtxTemplatedLanguageLib.inc.cws"
 
 insert this.scripts_path = _ARGS[0] + "/compiler/";
 
@@ -68,13 +69,16 @@ if (!isEmpty(source.error))
     traceLine(out);
     exit(1);
 }
-traceLine("====>Result of parsing: __type_reordering.tree");
-saveProject("__type_reordering.tree", source);
+
+// normalize unstrict C code
+rtx_templatedLang_normalize<"C">(source);
+traceLine("====>Result of parsing: __parse.tree:");
+traceLine(cnorm2c(source));
+saveProject("__parse.tree", source);
 
 rtxResolve_BlockReordering(source.block);
 traceLine("====>Result of reordering: __type_reordering_done.tree");
 saveProject("__type_reordering_done.tree", source);
-
 traceLine(cnorm2c(source));
 
 
