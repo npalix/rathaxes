@@ -6,19 +6,31 @@
 \RequirePackage{inconsolata}
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
+\RequirePackage[fixlanguage]{babelbib}
 
 \newcommand{\rtx}{Rathaxes}
+% Useful in tikz:
+\newcommand{\bgcolor}{black}
+\newcommand{\fgcolor}{white}
+\newcommand{\twitter}{\raisebox{-0.3ex}{\includegraphics[height=1em]{twitter-bird-dark-bgs}} \href{https://twitter.com/rathaxes}{@rathaxes}}
 
 \definecolor{rathaxesred}{RGB}{190,36,31}
 \setbeamercolor{normal text}{fg=white,bg=black}
 \setbeamercolor{structure}{fg=rathaxesred}
 
-\DeclareOption{reverse}{\setbeamercolor{normal text}{fg=black,bg=white}}
+\DeclareOption{reverse}{
+\setbeamercolor{normal text}{fg=black,bg=white}
+\renewcommand{\bgcolor}{white}
+\renewcommand{\fgcolor}{black}
+\renewcommand{\twitter}{\raisebox{-0.3ex}{\includegraphics[height=1em]{twitter-bird-light-bgs}} \href{https://twitter.com/rathaxes}{@rathaxes}}
+}
 \ProcessOptions\relax
 
 \setbeamerfont{abstract}{family=\rmfamily,shape=\itshape}
 
 \useoutertheme{infolines}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{bibliography item}[text]
 
 \addtobeamertemplate{title page}{%
 \begin{center}%
@@ -27,3 +39,10 @@
 \end{center}}{}
 
 \graphicspath{{@RATHAXES_SOURCE_DIR@/com/images/}}
+
+\newcommand{\rtxbibliography}{%
+\bibliographystyle{abbrv}
+\scriptsize{
+\bibliography{@RATHAXES_SOURCE_DIR@/doc/bibliography}
+}
+}
