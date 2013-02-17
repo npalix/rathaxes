@@ -301,22 +301,14 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                     while ((value & (1 << 4)) == 0);
                     value >>= 16;
                     /*
-                     * XXX: The net_dev manipulations here should take place in the
-                     * ethernet templates:
-                     * TODO: recevoir un Builtin::symbol avec le tableau ici pour
-                     * pouvoir les remonter directement.
+                     * NOTE: I'm not sure if Ethernet::Device should be
+                     * accessed directly here. But since we need to take it in
+                     * parameter (so we can get back our e1000::Context) it
+                     * seems inadequate to set this in another way:
                      */
                     ${rtx_ether_ctx.dev_addr}[i * 2] = value & 0xff;
                     ${rtx_ether_ctx.dev_addr}[i * 2 + 1] = (value >> 8) & 0xff;
                 }
-
-                /* TODO: deplacer ça dans Ethernet (see above point): */
-                ${Ethernet::AbstractDevice} *rtx_ether_dev = ${rtx_ether_ctx.net_device};
-                ${cast local.rtx_ether_dev as Ethernet::AbstractDevice};
-                memcpy(${rtx_ether_ctx.perm_addr},
-                       ${rtx_ether_ctx.dev_addr},
-                       ${local.rtx_ether_dev.netdev}.addr_len);
-
                 ${Log::info("e1000::create: mac address loaded from the EEPROM")};
             }
         }
