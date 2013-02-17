@@ -277,6 +277,9 @@ with Ethernet, PCI, LKM, Log
                                                       local.irq)};
             ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
             ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
+            memcpy(${local.rtx_ether_ctx.perm_addr},
+                   ${local.rtx_ether_ctx.dev_addr},
+                   ${local.net_dev.netdev}.addr_len);
         }
 
         /* This chunk should be removed (see #26) */
