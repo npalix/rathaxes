@@ -1,4 +1,6 @@
 /*
+    GRAMMAR FOR EXTERNAL LANGUAGE SUPPORT
+
         External languages templated by rathaxes:
         - C (for now)
         - C++ (one day for Darwin driver)
@@ -6,13 +8,55 @@
         - Other? (!!!)
 */
 
+#include "rtxTemplatedLanguageLib.inc.cws"
+
+
 rtx_templatedLang_single_stmt<T>(theBody : node) ::= =>error("Not supported language:" + T);
 ;
 
 rtx_templatedLang_body<T>(theBody : node) ::= =>error("Not supported language:" + T);
 ;
 
+rtx_templatedLang_typedecl<T>(theChunk : node, theBody : node) ::= =>error("Not supported language:" + T);
+;
+
 /////////////////////// C LANGUAGE
+
+// A pointcut over a declaration
+rtx_templatedLang_C_declpointcut(theBody : node) ::=
+/**/=> local theDecl;
+    #pushItem(theBody.block)
+    #check(cnormNodeBlock_GetLastNode(theBody, theDecl))
+    #check(cnormNodeDecl(theDecl))
+    #check(cnormNode_DeclAsField(theDecl))
+    =>traceLine(CYAN + "NExt char is: <" + peekChar() + ">" + DEFAULT_COLOR);
+    #check(peekChar() == "$")
+    rtx_templatedLang_code:phString
+    #check(cnormNodeDecl_SetName(theDecl, phString))
+/**/=> traceLine(toString(theDecl, true));
+;
+
+// declaration
+rtx_templatedLang_typedecl<"C">(theChunk : node, theBody : node) ::=
+    '{'
+        /*
+         * Here, we manage Either the Values definitions of an enum
+         * Or the definition of a type.
+         */
+        [
+            [
+                [ declaration(theBody) | unstrict(theBody) ] => rtx_templatedLang_cnormcheck(theBody.block#back);
+            |
+                rtx_templatedLang_C_declpointcut(theBody)
+            ]+
+        |
+/**/      => local enumCtype;
+          #check(rtxNodeChunk_EnumContent(theChunk, enumCtype))
+          enumerator_list(enumCtype)
+        ]
+    #continue(sError, "Expected end of block for decl.")
+    '}'
+;
 
 rtx_templatedLang_single_stmt<"C">(theBody : node) ::= single_statement(theBody)
 ;

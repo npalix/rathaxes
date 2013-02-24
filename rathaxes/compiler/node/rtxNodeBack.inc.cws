@@ -248,6 +248,53 @@ function rtxNodeCast(local_node : node, varName : value, typeId : node)
     return true;
 }
 
+
+// This function transforms the body node of a chunk (a block, by default) into a ctype to register an enumerator_list
+function rtxNodeChunk_EnumContent(local_node : node, out_ctype : reference)
+{
+    // Reset the block (make sure it's empty)
+    rtxNodeChunk_SetDeclType(local_node, "enum");
+    clearVariable(local_node.body.block);
+
+    localref theBlock = local_node.body;
+    local theDecl;
+    local theCtype;
+
+    if (cnormNodeBlock_AddNode(theBlock) == false)
+        return false;
+    if (cnormNodeBlock_GetLastNode(theBlock, theDecl) == false)
+        return false;
+    if (cnormNodeDecl(theDecl) == false)
+        return false;
+    if (cnormNodeDecl_GetCtype(theDecl, theCtype) == false)
+        return false;
+
+
+    // Set body into a ctype.
+	// type of the node ... it's a ctype
+	insert theCtype.type = "__ctype__";
+	// type of cdecl ... (primary,composed)
+	insert theCtype.cdecl_type = "__primary__";// .list if composed
+	// only one storage class by decl (auto,register,typedef,static,extern)
+	insert theCtype.storage = "auto";
+	// only one qualifier by decl (auto, const, volatile,restrict)
+	insert theCtype.qualifier = "auto";
+	// only one specifier by decl (auto,inline,dll*,struct,enum,union,long,short)
+	insert theCtype.specifier = "auto";
+	// only one funspecifier by decl (auto,inline, and in C++ virtual,explicit)
+	insert theCtype.funspecifier = "auto";
+	// only one identifier by decl (char,int,float,double,void,typedefname, struct/union/enum/name)
+	insert theCtype.identifier = "auto";// .sign for int
+
+    if (cnormNodeDecl_SetSpecifier(theCtype, "enum") == false)
+        return false;
+
+    ref out_ctype = theCtype;
+
+    return true;
+}
+
+
 /*
  *
  * The following functions are used to build the variable hashtable called

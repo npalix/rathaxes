@@ -1,0 +1,16 @@
+Rathaxes has been started in 2007 by Lionel Auroux from his experience
+as a teacher in compilation [1] and the work of Dr. Laurent Réveillère
+on Devil, an interface description language (IDL) for hardware
+programming [2]. Lionel Auroux is currently a teacher at Epita, in
+Paris, France, and one of the lead of the Epita Systems Laboratory
+(LSE).
+
+Rathaxes is also developed by David Pineau, who is working at Scality,
+in Paris, a rising startup in the cloud storage business, and Louis
+Opter (speaker) working in San Francisco, USA, at dotCloud a startup
+which strives to deliver the best platform as a service (PaaS) offering.
+
+Both David and Louis have been working on Rathaxes since 2010.
+
+[1] http://lse.epita.fr/teaching/courses.html
+[2] http://www.labri.fr/perso/reveille/publications/papers/reveillere-thesis.pdf

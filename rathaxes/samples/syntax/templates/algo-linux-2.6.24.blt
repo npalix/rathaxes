@@ -22,11 +22,8 @@ values LKM::OS=linux, LKM::version >= 2.6.24
     {
         decl INCLUDE_DEPENDENCIES()
         {
-            struct buf
-            {
-                char ptr[${config.size}];
-                int sz;
-            };
+            char ptr[${config.size}];
+            int sz;
         }
 
         map

@@ -47,6 +47,7 @@ foreach template in source.block[0].body.block
                 }
                 break ;
             case "__rtx_var__": // always valid
+            case "__rtx_rtype__":
                 traceLine("<SUCCESS>: PlaceHolder "+key(placeHolder)
                           + " of chunk " + chunk.pointcut.name.scope + "::"
                           + chunk.pointcut.name.name + " updated by introspection.");

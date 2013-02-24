@@ -14,7 +14,7 @@
  *  - numeric value
  *  - string value
  */
-rtx_scoped_identifier(theNode : node) ::=
+rtx_scoped_identifier(theNode : node, force_scope : value) ::=
     #!ignore
 /**/=> local sScope = "";
 /**/=> local globally_defined = false;
@@ -25,6 +25,9 @@ rtx_scoped_identifier(theNode : node) ::=
         "::"
         => globally_defined = true;
     ]?
+    #check(force_scope == false
+           || (force_scope == true && globally_defined == true)
+           || (force_scope == true && sScope != ""))
     #readIdentifier:sIdentifier
     #check(rtxNodeIdentifier(theNode, sIdentifier, sScope, globally_defined))
 ;
@@ -32,7 +35,7 @@ rtx_scoped_identifier(theNode : node) ::=
 // This rule dissects an identifier in parts separated by dots.
 rtx_composed_identifier(theNode : node) ::=
 /**/=>local theVar;
-    rtx_scoped_identifier(theVar)
+    rtx_scoped_identifier(theVar, false)
     // Create the node from
     #check(rtxNodeVar(theNode, theVar))
     #check(rtxNode_InfoLocation(theNode))
@@ -135,7 +138,7 @@ rtx_value(theValue : node) ::=
 rtx_param(theParams : node, theIdentifiers : node) ::=
     #pushItem(theIdentifiers)
     #pushItem(theParams)
-    rtx_scoped_identifier(theParams#back)
+    rtx_scoped_identifier(theParams#back, false)
     [    #readIdentifier:theIdentifiers#back ]?
 ;
 
@@ -156,7 +159,7 @@ rtx_parameter_list(theParams : node, theIdentifiers : node) ::=
 rtx_template_prototype(theRtype : node, theIdentifiers : node) ::=
 /**/=> local nameNode;
 /**/=> local params;
-    rtx_scoped_identifier(nameNode)
+    rtx_scoped_identifier(nameNode, false)
     #check(rtxNodeRType(theRtype, nameNode, params))
     rtx_parameter_list(params, theIdentifiers)
 ;

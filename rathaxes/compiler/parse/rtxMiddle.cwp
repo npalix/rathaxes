@@ -69,7 +69,7 @@ rtx_itf_stmt<"pointcut">(theDecl : node, nameList : node, theQualif : value) ::=
     => local default; // Actually unused in the interface.
 
     #continue(sError, "Expected pointcut name after pointcut declaration.")
-    rtx_scoped_identifier(nameNode)
+    rtx_scoped_identifier(nameNode, false)
     #check(rtxNodeItfPointcutDeclaration(theDecl, theQualif, nameNode, param_types))
 
     #continue(sError, "Expected parameters to pointcut '"+rtxRTypeName<nameNode.type>(nameNode)+"'.")
@@ -85,7 +85,7 @@ rtx_itf_stmt<"chunk">(theDecl : node, nameList : node, theQualif : value) ::=
     => local dummy_ids; // actually ignored in the interface
 
     #continue(sError,  "Expected pointcut name after chunk declaration.")
-    rtx_scoped_identifier(id)
+    rtx_scoped_identifier(id, false)
     #check(rtxNodeItfChunkDeclaration(theDecl, id, param_types, theQualif))
 
     #continue(sError, "Expected parameters to chunk '"+rtxRTypeName<id.type>(id)+"'.")
@@ -100,7 +100,7 @@ rtx_itf_stmt<"type">(theDecl : node, nameList : node, theQualif : value) ::=
 /**/=> local rtypeNode;
 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "type"))
-    rtx_scoped_identifier(nameNode)
+    rtx_scoped_identifier(nameNode, false)
     #check(rtxNode_InfoLocation(theDecl))
     #check(rtxNodeRType(rtypeNode, nameNode, params))
 /**/=> addRTypeToItfDeclaration(theDecl, rtypeNode);
@@ -135,7 +135,7 @@ rtx_itf_type_stmt<"pointcut">(theDecl : node) ::=
     => local dummy_ids;
 
     #continue(sError, "Expected pointcut name after pointcut declaration.")
-    rtx_scoped_identifier(nameNode)
+    rtx_scoped_identifier(nameNode, false)
     #check (rtxNodeItfTypePointcutDeclaration(theDecl, nameNode, paramTypes))
 
     #continue(sError, "Expected parameters to pointcut '"+rtxRTypeName<nameNode.type>(nameNode)+"'.")
@@ -147,7 +147,7 @@ rtx_itf_type_stmt<"chunk">(theDecl : node) ::=
     => local theParamTypes;
     => local dummy_ids;
     #continue(sError, "Expected name for method in type's declaration.")
-    rtx_scoped_identifier(theName)
+    rtx_scoped_identifier(theName, false)
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Expected parameters to method '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
@@ -157,7 +157,7 @@ rtx_itf_type_stmt<"chunk">(theDecl : node) ::=
 rtx_itf_type_stmt<"attribute">(theDecl : node) ::=
     => local theType;
     #continue(sError, "Expected type for attribute in type's declaration.")
-    rtx_scoped_identifier(theType)
+    rtx_scoped_identifier(theType, false)
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "No attribute name given.")
     => local theName;
@@ -170,7 +170,7 @@ rtx_itf_type_stmt<"method">(theDecl : node) ::=
     => local theParamTypes;
     => local dummy_ids;
     #continue(sError, "Expected name for method in type's declaration.")
-    rtx_scoped_identifier(theName)
+    rtx_scoped_identifier(theName, false)
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Expected parameters to method '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
@@ -182,7 +182,7 @@ rtx_itf_type_stmt<"decl">(theDecl : node) ::=
     => local theParamTypes;
     => local dummy_ids;
     #continue(sError, "Expected name for decl in type's declaration.")
-    rtx_scoped_identifier(theName)
+    rtx_scoped_identifier(theName, false)
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Expected parameters to decl '"+rtxRTypeName<theName.type>(theName)+"'.")
     rtx_parameter_list(theParamTypes, dummy_ids)
@@ -196,7 +196,7 @@ rtx_itf_stmt<"builtintype">(theDecl : node, nameList : node, theQualif : value) 
     => local rtypeNode;
 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "builtintype"))
-    rtx_scoped_identifier(nameNode)
+    rtx_scoped_identifier(nameNode, false)
     #check(rtxNode_InfoLocation(theDecl))
     #check(rtxNodeRType(rtypeNode, nameNode, params))
     => addRTypeToItfDeclaration(theDecl, rtypeNode);
@@ -218,8 +218,8 @@ rtx_itf_stmt<"variable">(theDecl : node, nameList : node, theQualif : value) ::=
     => local sName;
 
     #check(rtxNodeItfDeclaration(theDecl, theQualif, "variable"))
-    rtx_scoped_identifier(typeNode)
-    rtx_scoped_identifier(sName)
+    rtx_scoped_identifier(typeNode, false)
+    rtx_scoped_identifier(sName, false)
     #check(rtxNode_InfoLocation(theDecl))
     #continue(sError, "Missing ';' ending variable declaration.")
     ';'
@@ -268,7 +268,7 @@ rtx_itf_sequence_body_declaration(theBlock : node) ::=
 
 rtx_pointcut_param(theParams : node) ::=
     #pushItem(theParams)
-    rtx_scoped_identifier(theParams#back)
+    rtx_scoped_identifier(theParams#back, false)
 ;
 
 rtx_pointcut_parameter(theParams : node) ::=

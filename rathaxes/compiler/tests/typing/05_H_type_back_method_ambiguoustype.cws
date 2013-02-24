@@ -88,6 +88,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 method testMethod(Number paf)
