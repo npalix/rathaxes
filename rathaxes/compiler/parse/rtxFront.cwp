@@ -10,7 +10,7 @@ rtx_stmt_config_block(theBlock : node) ::=
 /**/    => local theIdentifier;
 /**/    => local theValue;
         #check(rtxNodeConfigField(configField, theIdentifier, theValue))
-        rtx_scoped_identifier(theIdentifier)
+        rtx_scoped_identifier(theIdentifier, false)
         #check(rtxNode_InfoLocation(theBlock))
 /**/    #continue(sError, "Expected assignment operator '=' after"
 /**/                    + " configuration variable declaration.")
@@ -135,7 +135,7 @@ rtx_register(theNode : node) ::= "register"
 /**/    => local like;
 /**/    => local body;
 /**/    #check(rtxNodeRegister(theNode, type, like, body))
-        rtx_scoped_identifier(type)
+        rtx_scoped_identifier(type, false)
         #check(rtxNode_InfoLocation(theNode))
         #readIdentifier:theNode.name
         #check(rtxNodeRegister_addMap(theNode))
@@ -159,7 +159,7 @@ rtx_property(theNode : node) ::=
         #check(rtxNodeProperty(theNode, rtype, body, visibility))
         => local typeNode;
         => local dummy;
-        rtx_scoped_identifier(typeNode)
+        rtx_scoped_identifier(typeNode, false)
         #check(rtxNode_InfoLocation(theNode))
         #check(rtxNodeRType(rtype, typeNode, dummy))
         #readIdentifier:theNode.name
@@ -199,7 +199,7 @@ rtx_sequence_call(theBlock : node) ::=
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
-        rtx_scoped_identifier(lastNode.sequence)
+        rtx_scoped_identifier(lastNode.sequence, false)
         #check(rtxNode_InfoLocation(lastNode))
         [rtx_sequence_args(lastNode.args) ]?
         #continue(sError, "Error in sequence call")

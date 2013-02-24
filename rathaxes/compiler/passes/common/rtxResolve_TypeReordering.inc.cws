@@ -1,0 +1,264 @@
+#if !existFunction(rtxResolve_TypeReordering_version)
+
+function rtxResolve_TypeReordering_version()
+{ return "1.0"; }
+
+
+// Entry-point function
+declare function rtxResolve_BlockReordering(inout_chunks : node);
+
+// Sub functions
+declare function rtxResolve_BlockReordering_DoRecursive(type : node, deps : node, inserted_keys : node, source : node, result : node, force : value);
+declare function rtxResolve_BlockReordering_IterComposed(ctype : node, deplists : node);
+declare function rtxResolve_BlockReordering_RecurseTypeDecl(ctype : node, deplists : node);
+declare function rtxResolve_BlockReordering_InsertDep(decl : node, deplists : node);
+
+
+
+
+/*
+ * This function inserts a depended-on type into the deplist for the block's reordering
+ */
+function rtxResolve_BlockReordering_InsertDep(decl : node, deplists : node)
+{
+    local depnode;
+
+    // don't insert dep if it's a primary type (not user-defined)
+    if (decl.ctype.storage == "typedef")
+    {
+        // prevent multiple-insertions
+        foreach entry in deplists#front
+        {
+            if (entry.name == decl.name && entry.type == "typedef")
+                return ;
+        }
+        insert depnode.name = decl.name;
+        insert depnode.type = "typedef";
+    }
+    else if (decl.ctype.specifier != "auto")
+    {
+        // prevent multiple-insertions
+        foreach entry in deplists#front
+        {
+            if (entry.name == decl.ctype.identifier && entry.type == decl.ctype.specifier)
+                return ;
+        }
+        insert depnode.name = decl.ctype.identifier;
+        insert depnode.type = decl.ctype.specifier;
+    }
+    else if (decl.ctype.cdecl_type == "__primary__")
+    {
+        local id;
+
+        if (decl.ctype.identifier == "auto" && existVariable(decl.ctype.unknown))
+        {
+            if (getArraySize(decl.ctype.unknown) != 1)
+                traceLine(YELLOW + "[Warning] Multiple keywords in .unknown: using first by default" + DEFAULT_COLOR);
+            id = decl.ctype.unknown#front;
+        }
+        else
+            id = decl.ctype.identifier;
+
+        // Consider an unknown type as a typedef...
+        foreach entry in deplists#front
+        {
+            if (entry.name == id && entry.type == "typedef")
+                return ;
+        }
+        insert depnode.name = id;
+        insert depnode.type = "typedef";
+    }
+    else
+    {
+        error(RED + "Unmanaged type for block reordering: " + toString(decl, true) + DEFAULT_COLOR);
+    }
+
+    // Common flag
+    if (existVariable(decl.ctype.pointer))
+        insert depnode.aggreg = false;
+    else
+        insert depnode.aggreg = true;
+
+    foreach list in deplists
+    {
+        pushItem  list;
+        setall list#back = depnode;
+    }
+}
+
+/*
+ * This recursive function checks a ctype node's body for type dependencies,
+ * and adds them to the deplists.
+ */
+function rtxResolve_BlockReordering_RecurseTypeDecl(ctype : node, deplists : node)
+{
+    foreach entry in ctype.body.block
+    {
+        if (entry.type == "__field_decl__" || entry.type == "__fwd_decl__")
+        {
+            // Go into recursion after adding the dependency,
+            // in order for the reordering to have a simple algorithm of traversal
+            // without anymore complexity (The sub-types will be inserted before)
+            rtxResolve_BlockReordering_RecurseTypeDecl(entry.ctype, deplists);
+            // Now add the dep.
+            rtxResolve_BlockReordering_InsertDep(entry, deplists);
+        }
+    }
+}
+
+/*
+ * This function checks a ctype node's list for type dependencies,
+ * and adds them to the deplists.
+ */
+function rtxResolve_BlockReordering_IterComposed(ctype : node, deplists : node)
+{
+    foreach entry in ctype.list
+    {
+        if (entry.type == "__decl__" || entry.type == "__field_decl__"
+            || entry.type == "__fwd_decl__")
+            rtxResolve_BlockReordering_InsertDep(entry, deplists);
+    }
+}
+
+/*
+ * this function inserts a
+ */
+function rtxResolve_BlockReordering_DoRecursive(type : node, deps : node, inserted_keys : node, source : node, result : node, force : value)
+{
+    // This flag is setup when starting to manage the dependencies of one type,
+    // In order to avoid multiple-inserts of a same type (and thus a circular dependency -> infinite recursion)
+    if (existVariable(type.managed) && (type.managed == true || force == false))
+        return ;
+
+    // This means that the type was inserted either by a dependency on the typedefed struct or typedefed union,
+    // and we are now manipulating the other component (typedef or actual struct/union). Consider it as already inserted.
+    if (findElement(type.location, inserted_keys))
+    {
+        insert type.managed = true;
+        return ;
+    }
+
+    // Now, iterate over the subdeps and recurse for each of them.
+    insert type.managed = force; // take the value depending on if we absolutely need to insert it or not.
+    foreach dep in type.list
+    {
+        local theDep;
+        if (dep.type == "struct")
+            ref theDep = deps.structs;
+        else if (dep.type == "union")
+            ref theDep = deps.unions;
+        else
+            ref theDep = deps.typedefs;
+
+        if (findElement(dep.name, theDep))
+        {
+            ref theDep = theDep[dep.name];
+            // The aggreg field tells wether the type must be aggregated (and thus absolutely defined before,
+            //   or if a fwd decl would suffice)
+            rtxResolve_BlockReordering_DoRecursive(theDep, deps, inserted_keys, source, result, theDep.aggreg);
+        }
+    }
+
+    // Finally, insert the type in the resulting code listing after checking it wasn't inserted.
+    if (!findElement(type.location, inserted_keys))
+    {
+        pushItem result;
+        setall result#back = source[type.location];
+        insert inserted_keys[type.location];
+        type.managed = true;
+    }
+}
+
+/*
+ * This function takes a list of resolved chunks, searches for types within this list,
+ * and then builds a dependency tree in order to re-order the types within the
+ * code tree.
+ */
+function rtxResolve_BlockReordering(inout_chunks : node)
+{
+    local deps;
+    local result;
+    local inserted_keys;
+    insert deps.structs;
+    insert deps.unions;
+    insert deps.typedefs;
+
+    // First, build the dependency lists
+    foreach chunk in inout_chunks
+    {
+        if (chunk.type == "__decl__")
+        {
+            local deplists;
+
+            if (chunk.ctype.storage == "typedef")
+            {
+                local name;
+                if (existVariable(chunk.name))
+                    name = chunk.name;
+                else if (existVariable(chunk.ctype.unknown))
+                    name = chunk.ctype.unknown#front;
+                else
+                    error(RED + "Unmanaged kind of type description for type reodering: " + toString(chunk,true) + DEFAULT_COLOR);
+                insert deps.typedefs[name];
+                insert deps.typedefs[name].location = key(chunk);
+                insert deps.typedefs[name].source;
+                setall deps.typedefs[name].source = chunk.ctype;
+                insert deps.typedefs[name].list;
+                pushItem deplists;
+                ref deplists#back = deps.typedefs[name].list;
+            }
+
+            if (chunk.ctype.specifier == "struct" && chunk.ctype.identifier != "")
+            {
+                insert deps.structs[chunk.ctype.identifier];
+                insert deps.structs[chunk.ctype.identifier].location = key(chunk);
+                insert deps.structs[chunk.ctype.identifier].type = chunk.ctype.cdecl_type;
+                insert deps.structs[chunk.ctype.identifier].list;
+                pushItem deplists;
+                ref deplists#back = deps.structs[chunk.ctype.identifier].list;
+            }
+
+            if (chunk.ctype.specifier == "union" && chunk.ctype.identifier != "")
+            {
+                insert deps.unions[chunk.ctype.identifier];
+                insert deps.unions[chunk.ctype.identifier].location = key(chunk);
+                insert deps.unions[chunk.ctype.identifier].type = chunk.ctype.cdecl_type;
+                insert deps.unions[chunk.ctype.identifier].list;
+                pushItem deplists;
+                ref deplists#back = deps.unions[chunk.ctype.identifier].list;
+            }
+
+            // Check the body for the sub-types
+            rtxResolve_BlockReordering_RecurseTypeDecl(chunk.ctype, deplists);
+            // Check the list for a composed (what's the diff with body??)
+            rtxResolve_BlockReordering_IterComposed(chunk.ctype, deplists);
+        }
+    }
+
+    // Then iterate over structs and typedefs and insert the nodes in order
+    foreach type in deps.structs
+    { rtxResolve_BlockReordering_DoRecursive(type, deps, inserted_keys, inout_chunks, result, false); }
+
+    foreach type in deps.unions
+    { rtxResolve_BlockReordering_DoRecursive(type, deps, inserted_keys, inout_chunks, result, false); }
+
+    foreach type in deps.typedefs
+    { rtxResolve_BlockReordering_DoRecursive(type, deps, inserted_keys, inout_chunks, result, false); }
+
+    // Then insert at the end every item from the source chunk listing which wasn't already inserted:
+    foreach entry in inout_chunks
+    {
+        local k = key(entry);
+        if (!findElement(k, inserted_keys))
+        {
+            insert inserted_keys[k];
+            pushItem result;
+            setall result#back = inout_chunks[k];
+        }
+    }
+
+    // Finally, set result back to the out param (inout_chunks)
+    setall inout_chunks = result;
+}
+
+#end

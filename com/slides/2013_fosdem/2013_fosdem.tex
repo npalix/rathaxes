@@ -1,0 +1,344 @@
+\documentclass[xcolor={usenames,svgnames}]{beamer}
+
+\usepackage{rtxslides}
+\usepackage[american]{babel}
+\usepackage{tikz}
+\usetikzlibrary{shapes,fit}
+
+\selectbiblanguage{american}
+
+\title{A DSL for driver development, why \& how?}
+\date{Fosdem 2013}
+\author{Louis Opter \\ \texttt{www.rathaxes.org}}
+
+\definecolor{lightred}{RGB}{147,36,33}
+\tikzset{componentarrow/.style={->, >=stealth, color=rathaxesred, ultra thick}}
+
+\newcommand{\cemph}[1]{{\itshape{\textcolor{rathaxesred}{#1}}}}
+
+\newcommand{\tred}[1]{\textcolor{rathaxesred}{#1}}
+
+\tikzset{warrow/.style={->, >=stealth, color=white, ultra thick}}
+
+\tikzset{graybox/.style={draw,rectangle,rounded corners=3pt,very thick,densely dashed,color=gray!75,text=white}}
+\tikzset{redbox/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white}}
+\tikzset{redcontainer/.style={draw,rectangle,rounded corners=5pt,ultra thick,color=rathaxesred,text=white,minimum height=3.5cm,minimum width=2.5cm}}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{About us}
+\Large{
+\begin{itemize}
+\item<1-> Three guys, limited experience;
+\item<2-> Lionel's idea back in 2007;
+\item<3-> Experimentations, POC in 2009;
+\item<4-> A side project for us since 2010.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{Why?}
+\Large{
+\begin{itemize}
+\item Learn;
+\item Biggest part of OSes code base;
+\item Dominant cause of crashes;
+\item Complexity/Skills required;
+\pause
+\item \emph{Understanding Modern Device Drivers} \cite{kadavasplos12}.
+\end{itemize}
+\pause
+
+\begin{center}
+How can this be solved/improved?
+\end{center}
+}
+\end{frame}
+
+\begin{frame}{Pre-requisites}
+\begin{itemize}
+\item Kernel: The Base Component of OSes;
+\item Device: The hardware on the motherboard;
+\item Subsystem: Abstraction layer for big features (Network, Storage, USB\ldots);
+\item Driver: The software component loaded into the kernel;
+\item Paradigm: Monolithic, Exo, Hybrid, Micro.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{ToC}
+\Large{
+\begin{enumerate}
+\item “State of the art”;
+\item Quick dive into \rtx;
+\item Wrap-up \& next steps.
+\end{enumerate}
+}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+\LARGE{
+\emph{“State of the art”}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{SOA - RAD Tools}
+\Large{
+Jungo's WinDriver: \url{http://youtu.be/-o6M1ljZMQk}
+}
+\end{frame}
+
+\begin{frame}{SOA - Static Analysis}
+\Large{
+\only<1>{
+\begin{itemize}
+\item Static Driver Verifier (Windows specific);
+\item Safe Drive (Linux) \cite{safedrive};
+\item SymDrive \cite{symdrive}.
+\end{itemize}
+}
+\only<2>{
+Limitations:
+\vspace{1ex}
+\begin{itemize}
+\item Doesn't solve code re-usability;
+\item SymDrive is very interesting.
+\end{itemize}
+\begin{center}
+\vspace{1ex}
+Cover topics we don't cover \cemph{yet};
+\end{center}
+}
+}
+\end{frame}
+
+\begin{frame}{SOA - Interface Description Languages (IDL)}
+\only<1>{
+\Large{
+\begin{itemize}
+\item Devil \cite{Reveillere:these2001};
+\item Hail (similar to Devil).
+\end{itemize}
+}
+}
+\only<2>{
+\large{
+\begin{itemize}
+\item Describe interfaces to access the registers with constraints;
+\item No notion of bus (in Devil);
+\item Don't describe the algorithms to access the registers.
+\end{itemize}
+}
+}
+\only<3>{
+\Large{
+\begin{itemize}
+\item Only solve one part of the problematic;
+\item Nonetheless, \rtx\ started from Devil.
+\end{itemize}
+}
+}
+\end{frame}
+
+\begin{frame}{SOA - Domain Specific Languages (DSL)}
+\Large{
+\begin{itemize}
+\item Termite \cite{Ryzhyk_CKSH_09};
+\item Us: \rtx.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{SOA - DSL - Termite}
+\Large{
+\only<1-2>{
+\begin{itemize}
+\item Generate a complete driver as a FSM;
+\item Sources are three “specifications”:
+\only<2>{
+\begin{itemize}
+\Large{
+\item device-class specification;
+\item device specification;
+\item os specification.
+}
+\end{itemize}
+}
+\end{itemize}
+}
+\only<3>{
+Limitations:
+\vspace{1ex}
+\begin{itemize}
+\item Interface with the OS is very blurry:
+\begin{itemize}
+\Large{
+\item The FSM is OS agnostic;
+\item Model of “messages”.
+}
+\end{itemize}
+\item FSM generation can take hours;
+\item Only the paper is available, no code.
+\end{itemize}
+}
+}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+\LARGE{
+\emph{Quick dive in our WIP}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{WIP - How we see drivers}
+\Large{
+What we have:
+\begin{itemize}
+\item Device dependent registers;
+\item Device dependent logic;
+\item Kernel dependent subsystems.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{WIP - \rtx\ - Model}
+\Large{
+\only<1->{
+\begin{itemize}
+\item Describe driver \& kernel in \rtx;
+\item Generate driver in C;
+\item Sources are split in three parts:
+\only<2>{
+\begin{itemize}
+\Large{
+\item BLT: kernel dependent subsystems;
+\item RTI: interfaces;
+\item RTX: device dependent registers and logic (ideally).
+}
+\end{itemize}
+}
+\only<3->{
+\begin{itemize}
+\Large{
+\item BLT: C code templates;
+\item RTI: interfaces;
+\item RTX: our DSL front-end.
+}
+\end{itemize}
+\pause
+\vspace{1ex}
+Loosely similar to Termite's specifications.
+}
+}
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{WIP - Some code - ethernet.blt}
+\Large{
+\begin{center}
+\href{http://code.google.com/p/rathaxes/source/browse/rathaxes/samples/e1000/ethernet.blt?r=7ef0fe8dcdcb55108abb3238ca004455dadf1a10\#200}{Ethernet initialization code (link)}
+\end{center}
+}
+\end{frame}
+
+\begin{frame}{WIP - Debrief}
+\Large{
+\begin{itemize}
+\item Re-usability is achieved;
+\item Device dependent algorithms can be extracted;
+\item Interfaces describes subsystems and needed device functionnality;
+\item Interfaces are paradigm agnostic.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+\LARGE{
+\emph{Wrap-up \& next steps}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}{Wrap-up}
+\Large{
+\begin{itemize}
+\item Research is in progress by different teams;
+\item Research seems justified;
+\item Our DSL front-end is not implemented yet;
+\item We are WIP but we are the only open source project.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{Next steps}
+\Large{
+\begin{itemize}
+\item Complete that e1000 example;
+\item Mature the langage;
+\item Start to implement the front-end;
+\item Get students on the project;
+\item Move the compiler to Python.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{Questions? Feedback?}
+\begin{center}
+\Huge{Thanks}
+
+\end{center}
+\vspace{2em}
+\begin{itemize}
+\item \Large{\url{http://www.rathaxes.org/}}
+\item \Large{\texttt{\#rathaxes} on IRC (\texttt{chat.freenode.net})}
+\item \Large{\twitter}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{CNorm 3 / CodeWorker}
+CNorm \& CodeWorker are used to write the \rtx\ compiler.
+
+\vspace{1ex}
+
+CNorm 3.x is:
+\begin{itemize}
+\item A C Frontend for an Epitech school's project;
+\item Written in the CodeWorker scripting language;
+\end{itemize}
+CodeWorker is:
+\begin{itemize}
+\item Allow to parse complex things (like ANTLR, Bison…);
+\item Easy for a one semester project;
+\item Have some features that other tools don't have.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{CNorm 4 / Pyrser}
+Pyrser is:
+\begin{itemize}
+\item A Python package;
+\item Have same features than codeworker;
+\item Release soon (needed for CNorm 4).
+\end{itemize}
+CNorm 4.x is:
+\begin{itemize}
+\item The Rewrite of CNorm in Python with Pyrser;
+\item Must be available for the next school semester;
+\item Going to be used to rewrite the \rtx\ compiler.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bibliography}
+\rtxbibliography
+\end{frame}
+
+\end{document}

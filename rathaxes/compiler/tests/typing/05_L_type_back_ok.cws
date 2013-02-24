@@ -93,6 +93,7 @@ generateString({
             {
                 decl insert_types()
                 {
+                    int i;
                 }
 
                 chunk pouet(String)

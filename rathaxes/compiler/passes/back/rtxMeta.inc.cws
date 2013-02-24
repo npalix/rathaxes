@@ -190,22 +190,6 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 ;
         
 
-                // read all ${...} forms
-                rtx_place_holder(theNode : node) ::=
-                        [ rootidentifier:theNode.prefix ]?
-                        "${"
-                        [
-                                tpl_sequence_call(theNode.body)
-                                |
-                                tpl_chunk_call(theNode.body)
-                                |
-                                rtx_composed_identifier(theNode.body)
-                        ]
-                        '}'
-                        [ rootidentifier:theNode.suffix ]?
-                        [ ";" ]?//>>>>>????????????
-                ;
-
                 //Parse a chunk call (i.e. "${local.buf.init()}" )
                 tpl_chunk_call(theCall : node) ::=
 /**/                    => local parameters;
@@ -259,7 +243,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 tpl_sequence_call(theCall : node) ::=
 /**/                    => local seqName;
 /**/                    => local seqArgs;
-                        rtx_scoped_identifier(seqName)
+                        rtx_scoped_identifier(seqName, false)
                         #check(rtxNode_InfoLocation(seqName))
                         '('
 /**/                            #continue(sError, "Expected closing parenthesis in sequence call :'" 
@@ -304,7 +288,7 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 /**/                    => local theDefault;
 /**/                    #check(rtxNodePointcut(thePointcut, pointcutId, theParams, theDefault))
 /**/                    #check(rtxNodeVarList(theParams))
-                        rtx_scoped_identifier(pointcutId)
+                        rtx_scoped_identifier(pointcutId, false)
                         #continue(sError, "Expected parameters to definition of pointcut '"+rtxRTypeName<pointcutId.type>(pointcutId)+"'")
                         tpl_pointcut_parameters(theParams)
                         [ tpl_pointcut_default(theDefault) ]?
@@ -319,13 +303,54 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                         #continue(sError, "Expected 'as' token for a rathaxes cast.")
                         "as"
                         #continue(sError, "Expected Type name for casting type.")
-                        rtx_scoped_identifier(typeId)
+                        rtx_scoped_identifier(typeId, false)
                         #check(rtxNodeCast(theCast, varName, typeId))
                 ;
 
+                tpl_type_qualifier ::=
+                    "scalar" | "ref"
+                ;
+
+                tpl_type(theType : node) ::=
+/**/                => local sQualifier = "scalar";
+/**/                => local theId;
+/**/                => local dummy;
+                    rtx_scoped_identifier(theId, true)
+                    [
+                        "."
+                        tpl_type_qualifier:sQualifier
+                    ]?
+                    #check(rtxNodeRType(theType, theId, dummy))
+                    #check(rtxNodeRType_SetQualifier(theType, sQualifier))
+                ;
+
                 rtx_placeholder_noconcat(theNode : node) ::=
-                        "${" [ tpl_pointcut(theNode.body) | tpl_cast(theNode.body) ] '}' 
+                        "${"
+                        [
+                            tpl_pointcut(theNode.body)
+                            |
+                            tpl_cast(theNode.body)
+                            |
+                            tpl_sequence_call(theNode.body)
+                            |
+                            tpl_chunk_call(theNode.body)
+                        ]
+                        '}'
                         [ ';' ]? //>>>????
+                ;
+
+                // read all ${...} forms
+                rtx_place_holder(theNode : node) ::=
+                        [ rootidentifier:theNode.prefix ]?
+                        "${"
+                        [
+                                tpl_type(theNode.body)
+                                |
+                                rtx_composed_identifier(theNode.body)
+                        ]
+                        '}'
+                        [ rootidentifier:theNode.suffix ]?
+                        [ ";" ]?//>>>>>????????????
                 ;
 
         }, treepart, compile.template_expr);
@@ -347,9 +372,9 @@ function    rtxMeta_parsePlaceHolder(compile : node)
                 traceLine(YELLOW + out + DEFAULT_COLOR);
                 return false;
         }
-        traceLine("Built node for template_expr : " + compile.template_expr);
         insert compile.node;
         setall compile.node = treepart;
+        traceLine("Built node for template_expr : " + compile.template_expr);
         return true;
 }
 

@@ -9,12 +9,9 @@ with Main
     {
         decl Main::include_headers()
         {
-            struct rtx_args
-            {
-                int     argc;
-                char    **argv;
-                char    **env;
-            };
+            int     argc;
+            char    **argv;
+            char    **env;
         }
 
         method ::init(Builtin::number argc, Builtin::symbol argv, Builtin::symbol env)

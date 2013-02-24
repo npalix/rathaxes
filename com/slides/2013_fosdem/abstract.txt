@@ -1,0 +1,16 @@
+A DSL for device driver development, why and how?
+
+Device drivers are notoriously known to be a critical and prominent part
+of modern operating systems. We will draw up a summary of the current
+state of the art in device driver development: tools, methodologies and
+approaches which try to mitigate the problem. Then, we will present our
+take on it: a domain specific language with its own aspect-oriented
+programming paradigm, and its compiler, Rathaxes. We will show you
+interesting details of an implementation, in the Rathaxes DSL, of the
+e1000 ethernet driver for Linux. We will conclude with how Rathaxes fits
+into the current state of the art, our vision, and next steps.
+
+And that's it! If you have any question, please let me know. We are also
+hanging out on freenode in the #rathaxes channel.
+
+Our homepage is: http://www.rathaxes.org/.

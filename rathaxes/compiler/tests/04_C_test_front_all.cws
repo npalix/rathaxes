@@ -102,6 +102,10 @@ generateString({
                         chunk Builtin::types()
                         {
                                 ${self.type}         REG_${self.name};
+                                struct  tutu
+                                {
+                                        int_t   blabla;
+                                } niania;
                                 ${pointcut              Builtin::register_fields(self)};
                         }
 
@@ -114,10 +118,7 @@ generateString({
                 {
                         chunk Builtin::register_fields(Builtin::register reg)
                         {
-                                enum    FIELD_${reg.name}
-                                {
-                                        ${pointcut Builtin::register_values(self)},
-                                };
+                                ${pointcut Builtin::register_values(self)}
                         }
 
                         map
@@ -226,7 +227,7 @@ generateString({
         
                         chunk           LKM::code()
                         {
-                                int     f1()
+                                int     f1(f*,z)
                                 {
                                         printf("tata");
                                         int     base_addr = 0x1234;
@@ -239,6 +240,7 @@ generateString({
                 {
                         decl ::data()
                         {
+                            int i;
                         }
 
                         map

@@ -36,6 +36,7 @@ declare function rtxNodeWith_BuildFromConfig(local_node : node, out_config : nod
  * The Rtype node represents a rathaxes type (like the ctype for C types)
  */
 declare function rtxNodeRType(local_node : node, name : node, out_ref_params : reference);
+declare function rtxNodeRType_SetQualifier(local_node : node, qualifier : value);
 declare function rtxRTypeName<T>(theNode : node);
 declare function rtxRTypeFullQualifiedName<T>(rTypeNode : node, identifiers : node);
 /*
@@ -45,6 +46,7 @@ declare function rtxNodePointcut(local_node : node, out_ref_pointcut : reference
 declare function rtxNodePointcut_Default(local_node : node, body : reference);
 declare function rtxNodeChunk(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_body : reference);
 declare function rtxNodeChunk_SetType(local_node : node, type : value);
+declare function rtxNodeChunk_SetDeclType(local_node : node, type : value);
 declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
 declare function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node);
 declare function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node);
@@ -361,15 +363,27 @@ function        rtxNodeRType(local_node     : node,
     insert local_node.name;
     setall local_node.name = name;
 
+    insert local_node.qualifier = "scalar";
+
     insert local_node.params;
     ref out_ref_params = local_node.params;
 
     return true;
 }
 
+function rtxNodeRType_SetQualifier(local_node : node, qualifier : value)
+{
+    if (local_node.type != "__rtx_rtype__")
+        return false;
+
+    insert local_node.qualifier = qualifier;
+
+    return true;
+}
+
 function        rtxRTypeName(theNode : node)
 {
-    error(toString(theNode#parent,true));
+    error(RED + "[Error] No node type given to rtxRTypeName for node:" + toString(theNode#parent,true) + DEFAULT_COLOR);
 }
 
 function        rtxRTypeName<T>(theNode : node)
@@ -503,6 +517,16 @@ function rtxNodeChunk_SetType(local_node : node, type : value)
         return false;
 
     insert local_node.chunk_type = type;
+    return rtxNodeChunk_SetDeclType(local_node, "block");
+}
+
+function rtxNodeChunk_SetDeclType(local_node : node, type : value)
+{
+    if (local_node.type  != "__rtx_chunk__")
+        return false;
+
+    insert local_node.decl_type = type;
+
     return true;
 }
 

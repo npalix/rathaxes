@@ -1,0 +1,159 @@
+/*
+	TEST for template code parsing
+*/
+#include "misc/colors.cws"
+
+local dummy;
+local input;
+generateString({
+
+typedef struct paf t_paf;
+
+struct paf {
+    struct paf  *nxt;
+    struct data pouet;
+};
+
+struct pdata {
+    t_data      content;
+    const u_test      color;
+    t_paf       pafdata;
+};
+
+typedef int t_int;
+typedef char t_char;
+
+typedef struct data
+{
+    t_int i;
+    f       fptr;
+} t_data;
+
+typedef void (*f)(t_data, t_paf);
+
+typedef union
+{
+    t_int i;
+    t_char c;
+} u_test;
+
+@}, dummy, input);
+
+#include "cwTool.inc.cws"
+#include "cnorm.inc.cws"
+#include "cnorm2c/cnorm2c.inc.cws"
+#include "patchLib/cnormPatchLib.inc.cws"
+#include "misc/rtxTools.inc.cws"
+#include "typing/rtxType.inc.cws"
+#include "node/rtxNode.inc.cws"
+#include "linker/rtxLink.inc.cws"
+#include "passes/common/rtxResolve.inc.cws"
+#include "parse/rtxTemplatedLanguageLib.inc.cws"
+
+insert this.scripts_path = _ARGS[0] + "/compiler/";
+
+traceLine("input:\n" + input);
+saveToFile("INPUT.TXT", input);
+
+local source;
+//cnormDialect<"__std__">(source);
+rtxType_Load(source);
+
+try { cnormString<"__unstrict__">(source, input);} catch(sError) { traceLine("caught an error"); }
+if (!isEmpty(source.error))
+{
+    local out = "\nAn error Occured while parsing :\nTrace:\n";
+    foreach stack_line in source.error[0].trace
+        out += stack_line;
+    out += "\nError: " + source.error[0].msg;
+    traceLine(out);
+    exit(1);
+}
+
+// normalize unstrict C code
+rtx_templatedLang_normalize<"C">(source);
+traceLine("====>Result of parsing: __parse.tree:");
+traceLine(cnorm2c(source));
+saveProject("__parse.tree", source);
+
+rtxResolve_BlockReordering(source.block);
+traceLine("====>Result of reordering: __type_reordering_done.tree");
+saveProject("__type_reordering_done.tree", source);
+traceLine(cnorm2c(source));
+
+
+local typelist;
+insert typelist.structs;
+insert typelist.unions;
+insert typelist.typedefs;
+foreach theType in source.block
+{
+    if (theType.type == "__decl__")
+    {
+        local deplists;
+
+        if (theType.ctype.specifier == "struct" && theType.ctype.identifier != "")
+        {
+            insert typelist.structs[theType.ctype.identifier];
+            insert typelist.structs[theType.ctype.identifier] = theType.ctype.identifier;
+        }
+        
+        if (theType.ctype.specifier == "union" && theType.ctype.identifier != "")
+        {
+            insert typelist.unions[theType.ctype.identifier];
+            insert typelist.unions[theType.ctype.identifier] = theType.ctype.identifier;
+        }
+
+        if (existVariable(theType.ctype.body))
+        {
+            foreach field in theType.ctype.body.block
+            {
+                if (field.ctype.cdecl_type == "__primary__")
+                {
+                    localref search_in = typelist;
+
+                    local type_name;
+                    if (field.ctype.identifier == "auto" && existVariable(field.ctype.unknown))
+                        type_name = field.ctype.unknown#front;
+                    else
+                        type_name = field.ctype.identifier;
+
+                    switch (field.ctype.specifier)
+                    {
+                    case "struct":
+                        ref search_in = search_in.structs;
+                        break ;
+                    case "union":
+                        ref search_in = search_in.unions;
+                        break ;
+                    default:
+                        ref search_in = search_in.typedefs;
+                        break ;
+                    }
+
+                    if (!findElement(type_name, search_in))
+                    {
+                        traceLine(RED + "Detected a bad resulting type order: field '"
+                        + field.name + "' of type '" + field.ctype.specifier + " " + type_name
+                        + "' is not defined yet." +  DEFAULT_COLOR);
+                        exit(1);
+                    }
+                }
+            }
+        }
+
+        if (theType.ctype.storage == "typedef")
+        {
+            local name;
+            if (existVariable(theType.name))
+                name = theType.name;
+            else if (existVariable(theType.ctype.unknown))
+                name = theType.ctype.unknown#front;
+            else
+                error(RED + "Unmanaged kind of type description for type reodering: " + toString(theType,true) + DEFAULT_COLOR);
+
+            insert typelist.typedefs[name];
+            insert typelist.typedefs[name] = name;
+        }
+    }
+}
