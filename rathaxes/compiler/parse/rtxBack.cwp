@@ -3,7 +3,6 @@
 /////// TEMPLATE
 rtx_stmt<"template">(theBlock : node) ::=
         // Initialize the current node
-/**/    =>traceLine("TEMPLATE!");
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
@@ -31,7 +30,6 @@ rtx_stmt<"template">(theBlock : node) ::=
 
 // TEMPLATE SEQUENCE
 rtx_stmt_template_content<"sequence">(theTemplate : node, theBlock : node) ::=
-/**/    =>traceLine("Template sequence block!");
         [
                 // Theoretically, the template should only contain chunks...
                 "chunk" rtx_stmt<"chunk">(theBlock)
@@ -40,14 +38,12 @@ rtx_stmt_template_content<"sequence">(theTemplate : node, theBlock : node) ::=
 
 // TEMPLATE TYPE
 rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
-/**/    =>traceLine("Template type block!");
         [
                 "chunk" rtx_stmt<"chunk">(theBlock)
         |       "decl" rtx_stmt<"decl">(theBlock)
         |       "method" rtx_stmt<"method">(theBlock)
         |
                 "map"
-/**/            =>traceLine("MAP");
 /**/            =>local mapping;
 /**/            =>local body;
 /**/            #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
@@ -67,14 +63,12 @@ rtx_stmt_template_content<"type">(theTemplate : node, theBlock : node) ::=
 
 rtx_stmt_template_content<"builtintype">(theTemplate : node, theBlock : node) ::=
     rtx_stmt_template_content<"type">(theTemplate, theBlock)
-/**///  =>traceLine("Template builtin type block!");
     //  [
     //          "chunk" rtx_stmt<"chunk">(theBlock)
     //  |       "decl" rtx_stmt<"decl">(theBlock)
     //  |       "method" rtx_stmt<"method">(theBlock)
     //  |
     //          "map"
-/**///          =>traceLine("MAP");
 /**///          =>local mapping;
 /**///          =>local body;
 /**///          #check(rtxNodeTpl_AddMapping(theTemplate, mapping))
@@ -118,7 +112,6 @@ rtx_type_map_identifier(theMap : node) ::=
 
 //////// POINTCUT
 rtx_pointcut(theBlock : node) ::=
-/**/    =>traceLine("POINTCUT!");
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
 /**/    #check(cnormNodeBlock_GetLastNode(theBlock, lastNode))
@@ -133,7 +126,6 @@ rtx_pointcut(theBlock : node) ::=
 
 /////// WITH
 rtx_stmt<"with">(theBlock : node) ::=
-/**/    => traceLine("WITH");
         // create a block to host the with node
 /**/    #pushItem(theBlock.block)
 /**/    => local lastNode;
@@ -214,7 +206,6 @@ rtx_stmt_with_operator ::=
 
 //////// CHUNK, DECL, or METHOD
 rtx_stmt_chunk_common(theChunk : node) ::=
-/**/    => traceLine("Parsing: Chunk Common");
 /**/    => local pointcutId;
 /**/    => local param_types;
 /**/    => local param_ids;
@@ -234,7 +225,6 @@ rtx_stmt_chunk_common(theChunk : node) ::=
 ;
 
 rtx_stmt<"chunk">(theBlock : node) ::=
-/**/    => traceLine("CHUNK");
 /**/    #continue(sError, "Expected pointcut associated to chunk declaration.")
         // Create an item in the Block list to host the chunk
 /**/    #pushItem(theBlock.block)
@@ -245,7 +235,6 @@ rtx_stmt<"chunk">(theBlock : node) ::=
         #check(rtxNodeChunk_SetType(theChunk, "chunk"))
 ;
 rtx_stmt<"decl">(theBlock : node) ::=
-/**/    => traceLine("DECL");
 /**/    #continue(sError, "Expected pointcut associated to chunk declaration.")
         // Create an item in the Block list to host the chunk
 /**/    #pushItem(theBlock.block)
@@ -272,7 +261,6 @@ rtx_stmt<"decl">(theBlock : node) ::=
 
 
 rtx_stmt<"method">(theBlock : node) ::=
-/**/    => traceLine("METHOD");
 /**/    #continue(sError, "Expected pointcut associated to chunk declaration.")
         // Create an item in the Block list to host the chunk
 /**/    #pushItem(theBlock.block)

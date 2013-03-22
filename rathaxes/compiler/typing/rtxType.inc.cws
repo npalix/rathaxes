@@ -37,7 +37,7 @@ function        rtxType_Load(out : node)
         foreach f in theDir.files
         {
             try {
-                traceLine("Load:" + f);
+                //traceLine("Load:" + f);
                 local content = loadFile(theDir + f);
                 extendExecutedScript(content);
                 insert out.map.files[f] = true;
