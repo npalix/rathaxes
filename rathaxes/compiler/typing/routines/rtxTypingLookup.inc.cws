@@ -73,12 +73,20 @@ function rtxTypingLookup_TypeField<ContainerTypeString>(theRtype : node, theFiel
 
 function rtxTypingLookup_TypeField<"Builtin::local">(theRtype : node, theField : value, theChunk : node, source_tree : node,  fieldRtype : reference)
 {
-    traceLine(toString(theRtype,true) + toString(theField, true) + toString(theChunk.variables,true));
-
     if (!findElement(theField, theChunk.variables))
         return false;
 
-    setall fieldRtype = theChunk.variables[theField].type_node;
+    if (theChunk.variables[theField].type == "ctype")
+    {
+        traceLine(YELLOW + "[Warning] The local variable " + theField
+                  + " has no associated rtxtype. Using Builtin::symbol by default."+ DEFAULT_COLOR);
+        local dummy;
+        local id;
+        rtxNodeIdentifier(id, "symbol", "Builtin");
+        rtxNodeRType(fieldRtype, id, dummy);
+    }
+    else
+        setall fieldRtype = theChunk.variables[theField].type_node;
 
     return true;
 }
@@ -101,7 +109,6 @@ function rtxTypingLookup_ResolveTypeFields(baseRtype : node, theFields : node, t
     local fieldRtype;
 
     setall containerRtype = baseRtype;
-    traceLine(BLUE + "Looking for fields " + toString(theFields) + " in  type " + rtxRTypeName<containerRtype.type>(containerRtype) + DEFAULT_COLOR);
     foreach field in theFields
     {
         local type_name = rtxRTypeName<containerRtype.type>(containerRtype);
@@ -111,7 +118,6 @@ function rtxTypingLookup_ResolveTypeFields(baseRtype : node, theFields : node, t
                       + field.name + "' inside type " + type_name + DEFAULT_COLOR);
             return false;
         }
-        traceLine(BLUE + "Found type " + rtxRTypeName<out_field_type.type>(out_field_type) + " for field " + field + " in type " + rtxRTypeName<containerRtype.type>(containerRtype) + DEFAULT_COLOR);
         setall containerRtype = out_field_type;
     }
 
