@@ -83,7 +83,6 @@ function    rtxGenPlaceHolder<"__rtx_rtype__">(item : node, theKey : value)
                 traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                 traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
             }
         @}, item, item.cws_expr);
@@ -106,7 +105,6 @@ function    rtxGenPlaceHolder<"__rtx_var__">(item : node, theKey : value)
                 traceLine(RED + "[Error] Could not resolve placeHolder '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                 traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
             }
         @}, item, item.cws_expr);
@@ -159,8 +157,6 @@ function    rtxGenPlaceHolder<"__rtx_tpl_chunk_call__">(item : node, theKey : va
                     traceLine(RED + "[Error] Could not resolve chunk call '@this.cws_expr@'"
                               + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                     traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                    //traceLine("c_tree:" + toString(c_tree#root, true));
-                    //traceLine("resval:" + toString(resVals, true));
                     increment(errcount);
                 }
         @}, item, item.cws_expr);
@@ -184,8 +180,6 @@ function    rtxGenPlaceHolder<"__rtx_tpl_sequence_call__">(item : node, theKey :
                     traceLine(RED + "[Error] Could not resolve template call '@this.cws_expr@'"
                               + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                     traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                    //traceLine("c_tree:" + toString(c_tree#root, true));
-                    //traceLine("resval:" + toString(resVals, true));
                     increment(errcount);
                 }
         @}, item, item.cws_expr);
@@ -214,8 +208,6 @@ function    rtxGenPlaceHolder<"__rtx_tpl_type_id_map__">(item : node,
                 traceLine(RED + "[Error] Could not resolve type mapping '@this.cws_expr@'"
                           + " from template '@this.tpl_hash@'" + DEFAULT_COLOR);
                 traceLine(RED + "        from @this.location@." + DEFAULT_COLOR);
-                //traceLine("c_tree:" + toString(c_tree#root, true));
-                //traceLine("resval:" + toString(resVals, true));
                 increment(errcount);
             }
         @}, item, item.cws_expr);
@@ -366,7 +358,6 @@ function	rtxGenScript<"__rtx_chunk__">(blt_node : node,
         if (sContext == "With")
         {       sContext += "_" + uid;}
         local sFile = sContext + "_chunk_" + blt_node.pointcut.name.scope + "_" + blt_node.pointcut.name.name;
-        traceLine(">>out file:" + sFile);
 
         // Put the PIC string containing the code into the template node
         // in order to be accessible durint the codeworker code generation
@@ -408,7 +399,6 @@ function    rtxGenScript<"__rtx_tpl_type_map__">(blt_node : node,
                                                   theBlock : node, uid : node)
 {
         local sFile = blt_node.tpl_hash + "_typemap_" + blt_node.prototype.name.scope + "_" + blt_node.prototype.name.name;
-        traceLine(">>out file2:" + sFile);
 
         insert blt_node.tree_filename = sFile;
         insert blt_node.tree_file = sFile + ".tree";
@@ -427,7 +417,6 @@ function    rtxGenScript<"__rtx_tpl_type_map__">(blt_node : node,
                 {
                         insert placeHolder.id = mapping.id;
                         local theKey = key(placeHolder);
-                        traceLine("key = "+theKey);
                         rtxGenPlaceHolder<mapping.type>(placeHolder, theKey);
                 }
                 local dummyId = $-1$;
@@ -466,7 +455,6 @@ function    rtxGenScript<"__rtx_tpl_type_map__">(blt_node : node,
                         removeVariable(placeHolder.id);
                 }
         }
-        traceLine(">>>>>>>>>:" + blt_node.tree_file);
         saveProject(blt_node.tree_file, blt_node);
 }
 

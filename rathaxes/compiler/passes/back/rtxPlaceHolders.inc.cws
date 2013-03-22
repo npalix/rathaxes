@@ -57,7 +57,6 @@ function        rtxPH_walk<T>(local_node : node)
 // Template 
 function        rtxPH_walk<"__rtx_tpl__">(local_node : node)
 {
-        traceLine("template ("+local_node.prototype.tpl_type+")! walk on " + local_node.prototype);
         // walk on all subitems
         foreach chunk in local_node.body.block
         { rtxPH_walk<chunk.type>(chunk); }
@@ -74,7 +73,6 @@ function        rtxPH_walk<"__rtx_tpl__">(local_node : node)
 function        rtxPH_walk<"__rtx_chunk__">(local_node : node)
 {
         local   dummyIdx = $-1$;
-        traceLine("walking lone chunk...");
         rtxPH_compile<local_node.body.type>(local_node.body, local_node.body.compile, dummyIdx);
 }
 
@@ -82,7 +80,6 @@ function        rtxPH_walk<"__rtx_chunk__">(local_node : node)
 function        rtxPH_walk<"__block__">(local_node : node)
 {
         // Should only be used for the block of a with node.
-        traceLine("WALKING BLOCK");
         // block contain template for with, chunks for template
         foreach item in local_node.block
         { rtxPH_walk<item.type>(item); }
@@ -91,7 +88,6 @@ function        rtxPH_walk<"__block__">(local_node : node)
 // Configuration block
 function	rtxPH_walk<"__rtx_with__">(local_node : node)
 {
-        traceLine("with! recurs body");
         // First walk the block of templates
         rtxPH_walk<local_node.body.type>(local_node.body);
         // And then compile the standalone C block surrounded by with
@@ -104,7 +100,6 @@ function	rtxPH_walk<"__rtx_with__">(local_node : node)
 // check that the node have a placeholder
 function	rtxPH_havePlaceHolder(ref_node : reference)
 {
-	traceLine("havePH?:" + ref_node);
 	return (findString(ref_node, "${") != -1);
 }
 
@@ -168,7 +163,6 @@ function	rtxPH_compile<T>(local_node : node, compile : node,
 // C Code block
 function	rtxPH_compile<"__block__">(local_node : node, compile : node, node_idx : value)
 {
-        traceLine("COMPILE BLOCK");
         // find every single placeHolder in the cNorm tree
         foreach item in local_node.block
         {
@@ -190,7 +184,6 @@ function rtxPH_compile<"__block_init__">(local_node : node, compile : node, node
 // Going thru declaration
 function        rtxPH_compile<"__decl__">(local_node : node, compile : node, node_idx : value)
 {
-        traceLine("COMPILE DECL");
         // walk the ctype node
         localref ctype_ref = local_node.ctype;
         do
@@ -206,10 +199,7 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 }
                 // name of a type
                 if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
-                {
-                        traceLine("MAP PLACE HOLDER:" + toString(ctype_ref.identifier));
-                        rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl");
-                }
+                { rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl"); }
                 // composed
                 if (existVariable(ctype_ref.list))
                 {
@@ -219,7 +209,7 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                             // This should not be needed, but the sample helloworld had an issue i didnt care about at the time.
                             // XXX TODO FIXME
                             if (existVariable(item.type))
-                                rtxPH_compile<item.type>(item, compile, node_idx);
+                            { rtxPH_compile<item.type>(item, compile, node_idx); }
                         }
                 }
                 // recurse param list
@@ -237,7 +227,7 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                         {
                                 local sKey = item.key;
                                 if (rtxPH_havePlaceHolder(sKey))
-                                {rtxPH_mapPlaceHolder(item.key, compile, node_idx, "target_identifier");}
+                                { rtxPH_mapPlaceHolder(item.key, compile, node_idx, "target_identifier"); }
                         }
                 }
                 // pointer
@@ -249,18 +239,15 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
 
         // variable name
         if (existVariable(local_node.name) && rtxPH_havePlaceHolder(local_node.name))
-        {
-                traceLine("MAP PLACE HOLDER:" + toString(local_node.name));
-                rtxPH_mapPlaceHolder(local_node.name, compile, node_idx, "target_identifier");
-        }
+        { rtxPH_mapPlaceHolder(local_node.name, compile, node_idx, "target_identifier"); }
 
         // And check each of the possible members...
         // the colon expression for C++ ctor init list and bitfields
         if (existVariable(local_node.colon_expr))
-                rtxPH_compile<local_node.colon_expr.type>(local_node.colon_expr, compile, node_idx);
+        { rtxPH_compile<local_node.colon_expr.type>(local_node.colon_expr, compile, node_idx); }
         // the assign_expression for initialization list
         if (existVariable(local_node.assign_expr))
-                rtxPH_compile<local_node.assign_expr.type>(local_node.assign_expr, compile, node_idx);
+        { rtxPH_compile<local_node.assign_expr.type>(local_node.assign_expr, compile, node_idx); }
         // recurse on the function's code
         if (existVariable(local_node.body))
         { rtxPH_compile<local_node.body.type>(local_node.body, compile, node_idx);}
@@ -321,7 +308,7 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
                                 foreach param in item.expr.list
                                 {
                                         if (existVariable(param.expr_type))
-                                                rtxPH_compile<param.type>(param, compile, node_idx);
+                                        { rtxPH_compile<param.type>(param, compile, node_idx);}
                                 }
                         }
                         else // standard case
@@ -331,7 +318,6 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
         // for terminal id that contain ${}
         if (existVariable(local_node.id) && rtxPH_havePlaceHolder(local_node.id))
         {
-                traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
                 //insert local_node.phtype = this.phtype;
                 rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr", this.phtype);
         }
@@ -346,20 +332,14 @@ function	rtxPH_compile<"__stmt__">(local_node : node, compile : node, node_idx :
             if (existVariable(local_node.expr.id)) // terminal id, may be a pointcut/call
             {
                 if (rtxPH_havePlaceHolder(local_node.expr.id))
-                {
-                    traceLine("MAP PLACE HOLDER:" + toString(local_node.expr.id));
-                    rtxPH_mapPlaceHolder(local_node.expr.id, compile, node_idx, "target_pointcut");
-                }
+                { rtxPH_mapPlaceHolder(local_node.expr.id, compile, node_idx, "target_pointcut"); }
             }
             else
                 rtxPH_compile<local_node.expr.type>(local_node.expr, compile, node_idx);
         }
         // Label
         if (existVariable(local_node.label) && rtxPH_havePlaceHolder(local_node.label))
-        {
-                traceLine("MAP PLACE HOLDER:" + toString(local_node.label));
-                rtxPH_mapPlaceHolder(local_node.label, compile, node_idx, "target_identifier");
-        }
+        { rtxPH_mapPlaceHolder(local_node.label, compile, node_idx, "target_identifier"); }
         // if/switch/while
         if (existVariable(local_node.condition))
         { rtxPH_compile<local_node.condition.type>(local_node.condition, compile, node_idx); }
@@ -411,7 +391,6 @@ function rtxPH_compile<"__field_designation__">(local_node : node, compile : nod
 // direct pointcut in a WITH
 function    rtxPH_compile<"__rtx_pointcut_raw__">(local_node : node, compile : node, node_idx : value)
 {
-        traceLine("MAP PLACE HOLDER:" + toString(local_node.id));
         rtxPH_mapPlaceHolder(local_node.id, compile, node_idx, "target_expr");
 }
 

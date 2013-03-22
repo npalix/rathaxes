@@ -326,16 +326,11 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
 
     foreach dst_p in dst_list
     {
-        traceLine(RED + "Parameter: " + toString(dst_p) + DEFAULT_COLOR);
         local src_p;
         if (search_chunk)
             ref src_p = src_params.list#[index(dst_p)];
         else
-        {
             ref src_p = src_params#[index(dst_p)];
-            traceLine("src_p = " + toString(src_p,true));
-            traceLine("dst_p = " + toString(dst_p,true));
-        }
         localref param_name = dst_p;
         if (existVariable(dst_p.identifiers))
             ref param_name = dst_p.identifiers#front.name;
@@ -356,14 +351,8 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
             localref placeHolder = src_params; // We're in a placeHolder anyways, so gotta roll up (called from pointcut or chunk call)
             if (search_chunk == true) // Buildin resval for back-end weaving
             {
-            traceLine("building resval for backend...");
                 while (placeHolder.type != "__rtx_tpl_placeHolder__")
                 { ref placeHolder = placeHolder#parent; }
-            }
-            else // Building ResVal for front-end weaving into the back-end
-            {
-            traceLine("building resval for frontend...");
-            traceLine(toString(src_params#parent#parent,true));
             }
 
             //  Prepare field list
@@ -377,7 +366,6 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
 
             if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg) == true)
             {
-traceLine(CYAN + "2" + DEFAULT_COLOR);
                 // Argument comes from the resVals
                 if (rtxNodeArg_getRType(src_arg, param_type) == false)
                     return false;
@@ -387,11 +375,9 @@ traceLine(CYAN + "2" + DEFAULT_COLOR);
 
                 // In case a recursive resolution is necessary, we need to setup a "self"
                 rtxNodeArgs_AppendArg(subResVal, "self", resolver_type, param_value);
-traceLine(YELLOW + "variable " + src_name + " value is : " + toString(param_value,true) + DEFAULT_COLOR);
             }
             else if (search_chunk)
             {
-traceLine(CYAN + "3 -> " + toString(dst_params, true) + DEFAULT_COLOR);
                 // Argument comes from the Chunk, so we retrieve the *real* type
                 // That will be resolved after the "local" resolution.
 
@@ -409,7 +395,6 @@ traceLine(CYAN + "3 -> " + toString(dst_params, true) + DEFAULT_COLOR);
                 {
                     setall param_type = theChunk.variables[src_name].type_node;
                 }
-traceLine(GREEN + src_name + " -> " + toString(theChunk.type_map,true) + DEFAULT_COLOR);
             }
             else
             {
@@ -424,7 +409,6 @@ traceLine(GREEN + src_name + " -> " + toString(theChunk.type_map,true) + DEFAULT
                 error(RED + "[Error] Could not resolve variable '"+ src_name+"' for type '"+typename+"'" + DEFAULT_COLOR);
             }
             setall param_value = mapping;
-traceLine(BLUE  + toString(mapping,true) + DEFAULT_COLOR);
 
             // Only retrieve sub-type if it exists.
             if ($getArraySize(subidentifiers) > 1$)
@@ -449,7 +433,6 @@ traceLine(BLUE  + toString(mapping,true) + DEFAULT_COLOR);
                 error(RED + "Could not translate rathaxes node " + toString(src_p, true)
                       + " to a resVal (containing one cnorm) node." + DEFAULT_COLOR);
             setall param_type = src_p.rtype;
-            traceLine(BLUE + "Resolving front end: got value="+toString(param_value,true) + DEFAULT_COLOR);
             if (param_value.type == "__expr__" && param_value.operator != "__literal__")
             {
                 local src_arg;
@@ -477,10 +460,8 @@ traceLine(BLUE  + toString(mapping,true) + DEFAULT_COLOR);
         {
             error(RED + "[Error] Could not append argument to arguments container." + DEFAULT_COLOR);
         }
-traceLine(YELLOW + "Computed value for param " + param_name + " : " + toString(param_value,true) + DEFAULT_COLOR);
     }
 
-traceLine(GREEN + toString(dst_resVals,true) + DEFAULT_COLOR);
     return true;
 }
 
@@ -499,11 +480,6 @@ function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tr
     local   startIdx = 0;
     local   phName = "call";
     local   phIdx = 0;
-
-//////////
-traceLine("REPLACE CALL sidx:" + startIdx);
-traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
-//////////
 
     while ($startIdx < getArraySize(theSeq.body.block)$)
     {
@@ -959,7 +935,6 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     // Now, resolve the loaded chunk...
     local resVals;
     rtxResolve_BuildParameterResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree, false);
-traceLine(PURPLE + " Just built parameters for call: " + toString(local_node.body.seqArgs,true) + toString(resVals,true) + DEFAULT_COLOR);
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
         traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(tplRtype,dummy) + DEFAULT_COLOR);
