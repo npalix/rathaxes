@@ -119,18 +119,12 @@ function type_map<"Builtin::symbol">(resolverValues : node,
         
 
         traceLine(toString(resolverValues,true));
-        local tplVarName = resolverValues["self"].body;
-        localref data = resolverValues[tplVarName].body;
+        local self;
+        rtxNodeArgs_GetArgByName(resolverValues, "self", self);
+        local data;
+        rtxNodeArg_getValue(self, data);
 
-        // Here, we only need the pure literal data
-        if (existVariable(data.type))
-        {
-            if (!existVariable(data.operator) || data.operator != "__id__")
-                error("Injection not managed for type_map<Builtin::symbol>()");
-            setall out_node = data.id;
-        }
-        else
-            setall out_node = data;
+        setall out_node = data;
 
         return true;
 }

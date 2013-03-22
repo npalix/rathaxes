@@ -29,7 +29,6 @@ rtx_templatedLang_C_declpointcut(theBody : node) ::=
     #check(cnormNodeBlock_GetLastNode(theBody, theDecl))
     #check(cnormNodeDecl(theDecl))
     #check(cnormNode_DeclAsField(theDecl))
-    =>traceLine(CYAN + "NExt char is: <" + peekChar() + ">" + DEFAULT_COLOR);
     #check(peekChar() == "$")
     rtx_templatedLang_code:phString
     #check(cnormNodeDecl_SetName(theDecl, phString))

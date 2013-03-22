@@ -32,7 +32,7 @@ declare function rtxResolve_MangleTypeName(theRtype : node, is_pointer : value);
 
 declare function rtxResolve_WrapChunkIntoType(chunkTree : node);
 declare function rtxResolve_InsertCode(destBlock : node, startIdx : node, phName : value, phIdx : node, sourceNode : node);
-declare function rtxResolve_BuildParameterResVals(src_resVals : node, src_params : node, dst_resVals : node, dst_params : node, source_tree : reference);
+declare function rtxResolve_BuildParameterResVals(src_resVals   : node, src_params    : node, dst_resVals   : node, dst_params    : node, source_tree   : reference, search_chunk  : value = true);
 declare function rtxResolve_BuildFrontResVals(src_resVals : node, src_params : node, dst_resVals : node, dst_params : node, source_tree : reference);
 declare function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tree : reference);
 
@@ -205,6 +205,40 @@ function    rtxResolve_InsertCode(destBlock : node, startIdx : node,
  * values to be used in the resolution of a template.
  *
  */
+/*
+ * Tool function which builds the "self" for a Builtin::Local variable.
+ */
+function rtxResolve_BuildLocalSelf(resVals : node, theChunk : node, placeHolder : node,
+                                   identifiers : node)
+{
+    local arg_rtype;
+    local arg_value;
+
+    // Retrieve argument actual type and value from the chunk first.
+    if (identifiers#[0] != "local")
+    {
+        error(RED + "[Error] Trying to access chunk's local variable '"
+              + identifiers#[0] + "' without the use of the 'local' prefix at "
+              + placeHolder#parent.location + DEFAULT_COLOR);
+    }
+    local varName = identifiers#[1];
+    if (!existVariable(theChunk.variables[varName]))
+    {
+        error(RED + "[Error] Unknown local variable '" + varName + "'" + endl()
+              + "[Error]   at location " + placeHolder#parent.location + "." + DEFAULT_COLOR);
+    }
+
+    local local_name;
+    local dummy;
+    // Craft the rtype
+    rtxNodeIdentifier(local_name, "local", "Builtin", false);
+    rtxNodeRType(arg_rtype, local_name, dummy);
+    // Then craft a terminal expr with the name as the identifier.
+    cnormNode_TerminalId(arg_value, varName);
+
+    // Finally, craft the argument holder.
+    rtxNodeArgs_AppendArg(resVals, "self", arg_rtype, arg_value);
+}
 
 /*
  * In this function, both params are rtx Var List Nodes
@@ -217,180 +251,178 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                                           src_params    : node,
                                           dst_resVals   : node,
                                           dst_params    : node, 
-                                          source_tree : reference)
+                                          source_tree   : reference,
+                                          search_chunk  : value = true)
 {
-    local idx = $0$;
-    local dst_param_name;
+    localref   dst_list = dst_params;
 
-    // TODO: failed to get the param from ::IMPLEM
-    /* 
-    if (getArraySize(src_params.list) != getArraySize(dst_params.list))
+    if (rtxNodeArgs(dst_resVals) == false)
+        error(RED + "[Error] Could not intialize argument container." + DEFAULT_COLOR);
+
+    if (search_chunk)
+        ref dst_list = dst_list.list;
+    traceLine(RED + "Building resval: dst_list="+toString(dst_list) + DEFAULT_COLOR);
+
+    foreach dst_p in dst_list
     {
-        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "+getArraySize(dst_params.list)
-                  +", got "+getArraySize(src_params.list)+")." + DEFAULT_COLOR);
-        traceLine(toString(dst_params, true)+toString(src_params, true));
-        return false;
-    }*/
+        traceLine(RED + "Parameter: " + toString(dst_p) + DEFAULT_COLOR);
+        local src_p;
+        if (search_chunk)
+            ref src_p = src_params.list#[index(dst_p)];
+        else
+        {
+            ref src_p = src_params#[index(dst_p)];
+            traceLine("src_p = " + toString(src_p,true));
+            traceLine("dst_p = " + toString(dst_p,true));
+        }
+        localref param_name = dst_p;
+        if (existVariable(dst_p.identifiers))
+            ref param_name = dst_p.identifiers#front.name;
+        local param_type;
+        local param_value;
+        local src_arg;
 
-    foreach dst_param in dst_params.list
-    {
-        local newValue;
-        localref theValue = src_resVals;
-        if (!existVariable(src_params.list) || !findElement(idx, src_params.list))
-            traceLine(RED + "[Error] src_params do not contain the required field: "+toString(dst_param,true)+" in "+toString(src_params, true) + DEFAULT_COLOR);
-        localref theParam = src_params.list#[idx];
-
-        // The parameter can be either a resVal or a rtx variable.
-        if (existVariable(theParam.identifiers)) // this is an identifier and not a literal value -> rtx type mapping
+        // First case: A rtx variable (either comes from src ResVals or from chunk itself)
+        // Second case: A litteral
+        if (existVariable(src_p.identifiers))
         {
             // Two ways to resolve :
             //  - already in the resVals (simple walk/copy)
             //  - not in the ResVals -> gotta build a resVal from the rtx Type (cnormNode).
-
-            // By default, consider it's in the resVals
-            foreach param_field in theParam.identifiers
+            localref theChunk = src_params#root;
+            local src_name = src_p.identifiers#front.name;
+            local resolver_type; // Type used for the resolver (!= Actual type of the variable, to manage local variables)
+            localref placeHolder = src_params; // We're in a placeHolder anyways, so gotta roll up (called from pointcut or chunk call)
+            if (search_chunk == true) // Buildin resval for back-end weaving
             {
-                if (!findElement(param_field.name, theValue))
-                {
-                    localref theChunk = src_params#root;
-                    // There, it is not in the resVals anymore...
-                    if (index(param_field) == 0) // Then we're on a rathaxes variable
-                    {
-                        localref placeHolder = src_params; // We're in a placeHolder anyways, so gotta roll up (called from pointcut or chunk call)
-                        while (placeHolder.type != "__rtx_tpl_placeHolder__")
-                        { ref placeHolder = placeHolder#parent; }
-
-                        local   paramRtype;
-                        if (rtxGetTypeFromVariableID<param_field.name>(paramRtype) == false)
-                        {
-                            error("Could not find a rathaxes variable named " + param_field.name
-                                  + " in the source Resolver values or in the template variables.");
-                        }
-
-                        local typename = rtxRTypeName<paramRtype.type>(paramRtype);
-                        local dummyResVal;
-                        local mapping;
-                        local subParam;
-                        setall subParam = theParam.identifiers;
-                        local subidentifiers;
-                        select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
-
-                        if (type_map<typename>(dummyResVal, paramRtype, subidentifiers, placeHolder, mapping, source_tree) == false)
-                        {
-                            error("Could not resolve variable '"+param_field.name+"' for type '"+typename+"'");
-                        }
-
-                        rtxNodeResValLeaf(newValue, mapping);
-
-                        ref theValue = newValue;
-                        break ;
-                    }
-                    error("Could not find an element named " + param_field.name
-                          + " in the source Resolver values or in the C variables.");
-                }
-                else // Element in previous resolver values.
-                {
-                    ref theValue = theValue[param_field.name];
-                }
+            traceLine("building resval for backend...");
+                while (placeHolder.type != "__rtx_tpl_placeHolder__")
+                { ref placeHolder = placeHolder#parent; }
             }
-        }
-        else // We are on a rtx-type value...
-        {
-            // A RTX parameter MUST be a rtx type.
-            local translatedParam;
-            if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
-                error("Could not translate rathaxes node " + toString(theParam, true) + " to a resVal (containing one cnorm) node.");
-            rtxNodeResValLeaf(newValue, translatedParam);
-            ref theValue = newValue;
-        }
-
-        if (existVariable(dst_param.type) && dst_param.type == "__rtx_var__")
-            ref dst_param_name = dst_param.identifiers#[0].name;
-        else
-            ref dst_param_name = dst_param;
-
-        insert dst_resVals[dst_param_name];
-        setall dst_resVals[dst_param_name] = theValue;
-        increment(idx);
-    }
-
-    return true;
-}
-
-
-/*
- * This function is a clone of rtxResolve_BuildParameterResVals, instead it's specialized for
- * the calls from the front-end.
- */
-function rtxResolve_BuildFrontResVals(src_resVals   : node,
-                                      src_params    : node,
-                                      dst_resVals   : node,
-                                      dst_params    : node,
-                                      source_tree   : reference)
-{
-    local idx = $0$;
-    local newValue;
-
-    if (getArraySize(src_params) != getArraySize(dst_params))
-    {
-        traceLine(RED + "[Error] Wrong number of parameters given to the sequence (expected "
-                  + getArraySize(dst_params) + ", got "+getArraySize(src_params)+")." + DEFAULT_COLOR);
-        return false;
-    }
-
-    foreach dst_param in dst_params
-    {
-        localref theValue = src_resVals;
-        if (!existVariable(src_params) || !findElement(idx, src_params))
-            traceLine(RED + "[Error] src_params do not contain the required field: "+toString(dst_param,true)+" in "+toString(src_params, true) + DEFAULT_COLOR);
-        localref theParam = src_params[idx];
-        if (existVariable(theParam.identifiers))
-        {
-            foreach param_field in theParam.identifiers
+            else // Building ResVal for front-end weaving into the back-end
             {
-                if (!findElement(param_field.name, theValue))
-                {
-                    localref theChunk = src_params#root;
-                    if (existVariable(theChunk.variables) && (getArraySize(theParam.identifiers) != 1 || !findElement(param_field.name, theChunk.variables)))
-                    {
-                        error("Could not find an element named " + param_field.name
-                              + " in the source Resolver values or in the C variables.");
-                    }
-                    else // Element in chunk C variables.
-                    {
-                        ref theValue = theChunk.variables[param_field.name];
-                    }
-                }
-                else // Element in previous resolver values.
-                {
-                    ref theValue = theValue[param_field.name];
-                }
+            traceLine("building resval for frontend...");
+            traceLine(toString(src_params#parent#parent,true));
             }
-        }
-        else
-        {
-            // Then we're building a node leaf from another thing
-            if (findElement(theParam.val, theValue))
+
+            //  Prepare field list
+            local subidentifiers;
+            select n in src_p.identifiers[].name { pushItem subidentifiers; subidentifiers#back = n; }
+
+            // Prepare mapping results and resVal before the resolution of the parameters.
+            local mapping;
+            local subResVal;
+            rtxNodeArgs(subResVal);
+
+            if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg) == true)
             {
-                ref theValue = theValue[theParam.val];
+traceLine(CYAN + "2" + DEFAULT_COLOR);
+                // Argument comes from the resVals
+                if (rtxNodeArg_getRType(src_arg, param_type) == false)
+                    return false;
+                setall resolver_type = param_type;
+                if (rtxNodeArg_getValue(src_arg, param_value) == false)
+                    return false;
+
+                // In case a recursive resolution is necessary, we need to setup a "self"
+                rtxNodeArgs_AppendArg(subResVal, "self", resolver_type, param_value);
+traceLine(YELLOW + "variable " + src_name + " value is : " + toString(param_value,true) + DEFAULT_COLOR);
+            }
+            else if (search_chunk)
+            {
+traceLine(CYAN + "3 -> " + toString(dst_params, true) + DEFAULT_COLOR);
+                // Argument comes from the Chunk, so we retrieve the *real* type
+                // That will be resolved after the "local" resolution.
+
+                rtxResolve_BuildLocalSelf(subResVal, theChunk, placeHolder, subidentifiers);
+                local local_self;
+                rtxNodeArgs_GetArgByName(subResVal, "self", local_self);
+                local local_type;
+                rtxNodeArg_getRType(local_self, local_type);
+                setall resolver_type = local_type;
+
+                src_name = subidentifiers#[1];
+                if (findElement(src_name, theChunk.type_map))
+                    setall param_type = theChunk.type_map[src_name];
+                else
+                {
+                    setall param_type = theChunk.variables[src_name].type_node;
+                }
+traceLine(GREEN + src_name + " -> " + toString(theChunk.type_map,true) + DEFAULT_COLOR);
             }
             else
             {
-                local translatedParam;
-                if (!rtxNode2cnormNode<theParam.type>(theParam, translatedParam))
-                    error("Could not translate rathaxes node "
-                          + toString(theParam, true) + " to cnorm node.");
-                rtxNodeResValLeaf(newValue, translatedParam);
-                ref theValue = newValue;
+                error(RED + "[Error] Front-end argument '" + src_name
+                      + "' could not be found within the sequence's arguments." + DEFAULT_COLOR);
+            }
+
+            local typename = rtxRTypeName<resolver_type.type>(resolver_type);
+
+            if (type_map<typename>(subResVal, resolver_type, subidentifiers, placeHolder, mapping, source_tree) == false)
+            {
+                error(RED + "[Error] Could not resolve variable '"+ src_name+"' for type '"+typename+"'" + DEFAULT_COLOR);
+            }
+            setall param_value = mapping;
+traceLine(BLUE  + toString(mapping,true) + DEFAULT_COLOR);
+
+            // Only retrieve sub-type if it exists.
+            if ($getArraySize(subidentifiers) > 1$)
+            {
+                //  Prepare field list
+
+                // Now resolve the finaltype of the argument -> Retrieve actual param_type
+                removeVariable(subidentifiers#[0]); // Remove the first identifiers for the type resolution
+                local result_type;
+                if (rtxTypingLookup_ResolveTypeFields(resolver_type, subidentifiers, theChunk, source_tree, result_type) == false)
+                {
+                    error(RED + "[Error] Could not resolve type fields for variable '"
+                          + subidentifiers#front + "'" + DEFAULT_COLOR);
+                }
+                setall param_type = result_type;
+            }
+
+        }
+        else if (search_chunk == false) // This may be the rtx implementation chunk -> different way to resolve...
+        {
+            if (rtxNode2cnormNode<src_p.type>(src_p, param_value) == false)
+                error(RED + "Could not translate rathaxes node " + toString(src_p, true)
+                      + " to a resVal (containing one cnorm) node." + DEFAULT_COLOR);
+            setall param_type = src_p.rtype;
+            traceLine(BLUE + "Resolving front end: got value="+toString(param_value,true) + DEFAULT_COLOR);
+            if (param_value.type == "__expr__" && param_value.operator != "__literal__")
+            {
+                local src_arg;
+                local src_name = param_value.id;
+                if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg))
+                if (rtxNodeArg_getRType(src_arg, param_type) == false)
+                    return false;
+                if (rtxNodeArg_getValue(src_arg, param_value) == false)
+                    return false;
+                param_name = dst_p;
             }
         }
-        insert dst_resVals[dst_param];
-        setall dst_resVals[dst_param] = theValue;
-        increment(idx);
+        else
+        {
+            // Retrieve the expr associated to the litteral
+            if (rtxNode2cnormNode<src_p.type>(src_p, param_value) == false)
+                error(RED + "Could not translate rathaxes node " + toString(src_p, true)
+                      + " to a resVal (containing one cnorm) node." + DEFAULT_COLOR);
+            setall param_type = src_p.rtype;
+        }
+
+        // Now that we have both the source type (important for the qualifier: scalar or ref) and value, 
+        // Add it to the destination resvals.
+        if (rtxNodeArgs_AppendArg(dst_resVals, param_name, param_type, param_value) == false)
+        {
+            error(RED + "[Error] Could not append argument to arguments container." + DEFAULT_COLOR);
+        }
+traceLine(YELLOW + "Computed value for param " + param_name + " : " + toString(param_value,true) + DEFAULT_COLOR);
     }
 
+traceLine(GREEN + toString(dst_resVals,true) + DEFAULT_COLOR);
     return true;
 }
+
 
 
 /*
@@ -439,7 +471,7 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
 
         // Now, resolve the loaded chunk...
         local resVals;
-        rtxResolve_BuildFrontResVals(resolverValues, call.args, resVals, chunkTree.tpl_params, source_tree);
+        rtxResolve_BuildParameterResVals(resolverValues, call.args, resVals, chunkTree.tpl_params, source_tree, false);
         if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
         {
             increment(errcount);
@@ -459,8 +491,6 @@ traceLine("REPLACE CALL bidx:" + getArraySize(theSeq.body.block));
 /*
  *
  * resolverValues -> the hash mapping of values used in the template
-
-        increment(startIdx);
  * treeNode -> the root of the __rtx_tpl__ node
  * local_node -> current node
  *
@@ -511,8 +541,17 @@ function    inject<"__rtx_rtype__">(resolverValues : node, treeNode : node,
                                     local_node : node, source_tree : reference)
 {
     localref    theRtype = local_node.body;
+    localref    theChunk = treeNode#root;
+    local dummy;
 
-    traceLine("inject<\"__rtx_rtype__\">:<LOG> Injecting a type name: " + rtxRTypeName<theRtype.type>(theRtype) + ".");
+    if (!existVariable(local_node#parent.ref_placeholder.identifier))
+    {
+        error(RED + "Cannot inject type name into badly built compile node: "
+        + toString(local_node#parent,true) + DEFAULT_COLOR);
+    }
+    traceLine("inject<\"__rtx_rtype__\">:<LOG> Injecting type name " + rtxRTypeName<theRtype.type>(theRtype)
+    + " within Chunk " + rtxRTypeFullQualifiedName<theChunk.pointcut.type>(theChunk.pointcut,dummy)
+    + " of template " + rtxRTypeFullQualifiedName<theChunk.tpl_rtype.type>(theChunk.tpl_rtype, dummy) + ".");
 
     // We want to set the mangled typedef name into the ctype's identifier:
     // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
@@ -572,12 +611,26 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 }
         }
         else
-        { rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);}
-        traceLine("inject<\"__rtx_var__\">:<LOG> ID:fieldValue: " + toString(fieldValue, true));
-        local sChunk = fieldValue;
-        if (existVariable(fieldValue.id))
-        { sChunk = fieldValue.id;}
-        // First concat prefix
+        {
+            local field;
+            if (rtxNodeArgs_GetArgByName(resolverValues, local_node.body.identifiers#front.name, field) == false)
+            {
+                traceLine(RED + "[Error] Could not retrieve argument '" + local_node.body.identifiers#front.name
+                          + "' from resolverValues." + toString(local_node.body.identifiers,true) + DEFAULT_COLOR);
+                error(RED + toString(resolverValues,true) + DEFAULT_COLOR);
+                return false;
+            }
+            rtxNodeArg_getValue(field, fieldValue);
+        }
+        traceLine("inject<\"__rtx_var__\">:<LOG> ID:fieldValue: " + cnorm2c(fieldValue));
+        if (fieldValue.type != "__expr__" || fieldValue.expr_type != "__terminal__" || fieldValue.operator != "__id__")
+        {
+            traceLine(RED + "[Error] Cannot concatenate prefix and suffix to something other than a terminal id !"
+                      + toString(fieldValue, true) + DEFAULT_COLOR);
+            return false;
+        }
+        // First concat prefix and suffix
+        local sChunk = fieldValue.id;
         local finalNode = local_node.prefix + sChunk + local_node.suffix;
         traceLine("inject<\"__rtx_var__\"> ID:final value:" + finalNode);
         local_node#parent.ref_placeholder = finalNode;
@@ -588,12 +641,23 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                  && existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping (" + varName + ").");
-            // Create the resolvervalues for the type resolution:
+            // Create the resolverValues for the type resolution:
             // This should not need any more than config and var's identifier.
             local resVal;
-            setall resVal = resolverValues;
-            insert resVal["self"];
-            rtxNodeResValLeaf(resVal["self"], varName);
+            rtxNodeArgs(resVal);
+            local self;
+            local self_value;
+            // First, try to retrieve value from previous resVals, otherwise build it from chunk
+            if (rtxNodeArgs_GetArgByName(resolverValues, varName, self) == true)
+            {
+                rtxNodeArg_getValue(self, self_value);
+            }
+            else
+            {
+                clearVariable(self_value);
+                cnormNode_TerminalId(self_value, varName);
+            }
+            rtxNodeArgs_AppendArg(resVal, "self", theChunk.type_map[varName], self_value);
 
             local qTypeName = rtxRTypeName<theChunk.type_map[varName].type>(
                                     theChunk.type_map[varName]
@@ -616,8 +680,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            // traceLine(BLUE + "[Debug] Type mapping resolution : mapping = " + toString(mapping, true) + DEFAULT_COLOR);
-
             // Here, the mapping should always be an expression
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
             {
@@ -636,22 +698,25 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 setall local_node#parent.ref_placeholder = mapping;
             }
 
-            //traceLine(BLUE + "[Debug] Type mapping resolution : resolved mapping = " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
         }
         else if (isBuiltinVariable(varName)) // Mapping for a  builtin type
         {
-            local dummyResVal;
             local dummyRtype;
-            local    mapping;
+            local mapping;
+            local subResVal;
+            rtxNodeArgs(subResVal);
 
             local subParam;
             setall subParam = local_node.body.identifiers;
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
+            if (subidentifiers#[0] == "local")
+                rtxResolve_BuildLocalSelf(subResVal, theChunk, local_node, subidentifiers);
+
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a builtintype mapping (" + varName + ").");
             // TODO: obsolete when builtintype will be typed
-            if (type_map<"Builtin::"+varName>(dummyResVal, dummyRtype,
+            if (type_map<"Builtin::"+varName>(subResVal, dummyRtype,
                                               subidentifiers,
                                               local_node, mapping, source_tree) == false)
             {
@@ -661,7 +726,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 return false;
             }
 
-            //traceLine(BLUE + "[Debug] Builtin type mapping resolution : mapping = " + toString(mapping,true) + DEFAULT_COLOR);
 
             // Here, the mapping should always be an expression
             if (!isString(mapping) && (!existVariable(mapping.type) || mapping.type != "__expr__"))
@@ -680,7 +744,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             {
                 setall local_node#parent.ref_placeholder = mapping;
             }
-            //traceLine(BLUE + "[Debug] Builtin type mapping resolution : resolved mapping = " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
         }
         // Mapping as a value
         else
@@ -689,12 +752,19 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
              * This block of code means to replace the placeHolder by a simple
              * identifier in the code. (May be used for the self resolution)
              */
+            local field;
             local fieldValue;
             local finalNode;
-
-            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a value placeHolder : "+toString(local_node.body.identifiers));
-            rtxNodeResVal_GetField(resolverValues, local_node.body.identifiers, fieldValue);
-            // The ResValLeaf is a whole node : setall it into the placeholder's parent
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a value placeHolder : "+toString(local_node.body.identifiers, true));
+            if (rtxNodeArgs_GetArgByName(resolverValues, local_node.body.identifiers#front.name, field) == false)
+            {
+                traceLine(RED + "[Error] Could not retrieve argument '" + local_node.body.identifiers#front.name
+                          + "' from resolverValues." + toString(local_node.body.identifiers,true)  + toString(resolverValues, true)+ DEFAULT_COLOR);
+                error(RED + toString(resolverValues,true) + DEFAULT_COLOR);
+                return false;
+            }
+            rtxNodeArg_getValue(field, fieldValue);
+            // The Arg's value is a whole node : setall it into the placeholder's parent
             if (existVariable(fieldValue.type))
             {
                 traceLine("inject<\"__rtx_var__\">:<LOG> Replacing identifier '"+toString(local_node.body.identifiers)+"' of type "+fieldValue.type);
@@ -805,7 +875,8 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
 
     // Now, resolve the loaded chunk...
     local resVals;
-    rtxResolve_BuildFrontResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree);
+    rtxResolve_BuildParameterResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree, false);
+traceLine(PURPLE + " Just built parameters for call: " + toString(local_node.body.seqArgs,true) + toString(resVals,true) + DEFAULT_COLOR);
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
         traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(tplRtype,dummy) + DEFAULT_COLOR);
@@ -816,8 +887,6 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     insertModifier(theParent, local_node#parent);
     startIdx = local_node#parent.block_idx; // retrieve updated startIdx from dummy.
     rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
-    //traceLine(PURPLE+toString(chunkTree.body,true)+DEFAULT_COLOR);
-    //traceLine(PURPLE+toString(theParent,true)+DEFAULT_COLOR);
 
     return true;
 }
@@ -909,12 +978,6 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         // Here, we should be in the following case:
         //  - A field declaration within a block
 
-        traceLine(GREEN + "Node containing ph '" + local_node#parent.template_expr + "' is of type '" + theParent.type
-                  +"' and its parent is a '"+theParent#parent.type
-                  +"' with a '"+theParent#parent#parent.type
-                  +"' as a parent"+DEFAULT_COLOR);
-        traceLine(GREEN + local_node#parent.type_target + " => " + toString(local_node#parent.ref_placeholder,true) + DEFAULT_COLOR);
-
         localref pBlock = theParent#parent;
         if (pBlock.type == "")
             ref pBlock = pBlock#parent;
@@ -984,7 +1047,6 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
             {
                 traceLine(RED + "[Error] inject_pointcut<T(\""+T+"\")>: Could not instanciate chunk '"+c_tree.instanceKey+"'." + DEFAULT_COLOR);
                 traceLine(RED + "        at " + local_node#parent.location + "." + DEFAULT_COLOR);
-                exit(1);
                 increment(errcount);
             }
         }
@@ -1130,12 +1192,16 @@ function    type_call<T>(resolverValues : node,
     //  * The parameters to the chunk (TBD) FIXME XXX TODO
     //
     local resVals;
-    // Now add the "self" to the resVals
-    insert resVals["self"];
-    rtxNodeResValLeaf(resVals["self"], placeHolder.body.vars#back.name);
+    // Add the "self" after we build the resVals
+    local self_value;
+    rtxNodeArgs(resVals);
+    traceLine("type_call<"+T+">:<LOG> Building resVals for chunk " + methodProto + "... ");
     // Then add the call (chunk's) parameters to the resval.
     rtxResolve_BuildParameterResVals(resolverValues, placeHolder.body.parameters,
                                      resVals, subtree.parameters, source_tree);
+    // Since it is a local variable, simply build a terminal ID for it.
+    cnormNode_TerminalId(self_value, placeHolder.body.vars#back.name);
+    rtxNodeArgs_AppendArg(resVals, "self", tplRtype, self_value);
 
     traceLine("type_call<"+T+">:<LOG> Resolving chunk " + methodProto + "... ");
     if (instanceChunk<subtree.instanceKey>(resVals, subtree.body, source_tree) == false)
@@ -1174,7 +1240,7 @@ declare function instanceMapping<T>(resVals : node, c_tree : node, source_tree :
  *
  * resolverValues : hashtable of values for placeHolder resolution
  * theRtype       : a __rtx_rtype__ node  matching the template's type
- * mappedIds       : the identifier used in the mapping call
+ * mappedIds      : the identifier used in the mapping call
  * local_node     : the mapping's placeHolder .node
  */
 function type_map<T>(resolverValues : node,
@@ -1183,16 +1249,19 @@ function type_map<T>(resolverValues : node,
 {
     traceLine("rtxResolve:<LOG> type_map<"+T+"> for variable '"+mappedIds#[0]+"' ("+toString(mappedIds)+")");
     local   theTemplate;
+    local   identifiers;
 
     if (rtxLink_FindUniqueTemplate(theRtype, source_tree.config, theTemplate) == false)
         return false;
 
-    if (getArraySize(mappedIds) > 1)
+    setall identifiers = mappedIds;
+    removeFirstElement(identifiers);
+    if (getArraySize(identifiers) > 0)
     {
         // Now that we have selected an unique template, load the tree+script
         local   subtree;
         rtxLink_LoadItem(theTemplate, subtree);
-        localref theMapping = subtree.mapping.body.block[mappedIds#[1]];
+        localref theMapping = subtree.mapping.body.block[identifiers#front];
 
         // Call the right mapping function (based on hash + identifier mapped).
         traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
@@ -1209,14 +1278,13 @@ function type_map<T>(resolverValues : node,
     }
     else
     {
-        // just conform to the called function's interface...
-        local identifiers;
-        foreach n in mappedIds { pushItem identifiers; rtxNodeIdentifier(identifiers#back, n); }
-        //traceLine(BLUE + "Trying value mapping here..." +toString(resolverValues,true) + toString(identifiers,true)+ DEFAULT_COLOR);
-
+        local self;
         local val;
-        if (rtxNodeResVal_GetField(resolverValues, identifiers, val) == false)
-            error("Could not get value...");
+        if (rtxNodeArgs_GetArgByName(resolverValues, "self", self) == false)
+        {
+            error(RED + "Could not get value..." + DEFAULT_COLOR);
+        }
+        rtxNodeArg_getValue(self, val);
         setall out_node = val;
     }
 
@@ -1252,39 +1320,47 @@ function type_map<"Builtin::local">(resolverValues : node,
 {
     local data;
     localref theChunk = placeHolder#root;
+    local identifiers;
+    setall identifiers = mappedIds;
 
-    removeFirstElement(mappedIds); // remove the "local."
-    if (!findElement(mappedIds#[0], theChunk.variables))
+    removeFirstElement(identifiers); // remove the "local."
+    if (!findElement(identifiers#[0], theChunk.variables))
     {
-        traceLine(RED + "[ERROR] Could not find local variable '" + mappedIds#[0] + "' in block" + DEFAULT_COLOR);
+        traceLine(RED + "[ERROR] Could not find local variable '" + identifiers#[0] + "' in block" + DEFAULT_COLOR);
         traceLine(RED + "        at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
         return false;
     }
 
-    localref theVar = theChunk.variables[mappedIds#[0]];
-    if (getArraySize(mappedIds) == 1) // we're searching for a simple value/identifier
+    localref theVar = theChunk.variables[identifiers#[0]];
+    if (getArraySize(identifiers) == 0)
     {
-            cnormNode_TerminalId(out_node, mappedIds#[0]);
+        error(RED + "[Error] The Builtin::local variable cannot be used "
+              + "alone (not followed by any identifier)." + DEFAULT_COLOR);
+    }
+
+    if (theVar.type == "ctype") // the variable is a pure C type
+    {
+        error(RED + toString(theChunk.variables[identifiers#front],true)+ DEFAULT_COLOR);
+    }
+    else if (theVar.type == "rtxtype")// the variable is a declared rathaxes type-> check for mapping
+    {
+        // Build the resval properly for the actual variable.
+        local self_arg;
+        local theValue;
+        if (rtxNodeArgs_GetArgByName(resolverValues, "self", self_arg) == false)
+            error(RED + "[Error] No self argument to Builtin::Local variable resolution: "
+                  + toString(resolverValues,true) + DEFAULT_COLOR);
+        rtxNodeArg_getValue(self_arg, theValue);
+        local resVal;
+        rtxNodeArgs(resVal);
+        rtxNodeArgs_AppendArg(resVal, "self", theVar.type_node, theValue);
+
+        local rtype;
+        setall rtype = theVar.type_node;
+        return type_map<rtxRTypeName<rtype.type>(rtype)>(resVal, rtype, identifiers, placeHolder, out_node, source_tree);
     }
     else
-    {
-        if (theVar.type == "ctype") // the variable is a pure C type
-        {
-            error(RED + toString(theChunk.variables[mappedIds#[0]],true)+ DEFAULT_COLOR);
-        }
-        else if (theVar.type == "rtxtype")// the variable is a declared rathaxes type-> check for mapping
-        {
-            local rtype;
-            setall rtype = theVar.type_node;
-            local resVal;
-            setall resVal = resolverValues;
-            insert resVal["self"];
-            rtxNodeResValLeaf(resVal["self"], mappedIds#[0]);
-            return type_map<rtxRTypeName<rtype.type>(rtype)>(resVal, rtype, mappedIds, placeHolder, out_node, source_tree);
-        }
-        else
-            return false;
-    }
+        return false;
 
     return true;
 }
@@ -1294,31 +1370,33 @@ function type_map<"Builtin::config">(resolverValues : node,
                                      theRtype : node, mappedIds : node,
                                      placeHolder : node, out_node : node, source_tree : reference)
 {
-    removeFirstElement(mappedIds); // remove the "config."
+    local identifiers;
+    setall identifiers = mappedIds;
+    removeFirstElement(identifiers); // remove the "config."
     foreach itf in source_tree.config
     {
-        if (findElement(mappedIds#[0], itf))
+        if (findElement(identifiers#[0], itf))
         {
             local retval;
-            if (existVariable(itf[mappedIds#[0]].val.rtype)) // then it's a rtx var...
+            if (existVariable(itf[identifiers#[0]].val.rtype)) // then it's a rtx var...
             {
                 // Always returns a terminal literal.
-                if (rtxNode2cnormNode<itf[mappedIds#[0]].type>(itf[mappedIds#[0]].val, out_node) == false)
+                if (rtxNode2cnormNode<itf[identifiers#[0]].type>(itf[identifiers#[0]].val, out_node) == false)
                     return false;
 
                 out_node.literal = placeHolder.prefix + out_node.literal + placeHolder.suffix;
                 return true;
             }
-            else if (itf[mappedIds#[0]].type == "__rtx_id__")
+            else if (itf[identifiers#[0]].type == "__rtx_id__")
             {
-                out_node = placeHolder.prefix + itf[mappedIds#[0]].val.name + placeHolder.suffix;
+                out_node = placeHolder.prefix + itf[identifiers#[0]].val.name + placeHolder.suffix;
                 return true;
             }
             else
             {
-                traceLine(RED + "[Error] Unmanaged type in Builtin::config type_map<> function : '"+itf[mappedIds#[0]].type+"'");
+                traceLine(RED + "[Error] Unmanaged type in Builtin::config type_map<> function : '"+itf[identifiers#[0]].type+"'");
             }
-            traceLine(RED + "[Error] Cannot translate node of type '" + itf[mappedIds#[0]].type
+            traceLine(RED + "[Error] Cannot translate node of type '" + itf[identifiers#[0]].type
                       + "' into a C value for config item replacement" + DEFAULT_COLOR);
             traceLine(RED + "        for mapping at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
             return false;

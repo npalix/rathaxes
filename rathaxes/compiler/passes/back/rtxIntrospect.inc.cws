@@ -637,12 +637,31 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_rtype__">(local_node : node,
     // Here, it should be type within a decl, thus the ref_placeHolder points to the ctype.
     localref theDecl = local_node#parent#parent.ref_placeholder#parent;
 
+    // If this was a pointer declaration, we need to retrieve its name, so roll up the nodes.
+    while (!existVariable(theDecl.name) && theDecl#parent.type == "__ctype__" && theDecl#parent.cdecl_type == "__pointer__")
+    { ref theDecl = theDecl#parent#parent; }
+
+    if (theDecl.name == "")
+    {
+        traceLine(YELLOW + "[Warning] Introspect placeHolder: Decl name for variable insertion cannot be determined for decl at " + theDecl.location + DEFAULT_COLOR);
+        if (!existVariable(theChunk.variables[theDecl.name]))
+            insert theChunk.variables[theDecl.name];
+        pushItem theChunk.variables[theDecl.name];
+        theChunk.variables[theDecl.name]#back = theDecl.location;
+
+        return true;
+    }
+
     if (!existVariable(theChunk.variables[theDecl.name]))
         insert theChunk.variables[theDecl.name];
 
     insert theChunk.variables[theDecl.name].type = "rtxtype";
     insert theChunk.variables[theDecl.name].type_node;
-    setall theChunk.variables[theDecl.name].type_node = local_node;
+    // Here, we set a ref because if the type was a ctype,
+    // the ref points to the ctype node, and the ctype node
+    // would thus be wrongly overwritten.
+    ref theChunk.variables[theDecl.name].type_node = local_node;
+
     return true;
 }
 
@@ -687,10 +706,24 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_pointcut__">(local_node : no
                       + "' could not be identified." + DEFAULT_COLOR);
             }
         }
-        else // should be a template argument then
+        else // should be a template argument then -> resolve fields too
         {
             if (findElement(theVar.name, theChunk.type_map))
                 ref paramType = theChunk.type_map[theVar.name];
+
+            if (getArraySize(param.identifiers) > 1)
+            {
+                local dummy;
+                local fieldRtype;
+                local fields;
+                select n in param.identifiers[].name { pushItem fields; fields#back = n; }
+                removeFirstElement(fields);
+                if (rtxTypingLookup_ResolveTypeFields(paramType, fields, dummy, dummy, fieldRtype) == false)
+                    error(RED + "[Error] The type of parameter number " + $index(param) + 1$
+                          + " of pointcut '" + local_node#parent.template_expr
+                          + " could not be resolved." +  DEFAULT_COLOR);
+                setall paramType = fieldRtype;
+            }
         }
 
         pushItem param_types;
