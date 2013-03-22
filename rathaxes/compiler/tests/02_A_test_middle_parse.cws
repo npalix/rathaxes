@@ -26,7 +26,7 @@ generateString({
 
             provided    type            BaseInterface::a_type
             {
-                attribute String val;
+                attribute String.scalar val;
             }
             provided    type            BaseInterface::type1
             {
@@ -52,8 +52,8 @@ generateString({
             optional            type            Userland::opt_type
             {
                 chunk       BaseInterface::foo(bar);
-                attribute   BaseInterface::type1    t1;
-                attribute   BaseInterface::type2    t2;
+                attribute   BaseInterface::type1.scalar    t1;
+                attribute   BaseInterface::type2.scalar    t2;
                 method      init(Builtin::type1);
                 method      test();
             }

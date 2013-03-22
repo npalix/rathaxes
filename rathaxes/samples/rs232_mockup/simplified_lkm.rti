@@ -37,8 +37,8 @@ interface Algorithms : LKM
     {
         decl                    LKM::INCLUDE_DEPENDENCIES();
         chunk                   LKM::GLOBAL_DATA_DECLARATION();
-        attribute LKM::Symbol   ptr;
-        attribute LKM::number   size;
+        attribute LKM::Symbol.scalar   ptr;
+        attribute LKM::number.scalar   size;
     }
 
     provided sequence   log(LKM::string)

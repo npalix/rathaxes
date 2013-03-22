@@ -12,7 +12,7 @@ declare function rtxItfAddTypeToList(theNode : node, nameList : reference);
 declare function rtxNodeItfPointcutDeclaration(local_node : node, qualifier : value, identifier : node, out_ref_params : reference);
 declare function rtxNodeItfChunkDeclaration(local_node : node, identifier : node, paramtypes_out_ref : reference, qualifier : value);
 declare function rtxNodeItfTypeChunkDeclaration(local_node : node, theIdentifier : node, theTypes : node);
-declare function rtxNodeItfTypeAttributeDeclaration(local_node : node, theType : node, theIdentifier : node);
+declare function rtxNodeItfTypeAttributeDeclaration(local_node : node, theType : node, theIdentifier : node, theQualifier : value);
 declare function rtxNodeItfTypeMethodDeclaration(local_node : node, theIdentifier : node, theTypes : node);
 declare function rtxItfAddDeclToType(theNode : node, theDecl : node);
 
@@ -206,14 +206,19 @@ function        rtxNodeItfTypeChunkDeclaration(local_node : node,
 
 function        rtxNodeItfTypeAttributeDeclaration(local_node : node,
                                                    theType : node,
-                                                   theIdentifier : node)
+                                                   theIdentifier : node,
+                                                   theQualifier : value)
 {
     local dummy;
 
     rtxNode(local_node);
     local_node.type = "__rtx_itf_attribute__";
+
     insert local_node.rtype;
     rtxNodeRType(local_node.rtype, theType, dummy);
+    if (rtxNodeRType_SetQualifier(local_node.rtype, theQualifier) == false)
+        return false;
+
     insert local_node.name = theIdentifier;
 
     return true;

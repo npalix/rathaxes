@@ -12,8 +12,8 @@ interface PCI : LKM, Builtin, Device
         method      init(PCI::AbstractDevice);
         method      set_context(Builtin::symbol);
 
-        attribute   Builtin::symbol data;
-        attribute   Builtin::symbol drv_data;
+        attribute   Builtin::symbol.scalar data;
+        attribute   Builtin::symbol.scalar drv_data;
     }
 
     provided type   PCI::Device
@@ -29,13 +29,13 @@ interface PCI : LKM, Builtin, Device
         method      select_ioaddr(Builtin::number);
         method      set_context(Builtin::symbol);
 
-        attribute   Builtin::symbol         context;
-        attribute   Device::AbstractDevice  device;
-        attribute   PCI::AbstractDevice     pci_device;
-        attribute   Builtin::symbol         ioaddr;
-        attribute   Builtin::number         BAR_0;
-        attribute   Builtin::number         irq;
-        attribute   Builtin::number         bars;
+        attribute   Builtin::symbol.scalar      context;
+        attribute   Device::AbstractDevice.ref  device;
+        attribute   PCI::AbstractDevice.ref     pci_device;
+        attribute   Builtin::symbol.ref         ioaddr;
+        attribute   Builtin::number.scalar      BAR_0;
+        attribute   Builtin::number.scalar      irq;
+        attribute   Builtin::number.scalar      bars;
     }
 
     provided sequence   register()
