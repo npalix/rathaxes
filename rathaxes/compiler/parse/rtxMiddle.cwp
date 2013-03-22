@@ -119,6 +119,10 @@ rtx_itf_type_body_stmt ::=
     "attribute" | "method" | "decl" | "chunk" | "pointcut"
 ;
 
+rtx_itf_type_attr_qual ::=
+    "ref" | "scalar"
+;
+
 rtx_itf_type_body_declaration(theBlock : node) ::=
     #pushItem(theBlock)
 /**/=> localref theDecl = theBlock#back;
@@ -159,10 +163,12 @@ rtx_itf_type_stmt<"attribute">(theDecl : node) ::=
     #continue(sError, "Expected type for attribute in type's declaration.")
     rtx_scoped_identifier(theType, false)
     #check(rtxNode_InfoLocation(theDecl))
+    #continue(sError, "Expected 'ref' or 'scalar' qualifier for attribute type.")
+    '.' rtx_itf_type_attr_qual:theQualifier
     #continue(sError, "No attribute name given.")
     => local theName;
     #readIdentifier:theName
-    #check(rtxNodeItfTypeAttributeDeclaration(theDecl, theType, theName))
+    #check(rtxNodeItfTypeAttributeDeclaration(theDecl, theType, theName, theQualifier))
 ;
 
 rtx_itf_type_stmt<"method">(theDecl : node) ::=

@@ -38,7 +38,7 @@ interface Algorithms : LKM, Builtin
 {
     provided type               Buffer {
         decl                        LKM::INCLUDE_DEPENDENCIES();
-        attribute Builtin::number   size;
+        attribute Builtin::number.scalar   size;
     }
 
     provided sequence   log(Builtin::string)

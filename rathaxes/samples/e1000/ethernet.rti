@@ -9,15 +9,15 @@ interface Ethernet : Socket, PCI, LKM, Builtin
          chunk       LKM::code();
          decl        data_types();
 
-         attribute  Builtin::number id;
-         attribute  Builtin::string str;
+         attribute  Builtin::number.scalar id;
+         attribute  Builtin::string.scalar str;
      }
 
     provided type   AbstractDevice
     {
         chunk       LKM::includes();
         decl        data_types();
-        attribute   Builtin::symbol netdev;
+        attribute   Builtin::symbol.scalar netdev;
     }
 
     provided type   Device
@@ -27,15 +27,15 @@ interface Ethernet : Socket, PCI, LKM, Builtin
         method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
         pointcut    Ethernet::HardwareContext();
 
-        attribute   Device::AbstractDevice      device;
-        attribute   PCI::AbstractDevice         pci_device;
-        attribute   Ethernet::AbstractDevice    net_device;
+        attribute   Device::AbstractDevice.ref      device;
+        attribute   PCI::AbstractDevice.ref         pci_device;
+        attribute   Ethernet::AbstractDevice.ref    net_device;
         /*
          * I'd like to use better names here, but I'd like to understand the
          * difference between the two first:
          */
-        attribute   Builtin::symbol             perm_addr;
-        attribute   Builtin::symbol             dev_addr;
+        attribute   Builtin::symbol.scalar      perm_addr;
+        attribute   Builtin::symbol.scalar      dev_addr;
     }
 
     required sequence   open(Ethernet::Device)

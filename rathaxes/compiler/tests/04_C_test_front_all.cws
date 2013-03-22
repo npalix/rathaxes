@@ -68,7 +68,7 @@ generateString({
             provided type               LKM::Buffer
             {
                 decl LKM::data();
-                attribute Builtin::number size;
+                attribute Builtin::number.scalar size;
             }
         
             required sequence           LKM::open(LKM::Context);
