@@ -134,7 +134,7 @@ use Algorithms, LKM, User
         }
     }
 */
-    read(Context ctx, Buffer output)
+    read(Device ctx, Buffer output)
     {
         log("my RS232 [read]\n");
 //      concat(output, rcv_buf)
@@ -142,7 +142,7 @@ use Algorithms, LKM, User
 //          PRECONDITION {WAIT(LSR.data_available, TRUE);}
 //      }
     }
-    write(Context ctx, Buffer input)
+    write(Device ctx, Buffer input)
     {
         log("my RS232 [write]\n");
 //      copy(snd_buf, input)
@@ -150,15 +150,15 @@ use Algorithms, LKM, User
 //          PRECONDITION {WAIT(LSR.thr_state.empty);}
 //      }
     }
-    open(Context ctx)
+    open(Device ctx)
     {
         log("my RS232 [open]\n");
     }
-    close(Context ctx)
+    close(Device ctx)
     {
         log("my RS232 [close]\n");
     }
-    on_plug(Context ctx)
+    on_plug(Device ctx)
     {
         log("my RS232 [on_plug]\n");
         //set(divisor, 0x0C);
