@@ -79,9 +79,17 @@ function rtxTypeHash_walk<"__rtx_chunk__">(local_node : node, type_map : node)
 
     foreach type in local_node.pointcut.params
     {
+        local dummy;
         local id = local_node.parameters.list#[index(type)];
         insert local_node.type_map[id];
-        setall local_node.type_map[id] = type;
+        if (type.type == "__rtx_rtype__")
+            setall local_node.type_map[id] = type;
+        else if (type.type == "__rtx_id__")
+            rtxNodeRType(local_node.type_map[id], type, dummy);
+        else
+            traceLine(RED + "[Error] Could not get type of parameter '" + id + "' in chunk prototype '"
+            + rtxRTypeFullQualifiedName<local_node.pointcut.type>(local_node.pointcut, local_node.parameters)
+            + "'." + DEFAULT_COLOR);
     }
 }
 

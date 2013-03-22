@@ -47,9 +47,19 @@ declare function rtxNodePointcut_Default(local_node : node, body : reference);
 declare function rtxNodeChunk(local_node : node, out_ref_pointcut : reference, out_ref_params : reference, out_ref_body : reference);
 declare function rtxNodeChunk_SetType(local_node : node, type : value);
 declare function rtxNodeChunk_SetDeclType(local_node : node, type : value);
+
 declare function rtxNodeCall_paramType<T>(theParam : node, theSequence : node, out_param : node);
 declare function rtxNodeCall_setNodeIdentifier<T>(out_param : node, theType : node);
 declare function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node);
+
+declare function rtxNodeArg(local_node : node, theName : value, theRtype : node, theValue : node);
+declare function rtxNodeArg_getName(local_node : node, out_name : reference);
+declare function rtxNodeArg_getRType(local_node : node, out_rtype : reference);
+declare function rtxNodeArg_getValue(local_node : node, out_value : reference);
+declare function rtxNodeArgs(local_node : node);
+declare function rtxNodeArgs_AppendArg(local_node : node, theName : value, theRtype : node, theValue : node);
+declare function rtxNodeArgs_GetArgByIndex(local_node : node, theIndex : value, out_arg : reference);
+declare function rtxNodeArgs_GetArgByName(local_node : node, theName : value, out_arg : reference);
 
 
 
@@ -755,6 +765,124 @@ function rtxNodeCall_toRtype(theCall : node, theSequence : node, theRtype : node
         return false;
     return true;
 }
+
+function rtxNodeArg(local_node : node, theName : value, theRtype : node, theValue : node)
+{
+    if (theRtype.type != "__rtx_rtype__")
+        return false;
+    if (rtxNode(local_node) == false)
+        return false;
+    if (theValue.type == "__expr__" && theValue.expr_type == "__terminal__" && theValue.operator == "__id__" && theValue.id = "")
+        error(RED + "Cannot add arg " + theName + " with value="+ toString(theValue,true)+ DEFAULT_COLOR);
+    if (theValue.type != "__expr__")
+        error(RED + "Cannot add arg " + theName + " with value="+ toString(theValue,true)+ DEFAULT_COLOR);
+
+    local_node.type = "__rtx_arg__";
+    insert local_node.name = theName;
+    insert local_node.rtype;
+    setall local_node.rtype = theRtype;
+    insert local_node.value;
+    setall local_node.value = theValue;
+
+    return true;
+}
+
+function rtxNodeArg_getName(local_node : node, out_name : reference)
+{
+    if (local_node.type != "__rtx_arg__")
+        return false;
+    ref out_name = local_node.name;
+    return true;
+}
+
+function rtxNodeArg_getRType(local_node : node, out_rtype : reference)
+{
+    if (local_node.type != "__rtx_arg__")
+        return false;
+    ref out_rtype = local_node.rtype;
+    return true;
+}
+
+function rtxNodeArg_getValue(local_node : node, out_value : reference)
+{
+    if (local_node.type != "__rtx_arg__")
+        return false;
+    ref out_value = local_node.value;
+    return true;
+}
+
+function rtxNodeArgs(local_node : node)
+{
+    insert local_node.type = "__rtx_args__";
+
+    insert local_node.list;
+
+    return true;
+}
+
+function rtxNodeArgs_AppendArg(local_node : node, theName : value, theRtype : node, theValue : node)
+{
+    local theArg;
+
+    if (local_node.type != "__rtx_args__")
+        return false;
+
+    foreach arg in local_node.list
+    {
+        local name;
+        if (rtxNodeArg_getName(arg, name) == false)
+            error(RED + "[Error] Argument is not an argument ?!" + DEFAULT_COLOR);
+
+        if (name == theName)
+        {
+            traceLine(RED + "[Error] An argument called '" + theName 
+                      + "' already exists within arg container."+ DEFAULT_COLOR);
+            return false;
+        }
+    }
+
+    if (rtxNodeArg(theArg, theName, theRtype, theValue) == false)
+        return false;
+
+    pushItem local_node.list;
+    setall local_node.list#back = theArg;
+
+    return true;
+}
+
+function rtxNodeArgs_GetArgByIndex(local_node : node, theIndex : value, out_arg : reference)
+{
+    if (local_node.type != "__rtx_args__")
+        return false;
+
+    if ($theIndex >= getArraySize(local_node.list)$)
+        return false;
+
+    ref out_arg = local_node.list#[theIndex];
+
+    return true;
+}
+
+function rtxNodeArgs_GetArgByName(local_node : node, theName : value, out_arg : reference)
+{
+    if (local_node.type != "__rtx_args__")
+        return false;
+
+    foreach arg in local_node.list
+    {
+        local name;
+        if (rtxNodeArg_getName(arg, name) == false)
+            error(RED + "[Error] Argument is not an argument ?!" + toString(local_node, true) + DEFAULT_COLOR);
+
+        if (name == theName)
+        {
+            ref out_arg = arg;
+            return true;
+        }
+    }
+    return false;
+}
+
 
 #include "rtxNodeFront.inc.cws"
 #include "rtxNodeMiddle.inc.cws"
