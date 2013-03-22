@@ -6,12 +6,12 @@ interface Builtin
     provided builtintype        register;
     provided builtintype        register_field;
     provided builtintype        register_value;
+    provided builtintype	    symbol;
 }
 
 interface LKM : Builtin
 {
     provided builtintype        Device_list;
-    provided builtintype	    Symbol;
 
     provided pointcut           INCLUDE_DEPENDENCIES();
     provided pointcut           GLOBAL_DATA_DECLARATION();
@@ -61,33 +61,37 @@ interface Algorithms : LKM, Builtin
 
 interface User : Algorithms
 {
-    provided builtintype        Context;//why not device?
+    provided type                           Device
+    {
+        decl                                LKM::INCLUDE_DEPENDENCIES();
+        attribute Builtin::symbol.scalar    self_ptr;
+    }
 
 
-    required sequence           open(Context)
+    required sequence           open(Device)
     {
         provided chunk          GLOBAL_CODE_DEFINITION();
     }
 
-    required sequence           close(Context)
-    {
-        provided chunk          GLOBAL_CODE_DEFINITION();
-        provided chunk          INIT_LKM_FPTRS();
-    }
-
-    required sequence           read(Context, Algorithms::Buffer)
-    {
-        provided chunk          GLOBAL_CODE_DEFINITION();
-        provided chunk          INIT_LKM_FPTRS();
-    }
-
-    required sequence           write(Context, Algorithms::Buffer)
+    required sequence           close(Device)
     {
         provided chunk          GLOBAL_CODE_DEFINITION();
         provided chunk          INIT_LKM_FPTRS();
     }
 
-    required sequence           on_plug(Context)
+    required sequence           read(Device, Algorithms::Buffer)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+
+    required sequence           write(Device, Algorithms::Buffer)
+    {
+        provided chunk          GLOBAL_CODE_DEFINITION();
+        provided chunk          INIT_LKM_FPTRS();
+    }
+
+    required sequence           on_plug(Device)
     {
         provided chunk          GLOBAL_CODE_DEFINITION();
         provided chunk          INIT_LKM_FPTRS();

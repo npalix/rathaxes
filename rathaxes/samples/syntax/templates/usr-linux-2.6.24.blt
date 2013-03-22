@@ -1,25 +1,38 @@
 with LKM, User
 values LKM::OS=linux, LKM::version >= 2.6.24
 {
-    template sequence open(User::Context ctx)
+
+    template type Device()
+    {
+        decl LKM::INCLUDE_DEPENDENCIES()
+        {
+            dev_t   content;
+        }
+
+        map {
+            self_ptr:   ${self}->content;
+        }
+    }
+
+    template sequence open(User::Device ctx)
     {
         chunk GLOBAL_CODE_DEFINITION()
         {
             int ${config.devices}_open(dev_t *ctx)
             {
-                ${cast local.ctx as User::Context};
+                ${cast local.ctx as User::Device};
                 ${pointcut ::IMPLEMENTATION(local.ctx)};
             }
         }
     }
 
-    template sequence close(User::Context ctx)
+    template sequence close(User::Device ctx)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
             int ${config.devices}_open(dev_t *ctx)
             {
-                ${cast local.ctx as User::Context};
+                ${cast local.ctx as User::Device};
                 ${pointcut ::IMPLEMENTATION(local.ctx)};
 
 
@@ -40,14 +53,14 @@ values LKM::OS=linux, LKM::version >= 2.6.24
         {}
     }
 
-    template sequence read(Context ctx, Buffer buf)
+    template sequence read(Device ctx, Buffer buf)
     {
         chunk LKM::GLOBAL_CODE_DEFINITION()
         {
             int ${config.devices}_read(dev_t *ctx)
             {
                 ${Algorithms::Buffer}   buf;
-                ${cast local.ctx as User::Context};
+                ${cast local.ctx as User::Device};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
                 return (0);
             }
@@ -59,14 +72,14 @@ values LKM::OS=linux, LKM::version >= 2.6.24
         }
     }
 
-    template sequence write(Context ctx, Buffer buf)
+    template sequence write(Device ctx, Buffer buf)
     {
         chunk GLOBAL_CODE_DEFINITION()
         {
             int ${config.devices}_write(dev_t *ctx)
             {
                 ${Algorithms::Buffer}   buf;
-                ${cast local.ctx as User::Context};
+                ${cast local.ctx as User::Device};
                 ${pointcut ::IMPLEMENTATION(local.ctx, local.buf)};
                 return (0);
             }
