@@ -1,0 +1,66 @@
+#if !existFunction(rtxTypingLookup)
+
+function rtxTypingLookup_version()
+{ return "1.0"; }
+
+declare function rtxTypingLookup_TypeField(theRtype : node, theField : value, fieldRtype : node);
+
+
+/*
+ * This functions allows retrieving the rtype of a rathaxes type's field.
+ */
+function rtxTypingLookup_TypeField(theRtype : node, theField : value, fieldRtype : node)
+{
+    local itfName = theRtype.name.scope;
+    local itfNode;
+    local itfTree;
+    local theType;
+
+    if (itfName == "" && theRtype.name.global != true)
+        error(RED + "[Error] Trying to retrieve field type for an unqualified type: "
+              + rtxRtypeName<theRtype.type>(theRtype) + DEFAULT_COLOR);
+
+    // First, load the interface containing the type to retrieve a field's type from
+    if (rtxLink_findInterface(itfName, itfNode) == false)
+    {
+        traceLine(RED + "[Error] Interface '" + itfName
+                  + "' containing the type template"
+                  + rtxRtypeName<theRtype.type(theRtype)
+                  + " could not be found within the cache." + DEFAULT_COLOR);
+        return false;
+    }
+    if (rtxLink_LoadItem(itfNode, itfTree, false) == false)
+    {
+        traceLine(RED + "[Error] Could not load interface's '"
+                  + itfName + "' tree." + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Get the type
+    if (findElement(theRtype.name.name, itfTree.types) != true)
+    {
+        traceLine(RED + "[Error] Could not find type " 
+                  + rtxRtypeName<theRtype.type(theRtype)
+                  + " within the interface's tree." + DEFAULT_COLOR);
+                  + DEFAULT_COLOR);
+        return false;
+    }
+    ref theType = itfTree.types[theRtype.name.name];
+
+    // Get the attribute
+    if (findElement(theField, theType.attributes))
+    {
+        traceLine(RED + "[Error] Could not find attribute " + theField 
+                  + " in description of type " + rtxRtypeName<theRtype.type(theRtype)
+                  + DEFAULT_COLOR);
+        return false;
+    }
+
+    // Finally, setup the type and return success.
+    setall fieldRtype = theType.attributes[theField].rtype;
+
+    return true;
+}
+
+
+#endif
