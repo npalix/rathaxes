@@ -29,11 +29,11 @@ declare function inject_pointcut<T>(resolverValues : node, treeNode : node, loca
 declare function isBuiltinVariable(varname : value);
 declare function insertModifier(theBlock : node, thePointcut : node);
 declare function rtxResolve_MangleTypeName(theRtype : node, is_pointer : value);
-
+declare function rtxResolve_RefScalarTranscribe(expr : node, in_type : value, out_type : value);
 declare function rtxResolve_WrapChunkIntoType(chunkTree : node);
+
 declare function rtxResolve_InsertCode(destBlock : node, startIdx : node, phName : value, phIdx : node, sourceNode : node);
 declare function rtxResolve_BuildParameterResVals(src_resVals   : node, src_params    : node, dst_resVals   : node, dst_params    : node, source_tree   : reference, search_chunk  : value = true);
-declare function rtxResolve_BuildFrontResVals(src_resVals : node, src_params : node, dst_resVals : node, dst_params : node, source_tree : reference);
 declare function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tree : reference);
 
 
@@ -163,6 +163,68 @@ function rtxResolve_WrapChunkIntoType(chunkTree : node)
 }
 
 /*
+ * This function modifies an expression to suit the needed expression:
+ * On a variable of the same type, it can transcribe an expression from ref to scalar and vis versa.
+ */
+function rtxResolve_RefScalarTranscribe(expr : node, in_type : value, out_type : value)
+{
+    local op = "";
+    local do_wrap = 0;
+
+    // First, normalize the "ref" and "pointer" as "pointer.
+    if (in_type == "ref")
+        in_type = "pointer";
+    if (out_type == "ref")
+        out_type = "pointer";
+
+    // make sure in and out types are either scalar or ref
+    if ((in_type != "scalar" && in_type != "pointer")
+        || (out_type != "scalar" && out_type != "pointer"))
+        error(RED + "[Error] In_type or Out_type are neither scalar nor ref: in='"
+              + in_type + "', and out='" + out_type + "'." + DEFAULT_COLOR);
+
+    // Make sure we're manipulating an expr
+    if (expr.type != "__expr__")
+        error(RED + "[Error] Node to transcribe is NOT an expression." + DEFAULT_COLOR);
+
+    if (in_type == out_type)
+        return true;
+
+    if (in_type == "scalar")
+    {
+        op = '&';
+        // If expr is not an unary &, wrap into it; otherwise we'll remove the unary outer layer.
+        if (expr.expr_type != "__unary__" || expr.op != '&')
+            do_wrap = 1;
+    }
+    else
+    {
+        op = '*';
+        // If expr is not an unary *, wrap into it; otherwise we'll remove the unary outer layer.
+        if (expr.expr_type != "__unary__" || expr.op != '*')
+            do_wrap = 1;
+    }
+
+    // It was determined that the expression is to be wrapped within an unary expr.
+    if (do_wrap)
+    {
+        slideNodeContent(expr, right);
+        insert expr.operator = op;
+        insert expr.type = "__expr__";
+        insert expr.expr_type = "__unary__";
+    }
+    // Or we can shrug off the useless outer layer of unary exprs
+    else
+    {
+        local temp;
+        setall temp = expr.right;
+        setall expr = temp;
+    }
+    
+    return true;
+}
+
+/*
  *
  * Function that allow weaving ASTs by injecting the function definitions into
  * the global scope, and every other node in the block starting at the current
@@ -261,7 +323,6 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
 
     if (search_chunk)
         ref dst_list = dst_list.list;
-    traceLine(RED + "Building resval: dst_list="+toString(dst_list) + DEFAULT_COLOR);
 
     foreach dst_p in dst_list
     {
@@ -555,7 +616,7 @@ function    inject<"__rtx_rtype__">(resolverValues : node, treeNode : node,
 
     // We want to set the mangled typedef name into the ctype's identifier:
     // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
-    local_node#parent.ref_placeholder.identifier = rtxResolve_MangleTypeName(theRtype, false);
+    local_node#parent.ref_placeholder.identifier = rtxResolve_MangleTypeName(theRtype, theRtype.qualifier != "scalar");
     
     return true;
 }
@@ -695,6 +756,28 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             }
             else
             {
+                local source_type;
+
+                // First retrieve the type of the value we just resolved.
+                if (getArraySize(subidentifiers) != 0)
+                {
+                    ref source_type = theChunk.type_map[varName];
+                }
+                else
+                {
+                    // Now resolve the finaltype of the argument -> Retrieve actual param_type
+                    removeVariable(subidentifiers#[0]); // Remove the first identifiers for the type resolution
+                    local result_type;
+                    if (rtxTypingLookup_ResolveTypeFields(theChunk.type_map[varName], subidentifiers, theChunk, source_tree, source_type) == false)
+                    {
+                        error(RED + "[Error] Could not resolve type fields for variable '"
+                                + subidentifiers#front + "'" + DEFAULT_COLOR);
+                    }
+                }
+                local in_type = source_type.qualifier;
+                local out_type = local_node#parent.ph_type;
+                if (rtxResolve_RefScalarTranscribe(mapping, in_type, out_type) == false)
+                { error(RED + "[Error] Cannot transcribe an expression from " + in_type + " to " + out_type + DEFAULT_COLOR); }
                 setall local_node#parent.ref_placeholder = mapping;
             }
 
@@ -755,7 +838,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local field;
             local fieldValue;
             local finalNode;
-            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a value placeHolder : "+toString(local_node.body.identifiers, true));
+            traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a value placeHolder : " + local_node#parent.template_expr);
             if (rtxNodeArgs_GetArgByName(resolverValues, local_node.body.identifiers#front.name, field) == false)
             {
                 traceLine(RED + "[Error] Could not retrieve argument '" + local_node.body.identifiers#front.name
@@ -1340,7 +1423,7 @@ function type_map<"Builtin::local">(resolverValues : node,
 
     if (theVar.type == "ctype") // the variable is a pure C type
     {
-        error(RED + toString(theChunk.variables[identifiers#front],true)+ DEFAULT_COLOR);
+        cnormNode_TerminalId(out_node, identifiers#front);
     }
     else if (theVar.type == "rtxtype")// the variable is a declared rathaxes type-> check for mapping
     {
@@ -1384,7 +1467,6 @@ function type_map<"Builtin::config">(resolverValues : node,
                 if (rtxNode2cnormNode<itf[identifiers#[0]].type>(itf[identifiers#[0]].val, out_node) == false)
                     return false;
 
-                out_node.literal = placeHolder.prefix + out_node.literal + placeHolder.suffix;
                 return true;
             }
             else if (itf[identifiers#[0]].type == "__rtx_id__")
