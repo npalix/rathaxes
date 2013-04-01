@@ -51,7 +51,7 @@ with Ethernet, PCI, LKM, Log, Builtin
     {
         decl  data_types()
         {
-            struct net_device ndev;
+            struct net_device   data;
         }
 
         chunk LKM::includes()
@@ -59,11 +59,16 @@ with Ethernet, PCI, LKM, Log, Builtin
             #include <linux/netdevice.h>
         }
 
+        method  init(Builtin::symbol dev)
+        {
+            ${self} = (${Ethernet::AbstractDevice} *)${dev};
+        }
+
         map
         {
-            netdev: ${self}->ndev;
+            k_net_dev: ((struct net_device *)${self});
             /* This could be another init method for Ethernet::Device: */
-            rtx_ether_ctx: netdev_priv(&${self}->ndev);
+            rtx_ether_ctx: netdev_priv((struct net_device *)${self});
         }
     }
 
@@ -90,25 +95,33 @@ with Ethernet, PCI, LKM, Log, Builtin
             #include <linux/etherdevice.h>
         }
 
-        method init(Ethernet::AbstractDevice net_dev, PCI::AbstractDevice pci_dev)
+        /* XXX: if the first arg is not called rtx_net_dev, it breaks. */
+        method init(Ethernet::AbstractDevice rtx_net_dev, PCI::AbstractDevice pci_dev)
         {
-            ${self} = netdev_priv(&${net_dev.netdev});
+            ${self} = ${rtx_net_dev.rtx_ether_ctx}; 
             /*
              * We can use -> because we know that ${self} will be always a
              * pointer, but the ambiguity sucks.
              */
             ${self}->pci_dev = ${pci_dev};
-            ${self}->net_dev = ${net_dev};
+            ${self}->net_dev = ${rtx_net_dev};
         }
 
         map
         {
-            device: ${self}->pci_dev->data.dev;
+            /*
+             * XXX: I'd like to be able to do things like:
+             * device: ${self.pci_dev.k_pci_dev}->dev;
+             *
+             * Also, using ${PCI::AbstractDevice} instead of directly struct
+             * pci_dev doesn't work.
+             */
+            device: (&((struct pci_dev *)(${self})->pci_dev)->dev);
             pci_device: ${self}->pci_dev;
             net_device: ${self}->net_dev;
-            perm_addr: ${self}->net_dev->ndev.perm_addr;
-            dev_addr: ${self}->net_dev->ndev.dev_addr;
-            irq: ${self}->pci_dev->data.irq;
+            perm_addr: ((struct net_device *)(${self})->net_dev)->perm_addr;
+            dev_addr: ((struct net_device *)(${self})->net_dev)->dev_addr;
+            irq: ((struct pci_dev *)(${self})->pci_dev)->irq;
         }
     }
 
@@ -128,7 +141,15 @@ with Ethernet, PCI, LKM, Log, Builtin
         {
             static int  rtx_ethernet_open(struct net_device *dev)
             {
-                ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(dev);
+                /*
+                 * XXX The casts are here because the compiler doesn't resolve
+                 * "enclosed" type (e.g: local.var.enclosed) correctly.
+                 */
+                ${Ethernet::AbstractDevice.ref} rtx_net_dev;
+                { /* XXX: I end up with a placeholder if I don't open a scope */
+                    ${local.rtx_net_dev.init(local.dev)};
+                }
+                ${Ethernet::Device.ref} rtx_ether_ctx = ${local.rtx_net_dev.rtx_ether_ctx};
 
                 int error;
                 {
@@ -181,7 +202,12 @@ with Ethernet, PCI, LKM, Log, Builtin
         {
             static int  rtx_ethernet_close(struct net_device *dev)
             {
-                ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(dev);
+                ${Ethernet::AbstractDevice.ref} rtx_net_dev;
+                { /* XXX: I end up with a placeholder if I don't open a scope */
+                    ${local.rtx_net_dev.init(local.dev)};
+                }
+
+                ${Ethernet::Device.ref} rtx_ether_ctx = ${local.rtx_net_dev.rtx_ether_ctx};
 
                 /* TODO: change this pointcut into a pointcut/adapter/callback: */
                 {
@@ -246,22 +272,24 @@ with Ethernet, PCI, LKM, Log, Builtin
          */
         chunk PCI::pci_probe_hook(PCI::Device rtx_pci_dev)
         {
+            ${Ethernet::AbstractDevice.ref} rtx_net_dev;
             ${Ethernet::Device.ref} rtx_ether_ctx;
-            ${Ethernet::AbstractDevice.ref} net_dev;
 
-            net_dev = (${Ethernet::AbstractDevice.ref})alloc_etherdev(sizeof(*rtx_ether_ctx));
-            if (!net_dev)
+            rtx_net_dev = (${Ethernet::AbstractDevice.ref})alloc_etherdev(sizeof(*rtx_ether_ctx));
+            if (!rtx_net_dev)
             {
                 ${Log::info("cannot allocate the ethernet device context")};
                 error = -ENOMEM;
                 goto fail;
             }
-            SET_NETDEV_DEV(&${local.net_dev.netdev}, ${rtx_pci_dev.device});
-            strlcpy(${local.net_dev.netdev}.name, ${config.ifname}, sizeof(${local.net_dev.netdev}.name));
-            ${local.net_dev.netdev}.irq = ${rtx_pci_dev.irq};
-            ${local.net_dev.netdev}.netdev_ops = &rtx_ether_ops;
+            SET_NETDEV_DEV(${local.rtx_net_dev.k_net_dev}, ${rtx_pci_dev.device});
+            strlcpy(${local.rtx_net_dev.k_net_dev}->name,
+                    ${config.ifname},
+                    sizeof(${local.rtx_net_dev.k_net_dev}->name));
+            ${local.rtx_net_dev.k_net_dev}->irq = ${rtx_pci_dev.irq};
+            ${local.rtx_net_dev.k_net_dev}->netdev_ops = &rtx_ether_ops;
 
-            error = register_netdev(&${local.net_dev.netdev});
+            error = register_netdev(${local.rtx_net_dev.k_net_dev});
             if (error)
             {
                 ${Log::info("cannot register the driver in the net subsystem")};
@@ -273,13 +301,11 @@ with Ethernet, PCI, LKM, Log, Builtin
              * XXX: the cast is here because the compiler resolve the
              * type of rtx_pci_dev.pci_device to the type of
              * rtx_pci_dev instead of the type of rtx_pci_dev.pci_device.
-             *
-             * Also, I'm getting placeholder in the generated code if
-             * I don't open a scope here.
              */
-            {
-                ${PCI::AbstractDevice.ref} rtx_pdev = ${rtx_pci_dev.pci_device};
-                ${local.rtx_ether_ctx.init(local.net_dev, local.rtx_pdev)};
+            ${PCI::AbstractDevice.ref} workaround = ${rtx_pci_dev.pci_device};
+            ${cast local.workaround as PCI::AbstractDevice};
+            { /* XXX: I end up with a placeholder if I don't open a scope */
+                ${local.rtx_ether_ctx.init(local.rtx_net_dev, local.workaround)};
             }
 
             /* Register ourselves in the parent context: */
@@ -300,7 +326,7 @@ with Ethernet, PCI, LKM, Log, Builtin
             ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
             memcpy(${local.rtx_ether_ctx.perm_addr},
                    ${local.rtx_ether_ctx.dev_addr},
-                   ${local.net_dev.netdev}.addr_len);
+                   ${local.rtx_net_dev.k_net_dev}->addr_len);
         }
 
         /* This chunk should be removed (see #26) */
@@ -317,13 +343,12 @@ with Ethernet, PCI, LKM, Log, Builtin
          */
         chunk   PCI::pci_remove_hook(PCI::Device rtx_pci_dev)
         {
-            ${Ethernet::Device.ref} rtx_ether_ctx = ${rtx_pci_dev.context};
-            ${Ethernet::AbstractDevice.ref} rtx_ether_dev = (${Ethernet::AbstractDevice.ref})${local.rtx_ether_ctx.net_device};
-
+            ${Ethernet::Device.ref} rtx_ether_ctx = ${rtx_pci_dev.rtx_drv_context};
             BUG_ON(!rtx_ether_ctx);
 
-            unregister_netdev(&${local.rtx_ether_dev.netdev});
-            free_netdev(&${local.rtx_ether_dev.netdev});
+            ${Ethernet::AbstractDevice.ref} rtx_net_dev = ${local.rtx_ether_ctx.net_device};
+            unregister_netdev(${local.rtx_net_dev.k_net_dev});
+            free_netdev(${local.rtx_net_dev.k_net_dev});
         }
 
         /* This chunk should be removed (see #26) */
