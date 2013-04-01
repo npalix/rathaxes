@@ -16,15 +16,15 @@ with PCI, LKM, Log
         {
         }
 
-        method  set_context(Builtin::symbol ctx)
+        method  set_rtx_context(Builtin::symbol ctx)
         {
-            pci_set_drvdata(&${self}->data, ${ctx});
+            pci_set_drvdata(${self.k_pci_dev}, ${ctx});
         }
 
         map
         {
-            data: ${self}->data;
-            drv_data: pci_get_drvdata(&${self}->data);
+            k_pci_dev: ((struct pci_dev *)${self});
+            rtx_pci_ctx: pci_get_drvdata((struct pci_dev *)${self});
         }
     }
 
@@ -51,13 +51,13 @@ with PCI, LKM, Log
             {
                 int error;
                 ${PCI::AbstractDevice.ref} enable_pdev = self->pdev;
-                error = pci_enable_device(&${local.enable_pdev.data});
+                error = pci_enable_device(${local.enable_pdev.k_pci_dev});
                 if (error)
                     return error;
-                error = pci_request_selected_regions(&${local.enable_pdev.data}, self->bars, ${config.name});
+                error = pci_request_selected_regions(${local.enable_pdev.k_pci_dev}, self->bars, ${config.name});
                 if (error)
                     return error;
-                pci_set_master(&${local.enable_pdev.data});
+                pci_set_master(${local.enable_pdev.k_pci_dev});
                 return 0;
             }
 
@@ -66,8 +66,8 @@ with PCI, LKM, Log
                 ${PCI::AbstractDevice.ref}  disable_pdev = self->pdev;
                 if (self->ioaddr)
                     iounmap(self->ioaddr);
-                pci_release_selected_regions(&${local.disable_pdev.data}, self->bars);
-                pci_disable_device(&${local.disable_pdev.data});
+                pci_release_selected_regions(${local.disable_pdev.k_pci_dev}, self->bars);
+                pci_disable_device(${local.disable_pdev.k_pci_dev});
             }
         }
 
@@ -75,7 +75,7 @@ with PCI, LKM, Log
         {
             ${PCI::AbstractDevice.ref} workaround = (${PCI::AbstractDevice.ref})pdev;
             ${self}->pdev = ${pdev};
-            ${self}->bars = pci_select_bars(&${local.workaround.data}, IORESOURCE_MEM);
+            ${self}->bars = pci_select_bars(${local.workaround.k_pci_dev}, IORESOURCE_MEM);
             ${self}->ioaddr = NULL;
             ${self}->context = NULL;
         }
@@ -93,20 +93,20 @@ with PCI, LKM, Log
         method  select_ioaddr(Builtin::number bar)
         {
             ${PCI::AbstractDevice.ref} select_ioaddr_pdev = ${self}->pdev;
-            ${self}->ioaddr = pci_ioremap_bar(&${local.select_ioaddr_pdev.data}, ${bar});
+            ${self}->ioaddr = pci_ioremap_bar(${local.select_ioaddr_pdev.k_pci_dev}, ${bar});
         }
 
-        method  set_context(Builtin::symbol ctx)
+        method  set_rtx_drv_context(Builtin::symbol ctx)
         {
             ${self}->context = ctx;
         }
 
         map
         {
-            context: ${self}->context;
-            device: &${self}->pdev->data.dev;
+            rtx_drv_context: ${self}->context;
+            device: &((struct pci_dev *)(${self})->pdev)->dev;
             pci_device: ${self}->pdev;
-            irq: ${self}->pdev->data.irq;
+            irq: ((struct pci_dev *)(${self})->pdev)->irq;
             bars: ${self}->bars;
             ioaddr: ${self}->ioaddr;
             BAR_0: 0;
@@ -146,7 +146,7 @@ with PCI, LKM, Log
                     ${local.rtx_pci_dev.init(local.rtx_pdev)};
                 }
 
-                /* ${local.pdev.set_context(local.rtx_pci_dev)}; */
+                /* ${local.pdev.set_rtx_context(local.rtx_pci_dev)}; */
                 pci_set_drvdata(pdev, rtx_pci_dev);
 
                 /* ${local.rtx_pci_dev.enable()}; */
@@ -173,7 +173,7 @@ with PCI, LKM, Log
                 return 0;
 
             fail:
-                /* ${local.pdev.set_context(NULL)}; */
+                /* ${local.pdev.set_rtx_drv_context(NULL)}; */
                 pci_set_drvdata(pdev, NULL);
                 kfree(rtx_pci_dev);
                 return error;
@@ -198,8 +198,7 @@ with PCI, LKM, Log
             static void rtx_pci_remove(struct pci_dev *pdev)
             {
                 ${PCI::AbstractDevice.ref} rtx_pdev = (${PCI::AbstractDevice.ref})pdev;
-                ${PCI::Device.ref} rtx_pci_dev = ${rtx_pdev.drv_data};
-
+                ${PCI::Device.ref} rtx_pci_dev = ${rtx_pdev.rtx_pci_ctx};
                 BUG_ON(!rtx_pci_dev);
 
                 ${pointcut PCI::pci_remove_hook(local.rtx_pci_dev)};

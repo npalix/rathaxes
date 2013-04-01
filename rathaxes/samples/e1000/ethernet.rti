@@ -16,13 +16,14 @@ interface Ethernet : Socket, PCI, LKM, Builtin
     provided type   AbstractDevice
     {
         chunk       LKM::includes();
+        method      init(Builtin::symbol);
         decl        data_types();
-        attribute   Builtin::symbol.scalar netdev;
+        attribute   Builtin::symbol.scalar  k_net_dev;
         /*
          * XXX: should be a Ethernet::Device, but that causes a circular
          * dependency:
          */
-        attribute   Builtin::symbol.scalar rtx_ether_ctx;
+        attribute   Builtin::symbol.scalar  rtx_ether_ctx;
     }
 
     provided type   Device

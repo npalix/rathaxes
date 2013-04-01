@@ -18,7 +18,7 @@ with Device, LKM
 
         map
         {
-            data:   ${self}->data;
+            k_device: ((struct device *)${self});
         }
     }
 }

@@ -5,7 +5,7 @@ interface Socket : LKM, Device
     {
         chunk       LKM::includes();
         decl        data_types();
-        attribute   Builtin::symbol.scalar data;
+        attribute   Builtin::symbol.scalar k_sk_buff;
     }
 
     provided type   SKBuff

@@ -10,10 +10,15 @@ interface PCI : LKM, Builtin, Device
 
         chunk       LKM::includes();
         method      init(PCI::AbstractDevice);
-        method      set_context(Builtin::symbol);
-
-        attribute   Builtin::symbol.scalar data;
-        attribute   Builtin::symbol.scalar drv_data;
+        /*
+         * XXX: the argument should be a PCI::Device but that causes a circular
+         * dependency:
+         */
+        method      set_rtx_context(Builtin::symbol);
+ 
+        attribute   Builtin::symbol.scalar k_pci_dev;
+        /* XXX: should be PCI::Device (see above point) */
+        attribute   Builtin::symbol.scalar rtx_pci_ctx;
     }
 
     provided type   PCI::Device
@@ -27,9 +32,10 @@ interface PCI : LKM, Builtin, Device
         method      enable();
         method      disable();
         method      select_ioaddr(Builtin::number);
-        method      set_context(Builtin::symbol);
 
-        attribute   Builtin::symbol.scalar      context;
+        method      set_rtx_drv_context(Builtin::symbol);
+ 
+        attribute   Builtin::symbol.scalar      rtx_drv_context;
         attribute   Device::AbstractDevice.ref  device;
         attribute   PCI::AbstractDevice.ref     pci_device;
         attribute   Builtin::symbol.ref         ioaddr;

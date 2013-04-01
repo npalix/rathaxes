@@ -171,8 +171,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
             static int          rtx_e1000_tx_ring_tso_cksum_offload(${e1000::TxRing.ref} self, ${Socket::SKBuff.ref} skb)
             {
-                ${Socket::AbstractSKBuff.ref} abs_skb = skb->skbuff;
-                return skb_is_gso(&${local.abs_skb.data}) || ${local.abs_skb.data}.ip_summed == CHECKSUM_PARTIAL;
+                ${Socket::AbstractSKBuff.ref} k_skb = skb->skbuff;
+                return skb_is_gso(${local.k_skb.k_sk_buff}) || ${local.k_skb.k_sk_buff}->ip_summed == CHECKSUM_PARTIAL;
             }
 
             static void         rtx_e1000_tx_ring_put(${e1000::TxRing.ref} self, ${Socket::SKBuff.ref} skb)
@@ -187,16 +187,16 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                  * code shouldn't be aware of it and use something more
                  * abstract.
                  */
-                ${Socket::AbstractSKBuff.ref} abs_skb = skb->skbuff;
+                ${Socket::AbstractSKBuff.ref} k_skb = skb->skbuff;
                 ${e1000::TxDescriptor.ref} tx_desc = &self->base[self->tail];
                 tx_desc->lower.data = cpu_to_le32(
                         E1000_TXD_CMD_EOP  |
                         E1000_TXD_CMD_IFCS |
                         E1000_TXD_CMD_RS   |
-                        skb_headlen(&${local.abs_skb.data}));
+                        skb_headlen(${local.k_skb.k_sk_buff}));
                 tx_desc->upper.data = 0;
                 tx_desc->buff_addr = cpu_to_le64(skb->dma_handle);
-                memcpy(&self->skbuffs[self->tail], skb, sizeof(*skb));
+                memcpy(&self->skbuffs[self->tail], ${local.k_skb.k_sk_buff}, sizeof(*${local.k_skb.k_sk_buff}));
                 self->tail = (self->tail + 1) % ${config.tx_ring_size};
             }
 
@@ -732,7 +732,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             hw_ctx->rx_ring.size = ${config.rx_ring_size} * sizeof(*hw_ctx->rx_ring.base);
             hw_ctx->rx_ring.size = ALIGN(hw_ctx->rx_ring.size, 4096);
             hw_ctx->rx_ring.base = dma_alloc_coherent(
-                    &${rtx_ether_ctx.device},
+                    ${rtx_ether_ctx.device},
                     hw_ctx->rx_ring.size,
                     &hw_ctx->rx_ring.dma_base,
                     GFP_KERNEL);
@@ -750,11 +750,10 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              * Allocate the skbuffs, map them for DMA, and write their address
              * in the corresponding descriptor.
              */
-            ${Ethernet::AbstractDevice.ref} rtx_ether_dev = ${rtx_ether_ctx.net_device};
             for (i = 0; i != ${config.rx_ring_size}; ++i)
             {
-                hw_ctx->rx_ring.skbuffs[i].skbuff = (${Socket::AbstractSKBuff.ref})netdev_alloc_skb(
-                        &${rtx_ether_dev.netdev},
+                hw_ctx->rx_ring.skbuffs[i].skbuff = (${Socket::AbstractSKBuff}*)netdev_alloc_skb(
+                        ${rtx_ether_ctx.net_device.k_net_dev}, /* XXX: .k_net_dev isn't expanded here */
                         ${config.rx_buffer_len});
                 if (!hw_ctx->rx_ring.skbuffs[i].skbuff)
                 {
@@ -762,11 +761,11 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                     goto err_skbuffs_alloc;
                 }
                 hw_ctx->rx_ring.skbuffs[i].dma_handle = dma_map_single(
-                        &${rtx_ether_ctx.device},
-                        &hw_ctx->rx_ring.skbuffs[i].skbuff->data,
+                        ${rtx_ether_ctx.device},
+                        (struct sk_buff *)hw_ctx->rx_ring.skbuffs[i].skbuff, /* XXX leaking cast */
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
-                int dma_error = dma_mapping_error(&${rtx_ether_ctx.device},
+                int dma_error = dma_mapping_error(${rtx_ether_ctx.device},
                         hw_ctx->rx_ring.skbuffs[i].dma_handle);
                 if (dma_error)
                 {
@@ -818,7 +817,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             hw_ctx->tx_ring.size = ${config.tx_ring_size} * sizeof(*hw_ctx->tx_ring.base);
             hw_ctx->tx_ring.size = ALIGN(hw_ctx->tx_ring.size, 4096);
             hw_ctx->tx_ring.base = dma_alloc_coherent(
-                    &${rtx_ether_ctx.device},
+                    ${rtx_ether_ctx.device},
                     hw_ctx->tx_ring.size,
                     &hw_ctx->tx_ring.dma_base,
                     GFP_KERNEL);
@@ -861,15 +860,16 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             while (i--)
             {
                 dma_unmap_single(
-                        &${rtx_ether_ctx.device},
+                        ${rtx_ether_ctx.device},
                         hw_ctx->rx_ring.skbuffs[i].dma_handle,
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
         err_skbuffs_map:
-                dev_kfree_skb(&hw_ctx->rx_ring.skbuffs[i].skbuff->data);
+                /* XXX leaking cast: */
+                dev_kfree_skb((struct sk_buff *)hw_ctx->rx_ring.skbuffs[i].skbuff);
             }
 
-            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->rx_ring.size,
+            dma_free_coherent(${rtx_ether_ctx.device}, hw_ctx->rx_ring.size,
                     hw_ctx->rx_ring.base, hw_ctx->rx_ring.dma_base);
         err_rx_ring_alloc:
             return -ENOMEM;
@@ -887,8 +887,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
     {
         chunk   ::CALL()
         {
-            ${e1000::Context.ref} hw_ctx;
-            hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+            /*
+             * XXX: Not generated if named "hw_ctx" (which is funny because
+             * it's used and works in the template right above this one):
+             */
+            ${e1000::Context.ref} hw_ctx_;
+            hw_ctx_ = &${rtx_ether_ctx}->hw_ctx;
 
             /*
              * Free the rx ring:
@@ -898,22 +902,26 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             for (int i = 0; i != ${config.rx_ring_size}; ++i)
             {
                 dma_unmap_single(
-                        &${rtx_ether_ctx.device},
-                        (dma_addr_t)hw_ctx->rx_ring.skbuffs[i].dma_handle,
+                        ${rtx_ether_ctx.device},
+                        (dma_addr_t)hw_ctx_->rx_ring.skbuffs[i].dma_handle,
                         ${config.rx_buffer_len},
                         DMA_FROM_DEVICE);
-                dev_kfree_skb(&hw_ctx->rx_ring.skbuffs[i].skbuff->data);
+                /* XXX Leaking cast
+                 * (We should go through the rtx types (Socket::SKBuff,
+                 * AbstractSKBuff)
+                 */
+                dev_kfree_skb((struct sk_buff *)hw_ctx_->rx_ring.skbuffs[i].skbuff);
             }
-            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->rx_ring.size,
-                    hw_ctx->rx_ring.base, hw_ctx->rx_ring.dma_base);
+            dma_free_coherent(${rtx_ether_ctx.device}, hw_ctx_->rx_ring.size,
+                    hw_ctx_->rx_ring.base, hw_ctx_->rx_ring.dma_base);
             ${Log::info("free_rx_tx: rx ring free'ed")};
 
             /*
              * Free the tx ring:
              * - Free the descriptors array.
              */
-            dma_free_coherent(&${rtx_ether_ctx.device}, hw_ctx->tx_ring.size,
-                    hw_ctx->tx_ring.base, hw_ctx->tx_ring.dma_base);
+            dma_free_coherent(${rtx_ether_ctx.device}, hw_ctx_->tx_ring.size,
+                    hw_ctx_->tx_ring.base, hw_ctx_->tx_ring.dma_base);
             ${Log::info("free_rx_tx: tx ring free'ed")};
         }
     }
@@ -971,13 +979,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             ${local.skb.init(kernel_skb)};
             hw_ctx = &${rtx_ether_ctx}->hw_ctx;
             tx_ring = &hw_ctx->tx_ring;
-            devp = (${Device::AbstractDevice.ref})&${rtx_ether_ctx.device};
+            devp = (${Device::AbstractDevice.ref})${rtx_ether_ctx.device};
 
             ${Log::info("xmit: skbuff details:")};
             /*
-             * skb is not expand on the bound C variable (should be rtx_skbuff),
-             * which is funny because it works for the sequence template call
-             * right after.
+             * skb does not expand on the bound C variable (should be
+             * rtx_skbuff), which is funny because it works for the
+             * sequence template call right after.
              */
             /*
              * XXX: doesn't work (I tried to pass self explicitely too):
@@ -1010,8 +1018,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
             /* 2. Map the data */
 
-            /* XXX: ${local.skb.map_to(local.devp)}; */
-            if (rtx_socket_skbuff_map(&skb, &${devp.data}, DMA_TO_DEVICE))
+            /* XXX: ${local.skb.map_to(devp.k_device)}; */
+            if (rtx_socket_skbuff_map(&skb, ${devp.k_device}, DMA_TO_DEVICE))
             {
                 ${Log::info("xmit: can't DMA map a SKbuff")};
                 goto err_skb_map_to;
@@ -1030,7 +1038,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         err_offload:
         err_skb_map_to:
             /* XXX: ${local.skb.unmap_to_and_free(local.dev)}; */
-            rtx_socket_skbuff_unmap_and_free(&skb, &${devp.data}, DMA_TO_DEVICE);
+            rtx_socket_skbuff_unmap_and_free(&skb, ${devp.k_device}, DMA_TO_DEVICE);
             return NETDEV_TX_OK;
         }
     }
