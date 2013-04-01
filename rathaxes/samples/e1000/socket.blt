@@ -22,20 +22,20 @@ with Socket, LKM, Device, Ethernet
     {
         decl  data_types()
         {
-            ${Socket::AbstractSKBuff}   *skbuff;
-            dma_addr_t                  dma_handle;
+            ${Socket::AbstractSKBuff.ref}   skbuff;
+            dma_addr_t                      dma_handle;
         }
 
         chunk   LKM::prototypes()
         {
-            static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff} *);
-            static int  rtx_socket_skbuff_map(${Socket::SKBuff} *, struct device *, enum dma_data_direction);
-            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff} *, struct device *, enum dma_data_direction);
+            static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff.ref});
+            static int  rtx_socket_skbuff_map(${Socket::SKBuff.ref}, struct device *, enum dma_data_direction);
+            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff.ref}, struct device *, enum dma_data_direction);
         }
 
         chunk   LKM::code()
         {
-            static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff} *self)
+            static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff.ref} self)
             {
                 WARN_ON(!self->skbuff);
 
@@ -44,8 +44,7 @@ with Socket, LKM, Device, Ethernet
                  * but Rathaxes doesn't support functions with a variable number of
                  * arguments yet.
                  */
-                ${Socket::AbstractSKBuff}   *skb = self->skbuff;
-                ${cast local.skb as Socket::AbstractSKBuff};
+                ${Socket::AbstractSKBuff.ref} skb = self->skbuff;
                 ${Ethernet::ProtocolId} ethernet_proto = { .id = be16_to_cpu(${local.skb.data}.protocol) };
                 static const char * const ip_summed_values[] = {
                     "none", "unnecessary", "complete", "partial"
@@ -65,12 +64,11 @@ with Socket, LKM, Device, Ethernet
                 );
             }
 
-            static int rtx_socket_skbuff_map(${Socket::SKBuff} *self,
+            static int rtx_socket_skbuff_map(${Socket::SKBuff.ref} self,
                                              struct device *dev,
                                              enum dma_data_direction direction)
             {
-                ${Socket::AbstractSKBuff}   *skb = self->skbuff;
-                ${cast local.skb as Socket::AbstractSKBuff};
+                ${Socket::AbstractSKBuff.ref}   skb = self->skbuff;
 
                 WARN_ON(!skb);
                 WARN_ON(!${local.skb.data}.data);
@@ -90,12 +88,11 @@ with Socket, LKM, Device, Ethernet
                 return 0;
             }
 
-            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff} *self,
+            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff.ref} self,
                                                          struct device *dev,
                                                          enum dma_data_direction direction)
             {
-                ${Socket::AbstractSKBuff}   *skb = self->skbuff;
-                ${cast local.skb as Socket::AbstractSKBuff};
+                ${Socket::AbstractSKBuff.ref}   skb = self->skbuff;
 
                 WARN_ON(!${local.skb});
                 WARN_ON(!${local.skb.data}.data);

@@ -32,7 +32,7 @@ with PCI, LKM, Log
     {
         decl    data_types()
         {
-            ${PCI::AbstractDevice}      *pdev;
+            ${PCI::AbstractDevice.ref}  pdev;
             int                         bars;
             /* It could be an array at some point: */
             unsigned char /* __iomem */ *ioaddr;
@@ -41,17 +41,16 @@ with PCI, LKM, Log
 
         chunk   LKM::prototypes()
         {
-            static int  rtx_pci_device_enable(${PCI::Device} *);
-            static void rtx_pci_device_disable(${PCI::Device} *);
+            static int  rtx_pci_device_enable(${PCI::Device.ref});
+            static void rtx_pci_device_disable(${PCI::Device.ref});
         }
 
         chunk   LKM::code()
         {
-            static int rtx_pci_device_enable(${PCI::Device} *self)
+            static int rtx_pci_device_enable(${PCI::Device.ref} self)
             {
                 int error;
-                ${PCI::AbstractDevice}  *enable_pdev = self->pdev;
-                ${cast local.enable_pdev as PCI::AbstractDevice};
+                ${PCI::AbstractDevice.ref} enable_pdev = self->pdev;
                 error = pci_enable_device(&${local.enable_pdev.data});
                 if (error)
                     return error;
@@ -62,10 +61,9 @@ with PCI, LKM, Log
                 return 0;
             }
 
-            static void rtx_pci_device_disable(${PCI::Device} *self)
+            static void rtx_pci_device_disable(${PCI::Device.ref} self)
             {
-                ${PCI::AbstractDevice}  *disable_pdev = self->pdev;
-                ${cast local.disable_pdev as PCI::AbstractDevice};
+                ${PCI::AbstractDevice.ref}  disable_pdev = self->pdev;
                 if (self->ioaddr)
                     iounmap(self->ioaddr);
                 pci_release_selected_regions(&${local.disable_pdev.data}, self->bars);
@@ -75,8 +73,7 @@ with PCI, LKM, Log
 
         method  init(PCI::AbstractDevice pdev)
         {
-            ${PCI::AbstractDevice} * workaround = (${PCI::AbstractDevice}*)pdev;
-            ${cast local.workaround as PCI::AbstractDevice};
+            ${PCI::AbstractDevice.ref} workaround = (${PCI::AbstractDevice.ref})pdev;
             ${self}->pdev = ${pdev};
             ${self}->bars = pci_select_bars(&${local.workaround.data}, IORESOURCE_MEM);
             ${self}->ioaddr = NULL;
@@ -95,8 +92,7 @@ with PCI, LKM, Log
 
         method  select_ioaddr(Builtin::number bar)
         {
-            ${PCI::AbstractDevice} *select_ioaddr_pdev = ${self}->pdev;
-            ${cast local.select_ioaddr_pdev as PCI::AbstractDevice};
+            ${PCI::AbstractDevice.ref} select_ioaddr_pdev = ${self}->pdev;
             ${self}->ioaddr = pci_ioremap_bar(&${local.select_ioaddr_pdev.data}, ${bar});
         }
 
@@ -131,9 +127,8 @@ with PCI, LKM, Log
                                                       const struct pci_device_id *pdev_id)
             {
                 int error;
-                ${PCI::Device} *rtx_pci_dev;
-                ${PCI::AbstractDevice}  *rtx_pdev = (${PCI::AbstractDevice}*)pdev;
-                ${cast local.rtx_pdev as PCI::AbstractDevice};
+                ${PCI::Device.ref} rtx_pci_dev;
+                ${PCI::AbstractDevice.ref} rtx_pdev = (${PCI::AbstractDevice.ref})pdev;
 
                 rtx_pci_dev = kmalloc(sizeof(*rtx_pci_dev), GFP_KERNEL);
                 if (!rtx_pci_dev)
@@ -173,12 +168,6 @@ with PCI, LKM, Log
                     goto fail;
                 }
 
-                /*
-                 * XXX: We have to cast here because the compiler is
-                 * confused by the fact that rtx_pci_dev is a
-                 * pointer.
-                 */
-                ${cast local.rtx_pci_dev as PCI::Device};
                 ${pointcut PCI::pci_probe_hook(local.rtx_pci_dev)};
 
                 return 0;
@@ -208,14 +197,11 @@ with PCI, LKM, Log
         {
             static void rtx_pci_remove(struct pci_dev *pdev)
             {
-                ${PCI::AbstractDevice}  *rtx_pdev = (${PCI::AbstractDevice}*)pdev;
-                ${cast local.rtx_pdev as PCI::AbstractDevice};
-                ${PCI::Device} *rtx_pci_dev = ${rtx_pdev.drv_data};
+                ${PCI::AbstractDevice.ref} rtx_pdev = (${PCI::AbstractDevice.ref})pdev;
+                ${PCI::Device.ref} rtx_pci_dev = ${rtx_pdev.drv_data};
 
                 BUG_ON(!rtx_pci_dev);
 
-                /* XXX: compiler confused by the pointer type. */
-                ${cast local.rtx_pci_dev as PCI::Device};
                 ${pointcut PCI::pci_remove_hook(local.rtx_pci_dev)};
 
                 /* ${local.rtx_pci_dev.disable()}; */

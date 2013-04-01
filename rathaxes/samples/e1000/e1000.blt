@@ -87,7 +87,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         decl    data_types()
         {
             unsigned int                    size;
-            ${e1000::RxDescriptor}          *base;
+            ${e1000::RxDescriptor.ref}      base;
             dma_addr_t                      dma_base;
             ${Socket::SKBuff}               skbuffs[${config.rx_ring_size}];
         }
@@ -124,7 +124,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         {
             unsigned int                    size;
             /* XXX: can't use ${e1000::TxDescriptor} here: */
-            ${e1000::TxDescriptor}          *base; /* rename to descs */
+            ${e1000::TxDescriptor.ref}      base; /* rename to descs */
             dma_addr_t                      dma_base;
             ${Socket::SKBuff}               skbuffs[${config.tx_ring_size}];
             unsigned short                  head;
@@ -133,20 +133,20 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   LKM::prototypes()
         {
-            static void         rtx_e1000_tx_ring_clean(${e1000::TxRing} *);
-            static unsigned int rtx_e1000_tx_ring_descriptors_remaining(${e1000::TxRing} *);
-            static int          rtx_e1000_tx_ring_tso_cksum_offload(${e1000::TxRing} *, ${Socket::SKBuff} *);
-            static void         rtx_e1000_tx_ring_put(${e1000::TxRing} *, ${Socket::SKBuff} *);
+            static void         rtx_e1000_tx_ring_clean(${e1000::TxRing.ref});
+            static unsigned int rtx_e1000_tx_ring_descriptors_remaining(${e1000::TxRing.ref});
+            static int          rtx_e1000_tx_ring_tso_cksum_offload(${e1000::TxRing.ref}, ${Socket::SKBuff.ref});
+            static void         rtx_e1000_tx_ring_put(${e1000::TxRing.ref}, ${Socket::SKBuff.ref});
             /* FIXME: See issue #54 */
-            static void         rtx_e1000_tx_ring_start_xmit(${e1000::TxRing} *, /*const*/ ${e1000::Context} *);
+            static void         rtx_e1000_tx_ring_start_xmit(${e1000::TxRing.ref}, /*const*/ ${e1000::Context.ref});
         }
 
         chunk   LKM::code()
         {
-            static void         rtx_e1000_tx_ring_clean(${e1000::TxRing} *self)
+            static void         rtx_e1000_tx_ring_clean(${e1000::TxRing.ref} self)
             {
-                ${e1000::TxDescriptor}  *tx_desc;
-                bool                    done;
+                ${e1000::TxDescriptor.ref}  tx_desc;
+                bool                        done;
 
                 for (; self->head != self->tail; self->head++)
                 {
@@ -159,7 +159,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                 pr_info("%s: tx_ring_clean: moving head to %d/%d", ${config.name}, self->head, ${config.tx_ring_size});
             }
 
-            static unsigned int rtx_e1000_tx_ring_descriptors_remaining(${e1000::TxRing} *self)
+            static unsigned int rtx_e1000_tx_ring_descriptors_remaining(${e1000::TxRing.ref} self)
             {
                 if (self->tail == self->head) /* ring is empty */
                     return 256; /* XXX: ${config.tx_ring_size}; */
@@ -169,14 +169,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                 return self->head - self->tail;
             }
 
-            static int          rtx_e1000_tx_ring_tso_cksum_offload(${e1000::TxRing} *self, ${Socket::SKBuff} *skb)
+            static int          rtx_e1000_tx_ring_tso_cksum_offload(${e1000::TxRing.ref} self, ${Socket::SKBuff.ref} skb)
             {
-                ${Socket::AbstractSKBuff} *abs_skb = skb->skbuff;
-                ${cast local.abs_skb as Socket::AbstractSKBuff};
+                ${Socket::AbstractSKBuff.ref} abs_skb = skb->skbuff;
                 return skb_is_gso(&${local.abs_skb.data}) || ${local.abs_skb.data}.ip_summed == CHECKSUM_PARTIAL;
             }
 
-            static void         rtx_e1000_tx_ring_put(${e1000::TxRing} *self, ${Socket::SKBuff} *skb)
+            static void         rtx_e1000_tx_ring_put(${e1000::TxRing.ref} self, ${Socket::SKBuff.ref} skb)
             {
                 WARN_ON(!skb);
 
@@ -188,9 +187,8 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                  * code shouldn't be aware of it and use something more
                  * abstract.
                  */
-                ${Socket::AbstractSKBuff} *abs_skb = skb->skbuff;
-                ${cast local.abs_skb as Socket::AbstractSKBuff};
-                ${e1000::TxDescriptor} *tx_desc = &self->base[self->tail];
+                ${Socket::AbstractSKBuff.ref} abs_skb = skb->skbuff;
+                ${e1000::TxDescriptor.ref} tx_desc = &self->base[self->tail];
                 tx_desc->lower.data = cpu_to_le32(
                         E1000_TXD_CMD_EOP  |
                         E1000_TXD_CMD_IFCS |
@@ -203,7 +201,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
             }
 
             /* FIXME: See issue #54 */
-            static void         rtx_e1000_tx_ring_start_xmit(${e1000::TxRing} *self, /*const*/ ${e1000::Context} *hw_ctx)
+            static void         rtx_e1000_tx_ring_start_xmit(${e1000::TxRing.ref} self, /*const*/ ${e1000::Context.ref} hw_ctx)
             {
                 pr_info("%s: start_xmit: moving tail to %d/%d", ${config.name}, self->tail, ${config.tx_ring_size});
                 rtx_e1000_register_write32(hw_ctx, E1000_TDT, self->tail);
@@ -271,7 +269,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
                                                Builtin::number irq)
         {
             {
-                ${e1000::Context} *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                ${e1000::Context.ref} hw_ctx = &${rtx_ether_ctx}->hw_ctx;
                 hw_ctx->bars = ${bars};
                 hw_ctx->ioaddr = ${ioaddr};
                 hw_ctx->irq = ${irq};
@@ -281,8 +279,9 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   Ethernet::adapter_reset(Ethernet::Device rtx_ether_ctx)
         {
             {
-                ${e1000::Context} *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
-                rtx_e1000_register_write32(hw_ctx, E1000_CTRL, E1000_CMD_RST);
+                /* XXX Naming this variable 'hw_ctx' kicks the decl out of the generated code */
+                ${e1000::Context.ref} tmp_hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                rtx_e1000_register_write32(tmp_hw_ctx, E1000_CTRL, E1000_CMD_RST);
                 udelay(10);
             }
         }
@@ -290,7 +289,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   Ethernet::adapter_load_mac_address(Ethernet::Device rtx_ether_ctx)
         {
             {
-                ${e1000::Context} *hw_ctx = &${rtx_ether_ctx}->hw_ctx;
+                ${e1000::Context.ref} hw_ctx = &${rtx_ether_ctx}->hw_ctx;
                 /* Shamelessly borrowed from Minix */
                 for (int i = 0; i < 3; ++i)
                 {
@@ -469,12 +468,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
     {
         chunk   LKM::prototypes()
         {
-            static void rtx_e1000_print_status(${e1000::Context} *);
+            static void rtx_e1000_print_status(${e1000::Context.ref});
         }
 
         chunk   LKM::code()
         {
-            static void rtx_e1000_print_status(${e1000::Context} *hw_ctx)
+            static void rtx_e1000_print_status(${e1000::Context.ref} hw_ctx)
             {
                 unsigned int status = rtx_e1000_register_read32(hw_ctx, E1000_STATUS);
                     ${Log::info("card status:")};
@@ -519,13 +518,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   LKM::prototypes()
         {
             /* FIXME: See issue #54 */
-            static unsigned int    rtx_e1000_register_read32(/*const*/ ${e1000::Context} *, unsigned int);
+            static unsigned int    rtx_e1000_register_read32(/*const*/ ${e1000::Context.ref}, unsigned int);
         }
 
         chunk   LKM::code()
         {
             /* FIXME: See issue #54 */
-            static unsigned int    rtx_e1000_register_read32(/*const*/ ${e1000::Context} *ctx, unsigned int reg_offset)
+            static unsigned int    rtx_e1000_register_read32(/*const*/ ${e1000::Context.ref} ctx, unsigned int reg_offset)
             {
                 return ioread32(ctx->ioaddr + reg_offset);
             }
@@ -542,13 +541,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   LKM::prototypes()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_write32(/*const*/ ${e1000::Context} *, unsigned int, unsigned int);
+            static void rtx_e1000_register_write32(/*const*/ ${e1000::Context.ref}, unsigned int, unsigned int);
         }
 
         chunk   LKM::code()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_write32(/*const*/ ${e1000::Context} *ctx, unsigned int reg_offset, unsigned int value)
+            static void rtx_e1000_register_write32(/*const*/ ${e1000::Context.ref} ctx, unsigned int reg_offset, unsigned int value)
             {
                 iowrite32(value, ctx->ioaddr + reg_offset);
             }
@@ -565,13 +564,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   LKM::prototypes()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_set32(/*const*/ ${e1000::Context} *, unsigned int, unsigned int);
+            static void rtx_e1000_register_set32(/*const*/ ${e1000::Context.ref}, unsigned int, unsigned int);
         }
 
         chunk   LKM::code()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_set32(/*const*/ ${e1000::Context} *ctx, unsigned int reg_offset, unsigned int value)
+            static void rtx_e1000_register_set32(/*const*/ ${e1000::Context.ref} ctx, unsigned int reg_offset, unsigned int value)
             {
                 iowrite32(rtx_e1000_register_read32(ctx, reg_offset) | value, ctx->ioaddr + reg_offset);
             }
@@ -588,13 +587,13 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   LKM::prototypes()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_unset32(/*const*/ ${e1000::Context} *, unsigned int, unsigned int);
+            static void rtx_e1000_register_unset32(/*const*/ ${e1000::Context.ref}, unsigned int, unsigned int);
         }
 
         chunk   LKM::code()
         {
             /* FIXME: See issue #54 */
-            static void rtx_e1000_register_unset32(/*const*/ ${e1000::Context} *ctx, unsigned int reg_offset, unsigned int value)
+            static void rtx_e1000_register_unset32(/*const*/ ${e1000::Context.ref} ctx, unsigned int reg_offset, unsigned int value)
             {
                 iowrite32(rtx_e1000_register_read32(ctx, reg_offset) & ~value, ctx->ioaddr + reg_offset);
             }
@@ -707,7 +706,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              * e1000::Context? (but we would need to make it point back to
              * the struct net_device)
              */
-            ${e1000::Context} *hw_ctx;
+            ${e1000::Context.ref} hw_ctx;
             hw_ctx = &${rtx_ether_ctx}->hw_ctx;
 
             /*
@@ -816,11 +815,10 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              * Allocate the skbuffs, map them for DMA, and write their address
              * in the corresponding descriptor.
              */
-            ${Ethernet::AbstractDevice} *rtx_ether_dev = ${rtx_ether_ctx.net_device};
-            ${cast local.rtx_ether_dev as Ethernet::AbstractDevice};
+            ${Ethernet::AbstractDevice.ref} rtx_ether_dev = ${rtx_ether_ctx.net_device};
             for (i = 0; i != ${config.rx_ring_size}; ++i)
             {
-                hw_ctx->rx_ring.skbuffs[i].skbuff = (${Socket::AbstractSKBuff}*)  netdev_alloc_skb(
+                hw_ctx->rx_ring.skbuffs[i].skbuff = (${Socket::AbstractSKBuff.ref})netdev_alloc_skb(
                         &${rtx_ether_dev.netdev},
                         ${config.rx_buffer_len});
                 if (!hw_ctx->rx_ring.skbuffs[i].skbuff)
@@ -954,7 +952,7 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
     {
         chunk   ::CALL()
         {
-            ${e1000::Context} *hw_ctx;
+            ${e1000::Context.ref} hw_ctx;
             hw_ctx = &${rtx_ether_ctx}->hw_ctx;
 
             /*
@@ -1031,14 +1029,14 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
              */
 
             ${Socket::SKBuff} skb;
-            ${e1000::Context} *hw_ctx;
-            ${e1000::TxRing} *tx_ring;
-            ${Device::AbstractDevice} *devp;
+            ${e1000::Context.ref} hw_ctx;
+            ${e1000::TxRing.ref} tx_ring;
+            ${Device::AbstractDevice.ref} devp;
 
             ${local.skb.init(kernel_skb)};
             hw_ctx = &${rtx_ether_ctx}->hw_ctx;
             tx_ring = &hw_ctx->tx_ring;
-            devp = (${Device::AbstractDevice}*) &${rtx_ether_ctx.device};
+            devp = (${Device::AbstractDevice.ref})&${rtx_ether_ctx.device};
 
             ${Log::info("xmit: skbuff details:")};
             /*
