@@ -221,9 +221,9 @@ FUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
 
         ADD_CUSTOM_TARGET("${NAME}" ALL DEPENDS "${KERNEL_OBJECT_NAME}")
 
-ELSE (${SYSTEM} MATCHES "Linux")
-	MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
-ENDIF (${SYSTEM} MATCHES "Linux")
+    ELSE (${SYSTEM} MATCHES "Linux")
+            MESSAGE(STATUS "Don't know how to build kernel modules for ${SYSTEM} (yet)")
+    ENDIF (${SYSTEM} MATCHES "Linux")
 ENDFUNCTION(ADD_RATHAXES_LKM NAME RATHAXES_SOURCE)
 
 # Like FIND_PACKAGE but also search in the Rathaxes directories. Usage:
