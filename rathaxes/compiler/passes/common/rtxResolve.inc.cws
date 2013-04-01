@@ -739,9 +739,13 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 local source_type;
 
                 // First retrieve the type of the value we just resolved.
-                if (getArraySize(subidentifiers) != 0)
+                if (getArraySize(subidentifiers) == 1)
                 {
-                    ref source_type = theChunk.type_map[varName];
+                    // If there's a resval argument for it, then take the source type from there
+                    // Otherwise, use the chunk's type_map.
+                    if (rtxNodeArg_getRType(self, source_type) == false)
+                    { ref source_type = theChunk.type_map[varName]; }
+                    rtxNodeArg_getRType(self, source_type);
                 }
                 else
                 {
@@ -1100,6 +1104,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
                 return false;
             }
 
+
             if (instanceChunk<c_tree.instanceKey>(resVals, c_tree.body, source_tree) != false)
             {
                 rtxResolve_InsertCode(theBlock, startIdx, phName, phIdx, c_tree.body);
@@ -1115,6 +1120,7 @@ function inject_pointcut<T>(resolverValues : node, treeNode : node,
         if (errcount != 0)
             return false;
     }
+
     return true;
 }
 
@@ -1309,39 +1315,69 @@ function type_map<T>(resolverValues : node,
                      placeHolder : node, out_node : node, source_tree : reference)
 {
     traceLine("rtxResolve:<LOG> type_map<"+T+"> for variable '"+mappedIds#[0]+"' ("+toString(mappedIds)+")");
-    local   theTemplate;
     local   identifiers;
-
-    if (rtxLink_FindUniqueTemplate(theRtype, source_tree.config, theTemplate) == false)
-        return false;
+    local   actual_resVals;
+    local   actual_rtype;
+    setall actual_rtype = theRtype;
+    setall actual_resVals = resolverValues;
 
     setall identifiers = mappedIds;
     removeFirstElement(identifiers);
     if (getArraySize(identifiers) > 0)
     {
-        // Now that we have selected an unique template, load the tree+script
-        local   subtree;
-        rtxLink_LoadItem(theTemplate, subtree);
-        localref theMapping = subtree.mapping.body.block[identifiers#front];
-
-        // Call the right mapping function (based on hash + identifier mapped).
-        traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
-                  + theMapping.instanceKey);
-
-        if (instanceMapping<theMapping.instanceKey>(resolverValues, subtree, source_tree) == false)
+        local self_arg;
+        local prev_expr;
+        if (rtxNodeArgs_GetArgByName(resolverValues, "self", self_arg) == false)
         {
-            traceLine(RED + "[Error] type_map<"+T+">: instanceMapping<\""+theMapping.instanceKey+"\"> failed");
-            traceLine(RED + "        for mapping at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
+            traceLine(RED + "[Error] type_map<"+T+">: Could not retrieve self." + DEFAULT_COLOR);
             return false;
         }
+        rtxNodeArg_getValue(self_arg, prev_expr);
 
-        setall out_node = theMapping.body.expr;
+        while (getArraySize(identifiers) > 0)
+        {
+            local   theTemplate;
+            local   subtree;
+            if (rtxLink_FindUniqueTemplate(actual_rtype, source_tree.config, theTemplate) == false)
+                return false;
+            rtxLink_LoadItem(theTemplate, subtree);
+            localref theMapping = subtree.mapping.body.block[identifiers#front];
+
+            // Call the right mapping function (based on hash + identifier mapped).
+            traceLine("type_map<"+T+">:<LOG> type_map<" + T + ">: Calling mapping key : "
+                      + theMapping.instanceKey);
+
+            if (instanceMapping<theMapping.instanceKey>(actual_resVals, subtree, source_tree) == false)
+            {
+                traceLine(RED + "[Error] type_map<"+T+">: instanceMapping<\""+theMapping.instanceKey+"\"> failed");
+                traceLine(RED + "        for mapping at " + placeHolder#parent.location + "." + DEFAULT_COLOR);
+                return false;
+            }
+
+            // Update actual rtype.
+            local rtypeName = rtxRTypeName<actual_rtype.type>(actual_rtype);
+            local field_rtype;
+            if (rtxTypingLookup_TypeField<rtypeName>(actual_rtype, identifiers#front, placeHolder#root, source_tree, field_rtype) == false)
+            {
+                traceLine(RED + "[Error] Could not resolve type field '"
+                          + identifiers#front + "' for type " + rtypeName + DEFAULT_COLOR);
+                return false;
+            }
+
+            setall prev_expr = theMapping.body.expr;
+            setall actual_rtype = field_rtype;
+            clearVariable(actual_resVals);
+            rtxNodeArgs(actual_resVals);
+            rtxNodeArgs_AppendArg(actual_resVals, "self", actual_rtype, prev_expr);
+            removeFirstElement(identifiers);
+        }
     }
-    else
+
+    // Now, resolve as a "self"
     {
         local self;
         local val;
-        if (rtxNodeArgs_GetArgByName(resolverValues, "self", self) == false)
+        if (rtxNodeArgs_GetArgByName(actual_resVals, "self", self) == false)
         {
             error(RED + "Could not get value..." + DEFAULT_COLOR);
         }
