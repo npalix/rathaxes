@@ -177,6 +177,10 @@ function rtxResolve_RefScalarTranscribe(expr : node, in_type : value, out_type :
     if (out_type == "ref")
         out_type = "pointer";
 
+    // Then, check if we need any changes or not for the out_type
+    if (out_type == "copy") // Copy means that we keep the current state, whether pointer or scalar.
+        return true;
+
     // make sure in and out types are either scalar or ref
     if ((in_type != "scalar" && in_type != "pointer")
         || (out_type != "scalar" && out_type != "pointer"))
@@ -593,7 +597,7 @@ function    inject<"__rtx_rtype__">(resolverValues : node, treeNode : node,
     // We want to set the mangled typedef name into the ctype's identifier:
     // (equivalent of: theDecl.ctype.identifier = COMPUTED_NAME;)
     local_node#parent.ref_placeholder.identifier = rtxResolve_MangleTypeName(theRtype, theRtype.qualifier != "scalar");
-    
+
     return true;
 }
 
@@ -756,7 +760,6 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                 { error(RED + "[Error] Cannot transcribe an expression from " + in_type + " to " + out_type + DEFAULT_COLOR); }
                 setall local_node#parent.ref_placeholder = mapping;
             }
-
         }
         else if (isBuiltinVariable(varName)) // Mapping for a  builtin type
         {
