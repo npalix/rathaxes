@@ -194,12 +194,13 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 // in unstrict mode
                 if (existVariable(ctype_ref.unknown) && $getArraySize(ctype_ref.unknown) > 0$)
                 {       
-                        ctype_ref.identifier = ctype_ref.unknown#back;
-                        removeVariable(ctype_ref.unknown);
+                    ctype_ref.identifier = ctype_ref.unknown#back;
+                    removeVariable(ctype_ref.unknown);
                 }
                 // name of a type
                 if (existVariable(ctype_ref.identifier) && rtxPH_havePlaceHolder(ctype_ref.identifier))
                 { rtxPH_mapPlaceHolder(ctype_ref.identifier, compile, node_idx, "target_decl"); }
+
                 // composed
                 if (existVariable(ctype_ref.list))
                 {
@@ -266,7 +267,7 @@ function	rtxPH_compile<"__fwd_decl__">(local_node : node, compile : node, node_i
 // So do not bother with subtypes and check them all and then recurse.
 function        rtxPH_compile<"__expr__">(local_node : node, compile : node, node_idx : value)
 {
-        if (!existVariable(this.phtype)) insert this.phtype = "scalar";/////
+        if (!existVariable(this.phtype)) insert this.phtype = "copy";//// set to default
         // left for bin operator
         if (existVariable(local_node.left))
         { 
@@ -275,7 +276,7 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
                 // all post expr case [] or (), are pointer
                 if (local_node.expr_type == "__postexpr__") { insert this.phtype = "pointer";}////
                 rtxPH_compile<local_node.left.type>(local_node.left, compile, node_idx); 
-                insert this.phtype = "scalar";////
+                insert this.phtype = "copy";//// set to default
         }
         // right for bin operator
         if (existVariable(local_node.right))
@@ -283,7 +284,7 @@ function        rtxPH_compile<"__expr__">(local_node : node, compile : node, nod
                 // the unary *
                 if (local_node.operator == "*" && local_node.expr_type == "__unary__") {insert this.phtype = "pointer";}////
                 rtxPH_compile<local_node.right.type>(local_node.right, compile, node_idx); 
-                insert this.phtype = "scalar";////
+                insert this.phtype = "copy";//// set to default
         }
         // if,while
         if (existVariable(local_node.condition))
