@@ -292,15 +292,20 @@ function    rtxMeta_parsePlaceHolder(compile : node)
 
                 // Here, we allow casting a local C variable into a rathaxes type. This casts lasts for the current chunk's scope.
                 tpl_cast(theCast : node) ::=
+/**/                    => local sQualifier = "scalar";
                         "cast"
-                        => local typeId;
                         #continue(sError, "A cast can only be applied to a local variable (\"local.\" is expected).")
+                        => local typeId;
                         "local" '.' rootidentifier:varName
                         #continue(sError, "Expected 'as' token for a rathaxes cast.")
                         "as"
                         #continue(sError, "Expected Type name for casting type.")
                         rtx_scoped_identifier(typeId, false)
-                        #check(rtxNodeCast(theCast, varName, typeId))
+                        [
+                            "."
+                            tpl_type_qualifier:sQualifier
+                        ]?
+                        #check(rtxNodeCast(theCast, varName, typeId, sQualifier))
                 ;
 
                 tpl_type_qualifier ::=
