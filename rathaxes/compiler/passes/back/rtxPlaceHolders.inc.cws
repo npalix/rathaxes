@@ -213,9 +213,65 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                             { rtxPH_compile<item.type>(item, compile, node_idx); }
                         }
                 }
-                // recurse param list
+                // recurse param list + Resolve unknown before going down.
                 if (existVariable(ctype_ref.param))
-                { rtxPH_compile<ctype_ref.param.type>(ctype_ref.param, compile, node_idx);}
+                {
+                    // XXX FIXME
+                    // This is a workaround for a bug involving the unstrict cnorm.
+                    // We patch-up the function's arg's types and names before checking further.
+                    local argnames;
+                    foreach param in ctype_ref.param.block
+                    {
+                        localref theType = param;
+                        localref param_ctype = theType.ctype;
+
+                        //First setup the iterator over the right param to retrieve name.
+                        local name_it;
+                        local it_idx = 0;
+                        createIterator(name_it, ctype_ref.param.map);
+                        while (it_idx != index(param))
+                        {
+                            next(name_it);
+                            increment(it_idx);
+                        }
+                        local theName = key(name_it);
+
+                        if (existVariable(param_ctype.unknown))
+                        {
+                            local placeholder_key = false;
+                            foreach token in param_ctype.unknown
+                            {
+                                local theKey = key(token);
+                                if (rtxPH_havePlaceHolder(theKey))
+                                {
+                                    placeholder_key = theKey;
+                                    break ;
+                                }
+                            }
+                            if (placeholder_key == false) // no token found
+                            {
+                                param_ctype.identifier = param_ctype.unknown#back;
+                                removeVariable(param_ctype.unknown);
+                            }
+                            else // placeholder found -> Set as type, use other var as name.
+                            {
+                                param_ctype.identifier = placeholder_key;
+                                removeVariable(param_ctype.unknown[placeholder_key]);
+                                local last_it;
+                                createReverseIterator(last_it, param_ctype.unknown);
+                                theName = key(last_it);
+                                removeVariable(param_ctype.unknown);
+                                insert param.name = theName;
+                            }
+                        }
+                        insert argnames[theName] = index(param);
+                    }
+                    setall ctype_ref.param.map = argnames;
+
+                    rtxPH_compile<ctype_ref.param.type>(ctype_ref.param, compile, node_idx);
+                }
+
+
                 // if type is enum
                 if (existVariable(ctype_ref.enum))
                 {
