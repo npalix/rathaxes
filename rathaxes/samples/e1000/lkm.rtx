@@ -4,13 +4,6 @@ device LKM use LKM, PCI, Ethernet, Log, Socket
     {
         Log::info("opening the device");
 
-        /*
-         * Maybe e1000::create_device should be called from here, to be
-         * more coherent.
-         */
-
-        e1000::setup_interrupt_handler(dev);
-        Log::info("interrupt handler installed");
 
         e1000::set_up_device(dev);
         Log::info("device activated");
@@ -32,9 +25,6 @@ device LKM use LKM, PCI, Ethernet, Log, Socket
          */
         e1000::free_rx_tx(dev);
         Log::info("free'ed up rx/tx resources");
-
-        e1000::free_interrupt_handler(dev);
-        Log::info("interrupt handler free'ed");
     }
 
     Ethernet::interrupt_handler(Ethernet::Device dev)

@@ -247,7 +247,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         {
             int                         bars;
             unsigned char /* __iomem */ *ioaddr;
-            int                         irq;
 
             ${e1000::RxRing}    rx_ring;
             ${e1000::TxRing}    tx_ring;
@@ -265,14 +264,12 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
 
         chunk   Ethernet::adapter_init_context(Ethernet::Device rtx_ether_ctx,
                                                Builtin::number bars,
-                                               Builtin::symbol ioaddr,
-                                               Builtin::number irq)
+                                               Builtin::symbol ioaddr)
         {
             {
                 ${e1000::Context.ref} hw_ctx = &${rtx_ether_ctx}->hw_ctx;
                 hw_ctx->bars = ${bars};
                 hw_ctx->ioaddr = ${ioaddr};
-                hw_ctx->irq = ${irq};
             }
         }
 
@@ -602,68 +599,6 @@ with e1000, Ethernet, Socket, PCI, LKM, Log, Builtin
         chunk   ::CALL()
         {
             rtx_e1000_register_unset32(${ctx}, ${reg_offset}, ${value});
-        }
-    }
-
-    template sequence   e1000::setup_interrupt_handler(Ethernet::Device rtx_ether_ctx)
-    {
-        chunk   LKM::includes()
-        {
-            #include <linux/interrupt.h>
-        }
-
-        chunk   LKM::prototypes()
-        {
-            static int e1000_setup_interrupt_handler(${Ethernet::Device} *);
-        }
-
-        chunk   LKM::code()
-        {
-            static int e1000_setup_interrupt_handler(${Ethernet::Device} *rtx_ether_ctx)
-            {
-                int error;
-
-                error = request_irq(rtx_ether_ctx->hw_ctx.irq,
-                        rtx_ethernet_interrupt_handler,
-                        IRQF_SHARED,
-                        ${config.name},
-                        rtx_ether_ctx);
-
-                if (error)
-                    ${Log::info("cannot register the interrupt handler")};
-
-                return error;
-            }
-        }
-
-        chunk   ::CALL()
-        {
-                int error = e1000_setup_interrupt_handler(${rtx_ether_ctx});
-                if (error)
-                {
-                        return error;
-                }
-        }
-    }
-
-    template sequence   free_interrupt_handler(Ethernet::Device rtx_ether_ctx)
-    {
-        chunk   prototypes()
-        {
-            static void e1000_free_interrupt_handler(${Ethernet::Device} *rtx_ether_ctx);
-        }
-
-        chunk code()
-        {
-            static void e1000_free_interrupt_handler(${Ethernet::Device} *rtx_ether_ctx)
-            {
-                free_irq(rtx_ether_ctx->hw_ctx.irq, rtx_ether_ctx);
-            }
-        }
-
-        chunk ::CALL()
-        {
-            e1000_free_interrupt_handler(${rtx_ether_ctx});
         }
     }
 
