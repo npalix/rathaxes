@@ -18,6 +18,11 @@ interface Ethernet : Socket, PCI, LKM, Builtin
         chunk       LKM::includes();
         decl        data_types();
         attribute   Builtin::symbol.scalar netdev;
+        /*
+         * XXX: should be a Ethernet::Device, but that causes a circular
+         * dependency:
+         */
+        attribute   Builtin::symbol.scalar rtx_ether_ctx;
     }
 
     provided type   Device
@@ -34,12 +39,14 @@ interface Ethernet : Socket, PCI, LKM, Builtin
          * I'd like to use better names here, but I'd like to understand the
          * difference between the two first:
          */
-        attribute   Builtin::symbol.ref perm_addr;
-        attribute   Builtin::symbol.ref dev_addr;
+        attribute   Builtin::symbol.ref     perm_addr;
+        attribute   Builtin::symbol.ref     dev_addr;
+        attribute   Builtin::symbol.scalar  irq;
     }
 
     required sequence   open(Ethernet::Device)
     {
+        provided chunk  LKM::includes();
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
     }
@@ -69,8 +76,7 @@ interface Ethernet : Socket, PCI, LKM, Builtin
 
         provided pointcut   Ethernet::adapter_init_context(Ethernet::Device,
                                                            Builtin::number,
-                                                           Builtin::symbol,
-                                                           Builtin::number);
+                                                           Builtin::symbol);
         provided pointcut   Ethernet::adapter_reset(Ethernet::Device);
         provided pointcut   Ethernet::adapter_load_mac_address(Ethernet::Device);
     }

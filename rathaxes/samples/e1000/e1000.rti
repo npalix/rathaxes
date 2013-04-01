@@ -13,8 +13,7 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
         /* Callbacks/Hooks which should probably be in the front-end: */
         chunk       Ethernet::adapter_init_context(Ethernet::Device,
                                                    Builtin::number,
-                                                   Builtin::symbol,
-                                                   Builtin::number);
+                                                   Builtin::symbol);
         chunk       Ethernet::adapter_reset(Ethernet::Device);
         chunk       Ethernet::adapter_load_mac_address(Ethernet::Device);
     }
@@ -79,21 +78,6 @@ interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
      * not working as wished.
      */
     provided sequence   print_status(Ethernet::Device)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   setup_interrupt_handler(Ethernet::Device)
-    {
-        provided chunk  LKM::includes(); // works without this one
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   free_interrupt_handler(Ethernet::Device)
     {
         provided chunk  LKM::prototypes();
         provided chunk  LKM::code();
