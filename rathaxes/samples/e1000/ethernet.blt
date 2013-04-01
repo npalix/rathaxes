@@ -73,8 +73,8 @@ with Ethernet, PCI, LKM, Log
              * I think it's useless to use the ${PCI::AbstractDevice} "abstraction"
              * here, since we already are in a Linux specific context.
              */
-            ${PCI::AbstractDevice}          *pci_dev;
-            ${Ethernet::AbstractDevice}     *net_dev;
+            ${PCI::AbstractDevice.ref}          pci_dev;
+            ${Ethernet::AbstractDevice.ref}     net_dev;
 
             /*
              * In the long-term, this may disappear for a new concept allowing
@@ -120,9 +120,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_open(struct net_device *dev)
             {
-                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(dev);
+                ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(dev);
 
-                ${cast local.rtx_ether_ctx as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
 
                 return 0;
@@ -141,10 +140,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_xmit(struct sk_buff* kernel_skb, struct net_device *net_dev)
             {
-                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(net_dev);
-                ${Socket::AbstractSKBuff} *rtx_skb = (${Socket::AbstractSKBuff}*) kernel_skb;
-                ${cast local.rtx_skb as Socket::AbstractSKBuff};
-                ${cast local.rtx_ether_ctx as Ethernet::Device};
+                ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(net_dev);
+                ${Socket::AbstractSKBuff.ref} rtx_skb = (${Socket::AbstractSKBuff.ref}) kernel_skb;
 
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx, local.rtx_skb)};
             }
@@ -162,9 +159,8 @@ with Ethernet, PCI, LKM, Log
         {
             static int  rtx_ethernet_close(struct net_device *dev)
             {
-                ${Ethernet::Device} *rtx_ether_ctx = netdev_priv(dev);
+                ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(dev);
 
-                ${cast local.rtx_ether_ctx as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
 
                 return 0;
@@ -187,9 +183,8 @@ with Ethernet, PCI, LKM, Log
         {
             static enum irqreturn   rtx_ethernet_interrupt_handler(int irq, void *dev_id)
             {
-                ${Ethernet::Device} *rtx_ether_ctx = dev_id;
+                ${Ethernet::Device.ref} rtx_ether_ctx = dev_id;
 
-                ${cast local.rtx_ether_ctx as Ethernet::Device};
                 ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
 
                 return IRQ_NONE;
@@ -219,11 +214,10 @@ with Ethernet, PCI, LKM, Log
          */
         chunk PCI::pci_probe_hook(PCI::Device rtx_pci_dev)
         {
-            ${Ethernet::Device} *rtx_ether_ctx;
-            ${Ethernet::AbstractDevice} *net_dev;
-            ${cast local.net_dev as Ethernet::AbstractDevice};
+            ${Ethernet::Device.ref} rtx_ether_ctx;
+            ${Ethernet::AbstractDevice.ref} net_dev;
 
-            net_dev = (${Ethernet::AbstractDevice}*) alloc_etherdev(sizeof(*rtx_ether_ctx));
+            net_dev = (${Ethernet::AbstractDevice.ref})alloc_etherdev(sizeof(*rtx_ether_ctx));
             if (!net_dev)
             {
                 ${Log::info("cannot allocate the ethernet device context")};
@@ -252,8 +246,7 @@ with Ethernet, PCI, LKM, Log
              * I don't open a scope here.
              */
             {
-                ${PCI::AbstractDevice} *rtx_pdev = ${rtx_pci_dev.pci_device};
-                ${cast local.rtx_pdev as PCI::AbstractDevice};
+                ${PCI::AbstractDevice.ref} rtx_pdev = ${rtx_pci_dev.pci_device};
                 ${local.rtx_ether_ctx.init(local.net_dev, local.rtx_pdev)};
             }
 
@@ -270,7 +263,6 @@ with Ethernet, PCI, LKM, Log
             int irq = ${rtx_pci_dev.irq};
             ${cast local.bars as Builtin::number};
             ${cast local.irq as Builtin::number};
-            ${cast local.rtx_ether_ctx as Ethernet::Device};
             ${pointcut Ethernet::adapter_init_context(local.rtx_ether_ctx,
                                                       local.bars,
                                                       local.ioaddr,
@@ -296,13 +288,11 @@ with Ethernet, PCI, LKM, Log
          */
         chunk   PCI::pci_remove_hook(PCI::Device rtx_pci_dev)
         {
-            ${Ethernet::Device} *rtx_ether_ctx = ${rtx_pci_dev.context};
-            ${Ethernet::AbstractDevice} *rtx_ether_dev = (${Ethernet::AbstractDevice}*) ${local.rtx_ether_ctx.net_device};
+            ${Ethernet::Device.ref} rtx_ether_ctx = ${rtx_pci_dev.context};
+            ${Ethernet::AbstractDevice.ref} rtx_ether_dev = (${Ethernet::AbstractDevice.ref})${local.rtx_ether_ctx.net_device};
 
             BUG_ON(!rtx_ether_ctx);
 
-            ${cast local.rtx_ether_ctx as Ethernet::Device};
-            ${cast local.rtx_ether_dev as Ethernet::AbstractDevice};
             unregister_netdev(&${local.rtx_ether_dev.netdev});
             free_netdev(&${local.rtx_ether_dev.netdev});
         }
@@ -313,4 +303,3 @@ with Ethernet, PCI, LKM, Log
         }
     }
 }
-
