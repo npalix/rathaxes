@@ -3,8 +3,7 @@ import os
 from twisted.application import service
 from buildslave.bot import BuildSlave
 
-# basedir, once uploaded on DotCloud
-basedir = os.path.expanduser(r'~/')
+basedir = os.path.expanduser('~/buildbot/slave/')
 
 # if this is a relocatable tac file, get the directory containing the TAC
 if basedir == '.':
@@ -26,9 +25,9 @@ except ImportError:
     # probably not yet twisted 8.2.0 and beyond, can't set log yet
     pass
 
-buildmaster_host = os.environ['DOTCLOUD_MASTER_SLAVES_HOST']
-port = int(os.environ['DOTCLOUD_MASTER_SLAVES_PORT'])
-slavename = 'ubuntu_lucid_x86_64'
+buildmaster_host = 'localhost'
+port = 9989
+slavename = 'debian_wheezy_x86_64'
 passwd = os.environ['BUILDBOT_SLAVES_PASSWORD']
 keepalive = 600
 usepty = 0

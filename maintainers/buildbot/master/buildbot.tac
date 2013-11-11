@@ -3,8 +3,10 @@ import os
 from twisted.application import service
 from buildbot.master import BuildMaster
 
-# basedir, once uploaded on DotCloud
-basedir = os.path.expanduser(r'~/')
+basedir = os.path.expanduser('~/buildbot/master')
+
+# Default umask for server
+umask = None
 
 # if this is a relocatable tac file, get the directory containing the TAC
 if basedir == '.':
@@ -26,7 +28,7 @@ except ImportError:
     # probably not yet twisted 8.2.0 and beyond, can't set log yet
     pass
 
-configfile = r'master-dotcloud.cfg'
+configfile = r'master.cfg'
 
 m = BuildMaster(basedir, configfile)
 m.setServiceParent(application)
