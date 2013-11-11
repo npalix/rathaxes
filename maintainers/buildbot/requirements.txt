@@ -1,0 +1,15 @@
+Jinja2==2.7.1
+MarkupSafe==0.18
+SQLAlchemy==0.7.9
+Tempita==0.5.1
+Twisted==13.2.0
+argparse==1.2.1
+buildbot==0.8.8
+buildbot-slave==0.8.8
+decorator==3.4.0
+distribute==0.7.3
+mercurial==2.8
+python-dateutil==1.5
+sqlalchemy-migrate==0.7.2
+wsgiref==0.1.2
+zope.interface==4.0.5
