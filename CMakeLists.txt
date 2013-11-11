@@ -51,7 +51,6 @@ IF (WITH_DOCUMENTATION)
 
         ADD_SUBDIRECTORY(doc)
         ADD_SUBDIRECTORY(com)
-        ADD_SUBDIRECTORY(epitech)
     ELSE (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
         MESSAGE(STATUS "ps2pdf (shipped with ghostscript) and pdflatex needed to generate documentation.")
     ENDIF (PDFLATEX_COMPILER AND PS2PDF_CONVERTER)
