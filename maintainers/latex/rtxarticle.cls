@@ -52,8 +52,6 @@
 \def\@publishers{%
 \vskip 1.5em
 \includegraphics[height=1.3cm]{logo_latex}\color{rathaxesred}{\sffamily{Rathaxes}}%
-\hskip 3em
-\includegraphics[height=1.3cm]{logo_eip}%
 }
 
 % Define a command to generate the title block

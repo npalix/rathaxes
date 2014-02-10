@@ -809,7 +809,7 @@ with LKM, e1000, Ethernet, Socket, Device, DMA, PCI, Log, Builtin
 
         chunk LKM::code()
         {
-            static int rtx_e1000_tx_ring_alloc_resources(${e1000::TxRing.ref} self)
+            static int rtx_e1000_tx_ring_alloc_resources(${e1000:::TxRing.ref} self)
             {
                 ${Log::info("e1000_tx_ring_alloc_resources: TBD...")};
                 return 0;

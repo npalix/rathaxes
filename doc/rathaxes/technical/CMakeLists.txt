@@ -15,3 +15,5 @@ FOREACH(I ${DOCS})
     INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/technical_documentation_en.pdf
             DESTINATION share/doc/rathaxes/)
 ENDFOREACH(I ${DOCS})
+
+ADD_LATEX_DOCUMENT(rtx_2k12_wrap_up.tex DEFAULT_PDF MANGLE_TARGET_NAMES)

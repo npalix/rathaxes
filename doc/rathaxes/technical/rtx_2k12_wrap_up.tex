@@ -1,0 +1,121 @@
+\documentclass[american]{rtxarticle}
+
+\title{\rtx\ 2012 wrap-up}
+
+\author{Louis Opter}
+
+\begin{document} 
+
+\maketitle 
+
+\begin{abstract}
+The second iteration of the \rtx\ compiler, \emph{\rtx\ 2012}, started in 2010
+has been sunset in 2013. This document aims to highlight the issues and the
+lessons learned while trying to recode an e1000 driver with this compiler
+version.
+
+This document should serve as a reference for the next version of the \rtx\
+compiler implemented in Python 3 with Pyrser. Design shortcomings led to the
+biggest issues and are covered first, some implementation issues are covered in
+a second part.
+\end{abstract}
+
+\section{Design issues}
+
+\subsection{Unused features}
+
+The following compiler features:
+
+\begin{itemize}
+\item Advanced chunk selection (using the \texttt{with} statement);
+\item Register declarations.
+\end{itemize}
+
+Turned out to unnecessary because:
+
+\begin{itemize}
+\item We decided to scope the first driver to a single kernel (Linux 2.6.32 and
+      then 3.2.0);
+\item Register declarations were not clearly wired to the rest of the language
+      and were simply too advanced to be used at first;
+\item Challenges appeared at other places.
+\end{itemize}
+
+The \texttt{with} statement stays a core feature of the language, it just
+turned out to an advanced feature that we didn't need at first.
+
+It's also interesting to note that sequences weren't used to define algorithms
+as planned but were re-fitted as ``functions'' as we started to write object
+oriented code around \rtx\ types. Some sequences are also used to logically
+regroup chunks and pointcuts but those chunks could be moved to types or could
+directly be top-level declarations within their interface.
+
+\subsection{Features we missed}
+
+The following compiler features:
+
+\begin{itemize}
+\item ``Object model'';
+\item ref/scalar (let you express whether a variable or attribute is a pointer
+      or not);
+\item Error handling;
+\item Variadic sequences;
+\item Arrays support (maybe we could have ref, scalar and array?);
+\item Comments pass-through;
+\item Type coercion to \texttt{Builtin::symbol}.
+\end{itemize}
+
+Are really needed; the ref/scalar distinction has been implemented in 2013 and
+works ok.
+
+\subsubsection{``Object model''}
+
+The driver code started to organically organize itself into types, with methods
+(chunks attached to a type which take an explicit \texttt{self} argument of
+that type) and attributes, that loosely correspond to classes. We ran different
+into issues:
+
+\begin{itemize}
+\item Methods call aren't working;
+\item Type dependencies aren't resolved correctly, so they aren't generated in
+      the right order;
+\item \texttt{\$\{self\}} is ambiguous, how do you know when it's a scalar or a
+      method? (this is important to define the \texttt{init} method);
+\item Abstract data types should probably be framed/defined in the language;
+\item Mappings aren't resolved recursively;
+\item Mappings can't use \rtx\ code in them (e.g: you can't use
+      \texttt{\$\{Rathaxes::Type.ref\}} in a mapping definition);
+\item Circular dependencies aren't supported (in e1000 the rings and the
+      hardware context are inter-dependant, you can't avoid that);
+\item Type injections in upper sub-system (i.e: inject \texttt{e1000::Context}
+      into \texttt{Ethernet::Device}), that has been implemented with regular
+      pointcut but we need another kind of pointcut to only weave the type (and
+      not the full structure field).
+\end{itemize}
+
+\subsubsection{Error handling}
+
+This has been deliberately left out in \rtx\ 2012 but it seems that the
+biggest difficulty is going to define and then inject the error handling code
+into the parent chunk/context appropriately.
+
+\section{Implementation issues}
+
+Bugs are impairing development:
+
+\begin{itemize}
+\item Expansion bugs:
+\begin{itemize}
+\item Obscure expansion issues solved by scoping things;
+\item Variable declarations leaking across different chunks;
+\item Chunk/Pointcut parameters not bound to the C variables (the parameters
+      must be named like the C variables are).
+\end{itemize}
+\item CNorm issues: it's impossible to use annotation (e.g: \texttt{\_\_init},
+      \texttt{\_\_exit}, \texttt{\_\_iomem}\ldots) or arbitrary typedef'd
+      types;
+\item Some sequences call aren't working for obscure reasons (e.g:
+      \texttt{DMA::unmap}).
+\end{itemize}
+
+\end{document}
