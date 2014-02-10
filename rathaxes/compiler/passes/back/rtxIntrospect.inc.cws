@@ -752,7 +752,28 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_
             if (findElement(theVar.name, theChunk.type_map))
                 ref theType = theChunk.type_map[theVar.name];
             insert param.rtype;
-            setall param.rtype = theType;
+            if (getArraySize(param.identifiers) > 2)
+            {
+                local subType;
+                local fieldList;
+                foreach field in param.identifiers
+                {
+                    pushItem fieldList;
+                    fieldList#back = field.name;
+                }
+                removeFirstElement(fieldList);
+                removeFirstElement(fieldList);
+                if (rtxTypingLookup_ResolveTypeFields(theType, fieldList, theChunk, theChunk#root /* XXX dummy */, subType) == false)
+                {
+                    error(RED + "[Error] Could not resolve type fields for variable '"
+                          + theVar + "'" + DEFAULT_COLOR);
+                }
+                setall param.rtype = subType;
+            }
+            else
+            {
+                setall param.rtype = theType;
+            }
         }
         pushItem params;
         setall params#back = param.rtype.name;
