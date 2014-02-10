@@ -449,21 +449,34 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         }
         else if (search_chunk == false) // This may be the rtx implementation chunk -> different way to resolve...
         {
-            if (rtxNode2cnormNode<src_p.type>(src_p, param_value) == false)
-                error(RED + "Could not translate rathaxes node " + toString(src_p, true)
-                      + " to a resVal (containing one cnorm) node." + DEFAULT_COLOR);
-            setall param_type = src_p.rtype;
-            if (param_value.type == "__expr__" && param_value.operator != "__literal__")
+
+            if (rtxNodeArgs_GetArgByName(src_resVals, src_p.val, src_arg) == true)
             {
-                local src_arg;
-                local src_name = param_value.id;
-                if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg))
-                    return false;
                 if (rtxNodeArg_getRType(src_arg, param_type) == false)
                     return false;
                 if (rtxNodeArg_getValue(src_arg, param_value) == false)
                     return false;
                 param_name = dst_p;
+            }
+            else
+            {
+                if (rtxNode2cnormNode<src_p.type>(src_p, param_value) == false)
+                    error(RED + "Could not translate rathaxes node " + toString(src_p, true)
+                          + " to a resVal (containing one cnorm) node." + DEFAULT_COLOR);
+
+                setall param_type = src_p.rtype;
+                if (param_value.type == "__expr__" && param_value.operator != "__literal__")
+                {
+                    local src_arg;
+                    local src_name = param_value.id;
+                    if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg))
+                        return false;
+                    if (rtxNodeArg_getRType(src_arg, param_type) == false)
+                        return false;
+                    if (rtxNodeArg_getValue(src_arg, param_value) == false)
+                        return false;
+                    param_name = dst_p;
+                }
             }
         }
         else
@@ -529,7 +542,13 @@ function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tr
 
         // Now, resolve the loaded chunk...
         local resVals;
-        rtxResolve_BuildParameterResVals(resolverValues, call.args, resVals, chunkTree.tpl_params, source_tree, false);
+        if (rtxResolve_BuildParameterResVals(resolverValues, call.args, resVals, chunkTree.tpl_params, source_tree, false) == false)
+        {
+            // TODO: should be an error, but will be break to many things at
+            // this point:
+            traceLine(RED + "[Error] Could not build front-end parameter resvals." + DEFAULT_COLOR);
+        }
+
         if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
         {
             increment(errcount);
@@ -710,17 +729,29 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             // First, try to retrieve value from previous resVals, otherwise build it from chunk
             if (varName != "self")
             {
+                //
+                // XXX Note: Here, we may encounter some issues if the chunk's type_map isnt properly filled
+                // (encountered once, the type was scalar instead of ref)
+                //
+                local self_reftype = "scalar";
+                local self_rtype;
                 if (rtxNodeArgs_GetArgByName(resolverValues, varName, self) == true)
                 {
                     rtxNodeArg_getValue(self, self_value);
+                    rtxNodeArg_getRType(self, self_rtype);
+                    self_reftype = self_rtype.qualifier;
                 }
                 else
                 {
+                    traceLine(YELLOW + "[Warning] Using variable's identifier as resolved value (high probability to be wrong): "
+                              + local_node#parent.location + DEFAULT_COLOR);
                     clearVariable(self_value);
                     cnormNode_TerminalId(self_value, varName);
                 }
-                rtxNodeArgs_AppendArg(resVal, "self", theChunk.type_map[varName], self_value);
-                setall self_type = theChunk.type_map[varName];
+                setall self_rtype = theChunk.type_map[varName];
+                self_rtype.qualifier = self_reftype;
+                rtxNodeArgs_AppendArg(resVal, "self", self_rtype, self_value);
+                setall self_type = self_rtype;
             }
             else
             {
