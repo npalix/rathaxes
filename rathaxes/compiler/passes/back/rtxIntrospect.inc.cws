@@ -744,17 +744,18 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_
         if (!existVariable(param.rtype))
         {
             localref theVar = param.identifiers#[0];
+            local theType;
             if (theVar.name == "local")
             {
                 ref theVar = param.identifiers#[1];
             }
-            local theType;
             if (findElement(theVar.name, theChunk.type_map))
                 ref theType = theChunk.type_map[theVar.name];
             else if (findElement(theVar.name, theChunk.variables))
                 ref theType = theChunk.variables[theVar.name].type_node;
             insert param.rtype;
-            if (getArraySize(param.identifiers) > 2)
+            if ((param.identifiers#[0].name != "local" && getArraySize(param.identifiers) > 1)
+                || getArraySize(param.identifiers) > 2)
             {
                 local subType;
                 local fieldList;
@@ -763,7 +764,8 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_
                     pushItem fieldList;
                     fieldList#back = field.name;
                 }
-                removeFirstElement(fieldList);
+                if (param.identifiers#[0].name == "local")
+                    removeFirstElement(fieldList);
                 removeFirstElement(fieldList);
                 if (rtxTypingLookup_ResolveTypeFields(theType, fieldList, theChunk, theChunk#root /* XXX dummy */, subType) == false)
                 {
