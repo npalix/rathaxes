@@ -2,16 +2,16 @@ interface Ethernet : Socket, PCI, LKM, Builtin
 {
     required variable   Builtin::string ifname;
 
-     provided type   ProtocolId
-     {
-         chunk       LKM::prototypes();
-         chunk       LKM::data();
-         chunk       LKM::code();
-         decl        data_types();
+    provided type   ProtocolId
+    {
+        chunk       LKM::prototypes();
+        chunk       LKM::data();
+        chunk       LKM::code();
+        decl        data_types();
 
-         attribute  Builtin::number.scalar id;
-         attribute  Builtin::string.scalar str;
-     }
+        attribute  Builtin::number.scalar id;
+        attribute  Builtin::string.scalar str;
+    }
 
     provided type   AbstractDevice
     {
@@ -28,57 +28,88 @@ interface Ethernet : Socket, PCI, LKM, Builtin
 
     provided type   Device
     {
-        chunk       LKM::includes();
         decl        data_types();
-        method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
+
+        chunk       LKM::includes();
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+
         pointcut    Ethernet::HardwareContext();
+
+        method      init(Ethernet::AbstractDevice, PCI::AbstractDevice);
+
+        // Alloc (the AbstractSKBuff inside) the given SKBuff and initialize
+        // the SKBuff, return 1 if the allocation failed, 0 on success:
+        method      alloc_rx_skbuff(Socket::SKBuff, Builtin::number);
 
         attribute   Device::AbstractDevice.ref      device;
         attribute   PCI::AbstractDevice.ref         pci_device;
         attribute   Ethernet::AbstractDevice.ref    net_device;
-        /*
-         * I'd like to use better names here, but I'd like to understand the
-         * difference between the two first:
-         */
+
+        // I'd like to use better names here, but I'd like to understand the
+        // difference between the two first:
         attribute   Builtin::symbol.ref     perm_addr;
         attribute   Builtin::symbol.ref     dev_addr;
         attribute   Builtin::symbol.scalar  irq;
     }
 
-    required sequence   open(Ethernet::Device)
+    provided sequence       open()
     {
-        provided chunk  LKM::includes();
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
+        provided chunk      LKM::includes();
+        provided chunk      LKM::prototypes();
+        provided chunk      LKM::code();
+
+        // Prepare the device and the resources for rx/tx:
+        provided pointcut   Ethernet::adapter_setup_rx_tx(Ethernet::Device);
+
+        // Enable interrupts:
+        provided pointcut   Ethernet::adapter_enable_interrupts(Ethernet::Device);
     }
 
-    required sequence   send(Ethernet::Device, Socket::AbstractSKBuff)
+    provided sequence       send()
     {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
+        provided chunk      LKM::prototypes();
+        provided chunk      LKM::code();
+
+        // Put a packet on the tx ring and signal the device:
+        provided pointcut   Ethernet::adapter_xmit(Ethernet::Device, Socket::SKBuff);
     }
 
-    required sequence   close(Ethernet::Device)
+    provided sequence       close()
     {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
+        provided chunk      LKM::prototypes();
+        provided chunk      LKM::code();
+
+        provided pointcut   Ethernet::adapter_disable_rx(Ethernet::Device);
+        provided pointcut   Ethernet::adapter_disable_tx(Ethernet::Device);
+        provided pointcut   Ethernet::adapter_disable_interrupts(Ethernet::Device);
+
+        // Clean and free all resources on the rx/tx rings:
+        provided pointcut   Ethernet::adapter_free_rx_tx(Ethernet::Device);
     }
 
-    required sequence   interrupt_handler(Ethernet::Device)
+    provided sequence       interrupt_handler()
     {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
+        provided chunk      LKM::prototypes();
+        provided chunk      LKM::code();
+
+        // Interrupt handler:
+        provided pointcut   Ethernet::adapter_handle_interrupt(Ethernet::Device);
     }
 
-    provided sequence   init()
+    provided sequence       init()
     {
-        provided chunk  LKM::data();
-        provided chunk  PCI::pci_probe_hook(PCI::Device);
+        provided chunk      LKM::data();
+        provided chunk      PCI::pci_probe_hook(PCI::Device);
 
-        provided pointcut   Ethernet::adapter_init_context(Ethernet::Device,
-                                                           Builtin::number,
-                                                           Builtin::symbol);
+        // Init the hardware context structure, doesn't allocate anything:
+        provided pointcut   Ethernet::adapter_init_context(Ethernet::Device, Builtin::symbol);
+
+        // Reset the adapter:
         provided pointcut   Ethernet::adapter_reset(Ethernet::Device);
+
+        // Load the MAC address from the EEPROM and save it into the
+        // dev_addr field/attribute of Ethernet::Device:
         provided pointcut   Ethernet::adapter_load_mac_address(Ethernet::Device);
     }
 

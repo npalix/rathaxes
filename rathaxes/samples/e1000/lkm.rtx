@@ -1,44 +1,5 @@
 device LKM use LKM, PCI, Ethernet, Log, Socket
 {
-    Ethernet::open(Ethernet::Device dev)
-    {
-        Log::info("opening the device");
-
-
-        e1000::set_up_device(dev);
-        Log::info("device activated");
-
-        e1000::activate_device_interruption(dev);
-        Log::info("interruption enabled");
-
-        e1000::print_status(dev);
-    }
-
-    Ethernet::close(Ethernet::Device dev)
-    {
-        Log::info("closing the device");
-
-        /*
-         * Note: some calls to release resources must be done when IRQs are
-         * enabled (dma_free_coherent() for example). So we have to cleanup our
-         * stuff before free_interrupt_handler().
-         */
-        e1000::free_rx_tx(dev);
-        Log::info("free'ed up rx/tx resources");
-    }
-
-    Ethernet::interrupt_handler(Ethernet::Device dev)
-    {
-        Log::info("got an interruption");
-        e1000::handle_interrupt(dev);
-    }
-
-    Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
-    {
-        Log::info("we have one packet to transmit!");
-        e1000::xmit(dev, skb);
-    }
-
     LKM::init()
     {
         Log::info("loading module");
@@ -54,7 +15,7 @@ configuration
 {
     LKM::name = "rtx_e1k";
     LKM::author = "Rathaxes";
-    LKM::description = "Hello World Loadable Kernel Module (LKM)";
+    LKM::description = "Rathaxes Intel PCI Gigabit NIC sample driver";
     LKM::license = "GPL";
 
     /*

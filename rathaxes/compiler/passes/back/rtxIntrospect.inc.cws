@@ -890,6 +890,8 @@ function    rtxIntrospect_walk<"__rtx_chunk__">(local_node : node)
     local to_remove;
     foreach placeHolder in local_node.body.compile
     {
+        if (!placeHolder.node.body.type)
+            traceLine(RED + "BUG: placeHolder.node.body.type is missing in rtxIntrospect_walk<\"__rtx_chunk__\">, placeHolder = " + toString(placeHolder) + DEFAULT_COLOR);
         if (rtxIntrospect_InferPlaceHolderTypes<placeHolder.node.body.type>(placeHolder.node.body, local_node) == false)
         {
             pushItem to_remove;
