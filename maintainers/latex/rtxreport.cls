@@ -50,7 +50,6 @@
 
 % Add our logos in the titlepage
 \def\@subject{\includegraphics[height=5cm]{logo_latex}Rathaxes}
-\def\@publishers{\includegraphics[height=1.4cm]{logo_eip}}
 
 % Define a command to generate the title block
 \newcommand{\rtxmaketitleblock}{
