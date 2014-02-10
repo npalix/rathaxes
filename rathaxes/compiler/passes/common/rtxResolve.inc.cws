@@ -340,6 +340,7 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
         if (existVariable(dst_p.identifiers))
             ref param_name = dst_p.identifiers#front.name;
         local param_type;
+        local param_src_value;
         local param_value;
         local src_arg;
 
@@ -375,9 +376,10 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                 if (rtxNodeArg_getRType(src_arg, param_type) == false)
                     return false;
                 setall resolver_type = param_type;
-                if (rtxNodeArg_getValue(src_arg, param_value) == false)
+                if (rtxNodeArg_getValue(src_arg, param_src_value) == false)
                     return false;
 
+                setall param_value = param_src_value;
                 // In case a recursive resolution is necessary, we need to setup a "self"
                 rtxNodeArgs_AppendArg(subResVal, "self", resolver_type, param_value);
             }
@@ -443,6 +445,7 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                 local src_arg;
                 local src_name = param_value.id;
                 if (rtxNodeArgs_GetArgByName(src_resVals, src_name, src_arg))
+                    return false;
                 if (rtxNodeArg_getRType(src_arg, param_type) == false)
                     return false;
                 if (rtxNodeArg_getValue(src_arg, param_value) == false)
