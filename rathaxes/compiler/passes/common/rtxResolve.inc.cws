@@ -696,7 +696,8 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
     case "target_expr":
         // Is it a variable of a rathaxes type : check in type_map ?
         if (isEmpty(local_node.prefix) && isEmpty(local_node.suffix)
-                 && existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
+                 && ((existVariable(theChunk.type_map) && findElement(varName, theChunk.type_map))
+                     || varName == "self"))
         {
             traceLine("inject<\"__rtx_var__\">:<LOG> Injecting a type mapping (" + varName + ").");
             // Create the resolverValues for the type resolution:
@@ -705,21 +706,35 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             rtxNodeArgs(resVal);
             local self;
             local self_value;
+            local self_type;
             // First, try to retrieve value from previous resVals, otherwise build it from chunk
-            if (rtxNodeArgs_GetArgByName(resolverValues, varName, self) == true)
+            if (varName != "self")
             {
-                rtxNodeArg_getValue(self, self_value);
+                if (rtxNodeArgs_GetArgByName(resolverValues, varName, self) == true)
+                {
+                    rtxNodeArg_getValue(self, self_value);
+                }
+                else
+                {
+                    clearVariable(self_value);
+                    cnormNode_TerminalId(self_value, varName);
+                }
+                rtxNodeArgs_AppendArg(resVal, "self", theChunk.type_map[varName], self_value);
+                setall self_type = theChunk.type_map[varName];
             }
             else
             {
-                clearVariable(self_value);
-                cnormNode_TerminalId(self_value, varName);
+                // "self" as an identifier means that we're within some Type Template code.
+                // Thus the actual value is the associated ResVal, and the type the template's type itself.
+                if (rtxNodeArgs_GetArgByName(resolverValues, varName, self) == true)
+                {
+                    rtxNodeArg_getValue(self, self_value);
+                }
+                rtxNodeArgs_AppendArg(resVal, "self", self.rtype, self_value);
+                setall self_type = self.rtype;
             }
-            rtxNodeArgs_AppendArg(resVal, "self", theChunk.type_map[varName], self_value);
 
-            local qTypeName = rtxRTypeName<theChunk.type_map[varName].type>(
-                                    theChunk.type_map[varName]
-                                );
+            local qTypeName = rtxRTypeName<self_type.type>(self_type);
 
             local    mapping;
             local subParam;
@@ -727,8 +742,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
             local subidentifiers;
             select n in subParam[].name { pushItem subidentifiers; subidentifiers#back = n; }
 
-            if (type_map<qTypeName>(resVal, theChunk.type_map[varName],
-                                    subidentifiers,
+            if (type_map<qTypeName>(resVal, self_type, subidentifiers,
                                     local_node, mapping, source_tree) == false)
             {
                 traceLine(RED + "[Error] Could not resolve mapping of '"
@@ -761,7 +775,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                     // If there's a resval argument for it, then take the source type from there
                     // Otherwise, use the chunk's type_map.
                     if (rtxNodeArg_getRType(self, source_type) == false)
-                    { ref source_type = theChunk.type_map[varName]; }
+                    { ref source_type = self_type; }
                     rtxNodeArg_getRType(self, source_type);
                 }
                 else
@@ -769,7 +783,7 @@ function    inject<"__rtx_var__">(resolverValues : node, treeNode : node,
                     // Now resolve the finaltype of the argument -> Retrieve actual param_type
                     removeVariable(subidentifiers#[0]); // Remove the first identifiers for the type resolution
                     local result_type;
-                    if (rtxTypingLookup_ResolveTypeFields(theChunk.type_map[varName], subidentifiers, theChunk, source_tree, source_type) == false)
+                    if (rtxTypingLookup_ResolveTypeFields(self_type, subidentifiers, theChunk, source_tree, source_type) == false)
                     {
                         error(RED + "[Error] Could not resolve type fields for variable '"
                                 + subidentifiers#front + "'" + DEFAULT_COLOR);
