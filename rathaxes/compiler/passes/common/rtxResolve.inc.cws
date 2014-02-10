@@ -33,7 +33,7 @@ declare function rtxResolve_RefScalarTranscribe(expr : node, in_type : value, ou
 declare function rtxResolve_WrapChunkIntoType(chunkTree : node);
 
 declare function rtxResolve_InsertCode(destBlock : node, startIdx : node, phName : value, phIdx : node, sourceNode : node);
-declare function rtxResolve_BuildParameterResVals(src_resVals   : node, src_params    : node, dst_resVals   : node, dst_params    : node, source_tree   : reference, search_chunk  : value = true);
+declare function rtxResolve_BuildParameterResVals(src_resVals   : node, src_params    : node, dst_resVals   : node, dst_params    : node, source_tree   : reference, search_chunk  : value = true, tpl_seq : value = false);
 declare function rtxResolve_replaceCalls(theSeq : node, resolverValues : node, source_tree : reference);
 
 
@@ -318,20 +318,21 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                                           dst_resVals   : node,
                                           dst_params    : node, 
                                           source_tree   : reference,
-                                          search_chunk  : value = true)
+                                          search_chunk  : value = true,
+                                          tpl_seq       : value = false)
 {
     localref   dst_list = dst_params;
 
     if (rtxNodeArgs(dst_resVals) == false)
         error(RED + "[Error] Could not intialize argument container." + DEFAULT_COLOR);
 
-    if (search_chunk)
+    if (search_chunk && tpl_seq == false)
         ref dst_list = dst_list.list;
 
     foreach dst_p in dst_list
     {
         local src_p;
-        if (search_chunk)
+        if (search_chunk && tpl_seq == false)
             ref src_p = src_params.list#[index(dst_p)];
         else
             ref src_p = src_params#[index(dst_p)];
@@ -941,7 +942,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
 
     // Now, resolve the loaded chunk...
     local resVals;
-    rtxResolve_BuildParameterResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree, false);
+    rtxResolve_BuildParameterResVals(resolverValues, local_node.body.seqArgs, resVals, chunkTree.tpl_params, source_tree, true, true);
     if (instanceChunk<chunkTree.instanceKey>(resVals, chunkTree.body, source_tree) == false)
     {
         traceLine(RED + "[Error] Could not resolve sequence call to " + rtxRTypeFullQualifiedName<"sequence">(tplRtype,dummy) + DEFAULT_COLOR);
@@ -949,9 +950,19 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
         return false;
     }
 
-    insertModifier(theParent, local_node#parent);
-    startIdx = local_node#parent.block_idx; // retrieve updated startIdx from dummy.
-    rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
+    switch (local_node#parent.type_target)
+    {
+        case "target_pointcut":
+            insertModifier(theParent, local_node#parent);
+            startIdx = local_node#parent.block_idx; // retrieve updated startIdx from dummy.
+            rtxResolve_InsertCode(theParent, startIdx, phName, phIdx, chunkTree.body);
+            break ;
+        case "target_expr":
+            setall local_node#parent.ref_placeholder = chunkTree.body.block[0].expr;
+            break ;
+        default:
+            error(RED + "[Error] Unmanaged weaving target type: " + local_node#parent.type_target + "." + DEFAULT_COLOR);
+    }
 
     return true;
 }
