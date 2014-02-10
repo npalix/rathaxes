@@ -194,7 +194,9 @@ function        rtxPH_compile<"__decl__">(local_node : node, compile : node, nod
                 // in unstrict mode
                 if (existVariable(ctype_ref.unknown) && $getArraySize(ctype_ref.unknown) > 0$)
                 {       
-                    ctype_ref.identifier = ctype_ref.unknown#back;
+                    local it;
+                    createReverseIterator(it, ctype_ref.unknown);
+                    ctype_ref.identifier = key(it);
                     removeVariable(ctype_ref.unknown);
                 }
                 // name of a type
