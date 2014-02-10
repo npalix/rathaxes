@@ -1,4 +1,4 @@
-with Socket, LKM, Device, Ethernet
+with LKM, Device, DMA, Ethernet, Socket
 {
     template type Socket::AbstractSKBuff()
     {
@@ -14,7 +14,7 @@ with Socket, LKM, Device, Ethernet
 
         map
         {
-            k_sk_buff: ((struct sk_buff *)${self});
+            k_sk_buff: ((struct sk_buff *)(${self}));
         }
     }
 
@@ -23,100 +23,47 @@ with Socket, LKM, Device, Ethernet
         decl  data_types()
         {
             ${Socket::AbstractSKBuff.ref}   skbuff;
-            dma_addr_t                      dma_handle;
         }
 
         chunk   LKM::prototypes()
         {
             static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff.ref});
-            static int  rtx_socket_skbuff_map(${Socket::SKBuff.ref}, struct device *, enum dma_data_direction);
-            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff.ref}, struct device *, enum dma_data_direction);
         }
 
         chunk   LKM::code()
         {
             static void rtx_socket_skbuff_dump_infos(${Socket::SKBuff.ref} self)
             {
-                WARN_ON(!self->skbuff);
+                WARN_ON(!${local.self.sk_buff});
+
+                ${Ethernet::ProtocolId} ethernet_proto = { .id = be16_to_cpu(${local.self.sk_buff.k_sk_buff}->protocol) };
+                static const char * const ip_summed_values[] = {
+                    "none", "unnecessary", "complete", "partial"
+                };
+                struct skb_shared_info *shinfo = skb_shinfo(${local.self.sk_buff.k_sk_buff});
 
                 /*
                  * We should use a Rathaxes log abstraction instead of pr_info here,
                  * but Rathaxes doesn't support functions with a variable number of
                  * arguments yet.
                  */
-                ${Socket::AbstractSKBuff.ref} skb = self->skbuff;
-                ${Ethernet::ProtocolId} ethernet_proto = { .id = be16_to_cpu(${local.skb.k_sk_buff}->protocol) };
-                static const char * const ip_summed_values[] = {
-                    "none", "unnecessary", "complete", "partial"
-                };
-                struct skb_shared_info *shinfo = skb_shinfo(${local.skb.k_sk_buff});
-
                 pr_info(
-                        "\t protocol = %#-5x (%s) ip_summed = %d (%s)\n"
-                        "\t      len = %-5u data_len = %-5u head_len = %-5u\n"
-                        "\t nr_frags = %u\n"
-                        "\t gso_size = %-5u gso_segs = %-5u gso_type = %-5u",
-                        /* XXX: can't use ${local.ethernet_proto.id} here (issue #52): */
-                        ethernet_proto.id, ${local.ethernet_proto.str},
-                        ${local.skb.k_sk_buff}->ip_summed, ip_summed_values[${local.skb.k_sk_buff}->ip_summed],
-                        ${local.skb.k_sk_buff}->len, ${local.skb.k_sk_buff}->data_len, skb_headlen(${local.skb.k_sk_buff}),
-                        shinfo->nr_frags, shinfo->gso_size, shinfo->gso_segs, shinfo->gso_type
+                    "\t protocol = %#-5x (%s) ip_summed = %d (%s)\n"
+                    "\t      len = %-5u data_len = %-5u head_len = %-5u\n"
+                    "\t nr_frags = %u\n"
+                    "\t gso_size = %-5u gso_segs = %-5u gso_type = %-5u",
+                    /* XXX: can't use ${local.ethernet_proto.id} here (issue #52): */
+                    ethernet_proto.id, ${local.ethernet_proto.str},
+                    ${local.self.sk_buff.k_sk_buff}->ip_summed, ip_summed_values[${local.self.sk_buff.k_sk_buff}->ip_summed],
+                    ${local.self.sk_buff.k_sk_buff}->len, ${local.self.sk_buff.k_sk_buff}->data_len, skb_headlen(${local.self.sk_buff.k_sk_buff}),
+                    shinfo->nr_frags, shinfo->gso_size, shinfo->gso_segs, shinfo->gso_type
                 );
-            }
-
-            static int rtx_socket_skbuff_map(${Socket::SKBuff.ref} self,
-                                             struct device *dev,
-                                             enum dma_data_direction direction)
-            {
-                ${Socket::AbstractSKBuff.ref}   skb = self->skbuff;
-
-                WARN_ON(!${local.skb.k_sk_buff});
-                WARN_ON(self->dma_handle);
-
-                self->dma_handle = dma_map_single(
-                        dev,
-                        ${local.skb.k_sk_buff},
-                        skb_headlen(${local.skb.k_sk_buff}),
-                        direction);
-                int err = dma_mapping_error(dev, self->dma_handle);
-                if (err)
-                {
-                    self->dma_handle = 0;
-                    return err;
-                }
-                return 0;
-            }
-
-            static void rtx_socket_skbuff_unmap_and_free(${Socket::SKBuff.ref} self,
-                                                         struct device *dev,
-                                                         enum dma_data_direction direction)
-            {
-                ${Socket::AbstractSKBuff.ref}   skb = self->skbuff;
-
-                WARN_ON(!${local.skb.k_sk_buff});
-
-                if (self->dma_handle)
-                {
-                    dma_unmap_single(dev,
-                            self->dma_handle,
-                            skb_headlen(${local.skb.k_sk_buff}),
-                            direction);
-                    self->dma_handle = 0;
-                }
-                dev_kfree_skb_any(${local.skb.k_sk_buff});
-                self->skbuff = 0;
             }
         }
 
-        /*
-         * XXX: the rathaxes argument kernel_skb is not actually bound to the
-         * correct C variable from Ethernet::send() (so I named it as the C
-         * variable I needed)
-         */
-        method init(Socket::AbstractSKBuff kernel_skb)
+        method init(Socket::AbstractSKBuff k_skb)
         {
-            ${self}.skbuff = ${kernel_skb};
-            ${self}.dma_handle = 0;
+            ${self} = (${Socket::SKBuff.ref})(${k_skb});
         }
 
         method dump_infos()
@@ -124,32 +71,21 @@ with Socket, LKM, Device, Ethernet
             rtx_socket_skbuff_dump_infos(${self});
         }
 
-        method   map_to(Device::AbstractDevice dev)
+        method free()
         {
-            rtx_socket_skbuff_map(${self}, ${dev.k_device}, DMA_TO_DEVICE);
-        }
-
-        method   map_from(Device::AbstractDevice dev)
-        {
-            rtx_socket_skbuff_map(${self}, ${dev.k_device}, DMA_FROM_DEVICE);
-        }
-
-        method   unmap_to_and_free(Device::AbstractDevice dev)
-        {
-            rtx_socket_skbuff_unmap_and_free(${self}, ${dev.k_device}, DMA_TO_DEVICE);
-        }
-
-        method   unmap_from_and_free(Device::AbstractDevice dev)
-        {
-            rtx_socket_skbuff_unmap_and_free(${self}, ${dev.k_device}, DMA_FROM_DEVICE);
+            dev_kfree_skb(${self.sk_buff.k_sk_buff});
         }
 
         map
         {
-            // some work may have to be done here in order
-            // to access to some field of the sk_buff.
-            // We should determine if all the sk_buff management
-            // can be abstracted from the user.
+            // Some work may have to be done here in order to access to some
+            // field of the sk_buff. We should determine if all the sk_buff
+            // management can be abstracted from the user. But this is at least
+            // useful for internal use:
+            sk_buff: (${self})->skbuff;
+
+            data: ((struct sk_buff *)((${self})->skbuff))->data;
+            len: ((struct sk_buff *)((${self})->skbuff))->len;
         }
     }
 }

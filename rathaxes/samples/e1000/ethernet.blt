@@ -1,4 +1,4 @@
-with Ethernet, PCI, LKM, Log, Builtin
+with LKM, Socket, PCI, Log, Builtin, Ethernet
 {
     template type   Ethernet::ProtocolId()
     {
@@ -9,7 +9,7 @@ with Ethernet, PCI, LKM, Log, Builtin
 
         chunk LKM::prototypes()
         {
-            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short);
+            static const char *rtx_ethernet_protocol_id_to_str(unsigned short);
         }
 
         chunk LKM::data()
@@ -28,7 +28,7 @@ with Ethernet, PCI, LKM, Log, Builtin
 
         chunk LKM::code()
         {
-            static const char   *rtx_ethernet_protocol_id_to_str(unsigned short proto_id)
+            static const char *rtx_ethernet_protocol_id_to_str(unsigned short proto_id)
             {
                 for (int i = 0;
                      i != sizeof(rtx_ethernet_proto_table) / sizeof(rtx_ethernet_proto_table[0]);
@@ -61,7 +61,7 @@ with Ethernet, PCI, LKM, Log, Builtin
 
         method  init(Builtin::symbol dev)
         {
-            ${self} = (${Ethernet::AbstractDevice} *)${dev};
+            ${self} = (${Ethernet::AbstractDevice.ref})${dev};
         }
 
         map
@@ -95,6 +95,27 @@ with Ethernet, PCI, LKM, Log, Builtin
             #include <linux/etherdevice.h>
         }
 
+        chunk LKM::prototypes()
+        {
+            static int rtx_ethernet_alloc_rx_skbuff(${Ethernet::Device.ref}, ${Socket::SKBuff.ref}, unsigned int);
+        }
+
+        chunk LKM::code()
+        {
+            static int rtx_ethernet_alloc_rx_skbuff(${Ethernet::Device.ref} self, ${Socket::SKBuff.ref} sk_buff, unsigned int size)
+            {
+                ${Socket::AbstractSKBuff.ref} k_skb = netdev_alloc_skb(${local.self.net_device.k_net_dev}, ${local.size});
+                if (${local.k_skb}) {
+                    // XXX meh, can't use the init method since we get a copy
+                    // of the pointer, so we have to do this which is
+                    // inconsistent with the rest of code:
+                    sk_buff->skbuff = k_skb;
+                    return 0;
+                }
+                return 1;
+            }
+        }
+
         /* XXX: if the first arg is not called rtx_net_dev, it breaks. */
         method init(Ethernet::AbstractDevice rtx_net_dev, PCI::AbstractDevice pci_dev)
         {
@@ -105,6 +126,11 @@ with Ethernet, PCI, LKM, Log, Builtin
              */
             ${self}->pci_dev = ${pci_dev};
             ${self}->net_dev = ${rtx_net_dev};
+        }
+
+        method alloc_rx_skbuff(Socket::SKBuff sk_buff, Builtin::number size)
+        {
+            rtx_ethernet_alloc_rx_skbuff(${self}, ${sk_buff}, ${size});
         }
 
         map
@@ -125,7 +151,7 @@ with Ethernet, PCI, LKM, Log, Builtin
         }
     }
 
-    template sequence   Ethernet::open(Ethernet::Device dev)
+    template sequence   Ethernet::open()
     {
         chunk   LKM::includes()
         {
@@ -134,97 +160,115 @@ with Ethernet, PCI, LKM, Log, Builtin
 
         chunk LKM::prototypes()
         {
-            static int  rtx_ethernet_open(struct net_device *);
+            static int rtx_ethernet_open(struct net_device *);
         }
 
         chunk LKM::code()
         {
-            static int  rtx_ethernet_open(struct net_device *dev)
+            static int rtx_ethernet_open(struct net_device *dev)
             {
-                /*
-                 * XXX The casts are here because the compiler doesn't resolve
-                 * "enclosed" type (e.g: local.var.enclosed) correctly.
-                 */
                 ${Ethernet::AbstractDevice.ref} rtx_net_dev;
-                { /* XXX: I end up with a placeholder if I don't open a scope */
-                    ${local.rtx_net_dev.init(local.dev)};
-                }
+                ${local.rtx_net_dev.init(local.dev)};
                 ${Ethernet::Device.ref} rtx_ether_ctx = ${local.rtx_net_dev.rtx_ether_ctx};
 
-                int error;
-                {
-                    ${Log::info("installing the interrupt handler")};
-                }
-                error = request_irq(${local.rtx_ether_ctx.irq},
-                                    rtx_ethernet_interrupt_handler,
-                                    IRQF_SHARED,
-                                    ${config.name},
-                                    dev);
-                if (error)
-                {
+                ${pointcut Ethernet::adapter_setup_rx_tx(local.rtx_ether_ctx)};
+
+                ${Log::info("Installing the interrupt handler")};
+                int error = request_irq(
+                    ${local.rtx_ether_ctx.irq},
+                    rtx_ethernet_interrupt_handler,
+                    IRQF_SHARED,
+                    ${config.name},
+                    dev
+                );
+                if (error) {
                     ${Log::info("Cannot register the interrupt handler")};
                     return error;
                 }
-                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
+
+                ${pointcut Ethernet::adapter_enable_interrupts(local.rtx_ether_ctx)};
 
                 return 0;
+
+            rtx_ethernet_open_fail:
+                return -EIO; // XXX Probably not appropriate.
             }
+        }
+
+        /* XXX This chunk should be removed (see #26) */
+        chunk   ::CALL()
+        {
         }
     }
 
-    template sequence   Ethernet::send(Ethernet::Device dev, Socket::AbstractSKBuff skb)
+    template sequence   Ethernet::send()
     {
         chunk LKM::prototypes()
         {
-            static int  rtx_ethernet_xmit(struct sk_buff* skb, struct net_device *dev);
+            static int rtx_ethernet_xmit(struct sk_buff *skb, struct net_device *dev);
         }
 
         chunk LKM::code()
         {
-            static int  rtx_ethernet_xmit(struct sk_buff* kernel_skb, struct net_device *net_dev)
+            static int rtx_ethernet_xmit(struct sk_buff *k_skb, struct net_device *net_dev)
             {
                 ${Ethernet::Device.ref} rtx_ether_ctx = netdev_priv(net_dev);
-                ${Socket::AbstractSKBuff.ref} rtx_skb = (${Socket::AbstractSKBuff.ref}) kernel_skb;
+                ${Socket::SKBuff.ref} rtx_skb;
 
-                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx, local.rtx_skb)};
+                ${cast local.k_skb as Socket::AbstractSKBuff.ref};
+                ${local.rtx_skb.init(local.k_skb)};
+
+                ${Log::info("we have one packet to transmit!")};
+                ${pointcut Ethernet::adapter_xmit(local.rtx_ether_ctx, local.rtx_skb)};
             }
+        }
+
+        /* XXX This chunk should be removed (see #26) */
+        chunk   ::CALL()
+        {
         }
     }
 
-    template sequence   Ethernet::close(Ethernet::Device dev)
+    template sequence   Ethernet::close()
     {
         chunk LKM::prototypes()
         {
-            static int  rtx_ethernet_close(struct net_device *);
+            static int rtx_ethernet_close(struct net_device *);
         }
 
         chunk LKM::code()
         {
-            static int  rtx_ethernet_close(struct net_device *dev)
+            static int rtx_ethernet_close(struct net_device *net_dev)
             {
-                ${Ethernet::AbstractDevice.ref} rtx_net_dev;
-                { /* XXX: I end up with a placeholder if I don't open a scope */
-                    ${local.rtx_net_dev.init(local.dev)};
-                }
+                ${cast local.net_dev as Ethernet::AbstractDevice.ref};
+                ${Ethernet::Device.ref} rtx_ether_ctx = ${local.net_dev.rtx_ether_ctx};
 
-                ${Ethernet::Device.ref} rtx_ether_ctx = ${local.rtx_net_dev.rtx_ether_ctx};
+                ${pointcut Ethernet::adapter_disable_rx(local.rtx_ether_ctx)};
 
-                /* TODO: change this pointcut into a pointcut/adapter/callback: */
-                {
-                    ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
-                }
+                netif_tx_disable(net_dev);
+                ${pointcut Ethernet::adapter_disable_tx(local.rtx_ether_ctx)};
 
+                ${pointcut Ethernet::adapter_disable_interrupts(local.rtx_ether_ctx)};
                 free_irq(${local.rtx_ether_ctx.irq}, dev);
-                {
-                    ${Log::info("interrupt handler free'ed")};
-                }
+                ${Log::info("interrupt handler free'ed")};
+
+                // TODO/XXX: There is definitely more stuff to do around here
+                // (e.g: clean the rings, flush some stuff...)
+
+                ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
+                ${pointcut Ethernet::adapter_free_rx_tx(local.rtx_ether_ctx)};
 
                 return 0;
             }
         }
+
+        /* XXX This chunk should be removed (see #26) */
+        chunk   ::CALL()
+        {
+        }
     }
 
-    template sequence   Ethernet::interrupt_handler(Ethernet::Device dev)
+    template sequence   Ethernet::interrupt_handler()
     {
         /*
          * We can't use the irqreturn_t type here because CNornm doesn't know
@@ -232,21 +276,26 @@ with Ethernet, PCI, LKM, Log, Builtin
          */
         chunk LKM::prototypes()
         {
-            static enum irqreturn   rtx_ethernet_interrupt_handler(int, void *);
+            static enum irqreturn rtx_ethernet_interrupt_handler(int, void *);
         }
 
         chunk LKM::code()
         {
-            static enum irqreturn   rtx_ethernet_interrupt_handler(int irq, void *dev_id)
+            static enum irqreturn rtx_ethernet_interrupt_handler(int irq, void *dev_id)
             {
                 ${Ethernet::AbstractDevice.ref} rtx_net_dev = dev_id;
                 ${Ethernet::Device.ref} rtx_ether_ctx;
                 rtx_ether_ctx = ${local.rtx_net_dev.rtx_ether_ctx};
 
-                ${pointcut ::IMPLEMENTATION(local.rtx_ether_ctx)};
+                ${pointcut Ethernet::adapter_handle_interrupt(local.rtx_ether_ctx)};
 
                 return IRQ_NONE;
             }
+        }
+
+        /* XXX This chunk should be removed (see #26) */
+        chunk   ::CALL()
+        {
         }
     }
 
@@ -254,7 +303,7 @@ with Ethernet, PCI, LKM, Log, Builtin
     {
         chunk LKM::data()
         {
-            static const struct net_device_ops  rtx_ether_ops =
+            static const struct net_device_ops rtx_ether_ops =
             {
                 .ndo_open = rtx_ethernet_open,
                 .ndo_stop = rtx_ethernet_close,
@@ -262,74 +311,65 @@ with Ethernet, PCI, LKM, Log, Builtin
             };
         }
 
-        /*
-         * NOTE: for now, the error handling is leaking from PCI::probe(), but
-         * it's better than doing it at all.
-         *
-         * XXX: the chunk argument isn't correctly expanded by the
-         * compiler I have to use the same name as the actual C
-         * variable:
-         */
+        // NOTE: for now, the error handling is leaking from PCI::probe(), but
+        // it's better than not doing it at all.
+        //
+        // XXX: the chunk argument isn't correctly expanded by the compiler I
+        // have to use the same name as the actual C variable:
         chunk PCI::pci_probe_hook(PCI::Device rtx_pci_dev)
         {
-            ${Ethernet::AbstractDevice.ref} rtx_net_dev;
-            ${Ethernet::Device.ref} rtx_ether_ctx;
-
-            rtx_net_dev = (${Ethernet::AbstractDevice.ref})alloc_etherdev(sizeof(*rtx_ether_ctx));
-            if (!rtx_net_dev)
             {
-                ${Log::info("cannot allocate the ethernet device context")};
-                error = -ENOMEM;
-                goto fail;
+                ${Ethernet::AbstractDevice.ref} rtx_net_dev;
+                ${Ethernet::Device.ref} rtx_ether_ctx;
+
+                rtx_net_dev = (${Ethernet::AbstractDevice.ref})alloc_etherdev(sizeof(*rtx_ether_ctx));
+                if (!rtx_net_dev)
+                {
+                    ${Log::info("cannot allocate the ethernet device context")};
+                    error = -ENOMEM;
+                    goto fail;
+                }
+                // XXX Past this point we should have another label to do
+                // free_netdev(rtx_net_dev) in case of failure but we don't
+                // have a nice way of doing that.
+                SET_NETDEV_DEV(${local.rtx_net_dev.k_net_dev}, ${rtx_pci_dev.device});
+                strlcpy(${local.rtx_net_dev.k_net_dev}->name,
+                        ${config.ifname},
+                        sizeof(${local.rtx_net_dev.k_net_dev}->name));
+                ${local.rtx_net_dev.k_net_dev}->irq = ${rtx_pci_dev.irq};
+                ${local.rtx_net_dev.k_net_dev}->netdev_ops = &rtx_ether_ops;
+
+                error = register_netdev(${local.rtx_net_dev.k_net_dev});
+                if (error)
+                {
+                    ${Log::info("cannot register the driver in the net subsystem")};
+                    goto fail;
+                }
+
+                /* Initialize our context held by the net_device structure */
+                { /* XXX: I end up with a placeholder if I don't open a scope */
+                    ${local.rtx_ether_ctx.init(local.rtx_net_dev, rtx_pci_dev.pci_device)};
+                }
+
+                /* Register ourselves in the parent context: */
+                /* ${rtx_pci_dev.set_context(local.rtx_ether_ctx)}; */
+                ${rtx_pci_dev.rtx_drv_context} = rtx_ether_ctx;
+
+                /*
+                 * XXX: the asssignments/casts are here to circumvent
+                 * typing issues in the compiler (see previous XXX).
+                 */
+                unsigned char /* __iomem */ *io_addr = ${rtx_pci_dev.ioaddr};
+                ${pointcut Ethernet::adapter_init_context(local.rtx_ether_ctx, local.io_addr)};
+                ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
+                ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
+                memcpy(${local.rtx_ether_ctx.perm_addr},
+                       ${local.rtx_ether_ctx.dev_addr},
+                       ${local.rtx_net_dev.k_net_dev}->addr_len);
             }
-            SET_NETDEV_DEV(${local.rtx_net_dev.k_net_dev}, ${rtx_pci_dev.device});
-            strlcpy(${local.rtx_net_dev.k_net_dev}->name,
-                    ${config.ifname},
-                    sizeof(${local.rtx_net_dev.k_net_dev}->name));
-            ${local.rtx_net_dev.k_net_dev}->irq = ${rtx_pci_dev.irq};
-            ${local.rtx_net_dev.k_net_dev}->netdev_ops = &rtx_ether_ops;
-
-            error = register_netdev(${local.rtx_net_dev.k_net_dev});
-            if (error)
-            {
-                ${Log::info("cannot register the driver in the net subsystem")};
-                goto fail;
-            }
-
-            /* Initialize our context held by the net_device structure */
-            /*
-             * XXX: the cast is here because the compiler resolve the
-             * type of rtx_pci_dev.pci_device to the type of
-             * rtx_pci_dev instead of the type of rtx_pci_dev.pci_device.
-             */
-            ${PCI::AbstractDevice.ref} workaround = ${rtx_pci_dev.pci_device};
-            ${cast local.workaround as PCI::AbstractDevice};
-            { /* XXX: I end up with a placeholder if I don't open a scope */
-                ${local.rtx_ether_ctx.init(local.rtx_net_dev, local.workaround)};
-            }
-
-            /* Register ourselves in the parent context: */
-            /* ${rtx_pci_dev.set_context(local.rtx_ether_ctx)}; */
-            ${rtx_pci_dev}->context = rtx_ether_ctx;
-
-            /*
-             * XXX: the asssignments/casts are here to circumvent
-             * typing issues in the compiler (see previous XXX).
-             */
-            int bars = ${rtx_pci_dev.bars};
-            unsigned char /* __iomem */ *ioaddr = ${rtx_pci_dev.ioaddr};
-            ${cast local.bars as Builtin::number};
-            ${pointcut Ethernet::adapter_init_context(local.rtx_ether_ctx,
-                                                      local.bars,
-                                                      local.ioaddr)};
-            ${pointcut Ethernet::adapter_reset(local.rtx_ether_ctx)};
-            ${pointcut Ethernet::adapter_load_mac_address(local.rtx_ether_ctx)};
-            memcpy(${local.rtx_ether_ctx.perm_addr},
-                   ${local.rtx_ether_ctx.dev_addr},
-                   ${local.rtx_net_dev.k_net_dev}->addr_len);
         }
 
-        /* This chunk should be removed (see #26) */
+        /* XXX This chunk should be removed (see #26) */
         chunk   ::CALL()
         {
         }
@@ -343,15 +383,17 @@ with Ethernet, PCI, LKM, Log, Builtin
          */
         chunk   PCI::pci_remove_hook(PCI::Device rtx_pci_dev)
         {
-            ${Ethernet::Device.ref} rtx_ether_ctx = ${rtx_pci_dev.rtx_drv_context};
-            BUG_ON(!rtx_ether_ctx);
+            {
+                ${Ethernet::Device.ref} rtx_ether_ctx = ${rtx_pci_dev.rtx_drv_context};
+                BUG_ON(!rtx_ether_ctx);
 
-            ${Ethernet::AbstractDevice.ref} rtx_net_dev = ${local.rtx_ether_ctx.net_device};
-            unregister_netdev(${local.rtx_net_dev.k_net_dev});
-            free_netdev(${local.rtx_net_dev.k_net_dev});
+                ${Ethernet::AbstractDevice.ref} rtx_net_dev = ${local.rtx_ether_ctx.net_device};
+                unregister_netdev(${local.rtx_net_dev.k_net_dev});
+                free_netdev(${local.rtx_net_dev.k_net_dev});
+            }
         }
 
-        /* This chunk should be removed (see #26) */
+        /* XXX This chunk should be removed (see #26) */
         chunk ::CALL()
         {
         }

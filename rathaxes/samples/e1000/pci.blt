@@ -1,4 +1,4 @@
-with PCI, LKM, Log
+with LKM, Log, PCI
 {
     template type   PCI::AbstractDevice()
     {
@@ -73,9 +73,8 @@ with PCI, LKM, Log
 
         method  init(PCI::AbstractDevice pdev)
         {
-            ${PCI::AbstractDevice.ref} workaround = (${PCI::AbstractDevice.ref})pdev;
             ${self}->pdev = ${pdev};
-            ${self}->bars = pci_select_bars(${local.workaround.k_pci_dev}, IORESOURCE_MEM);
+            ${self}->bars = pci_select_bars(${pdev.k_pci_dev}, IORESOURCE_MEM);
             ${self}->ioaddr = NULL;
             ${self}->context = NULL;
         }
@@ -92,13 +91,12 @@ with PCI, LKM, Log
 
         method  select_ioaddr(Builtin::number bar)
         {
-            ${PCI::AbstractDevice.ref} select_ioaddr_pdev = ${self}->pdev;
-            ${self}->ioaddr = pci_ioremap_bar(${local.select_ioaddr_pdev.k_pci_dev}, ${bar});
+            ${self.ioaddr} = pci_ioremap_bar(${self.pci_device.k_pci_dev}, ${bar});
         }
 
         method  set_rtx_drv_context(Builtin::symbol ctx)
         {
-            ${self}->context = ctx;
+            ${self.rtx_drv_context} = ${ctx};
         }
 
         map
@@ -127,7 +125,7 @@ with PCI, LKM, Log
                                                       const struct pci_device_id *pdev_id)
             {
                 int error;
-                ${PCI::Device.ref} rtx_pci_dev;
+                ${PCI::Device.ref} rtx_pci_dev = NULL;
                 ${PCI::AbstractDevice.ref} rtx_pdev = (${PCI::AbstractDevice.ref})pdev;
 
                 rtx_pci_dev = kmalloc(sizeof(*rtx_pci_dev), GFP_KERNEL);
@@ -138,13 +136,7 @@ with PCI, LKM, Log
                     goto fail;
                 }
 
-                /*
-                 * XXX: I'm getting placeholder in the generated code if I don't
-                 * open a scope here:
-                 */
-                {
-                    ${local.rtx_pci_dev.init(local.rtx_pdev)};
-                }
+                ${local.rtx_pci_dev.init(local.rtx_pdev)};
 
                 /* ${local.pdev.set_rtx_context(local.rtx_pci_dev)}; */
                 pci_set_drvdata(pdev, rtx_pci_dev);
@@ -157,14 +149,14 @@ with PCI, LKM, Log
                     goto fail;
                 }
 
-                /* ${local.rtx_pci_dev.select_ioaddr(local.rtx_pci_dev.BAR_0)}; */
-                rtx_pci_dev->ioaddr = pci_ioremap_bar(
+                // XXX #46: ${local.rtx_pci_dev.select_ioaddr(local.rtx_pci_dev.BAR_0)};
+                ${local.rtx_pci_dev.ioaddr} = pci_ioremap_bar(
                     pdev, ${local.rtx_pci_dev.BAR_0}
                 );
                 if (!${local.rtx_pci_dev.ioaddr})
                 {
                     ${Log::info("can't map the device address space")};
-                    error = 1; /* XXX anything more approriate? */
+                    error = -EIO; /* XXX anything more approriate? */
                     goto fail;
                 }
 
@@ -173,7 +165,7 @@ with PCI, LKM, Log
                 return 0;
 
             fail:
-                /* ${local.pdev.set_rtx_drv_context(NULL)}; */
+                // ${local.pdev.set_rtx_drv_context(NULL)};
                 pci_set_drvdata(pdev, NULL);
                 kfree(rtx_pci_dev);
                 return error;

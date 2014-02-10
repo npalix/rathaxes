@@ -1,139 +1,125 @@
-interface e1000 : Socket, Ethernet, PCI, LKM, Builtin
+interface e1000 : Socket, Ethernet, Device, DMA, PCI, LKM, Builtin
 {
-    required variable   Builtin::number rx_ring_size;
-    required variable   Builtin::number tx_ring_size;
-    required variable   Builtin::number rx_buffer_len;
-    required variable   Builtin::number tx_max_data_per_desc;
+    required variable Builtin::number rx_ring_size;
+    required variable Builtin::number tx_ring_size;
+    required variable Builtin::number rx_buffer_len;
+    required variable Builtin::number tx_max_data_per_desc;
+
+    // Hardware values/data structures, should probably be in the front-end:
+    provided type   Register            { decl data_types(); }
+    provided type   Command             { decl data_types(); }
+    provided type   TxDescriptorFlag    { decl data_types(); }
+    provided type   RxDescriptor        { decl data_types(); }
+    provided type   TxDescriptor        { decl data_types(); }
+
+    provided type   Buffer
+    {
+        decl        data_types();
+
+        method      init(Socket::SKBuff, DMA::DMAHandle);
+
+        attribute   Socket::SKBuff.scalar   sk_buff;
+        attribute   DMA::DMAHandle.scalar   dma;
+    }
 
     provided type   Context
     {
-        chunk       Ethernet::HardwareContext();
         decl        data_types();
 
-        /* Callbacks/Hooks which should probably be in the front-end: */
-        chunk       Ethernet::adapter_init_context(Ethernet::Device,
-                                                   Builtin::number,
-                                                   Builtin::symbol);
+        chunk       LKM::includes();
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+        chunk       Ethernet::HardwareContext();
+
+        // NOTE: Those callbacks/hooks should probably be in the front-end:
+
+        chunk       Ethernet::adapter_init_context(Ethernet::Device, Builtin::symbol);
         chunk       Ethernet::adapter_reset(Ethernet::Device);
         chunk       Ethernet::adapter_load_mac_address(Ethernet::Device);
+        chunk       Ethernet::adapter_setup_rx_tx(Ethernet::Device);
+        chunk       Ethernet::adapter_enable_interrupts(Ethernet::Device);
+        chunk       Ethernet::adapter_disable_interrupts(Ethernet::Device);
+        chunk       Ethernet::adapter_handle_interrupt(Ethernet::Device);
+        chunk       Ethernet::adapter_xmit(Ethernet::Device, Socket::SKBuff);
+        chunk       Ethernet::adapter_disable_rx(Ethernet::Device);
+        chunk       Ethernet::adapter_disable_tx(Ethernet::Device);
+        chunk       Ethernet::adapter_free_rx_tx(Ethernet::Device);
+
+        method      init(Ethernet::Device net_dev, Builtin::symbol);
+        method      print_status();
+        method      reg_read32(Register);
+        method      reg_write32(Register, Builtin::number);
+        method      reg_set32(Register, Builtin::number);
+        method      reg_unset32(Register, Builtin::number);
+
+        // XXX: Circular dependency with the rings, this will prevent us to
+        // call methods even when issue $46 is resolved, it also forces us to
+        // hardcode generated types in the definition of the type, and they
+        // can't be "dereferenced" (e.g: local.hw_ctx.rx_ring.desc_size can't
+        // work since local.hw_ctx.rx_ring is just going to be a symbol).
+        attribute   Builtin::symbol.scalar  rx_ring;
+        attribute   Builtin::symbol.scalar  tx_ring;
+        attribute   Builtin::symbol.ref     io_addr;
+        attribute   Ethernet::Device.ref    net_dev;
     }
 
-    provided type   RxDescriptor
+    provided type   Ring
     {
-        chunk       LKM::includes();
         decl        data_types();
-        method      init();
-    }
 
-    provided type   TxDescriptor
-    {
-        decl        data_types();
-        method      init();
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+
+        method      init(e1000::Context, Builtin::number, Builtin::number);
+
+        // Keep a backref to The context since it's going to be needed for of
+        // operations involving the ethernet device, flags on the context, etc.
+        attribute   Context.ref             hw_ctx;
+        attribute   DMA::DMAHandle.scalar   dma;
+        attribute   Builtin::number.scalar  size;   // Total size in bytes
+        attribute   Builtin::symbol.ref     descs;
+        attribute   Buffer.ref              buffs;
     }
 
     provided type   RxRing
     {
         decl        data_types();
-        method      init();
+
+        chunk       LKM::prototypes();
+        chunk       LKM::code();
+
+        method      init(e1000::Context, Builtin::number);
+        method      alloc(); // Returns != 0 on failure
+        method      free();
+        method      configure();
+
+        // Re-expose all the Ring attributes + the size of a single descriptor:
+        attribute   Context.ref             hw_ctx;
+        attribute   DMA::DMAHandle.scalar   dma;
+        attribute   Builtin::number.scalar  size;
+        attribute   RxDescriptor.ref        descs;
+        attribute   Builtin::number.scalar  desc_size;
+        attribute   Buffer.ref              buffs;
     }
 
     provided type   TxRing
     {
+        decl        data_types();
+
         chunk       LKM::prototypes();
         chunk       LKM::code();
-        decl        data_types();
-        method      init();
 
-        /* Clean the ring (i.e: move the head closer to the tail): */
-        method      clean();
-        /* Return the number of clean descriptors left in the ring: */
-        method      descriptors_remaining();
-        method      tso_cksum_offload(Socket::SKBuff);
-        method      put(Socket::SKBuff);
-        /* Signal the device that new dirty descriptors are on the ring: */
-        method      start_xmit(e1000::Context);
-    }
+        method      init(e1000::Context, Builtin::number);
+        method      alloc(); // Returns != 0 on failure
+        method      free();
+        method      configure();
 
-    /*
-     * These two types should actually be registers definitions in the frontend:
-     */
-    provided type   Register
-    {
-        decl        data_types();
-        method      init(Builtin::number);
-    }
-
-    provided type   Commands
-    {
-        decl        data_types();
-    }
-
-    provided type   TxDescriptorFlags
-    {
-        decl        data_types();
-    }
-
-    /*
-     * This should take an e1000::Context as the first argument but this was
-     * not working as wished.
-     */
-    provided sequence   print_status(Ethernet::Device)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   activate_device_interruption(Ethernet::Device)
-    {
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   set_up_device(Ethernet::Device)
-    {
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   free_rx_tx(Ethernet::Device dev)
-    {
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   handle_interrupt(Ethernet::Device)
-    {
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   xmit(Ethernet::Device, Socket::AbstractSKBuff)
-    {
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   register_read32(e1000::Context, e1000::Register)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   register_write32(e1000::Context, e1000::Register, ::number)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   register_set32(e1000::Context, e1000::Register, ::number)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
-    }
-
-    provided sequence   register_unset32(e1000::Context, e1000::Register, ::number)
-    {
-        provided chunk  LKM::prototypes();
-        provided chunk  LKM::code();
-        provided chunk  ::CALL();
+        // Re-expose all the Ring attributes + the size of a single descriptor:
+        attribute   Context.ref             hw_ctx;
+        attribute   DMA::DMAHandle.scalar   dma;
+        attribute   Builtin::number.scalar  size;
+        attribute   TxDescriptor.ref        descs;
+        attribute   Builtin::number.scalar  desc_size;
+        attribute   Buffer.ref              buffs;
     }
 }

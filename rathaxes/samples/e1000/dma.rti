@@ -1,0 +1,54 @@
+interface DMA : Builtin, LKM, Device
+{
+    provided type   AbstractDMAHandle
+    {
+        chunk       LKM::includes();
+        decl        data_types();
+        attribute   Builtin::symbol.scalar  k_dma_handle;
+    }
+
+    provided type   DMAHandle
+    {
+        decl        data_types();
+        attribute   AbstractDMAHandle.scalar    dma_handle;
+    }
+
+    provided type   AbstractDMADirection
+    {
+        decl        data_types();
+        attribute   Builtin::symbol.scalar  k_dma_direction;
+    }
+
+    provided type   DMADirection
+    {
+        decl        data_types();
+        attribute   AbstractDMADirection.scalar dma_direction;
+    }
+
+    provided sequence   map(Device::AbstractDevice, Builtin::symbol, Builtin::number, DMADirection)
+    {
+        provided chunk  ::CALL(); /* -> DMAHandle */
+    }
+
+    provided sequence   unmap(Device::AbstractDevice, AbstractDMAHandle, Builtin::number, DMADirection)
+    {
+        provided chunk  ::CALL();
+    }
+
+    /* XXX: Until we have a real error handling mechanism: */
+    provided sequence   mapping_error(Device::AbstractDevice, AbstractDMAHandle)
+    {
+        provided chunk  ::CALL(); /* -> != 0 if the mapping failed */
+    }
+
+    provided sequence   alloc_coherent(Device::AbstractDevice, Builtin::number, AbstractDMAHandle)
+    {
+        /* return the addr and the handle via the AbstractDMAHandle ptr: */
+        provided chunk  ::CALL();
+    }
+
+    provided sequence   free_coherent(Device::AbstractDevice, Builtin::number, Builtin::symbol, AbstractDMAHandle)
+    {
+        provided chunk  ::CALL();
+    }
+}

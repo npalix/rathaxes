@@ -1,4 +1,4 @@
-interface Socket : LKM, Device
+interface Socket : LKM, Device, DMA, Builtin
 {
     /* The SKBuff type from the kernel */
     provided type   AbstractSKBuff
@@ -10,14 +10,17 @@ interface Socket : LKM, Device
 
     provided type   SKBuff
     {
-        chunk       LKM::prototypes();
-        chunk       LKM::code();
-        decl        data_types();
-        method      init(Socket::AbstractSKBuff);
-        method      dump_infos();
-        method      map_to(Device::AbstractDevice);
-        method      map_from(Device::AbstractDevice);
-        method      unmap_to_and_free(Device::AbstractDevice);
-        method      unmap_from_and_free(Device::AbstractDevice);
+        chunk   LKM::prototypes();
+        chunk   LKM::code();
+
+        decl    data_types();
+
+        method  init(Socket::AbstractSKBuff);
+        method  dump_infos();
+        method  free();
+
+        attribute   Socket::AbstractSKBuff.ref  sk_buff;
+        attribute   Builtin::symbol.ref         data;
+        attribute   Builtin::number.scalar      len;
     }
 }

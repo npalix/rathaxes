@@ -1,0 +1,103 @@
+with Builtin, LKM, Device, DMA
+{
+    template type   DMA::AbstractDMAHandle()
+    {
+        chunk   LKM::includes()
+        {
+            #include <linux/dma-mapping.h>
+        }
+
+        decl    data_types()
+        {
+            dma_addr_t  data;
+        }
+
+        map
+        {
+            k_dma_handle: (*(dma_addr_t *)&(${self}));
+        }
+    }
+
+    template type   DMA::DMAHandle()
+    {
+        decl    data_types()
+        {
+            ${DMA::AbstractDMAHandle}   data;
+        }
+
+        map
+        {
+            /* XXX: we should use ${DMA::AbstractDMAHandle} here: */
+            dma_handle: (*(dma_addr_t *)&(${self}));
+        }
+    }
+
+    template type   DMA::AbstractDMADirection()
+    {
+        decl    data_types()
+        {
+            enum dma_data_direction data;
+        }
+
+        map
+        {
+            k_dma_direction: ((enum dma_data_direction)(${self}));
+        }
+    }
+
+    template type   DMA::DMADirection()
+    {
+        decl    data_types()
+        {
+            RTX_DMA_BIDIRECTIONAL   = DMA_BIDIRECTIONAL,
+            RTX_DMA_TO_DEVICE       = DMA_TO_DEVICE,
+            RTX_DMA_FROM_DEVICE     = DMA_FROM_DEVICE
+        }
+
+        map
+        {
+            /* XXX: we should use ${DMA::AbstractDMADirection} here: */
+            dma_direction: (enum dma_data_direction)(${self});
+        }
+    }
+
+    template sequence   map(Device::AbstractDevice dev, Builtin::symbol buf, Builtin::number size, DMA::DMADirection dir)
+    {
+        chunk  ::CALL()
+        {
+            dma_map_single(${dev.k_device}, ${buf}, ${size}, ${dir.dma_direction});
+        }
+    }
+
+    template sequence   unmap(Device::AbstractDevice dev, DMA::AbstractDMAHandle handle, Builtin::number size, DMA::DMADirection dir)
+    {
+        chunk  ::CALL()
+        {
+            dma_unmap_single(${dev.k_device}, ${handle.k_dma_handle}, ${size}, ${dir.dma_direction});
+        }
+    }
+
+    template sequence   mapping_error(Device::AbstractDevice dev, DMA::AbstractDMAHandle handle)
+    {
+        chunk ::CALL()
+        {
+            dma_mapping_error(${dev.k_device}, ${handle.k_dma_handle});
+        }
+    }
+
+    template sequence   alloc_coherent(Device::AbstractDevice dev, Builtin::number size, DMA::AbstractDMAHandle handle)
+    {
+        chunk  ::CALL()
+        {
+            dma_alloc_coherent(${dev.k_device}, ${size}, &${handle.k_dma_handle}, GFP_KERNEL);
+        }
+    }
+
+    template sequence   free_coherent(Device::AbstractDevice dev, Builtin::number size, Builtin::symbol addr, DMA::AbstractDMAHandle handle)
+    {
+        chunk  ::CALL()
+        {
+            dma_free_coherent(${dev.k_device}, ${size}, ${addr}, ${handle.k_dma_handle});
+        }
+    }
+}
