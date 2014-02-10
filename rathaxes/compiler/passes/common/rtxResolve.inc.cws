@@ -887,7 +887,7 @@ function    inject<"__rtx_tpl_sequence_call__">(resolverValues : node, treeNode 
     local       phName = "_"+local_node#parent.block_idx;
     local       phIdx = 0;
     localref    theParent = local_node#parent.ref_placeholder#parent;
-    if (local_node#parent.type_target != "target_pointcut")
+    if (local_node#parent.type_target != "target_pointcut" && local_node#parent.type_target != "target_expr")
     {
         error(RED + "[Error] inject<\"__rtx_tpl_sequence_call__\">: Wrong target type ("
               + local_node#parent.type_target + ")" + DEFAULT_COLOR);
