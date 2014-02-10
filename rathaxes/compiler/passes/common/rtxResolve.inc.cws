@@ -388,7 +388,20 @@ function rtxResolve_BuildParameterResVals(src_resVals   : node,
                 // Argument comes from the Chunk, so we retrieve the *real* type
                 // That will be resolved after the "local" resolution.
 
-                rtxResolve_BuildLocalSelf(subResVal, theChunk, placeHolder, subidentifiers);
+                if (subidentifiers#front == "local")
+                    rtxResolve_BuildLocalSelf(subResVal, theChunk, placeHolder, subidentifiers);
+                else
+                {
+                    local src_arg;
+                    local src_type;
+                    local src_value;
+                    rtxNodeArgs_GetArgByName(src_resVals, "self", src_arg);
+                    if (rtxNodeArg_getRType(src_arg, src_type) == false)
+                        return false;
+                    if (rtxNodeArg_getValue(src_arg, src_value) == false)
+                        return false;
+                    rtxNodeArgs_AppendArg(subResVal, "self", src_type, src_value);
+                }
                 local local_self;
                 rtxNodeArgs_GetArgByName(subResVal, "self", local_self);
                 local local_type;
