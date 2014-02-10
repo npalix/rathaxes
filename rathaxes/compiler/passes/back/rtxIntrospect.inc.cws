@@ -751,6 +751,8 @@ function rtxIntrospect_InferPlaceHolderTypes<"__rtx_tpl_sequence_call__">(local_
             local theType;
             if (findElement(theVar.name, theChunk.type_map))
                 ref theType = theChunk.type_map[theVar.name];
+            else if (findElement(theVar.name, theChunk.variables))
+                ref theType = theChunk.variables[theVar.name].type_node;
             insert param.rtype;
             if (getArraySize(param.identifiers) > 2)
             {
