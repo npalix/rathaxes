@@ -93,11 +93,7 @@ SET(IGNORE_PATTERNS
     "/build/"
     ".*\\\\.r?tree$"
     ".*\\\\.pp$"
-    # delete some legacy stuff and save some space:
-    "/management/"
-    "/epitech/2009/"
     # cnorm repo workarounds:
-    "\\\\.svn"
     "/cnorm/testing/"
    )
 SET(PACKAGE_FILE_NAME "${PACKAGE_NAME}-${RATHAXES_VERSION}")
